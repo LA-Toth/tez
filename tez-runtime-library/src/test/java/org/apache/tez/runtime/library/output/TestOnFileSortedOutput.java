@@ -68,8 +68,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -420,7 +420,7 @@ public class TestOnFileSortedOutput {
         callback.memoryAssigned(requestedSize);
         return null;
       }
-    }).when(context).requestInitialMemory(anyLong(), any(MemoryUpdateCallback.class));
+    }).when(context).requestInitialMemory(anyLong(), any());
     ExecutionContext ExecutionContext = mock(ExecutionContext.class);
     doReturn(HOST).when(ExecutionContext).getHostName();
     doReturn(reporter).when(context).getStatisticsReporter();

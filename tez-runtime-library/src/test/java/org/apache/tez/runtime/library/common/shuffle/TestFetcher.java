@@ -20,10 +20,10 @@ package org.apache.tez.runtime.library.common.shuffle;
 
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.tez.runtime.library.common.CompositeInputAttemptIdentifier;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
@@ -193,7 +193,7 @@ public class TestFetcher {
         Object[] args = invocation.getArguments();
         return new Path(SHUFFLE_INPUT_FILE_PREFIX + args[0]);
       }
-    }).when(fetcher).getShuffleInputFileName(anyString(), anyString());
+    }).when(fetcher).getShuffleInputFileName(anyString(), any());
 
     doAnswer(new Answer<TezIndexRecord>() {
       @Override

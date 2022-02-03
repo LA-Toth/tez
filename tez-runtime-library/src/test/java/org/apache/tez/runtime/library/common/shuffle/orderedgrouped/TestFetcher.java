@@ -19,12 +19,12 @@
 package org.apache.tez.runtime.library.common.shuffle.orderedgrouped;
 
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -53,6 +53,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import com.google.common.collect.Lists;
 
+import org.apache.tez.common.TezRuntimeFrameworkConfigs;
 import org.apache.tez.http.HttpConnection;
 import org.apache.tez.http.HttpConnectionParams;
 import org.apache.tez.common.counters.TezCounter;
@@ -163,7 +164,7 @@ public class TestFetcher {
     spyFetcher.fetchNext();
 
     verify(spyFetcher, times(1)).setupLocalDiskFetch(mapHost);
-    verify(spyFetcher, never()).copyFromHost(any(MapHost.class));
+    verify(spyFetcher, never()).copyFromHost(any());
 
     // if hostname does not match use http
     mapHost = new MapHost(HOST + "_OTHER", PORT, 0, 1);
@@ -177,7 +178,7 @@ public class TestFetcher {
 
     spyFetcher.fetchNext();
 
-    verify(spyFetcher, never()).setupLocalDiskFetch(any(MapHost.class));
+    verify(spyFetcher, never()).setupLocalDiskFetch(any());
     verify(spyFetcher, times(1)).copyFromHost(mapHost);
 
     // if port does not match use http
@@ -192,7 +193,7 @@ public class TestFetcher {
 
     spyFetcher.fetchNext();
 
-    verify(spyFetcher, never()).setupLocalDiskFetch(any(MapHost.class));
+    verify(spyFetcher, never()).setupLocalDiskFetch(any());
     verify(spyFetcher, times(1)).copyFromHost(mapHost);
 
     //if local fetch is not enabled
@@ -266,8 +267,8 @@ public class TestFetcher {
         return mapOutput;
       }
     }).when(spyFetcher)
-        .getMapOutputForDirectDiskFetch(any(InputAttemptIdentifier.class), any(Path.class),
-            any(TezIndexRecord.class));
+        .getMapOutputForDirectDiskFetch(any(), any(),
+            any());
 
     doAnswer(new Answer<Path>() {
       @Override
@@ -275,7 +276,7 @@ public class TestFetcher {
         Object[] args = invocation.getArguments();
         return new Path(SHUFFLE_INPUT_FILE_PREFIX + args[0]);
       }
-    }).when(spyFetcher).getShuffleInputFileName(anyString(), anyString());
+    }).when(spyFetcher).getShuffleInputFileName(any(), any());
 
     for (int i = 0; i < host.getPartitionCount(); i++) {
       doAnswer(new Answer<TezIndexRecord>() {
@@ -291,7 +292,7 @@ public class TestFetcher {
           // match with params for copySucceeded below.
           return new TezIndexRecord(p * 10, (p+1) * 1000, (p+2) * 100);
         }
-      }).when(spyFetcher).getIndexRecord(anyString(), eq(host.getPartitionId() + i));
+      }).when(spyFetcher).getIndexRecord(any(), eq(host.getPartitionId() + i));
     }
 
     doNothing().when(scheduler).copySucceeded(any(InputAttemptIdentifier.class), any(MapHost.class),
@@ -369,7 +370,7 @@ public class TestFetcher {
         Object[] args = invocation.getArguments();
         return new Path(SHUFFLE_INPUT_FILE_PREFIX + args[0]);
       }
-    }).when(spyFetcher).getShuffleInputFileName(anyString(), anyString());
+    }).when(spyFetcher).getShuffleInputFileName(any(), anyString());
 
     for (int i = 0; i < host.getPartitionCount(); i++) {
       doAnswer(new Answer<TezIndexRecord>() {
@@ -459,7 +460,7 @@ public class TestFetcher {
         Object[] args = invocation.getArguments();
         return new Path(SHUFFLE_INPUT_FILE_PREFIX + args[0]);
       }
-    }).when(spyFetcher).getShuffleInputFileName(anyString(), anyString());
+    }).when(spyFetcher).getShuffleInputFileName(any(), any());
 
     for (int i = 0; i < host.getPartitionCount(); i++) {
       doAnswer(new Answer<TezIndexRecord>() {
@@ -477,7 +478,7 @@ public class TestFetcher {
           // match with params for copySucceeded below.
           return new TezIndexRecord(p * 10, (p + 1) * 1000, (p + 2) * 100);
         }
-      }).when(spyFetcher).getIndexRecord(anyString(), eq(host.getPartitionId() + i));
+      }).when(spyFetcher).getIndexRecord(any(), eq(host.getPartitionId() + i));
     }
 
     doNothing().when(scheduler).copySucceeded(any(InputAttemptIdentifier.class), any(MapHost.class),
@@ -591,7 +592,7 @@ public class TestFetcher {
         new InputAttemptIdentifier(3, 4, InputAttemptIdentifier.PATH_PREFIX + "pathComponent_3")
     );
     doReturn(srcAttempts).when(scheduler).getMapsForHost(host);
-    doReturn(true).when(fetcher).setupConnection(any(MapHost.class), any(Collection.class));
+    doReturn(true).when(fetcher).setupConnection(any(), any());
 
     URL url = ShuffleUtils.constructInputURL("http://" + HOST + ":" + PORT + "/mapOutput?job=job_123&&reduce=1&map=", srcAttempts, false);
     fetcher.httpConnection = new FakeHttpConnection(url, null, "", null);
@@ -605,7 +606,7 @@ public class TestFetcher {
         doReturn(args[0]).when(mapOutput).getAttemptIdentifier();
         return mapOutput;
       }
-    }).when(merger).reserve(any(InputAttemptIdentifier.class), anyInt(), anyInt(), anyInt());
+    }).when(merger).reserve(any(), anyInt(), anyInt(), anyInt());
 
     //Create read timeout when reading data
     doAnswer(new Answer<Void>() {
@@ -614,7 +615,7 @@ public class TestFetcher {
         // Simulate read timeout by throwing proper exception
         throw new FetcherReadTimeoutException("creating fetcher socket read timeout exception");
       }
-    }).when(fetcher).copyMapOutput(any(MapHost.class), any(DataInputStream.class), any(InputAttemptIdentifier.class));
+    }).when(fetcher).copyMapOutput(any(), any(), any());
 
     try {
       fetcher.copyFromHost(host);

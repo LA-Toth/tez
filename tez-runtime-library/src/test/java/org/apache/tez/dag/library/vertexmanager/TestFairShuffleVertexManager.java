@@ -311,7 +311,7 @@ public class TestFairShuffleVertexManager
 
     doAnswer(new reconfigVertexAnswer(mockContext, mockManagedVertexId,
         newEdgeManagers)).when(mockContext).reconfigureVertex(
-        anyInt(), any(VertexLocationHint.class), anyMap());
+        anyInt(), any(), anyMap());
 
     // check initialization
     manager = createFairShuffleVertexManager(conf, mockContext,
