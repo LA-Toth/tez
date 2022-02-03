@@ -18,10 +18,10 @@
 
 package org.apache.tez.runtime.library.common.shuffle.impl;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -63,7 +63,6 @@ import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.DataMovem
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import com.google.protobuf.ByteString;
@@ -199,10 +198,10 @@ public class TestShuffleInputEventHandlerImpl {
           @Override
           public ExecutorService answer(InvocationOnMock invocation) throws Throwable {
             return sharedExecutor.createExecutorService(
-                invocation.getArgumentAt(0, Integer.class),
-                invocation.getArgumentAt(1, String.class));
           }
         });
+                invocation.getArgument(0, Integer.class),
+                invocation.getArgument(1, String.class)));
     return inputContext;
   }
 

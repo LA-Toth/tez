@@ -35,7 +35,6 @@ import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 import static org.junit.Assert.*;
@@ -190,10 +189,10 @@ public class TestLocalTaskSchedulerService {
     Answer<Void> answer = new Answer<Void>() {
       @Override
       public Void answer(InvocationOnMock invocation) {
-        ContainerId containerId = invocation.getArgumentAt(0, ContainerId.class);
         taskSchedulerService.deallocateContainer(containerId);
         return null;
       }
+      ContainerId containerId = invocation.getArgument(0, ContainerId.class);
     };
     doAnswer(answer).when(mockContext).preemptContainer(any(ContainerId.class));
 

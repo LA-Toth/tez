@@ -52,10 +52,10 @@ import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.BROADCAST;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -72,7 +72,7 @@ public class TestFairCartesianProductVertexManager {
 
   @Before
   public void setup() {
-    MockitoAnnotations.initMocks(this);
+    MockitoAnnotations.openMocks(this);
     ctx = mock(VertexManagerPluginContext.class);
     vertexManager = new FairCartesianProductVertexManager(ctx);
   }
@@ -224,7 +224,7 @@ public class TestFairCartesianProductVertexManager {
 
     vertexManager.onVertexManagerEventReceived(getVMEvent(250, "v0", 0));
     verify(ctx, never()).reconfigureVertex(
-      anyInt(), any(VertexLocationHint.class), anyMapOf(String.class, EdgeProperty.class));
+      anyInt(), any(VertexLocationHint.class), anyMap());
 
     vertexManager.onVertexManagerEventReceived(getVMEvent(200, "v1", 0));
     verify(ctx, times(1)).reconfigureVertex(
@@ -400,7 +400,7 @@ public class TestFairCartesianProductVertexManager {
     vertexManager.initialize(config);
     vertexManager.onVertexStateUpdated(new VertexStateUpdate("v0", VertexState.CONFIGURED));
     vertexManager.onVertexStateUpdated(new VertexStateUpdate("v1", VertexState.CONFIGURED));
-    vertexManager.onVertexStarted(new ArrayList<TaskAttemptIdentifier>());
+    vertexManager.onVertexStarted(new ArrayList<>());
     vertexManager.onSourceTaskCompleted(getTaId("v0", 0));
     vertexManager.onSourceTaskCompleted(getTaId("v0", 1));
   }
@@ -430,7 +430,7 @@ public class TestFairCartesianProductVertexManager {
       vertexManager.onSourceTaskCompleted(getTaId("v1", i));
     }
     verify(ctx, never()).reconfigureVertex(
-      anyInt(), any(VertexLocationHint.class), anyMapOf(String.class, EdgeProperty.class));
+      anyInt(), any(VertexLocationHint.class), anyMap());
 
     vertexManager.onSourceTaskCompleted(getTaId("v1", 14));
     verify(ctx, times(1)).reconfigureVertex(
@@ -448,7 +448,7 @@ public class TestFairCartesianProductVertexManager {
       vertexManager.onSourceTaskCompleted(getTaId("v1", i));
     }
     verify(ctx, never()).reconfigureVertex(
-      anyInt(), any(VertexLocationHint.class), anyMapOf(String.class, EdgeProperty.class));
+      anyInt(), any(VertexLocationHint.class), anyMap());
   }
 
   @Test(timeout = 5000)

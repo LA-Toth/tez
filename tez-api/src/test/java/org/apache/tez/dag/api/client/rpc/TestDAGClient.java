@@ -20,7 +20,7 @@ package org.apache.tez.dag.api.client.rpc;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -164,30 +164,22 @@ public class TestDAGClient {
                     .setVertexCounters(vertexCountersProto)
                     .build();
   }
-  
-  private static class DAGCounterRequestMatcher extends ArgumentMatcher<GetDAGStatusRequestProto>{
+
+  private static class DAGCounterRequestMatcher implements ArgumentMatcher<GetDAGStatusRequestProto>{
 
     @Override
-    public boolean matches(Object argument) {
-      if (argument instanceof GetDAGStatusRequestProto){
-        GetDAGStatusRequestProto requestProto = (GetDAGStatusRequestProto)argument;
-        return requestProto.getStatusOptionsCount() != 0
-            && requestProto.getStatusOptionsList().get(0) == StatusGetOptsProto.GET_COUNTERS;
-      }
-      return false;
+    public boolean matches(GetDAGStatusRequestProto requestProto) {
+      return requestProto != null && requestProto.getStatusOptionsCount() != 0
+              && requestProto.getStatusOptionsList().get(0) == StatusGetOptsProto.GET_COUNTERS;
     }
   }
-  
-  private static class VertexCounterRequestMatcher extends ArgumentMatcher<GetVertexStatusRequestProto>{
+
+  private static class VertexCounterRequestMatcher implements ArgumentMatcher<GetVertexStatusRequestProto>{
 
     @Override
-    public boolean matches(Object argument) {
-      if (argument instanceof GetVertexStatusRequestProto){
-        GetVertexStatusRequestProto requestProto = (GetVertexStatusRequestProto)argument;
-        return requestProto.getStatusOptionsCount() != 0
-            && requestProto.getStatusOptionsList().get(0) == StatusGetOptsProto.GET_COUNTERS;
-      }
-      return false;
+    public boolean matches(GetVertexStatusRequestProto requestProto) {
+      return requestProto != null && requestProto.getStatusOptionsCount() != 0
+          && requestProto.getStatusOptionsList().get(0) == StatusGetOptsProto.GET_COUNTERS;
     }
   }
   
@@ -202,14 +194,14 @@ public class TestDAGClient {
     dagIdStr = "dag_9999_0001_1";
     mockProxy = mock(DAGClientAMProtocolBlockingPB.class);
     // return the response with Counters is the request match the CounterMatcher
-    when(mockProxy.getDAGStatus(isNull(RpcController.class), any(GetDAGStatusRequestProto.class)))
+    when(mockProxy.getDAGStatus(isNull(), any(GetDAGStatusRequestProto.class)))
       .thenReturn(GetDAGStatusResponseProto.newBuilder().setDagStatus(dagStatusProtoWithoutCounters).build());
-    when(mockProxy.getDAGStatus(isNull(RpcController.class), argThat(new DAGCounterRequestMatcher())))
+    when(mockProxy.getDAGStatus(isNull(), argThat(new DAGCounterRequestMatcher())))
       .thenReturn(GetDAGStatusResponseProto.newBuilder().setDagStatus(dagStatusProtoWithCounters).build());
     
-    when(mockProxy.getVertexStatus(isNull(RpcController.class), any(GetVertexStatusRequestProto.class)))
+    when(mockProxy.getVertexStatus(isNull(), any(GetVertexStatusRequestProto.class)))
       .thenReturn(GetVertexStatusResponseProto.newBuilder().setVertexStatus(vertexStatusProtoWithoutCounters).build());
-    when(mockProxy.getVertexStatus(isNull(RpcController.class), argThat(new VertexCounterRequestMatcher())))
+    when(mockProxy.getVertexStatus(isNull(), argThat(new VertexCounterRequestMatcher())))
       .thenReturn(GetVertexStatusResponseProto.newBuilder().setVertexStatus(vertexStatusProtoWithCounters).build());
 
     TezConfiguration tezConf = new TezConfiguration();
@@ -270,7 +262,7 @@ public class TestDAGClient {
   @Test(timeout = 5000)
   public void testWaitForCompletion() throws Exception{
     // first time return DAG_RUNNING, second time return DAG_SUCCEEDED
-    when(mockProxy.getDAGStatus(isNull(RpcController.class), any(GetDAGStatusRequestProto.class)))
+    when(mockProxy.getDAGStatus(isNull(), any(GetDAGStatusRequestProto.class)))
       .thenReturn(GetDAGStatusResponseProto.newBuilder().setDagStatus(dagStatusProtoWithoutCounters)
           .build())
       .thenReturn(GetDAGStatusResponseProto.newBuilder().setDagStatus
@@ -291,7 +283,7 @@ public class TestDAGClient {
   public void testWaitForCompletionWithStatusUpdates() throws Exception{
 
     // first time and second time return DAG_RUNNING, third time return DAG_SUCCEEDED
-    when(mockProxy.getDAGStatus(isNull(RpcController.class), any(GetDAGStatusRequestProto.class)))
+    when(mockProxy.getDAGStatus(isNull(), any(GetDAGStatusRequestProto.class)))
         .thenReturn(GetDAGStatusResponseProto.newBuilder().setDagStatus(
             DAGStatusProto.newBuilder(dagStatusProtoWithCounters)
                 .setState(DAGStatusStateProto.DAG_RUNNING).build()).build())
@@ -317,7 +309,7 @@ public class TestDAGClient {
     verify(mockProxy, times(4))
         .getDAGStatus(rpcControllerArgumentCaptor.capture(), argumentCaptor.capture());
 
-    when(mockProxy.getDAGStatus(isNull(RpcController.class), any(GetDAGStatusRequestProto.class)))
+    when(mockProxy.getDAGStatus(isNull(), any(GetDAGStatusRequestProto.class)))
         .thenReturn(GetDAGStatusResponseProto.newBuilder().setDagStatus(
             DAGStatusProto.newBuilder(dagStatusProtoWithCounters)
                 .setState(DAGStatusStateProto.DAG_RUNNING).build()).build())
@@ -555,7 +547,7 @@ public class TestDAGClient {
         return GetDAGStatusResponseProto.newBuilder().setDagStatus(constructDagStatusProto(
             stateProto)).build();
       }
-    }).when(mock).getDAGStatus(isNull(RpcController.class), any(GetDAGStatusRequestProto.class));
+    }).when(mock).getDAGStatus(isNull(), any(GetDAGStatusRequestProto.class));
     return mock;
   }
 
