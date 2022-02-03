@@ -25,6 +25,9 @@ import static org.junit.Assert.assertTrue;
 import static io.netty.buffer.Unpooled.wrappedBuffer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -96,7 +99,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1402,7 +1404,7 @@ public class TestShuffleHandler {
     final ChannelHandlerContext mockCtx =
         mock(ChannelHandlerContext.class);
     final Channel mockCh = mock(AbstractChannel.class);
-    final ChannelPipeline mockPipeline = Mockito.mock(ChannelPipeline.class);
+    final ChannelPipeline mockPipeline = mock(ChannelPipeline.class);
 
     // Mock HttpRequest and ChannelFuture
     final FullHttpRequest httpRequest = createHttpRequest();
@@ -1412,11 +1414,11 @@ public class TestShuffleHandler {
         new ShuffleHandler.TimeoutHandler();
 
     // Mock Netty Channel Context and Channel behavior
-    Mockito.doReturn(mockCh).when(mockCtx).channel();
-    Mockito.when(mockCh.pipeline()).thenReturn(mockPipeline);
-    Mockito.when(mockPipeline.get(Mockito.any(String.class))).thenReturn(timerHandler);
+    doReturn(mockCh).when(mockCtx).channel();
+    when(mockCh.pipeline()).thenReturn(mockPipeline);
+    when(mockPipeline.get(any(String.class))).thenReturn(timerHandler);
     when(mockCtx.channel()).thenReturn(mockCh);
-    Mockito.doReturn(mockFuture).when(mockCh).writeAndFlush(Mockito.any(Object.class));
+    doReturn(mockFuture).when(mockCh).writeAndFlush(any());
     when(mockCh.writeAndFlush(Object.class)).thenReturn(mockFuture);
 
     final ShuffleHandler sh = new MockShuffleHandler();
@@ -1492,8 +1494,8 @@ public class TestShuffleHandler {
       final List<ShuffleHandler.ReduceMapFileCount> listenerList) {
     final ChannelFuture mockFuture = mock(ChannelFuture.class);
     when(mockFuture.channel()).thenReturn(mockCh);
-    Mockito.doReturn(true).when(mockFuture).isSuccess();
-    Mockito.doAnswer(new Answer<Object>() {
+    doReturn(true).when(mockFuture).isSuccess();
+    doAnswer(new Answer<Object>() {
       @Override
       public Object answer(InvocationOnMock invocation) throws Throwable {
         //Add ReduceMapFileCount listener to a list
@@ -1503,7 +1505,7 @@ public class TestShuffleHandler {
               invocation.getArguments()[0]);
         return null;
       }
-    }).when(mockFuture).addListener(Mockito.any(
+    }).when(mockFuture).addListener(any(
         ShuffleHandler.ReduceMapFileCount.class));
     return mockFuture;
   }

@@ -31,11 +31,11 @@ import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.tez.common.TezUtils;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 public class TestEntityDescriptor {
 
@@ -57,7 +57,7 @@ public class TestEntityDescriptor {
     ByteArrayOutputStream bos = new ByteArrayOutputStream(out.getData().length);
     bos.write(out.getData());
 
-    Mockito.verify(entityDescriptor).writeSingular(eq(out), any(ByteBuffer.class));
+    verify(entityDescriptor).writeSingular(eq(out), any());
     deserialized.readFields(new DataInputStream(new ByteArrayInputStream(bos.toByteArray())));
     verifyResults(entityDescriptor, deserialized, payload, confVal);
   }
@@ -69,7 +69,7 @@ public class TestEntityDescriptor {
     entityDescriptor.write(out);
     out.close();
 
-    Mockito.verify(entityDescriptor).writeSegmented(eq(out), any(ByteBuffer.class));
+    verify(entityDescriptor).writeSegmented(eq(out), any());
     deserialized.readFields(new DataInputStream(new ByteArrayInputStream(bos.toByteArray())));
     verifyResults(entityDescriptor, deserialized, payload, confVal);
   }

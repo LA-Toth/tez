@@ -23,9 +23,13 @@ import java.nio.ByteBuffer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
@@ -221,7 +225,6 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.mockito.internal.util.collections.Sets;
 
 import com.google.common.base.Joiner;
@@ -2483,7 +2486,7 @@ public class TestVertexImpl {
     dagId = TezDAGID.getInstance(appAttemptId.getApplicationId(), 1);
     taskSpecificLaunchCmdOption = mock(TaskSpecificLaunchCmdOption.class);
     doReturn(false).when(taskSpecificLaunchCmdOption).addTaskSpecificLaunchCmdOption(
-        any(String.class),
+        any(),
         anyInt());
   }
 
@@ -2525,7 +2528,7 @@ public class TestVertexImpl {
     execService = mock(ListeningExecutorService.class);
     final ListenableFuture<Void> mockFuture = mock(ListenableFuture.class);
     
-    Mockito.doAnswer(new Answer() {
+    doAnswer(new Answer() {
       public ListenableFuture<Void> answer(InvocationOnMock invocation) {
           Object[] args = invocation.getArguments();
           CallableEvent e = (CallableEvent) args[0];
@@ -2842,7 +2845,7 @@ public class TestVertexImpl {
     Assert.assertEquals("vertex2", listener.events.get(0).getVertexName());
     Assert.assertEquals(org.apache.tez.dag.api.event.VertexState.CONFIGURED,
         listener.events.get(0).getVertexState());
-    updateTracker.unregisterForVertexUpdates("vertex2", listener);    
+    updateTracker.unregisterForVertexUpdates("vertex2", listener);
   }
 
   @Test (timeout=5000)
