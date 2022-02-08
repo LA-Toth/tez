@@ -73,9 +73,9 @@ public class TestATSHistoryLoggingService {
   private int atsInvokeCounter;
   private int atsEntitiesCounter;
   private HistoryACLPolicyManager historyACLPolicyManager;
-  private SystemClock clock = new SystemClock();
-  private static ApplicationId appId = ApplicationId.newInstance(1000l, 1);
-  private static ApplicationAttemptId attemptId = ApplicationAttemptId.newInstance(appId, 1);
+  private final SystemClock clock = new SystemClock();
+  private static final ApplicationId appId = ApplicationId.newInstance(1000L, 1);
+  private static final ApplicationAttemptId attemptId = ApplicationAttemptId.newInstance(appId, 1);
 
   @Before
   public void setup() throws Exception {
@@ -85,7 +85,7 @@ public class TestATSHistoryLoggingService {
     atsHistoryLoggingService.setAppContext(appContext);
     conf = new Configuration(false);
     conf.setLong(TezConfiguration.YARN_ATS_EVENT_FLUSH_TIMEOUT_MILLIS,
-        1000l);
+        1000L);
     conf.setInt(TezConfiguration.YARN_ATS_MAX_EVENTS_PER_BATCH, 2);
     conf.setBoolean(TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS, true);
     conf.set(TezConfiguration.YARN_ATS_ACL_SESSION_DOMAIN_ID, "test-domain");
@@ -100,19 +100,16 @@ public class TestATSHistoryLoggingService {
     when(appContext.getApplicationID()).thenReturn(appId);
     when(atsHistoryLoggingService.timelineClient.putEntities(
         ArgumentMatchers.<TimelineEntity[]>any())).thenAnswer(
-        new Answer<Object>() {
-          @Override
-          public Object answer(InvocationOnMock invocation) throws Throwable {
-            ++atsInvokeCounter;
-            atsEntitiesCounter += invocation.getArguments().length;
-            try {
-              Thread.sleep(500l);
-            } catch (InterruptedException e) {
-              // do nothing
+            invocation -> {
+              ++atsInvokeCounter;
+              atsEntitiesCounter += invocation.getArguments().length;
+              try {
+                Thread.sleep(500L);
+              } catch (InterruptedException e) {
+                // do nothing
+              }
+              return null;
             }
-            return null;
-          }
-        }
     );
   }
 
@@ -126,16 +123,16 @@ public class TestATSHistoryLoggingService {
   public void testATSHistoryLoggingServiceShutdown() {
     atsHistoryLoggingService.start();
     TezDAGID tezDAGID = TezDAGID.getInstance(
-        ApplicationId.newInstance(100l, 1), 1);
+        ApplicationId.newInstance(100L, 1), 1);
     DAGHistoryEvent historyEvent = new DAGHistoryEvent(tezDAGID,
-        new DAGStartedEvent(tezDAGID, 1001l, "user1", "dagName1"));
+        new DAGStartedEvent(tezDAGID, 1001L, "user1", "dagName1"));
 
     for (int i = 0; i < 100; ++i) {
       atsHistoryLoggingService.handle(historyEvent);
     }
 
     try {
-      Thread.sleep(2500l);
+      Thread.sleep(2500L);
     } catch (InterruptedException e) {
       // Do nothing
     }
@@ -153,16 +150,16 @@ public class TestATSHistoryLoggingService {
   public void testATSEventBatching() {
     atsHistoryLoggingService.start();
     TezDAGID tezDAGID = TezDAGID.getInstance(
-        ApplicationId.newInstance(100l, 1), 1);
+        ApplicationId.newInstance(100L, 1), 1);
     DAGHistoryEvent historyEvent = new DAGHistoryEvent(tezDAGID,
-        new DAGStartedEvent(tezDAGID, 1001l, "user1", "dagName1"));
+        new DAGStartedEvent(tezDAGID, 1001L, "user1", "dagName1"));
 
     for (int i = 0; i < 100; ++i) {
       atsHistoryLoggingService.handle(historyEvent);
     }
 
     try {
-      Thread.sleep(1000l);
+      Thread.sleep(1000L);
     } catch (InterruptedException e) {
       // Do nothing
     }
@@ -183,34 +180,31 @@ public class TestATSHistoryLoggingService {
     atsHistoryLoggingService1.timelineClient = mock(TimelineClient.class);
     when(atsHistoryLoggingService1.timelineClient.putEntities(
       ArgumentMatchers.<TimelineEntity[]>any())).thenAnswer(
-      new Answer<Object>() {
-      @Override
-      public Object answer(InvocationOnMock invocation) throws Throwable {
-        ++atsInvokeCounter;
-        atsEntitiesCounter += invocation.getArguments().length;
-        try {
-          Thread.sleep(10l);
-        } catch (InterruptedException e) {
-          // do nothing
-        }
-        return null;
-      }
-    });
+            invocation -> {
+              ++atsInvokeCounter;
+              atsEntitiesCounter += invocation.getArguments().length;
+              try {
+                Thread.sleep(10L);
+              } catch (InterruptedException e) {
+                // do nothing
+              }
+              return null;
+            });
     conf.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, false);
     conf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
       ATSHistoryLoggingService.class.getName());
     atsHistoryLoggingService1.init(conf);
     atsHistoryLoggingService1.start();
     TezDAGID tezDAGID = TezDAGID.getInstance(
-         ApplicationId.newInstance(100l, 1), 1);
+         ApplicationId.newInstance(100L, 1), 1);
     DAGHistoryEvent historyEvent = new DAGHistoryEvent(tezDAGID,
-    new DAGStartedEvent(tezDAGID, 1001l, "user1", "dagName1"));
+    new DAGStartedEvent(tezDAGID, 1001L, "user1", "dagName1"));
     for (int i = 0; i < 100; ++i) {
       atsHistoryLoggingService1.handle(historyEvent);
     }
 
     try {
-        Thread.sleep(20l);
+        Thread.sleep(20L);
     } catch (InterruptedException e) {
         // Do nothing
     }

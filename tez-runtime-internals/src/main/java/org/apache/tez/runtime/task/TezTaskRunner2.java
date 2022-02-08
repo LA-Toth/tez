@@ -17,7 +17,6 @@ package org.apache.tez.runtime.task;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
@@ -99,8 +98,6 @@ public class TezTaskRunner2 {
   private volatile long taskKillStartTime  = 0;
   final Configuration taskConf;
 
-  private final HadoopShim hadoopShim;
-
   // The callable which is being used to execute the task.
   private volatile TaskRunner2Callable taskRunnerCallable;
 
@@ -138,12 +135,9 @@ public class TezTaskRunner2 {
     this.taskReporter = taskReporter;
     this.executor = executor;
     this.umbilicalAndErrorHandler = new UmbilicalAndErrorHandler();
-    this.hadoopShim = hadoopShim;
     this.taskConf = new Configuration(tezConf);
     if (taskSpec.getTaskConf() != null) {
-      Iterator<Entry<String, String>> iter = taskSpec.getTaskConf().iterator();
-      while (iter.hasNext()) {
-        Entry<String, String> entry = iter.next();
+      for (Entry<String, String> entry : taskSpec.getTaskConf()) {
         taskConf.set(entry.getKey(), entry.getValue());
       }
     }
@@ -438,7 +432,7 @@ public class TezTaskRunner2 {
     @Override
     public void shutdownRequested() {
       // Umbilical informing about a shutdown request for the container.
-      boolean isFirstTerminate = false;
+      boolean isFirstTerminate;
       synchronized (TezTaskRunner2.this) {
         isFirstTerminate = trySettingEndReason(EndReason.CONTAINER_STOP_REQUESTED);
         // Respect stopContainerRequested since it can come in at any point, despite a previous failure.

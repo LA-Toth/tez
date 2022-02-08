@@ -78,7 +78,7 @@ public class TestRootInputVertexManager {
     rootInputVertexManager.initialize();
 
     InputDescriptor id1 = mock(InputDescriptor.class);
-    List<Event> events1 = new LinkedList<Event>();
+    List<Event> events1 = new LinkedList<>();
     InputDataInformationEvent diEvent11 = InputDataInformationEvent.createWithSerializedPayload(0,
         null);
     events1.add(diEvent11);
@@ -86,7 +86,7 @@ public class TestRootInputVertexManager {
     // All good so far, single input only.
 
     InputDescriptor id2 = mock(InputDescriptor.class);
-    List<Event> events2 = new LinkedList<Event>();
+    List<Event> events2 = new LinkedList<>();
     InputDataInformationEvent diEvent21 = InputDataInformationEvent.createWithSerializedPayload(0,
         null);
     events2.add(diEvent21);
@@ -114,7 +114,7 @@ public class TestRootInputVertexManager {
     rootInputVertexManager.initialize();
 
     InputDescriptor id1 = mock(InputDescriptor.class);
-    List<Event> events1 = new LinkedList<Event>();
+    List<Event> events1 = new LinkedList<>();
     InputConfigureVertexTasksEvent diEvent11 = InputConfigureVertexTasksEvent.create(1, null,
         null);
     events1.add(diEvent11);
@@ -122,7 +122,7 @@ public class TestRootInputVertexManager {
     // All good so far, single input only.
 
     InputDescriptor id2 = mock(InputDescriptor.class);
-    List<Event> events2 = new LinkedList<Event>();
+    List<Event> events2 = new LinkedList<>();
     InputConfigureVertexTasksEvent diEvent21 = InputConfigureVertexTasksEvent.create(1, null,
         null);
     events2.add(diEvent21);
@@ -139,9 +139,9 @@ public class TestRootInputVertexManager {
   @Test(timeout = 5000)
   public void testRootInputVertexManagerSlowStart() {
     Configuration conf = new Configuration();
-    RootInputVertexManager manager = null;
+    RootInputVertexManager manager;
     HashMap<String, EdgeProperty> mockInputVertices =
-        new HashMap<String, EdgeProperty>();
+            new HashMap<>();
     String mockSrcVertexId1 = "Vertex1";
     EdgeProperty eProp1 = EdgeProperty.create(
         EdgeProperty.DataMovementType.BROADCAST,
@@ -195,7 +195,7 @@ public class TestRootInputVertexManager {
     try {
       // source vertex have some tasks. min < 0.
       manager = createRootInputVertexManager(conf, mockContext, -0.1f, 0.0f);
-      Assert.assertTrue(false); // should not come here
+      fail(); // should not come here
     } catch (IllegalArgumentException e) {
       Assert.assertTrue(e.getMessage().contains(
           "Invalid values for slowStartMinFraction"));
@@ -204,7 +204,7 @@ public class TestRootInputVertexManager {
     try {
       // source vertex have some tasks. max > 1.
       manager = createRootInputVertexManager(conf, mockContext, 0.0f, 95.0f);
-      Assert.assertTrue(false); // should not come here
+      fail(); // should not come here
     } catch (IllegalArgumentException e) {
       Assert.assertTrue(e.getMessage().contains(
           "Invalid values for slowStartMinFraction"));
@@ -213,7 +213,7 @@ public class TestRootInputVertexManager {
     try {
       // source vertex have some tasks. min > max
       manager = createRootInputVertexManager(conf, mockContext, 0.5f, 0.3f);
-      Assert.assertTrue(false); // should not come here
+      fail(); // should not come here
     } catch (IllegalArgumentException e) {
       Assert.assertTrue(e.getMessage().contains(
           "Invalid values for slowStartMinFraction"));
@@ -495,9 +495,9 @@ public class TestRootInputVertexManager {
   @Test
   public void testTezDrainCompletionsOnVertexStart() throws IOException {
     Configuration conf = new Configuration();
-    RootInputVertexManager manager = null;
+    RootInputVertexManager manager;
     HashMap<String, EdgeProperty> mockInputVertices =
-        new HashMap<String, EdgeProperty>();
+            new HashMap<>();
     String mockSrcVertexId1 = "Vertex1";
     EdgeProperty eProp1 = EdgeProperty.create(
         EdgeProperty.DataMovementType.BROADCAST,

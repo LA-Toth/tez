@@ -42,7 +42,6 @@ import static org.mockito.Mockito.*;
 
 public class TestLocalTaskSchedulerService {
 
-  LocalTaskSchedulerService ltss ;
   int core =10;
 
   @Test(timeout = 5000)
@@ -50,7 +49,7 @@ public class TestLocalTaskSchedulerService {
     Resource resource;
     //value in integer
     long value = 4*1024*1024;
-    resource = ltss.createResource(value,core);
+    resource = LocalTaskSchedulerService.createResource(value,core);
     Assert.assertEquals((int)(value/(1024*1024)),resource.getMemory());
   }
 
@@ -58,7 +57,7 @@ public class TestLocalTaskSchedulerService {
   public void testCreateResourceLargerThanIntMax() {
     //value beyond integer but within Long.MAX_VALUE
     try {
-      ltss.createResource(Long.MAX_VALUE, core);
+      LocalTaskSchedulerService.createResource(Long.MAX_VALUE, core);
       fail("No exception thrown.");
     } catch (Exception ex) {
       assertTrue(ex instanceof IllegalArgumentException);
@@ -72,7 +71,7 @@ public class TestLocalTaskSchedulerService {
     // it will be negative after it is passed to createResource
 
     try {
-      ltss.createResource((Long.MAX_VALUE*1024*1024), core);
+      LocalTaskSchedulerService.createResource((Long.MAX_VALUE*1024*1024), core);
       fail("No exception thrown.");
     } catch (Exception ex) {
       assertTrue(ex instanceof IllegalArgumentException);
@@ -86,10 +85,10 @@ public class TestLocalTaskSchedulerService {
   @Test(timeout = 5000)
   public void testDeallocationBeforeAllocation() throws InterruptedException {
     ApplicationAttemptId appAttemptId =
-        ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000l, 1), 1);
+        ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000L, 1), 1);
 
     TaskSchedulerContext mockContext = TestTaskSchedulerHelpers
-        .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000l, null, new Configuration());
+        .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000L, null, new Configuration());
 
     MockLocalTaskSchedulerSerivce taskSchedulerService = new MockLocalTaskSchedulerSerivce(mockContext);
     taskSchedulerService.initialize();
@@ -118,10 +117,10 @@ public class TestLocalTaskSchedulerService {
   @Test(timeout = 5000)
   public void testDeallocationAfterAllocation() throws InterruptedException {
     ApplicationAttemptId appAttemptId =
-        ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000l, 1), 1);
+        ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000L, 1), 1);
 
     TaskSchedulerContext mockContext = TestTaskSchedulerHelpers
-        .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000l, null, new Configuration());
+        .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000L, null, new Configuration());
 
     MockLocalTaskSchedulerSerivce taskSchedulerService =
         new MockLocalTaskSchedulerSerivce(mockContext);
@@ -151,14 +150,14 @@ public class TestLocalTaskSchedulerService {
 
     ApplicationId appId = ApplicationId.newInstance(2000, 1);
     ApplicationAttemptId appAttemptId = ApplicationAttemptId.newInstance(appId, 1);
-    Long parentTask1 = new Long(1);
-    Long parentTask2 = new Long(2);
-    Long childTask1 = new Long(3);
-    Long grandchildTask1 = new Long(4);
+    Long parentTask1 = 1L;
+    Long parentTask2 = 2L;
+    Long childTask1 = 3L;
+    Long grandchildTask1 = 4L;
 
     TaskSchedulerContext
         mockContext = TestTaskSchedulerHelpers.setupMockTaskSchedulerContext("", 0, "", true,
-        appAttemptId, 1000l, null, tezConf);
+        appAttemptId, 1000L, null, tezConf);
     when(mockContext.getVertexIndexForTask(parentTask1)).thenReturn(0);
     when(mockContext.getVertexIndexForTask(parentTask2)).thenReturn(0);
     when(mockContext.getVertexIndexForTask(childTask1)).thenReturn(1);
@@ -186,13 +185,10 @@ public class TestLocalTaskSchedulerService {
     MockLocalTaskSchedulerSerivce taskSchedulerService = new MockLocalTaskSchedulerSerivce(mockContext);
 
     // The mock context need to send a deallocate container request to the scheduler service
-    Answer<Void> answer = new Answer<Void>() {
-      @Override
-      public Void answer(InvocationOnMock invocation) {
-        taskSchedulerService.deallocateContainer(containerId);
-        return null;
-      }
+    Answer<Void> answer = invocation -> {
       ContainerId containerId = invocation.getArgument(0, ContainerId.class);
+      taskSchedulerService.deallocateContainer(containerId);
+      return null;
     };
     doAnswer(answer).when(mockContext).preemptContainer(any(ContainerId.class));
 
@@ -208,7 +204,7 @@ public class TestLocalTaskSchedulerService {
 
     // We should not preempt if we have not reached max task allocations
     Assert.assertEquals("Wrong number of allocate tasks", MAX_TASKS, requestHandler.allocateCount);
-    Assert.assertTrue("Another allocation should not fit", !requestHandler.shouldProcess());
+    assertFalse("Another allocation should not fit", requestHandler.shouldProcess());
 
     // Next task allocation should preempt
     taskSchedulerService.allocateTask(parentTask2, Resource.newInstance(1024, 1), null, null, priority2, null, null);

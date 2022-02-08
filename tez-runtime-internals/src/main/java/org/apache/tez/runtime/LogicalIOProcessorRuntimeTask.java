@@ -137,7 +137,7 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
   /** Maps which will be provided to the processor run method */
   final LinkedHashMap<String, LogicalInput> runInputMap;
   final LinkedHashMap<String, LogicalOutput> runOutputMap;
-  
+
   private final Map<String, ByteBuffer> serviceConsumerMetadata;
   private final Map<String, String> envMap;
 
@@ -152,7 +152,7 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
   private final int appAttemptNumber;
 
   private volatile InputReadyTracker inputReadyTracker;
-  
+
   private volatile ObjectRegistry objectRegistry;
   private final ExecutionContext ExecutionContext;
   private final long memAvailable;
@@ -181,22 +181,22 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
     int numOutputs = taskSpec.getOutputs().size();
     this.localDirs = localDirs;
     this.inputSpecs = taskSpec.getInputs();
-    this.inputsMap = new ConcurrentHashMap<String, LogicalInput>(numInputs);
-    this.inputContextMap = new ConcurrentHashMap<String, InputContext>(numInputs);
+    this.inputsMap = new ConcurrentHashMap<>(numInputs);
+    this.inputContextMap = new ConcurrentHashMap<>(numInputs);
     this.outputSpecs = taskSpec.getOutputs();
-    this.outputsMap = new ConcurrentHashMap<String, LogicalOutput>(numOutputs);
-    this.outputContextMap = new ConcurrentHashMap<String, OutputContext>(numOutputs);
+    this.outputsMap = new ConcurrentHashMap<>(numOutputs);
+    this.outputContextMap = new ConcurrentHashMap<>(numOutputs);
 
-    this.runInputMap = new LinkedHashMap<String, LogicalInput>();
-    this.runOutputMap = new LinkedHashMap<String, LogicalOutput>();
+    this.runInputMap = new LinkedHashMap<>();
+    this.runOutputMap = new LinkedHashMap<>();
 
-    this.initializedInputs = new ConcurrentHashMap<String, LogicalInput>();
-    this.initializedOutputs = new ConcurrentHashMap<String, LogicalOutput>();
+    this.initializedInputs = new ConcurrentHashMap<>();
+    this.initializedOutputs = new ConcurrentHashMap<>();
 
     this.processorDescriptor = taskSpec.getProcessorDescriptor();
     this.serviceConsumerMetadata = serviceConsumerMetadata;
     this.envMap = envMap;
-    this.eventsToBeProcessed = new LinkedBlockingQueue<TezEvent>();
+    this.eventsToBeProcessed = new LinkedBlockingQueue<>();
     this.state.set(State.NEW);
     this.appAttemptNumber = appAttemptNumber;
     this.initializeProcessorFirst = tezConf.getBoolean(TezConfiguration.TEZ_TASK_INITIALIZE_PROCESSOR_FIRST,
@@ -212,8 +212,8 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
         numInitializers,
         new ThreadFactoryBuilder().setDaemon(true)
             .setNameFormat("I/O Setup %d").build());
-    this.initializerCompletionService = new ExecutorCompletionService<Void>(
-        this.initializerExecutor);
+    this.initializerCompletionService = new ExecutorCompletionService<>(
+            this.initializerExecutor);
     this.groupInputSpecs = taskSpec.getGroupInputs();
     initialMemoryDistributor = new MemoryDistributor(numInputs, numOutputs, tezConf);
     this.startedInputsMap = startedInputsMap;
@@ -558,16 +558,13 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
   }
 
   private boolean inputAlreadyStarted(String vertexName, String edgeVertexName) {
-    if (startedInputsMap.containsKey(vertexName)
-        && startedInputsMap.get(vertexName).contains(edgeVertexName)) {
-      return true;
-    }
-    return false;
+    return startedInputsMap.containsKey(vertexName)
+            && startedInputsMap.get(vertexName).contains(edgeVertexName);
   }
 
   private void initializeGroupInputs() throws TezException {
     if (groupInputSpecs != null && !groupInputSpecs.isEmpty()) {
-     groupInputsMap = new ConcurrentHashMap<String, MergedLogicalInput>(groupInputSpecs.size());
+     groupInputsMap = new ConcurrentHashMap<>(groupInputSpecs.size());
      for (GroupInputSpec groupInputSpec : groupInputSpecs) {
        LOG.debug("Initializing GroupInput using GroupInputSpec: {}", groupInputSpec);
        MergedInputContext mergedInputContext =
@@ -695,7 +692,7 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
     }
     EventMetaData eventMetaData = new EventMetaData(generator,
         taskVertexName, edgeVertexName, taskAttemptID);
-    List<TezEvent> tezEvents = new ArrayList<TezEvent>(events.size());
+    List<TezEvent> tezEvents = new ArrayList<>(events.size());
     for (Event e : events) {
       TezEvent te = new TezEvent(e, eventMetaData);
       tezEvents.add(te);
@@ -703,7 +700,7 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
     if (LOG.isDebugEnabled()) {
       for (TezEvent e : tezEvents) {
         LOG.debug("Generated event info"
-            + ", eventMetaData=" + eventMetaData.toString()
+            + ", eventMetaData=" + eventMetaData
             + ", eventType=" + e.getEventType());
       }
     }
@@ -846,7 +843,7 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
   }
 
   private void closeContext(TaskContext context) throws IOException {
-    if (context != null && (context instanceof Closeable)) {
+    if (context instanceof Closeable) {
       ((Closeable) context).close();
     }
   }
@@ -981,7 +978,7 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
     inputContextMap.clear();
     outputContextMap.clear();
 
-    // only clean up objects in non-local mode, because local mode share the same 
+    // only clean up objects in non-local mode, because local mode share the same
     // taskSpec in AM rather than getting it through RPC in non-local mode
     /** Put other objects here when they are shared between AM & TezChild in local mode **/
     if (!tezConf.getBoolean(TezConfiguration.TEZ_LOCAL_MODE, TezConfiguration.TEZ_LOCAL_MODE_DEFAULT)) {
@@ -1025,13 +1022,13 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
       }
     }
   }
-  
+
   @Private
   @VisibleForTesting
   public Collection<InputContext> getInputContexts() {
     return this.inputContextMap.values();
   }
-  
+
   @Private
   @VisibleForTesting
   public Collection<OutputContext> getOutputContexts() {
@@ -1043,7 +1040,7 @@ public class LogicalIOProcessorRuntimeTask extends RuntimeTask {
   public ProcessorContext getProcessorContext() {
     return this.processorContext;
   }
-  
+
   @Private
   @VisibleForTesting
   public LogicalIOProcessor getProcessor() {

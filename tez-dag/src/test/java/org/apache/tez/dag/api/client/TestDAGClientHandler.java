@@ -40,7 +40,7 @@ import org.mockito.internal.util.collections.Sets;
 
 
 public class TestDAGClientHandler {
-  
+
   @Test(timeout = 5000)
   public void testDAGClientHandler() throws TezException {
 
@@ -78,7 +78,7 @@ public class TestDAGClientHandler {
     } catch (TezException e) {
       assertTrue(e.getMessage().contains("Unknown dagId"));
     }
-    DAGStatus dagStatus = dagClientHandler.getDAGStatus("dag_9999_0001_1", 
+    DAGStatus dagStatus = dagClientHandler.getDAGStatus("dag_9999_0001_1",
         Sets.newSet(StatusGetOpts.GET_COUNTERS));
     assertEquals(mockDagStatusBuilder, dagStatus);
 
@@ -92,8 +92,8 @@ public class TestDAGClientHandler {
     VertexStatus vertexStatus = dagClientHandler.getVertexStatus("dag_9999_0001_1", "v1",
         Sets.newSet(StatusGetOpts.GET_COUNTERS));
     assertEquals(mockVertexStatusBuilder, vertexStatus);
-    
-    
+
+
     // getTezAppMasterStatus
     when(mockDagAM.isSession()).thenReturn(false);
 
@@ -104,7 +104,7 @@ public class TestDAGClientHandler {
     assertEquals(TezAppMasterStatus.INITIALIZING, dagClientHandler.getTezAppMasterStatus());
     when(mockDagAM.getState()).thenReturn(DAGAppMasterState.ERROR);
     assertEquals(TezAppMasterStatus.SHUTDOWN, dagClientHandler.getTezAppMasterStatus());
-        
+
     // tryKillDAG
     try{
       dagClientHandler.tryKillDAG("dag_9999_0001_2");
@@ -117,18 +117,18 @@ public class TestDAGClientHandler {
     verify(mockDagAM, times(1)).tryKillDAG(eventCaptor.capture(),
         contains("Sending client kill from"));
     assertEquals(1, eventCaptor.getAllValues().size());
-    assertTrue(eventCaptor.getAllValues().get(0) instanceof DAG);
-    assertEquals("dag_9999_0001_1",  ((DAG)eventCaptor.getAllValues().get(0)).getID().toString());
+    assertNotNull(eventCaptor.getAllValues().get(0));
+    assertEquals("dag_9999_0001_1",  eventCaptor.getAllValues().get(0).getID().toString());
 
     // submitDAG
     DAGPlan dagPlan = DAGPlan.getDefaultInstance();
-    Map<String,LocalResource> localResources = new HashMap<String, LocalResource>();
+    Map<String,LocalResource> localResources = new HashMap<>();
     dagClientHandler.submitDAG(dagPlan, localResources);
     verify(mockDagAM).submitDAGToAppMaster(dagPlan, localResources);
-    
+
     // shutdown
     dagClientHandler.shutdownAM();
     verify(mockDagAM).shutdownTezAM(contains("Received message to shutdown AM from"));
   }
-  
+
 }

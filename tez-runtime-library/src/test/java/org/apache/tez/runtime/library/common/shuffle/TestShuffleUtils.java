@@ -21,7 +21,6 @@ import org.apache.tez.common.TezUtilsInternal;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.runtime.api.Event;
-import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.api.OutputContext;
 import org.apache.tez.runtime.api.events.CompositeDataMovementEvent;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
@@ -81,20 +80,10 @@ public class TestShuffleUtils {
 
   private OutputContext outputContext;
   private Configuration conf;
-  private FileSystem localFs;
   private Path workingDir;
 
-  private InputContext createTezInputContext() {
-    ApplicationId applicationId = ApplicationId.newInstance(1, 1);
-    InputContext inputContext = mock(InputContext.class);
-    doReturn(applicationId).when(inputContext).getApplicationId();
-    doReturn("sourceVertex").when(inputContext).getSourceVertexName();
-    when(inputContext.getCounters()).thenReturn(new TezCounters());
-    return inputContext;
-  }
-
   private OutputContext createTezOutputContext() throws IOException {
-    ApplicationId applicationId = ApplicationId.newInstance(1, 1);
+    ApplicationId.newInstance(1, 1);
     OutputContext outputContext = mock(OutputContext.class);
 
     ExecutionContextImpl executionContext = mock(ExecutionContextImpl.class);
@@ -124,7 +113,7 @@ public class TestShuffleUtils {
     conf = new Configuration();
     outputContext = createTezOutputContext();
     conf.set("fs.defaultFS", "file:///");
-    localFs = FileSystem.getLocal(conf);
+    FileSystem localFs = FileSystem.getLocal(conf);
 
     workingDir = new Path(
         new Path(System.getProperty("test.build.data", "/tmp")),
@@ -138,12 +127,12 @@ public class TestShuffleUtils {
     conf.setStrings(TezRuntimeFrameworkConfigs.LOCAL_DIRS, localDirs);
   }
 
-  private Path createIndexFile(int numPartitions, boolean allEmptyPartitions) throws IOException {
+  private Path createIndexFile(boolean allEmptyPartitions) throws IOException {
     Path path = new Path(workingDir, "file.index.out");
-    TezSpillRecord spillRecord = new TezSpillRecord(numPartitions);
+    TezSpillRecord spillRecord = new TezSpillRecord(10);
     long startOffset = 0;
     long partLen = 200; //compressed
-    for(int i=0;i<numPartitions;i++) {
+    for(int i = 0; i< 10; i++) {
       long rawLen = ThreadLocalRandom.current().nextLong(100, 200);
       if (i % 2  == 0 || allEmptyPartitions) {
         rawLen = 0; //indicates empty partition, see TEZ-3605
@@ -159,7 +148,7 @@ public class TestShuffleUtils {
   @Test
   public void testGenerateOnSpillEvent() throws Exception {
     List<Event> events = Lists.newLinkedList();
-    Path indexFile = createIndexFile(10, false);
+    Path indexFile = createIndexFile(false);
 
     boolean finalMergeEnabled = false;
     boolean isLastEvent = false;
@@ -173,24 +162,24 @@ public class TestShuffleUtils {
         outputContext, spillId, new TezSpillRecord(indexFile, conf),
             physicalOutputs, true, pathComponent, null, false, auxiliaryService, TezCommonUtils.newBestCompressionDeflater());
 
-    Assert.assertTrue(events.size() == 1);
+    Assert.assertEquals(1, events.size());
     Assert.assertTrue(events.get(0) instanceof CompositeDataMovementEvent);
 
     CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) events.get(0);
-    Assert.assertTrue(cdme.getCount() == physicalOutputs);
-    Assert.assertTrue(cdme.getSourceIndexStart() == 0);
+    Assert.assertEquals(cdme.getCount(), physicalOutputs);
+    Assert.assertEquals(0, cdme.getSourceIndexStart());
 
     ByteBuffer payload = cdme.getUserPayload();
     ShuffleUserPayloads.DataMovementEventPayloadProto dmeProto =
         ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(payload));
 
-    Assert.assertTrue(dmeProto.getSpillId() == 0);
+    Assert.assertEquals(0, dmeProto.getSpillId());
     Assert.assertTrue(dmeProto.hasLastEvent() && !dmeProto.getLastEvent());
 
     byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(dmeProto.getEmptyPartitions());
     BitSet emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
-    Assert.assertTrue("emptyPartitionBitSet cardinality (expecting 5) = " + emptyPartitionsBitSet
-        .cardinality(), emptyPartitionsBitSet.cardinality() == 5);
+    Assert.assertEquals("emptyPartitionBitSet cardinality (expecting 5) = " + emptyPartitionsBitSet
+            .cardinality(), 5, emptyPartitionsBitSet.cardinality());
 
     events.clear();
 
@@ -199,7 +188,7 @@ public class TestShuffleUtils {
   @Test
   public void testGenerateOnSpillEvent_With_FinalMerge() throws Exception {
     List<Event> events = Lists.newLinkedList();
-    Path indexFile = createIndexFile(10, false);
+    Path indexFile = createIndexFile(false);
 
     boolean finalMergeEnabled = true;
     boolean isLastEvent = true;
@@ -214,13 +203,13 @@ public class TestShuffleUtils {
         outputContext, spillId, new TezSpillRecord(indexFile, conf),
             physicalOutputs, true, pathComponent, null, false, auxiliaryService, TezCommonUtils.newBestCompressionDeflater());
 
-    Assert.assertTrue(events.size() == 2); //one for VM
+    Assert.assertEquals(2, events.size()); //one for VM
     Assert.assertTrue(events.get(0) instanceof VertexManagerEvent);
     Assert.assertTrue(events.get(1) instanceof CompositeDataMovementEvent);
 
     CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) events.get(1);
-    Assert.assertTrue(cdme.getCount() == physicalOutputs);
-    Assert.assertTrue(cdme.getSourceIndexStart() == 0);
+    Assert.assertEquals(cdme.getCount(), physicalOutputs);
+    Assert.assertEquals(0, cdme.getSourceIndexStart());
 
     ShuffleUserPayloads.DataMovementEventPayloadProto dmeProto =
         ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom( cdme.getUserPayload()));
@@ -232,8 +221,8 @@ public class TestShuffleUtils {
     byte[]  emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(dmeProto
         .getEmptyPartitions());
     BitSet  emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
-    Assert.assertTrue("emptyPartitionBitSet cardinality (expecting 5) = " + emptyPartitionsBitSet
-        .cardinality(), emptyPartitionsBitSet.cardinality() == 5);
+    Assert.assertEquals("emptyPartitionBitSet cardinality (expecting 5) = " + emptyPartitionsBitSet
+            .cardinality(), 5, emptyPartitionsBitSet.cardinality());
 
   }
 
@@ -242,7 +231,7 @@ public class TestShuffleUtils {
     List<Event> events = Lists.newLinkedList();
 
     //Create an index file with all empty partitions
-    Path indexFile = createIndexFile(10, true);
+    Path indexFile = createIndexFile(true);
 
     boolean finalMergeDisabled = false;
     boolean isLastEvent = true;

@@ -50,7 +50,6 @@ import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.dag.api.TezConfiguration;
-import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.ExecutionContext;
 import org.apache.tez.runtime.api.InputContext;
@@ -58,7 +57,6 @@ import org.apache.tez.runtime.api.events.DataMovementEvent;
 import org.apache.tez.runtime.library.common.CompositeInputAttemptIdentifier;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
 import org.apache.tez.runtime.library.common.shuffle.FetchedInputAllocator;
-import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.DataMovementEventPayloadProto;
 import org.junit.After;
 import org.junit.Before;
@@ -98,7 +96,7 @@ public class TestShuffleInputEventHandlerImpl {
     int taskIndex = 1;
     Event dme = createDataMovementEvent(0, taskIndex, null);
 
-    List<Event> eventList = new LinkedList<Event>();
+    List<Event> eventList = new LinkedList<>();
     eventList.add(dme);
     handler.handleEvents(eventList);
 
@@ -120,7 +118,7 @@ public class TestShuffleInputEventHandlerImpl {
     int taskIndex = 1;
     Event dme = createDataMovementEvent(0, taskIndex, createEmptyPartitionByteString(0));
 
-    List<Event> eventList = new LinkedList<Event>();
+    List<Event> eventList = new LinkedList<>();
     eventList.add(dme);
     handler.handleEvents(eventList);
 
@@ -140,7 +138,7 @@ public class TestShuffleInputEventHandlerImpl {
 
     int taskIndex = 1;
     Event dme = createDataMovementEvent(0, taskIndex, createEmptyPartitionByteString(1));
-    List<Event> eventList = new LinkedList<Event>();
+    List<Event> eventList = new LinkedList<>();
     eventList.add(dme);
     handler.handleEvents(eventList);
 
@@ -162,8 +160,8 @@ public class TestShuffleInputEventHandlerImpl {
     Event dme1 = createDataMovementEvent(0, taskIndex1, createEmptyPartitionByteString(0));
     int taskIndex2 = 2;
     Event dme2 = createDataMovementEvent(0, taskIndex2, null);
-    
-    List<Event> eventList = new LinkedList<Event>();
+
+    List<Event> eventList = new LinkedList<>();
     eventList.add(dme1);
     eventList.add(dme2);
     handler.handleEvents(eventList);
@@ -194,12 +192,7 @@ public class TestShuffleInputEventHandlerImpl {
             TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
     doReturn(executionContext).when(inputContext).getExecutionContext();
     when(inputContext.createTezFrameworkExecutorService(anyInt(), anyString())).thenAnswer(
-        new Answer<ExecutorService>() {
-          @Override
-          public ExecutorService answer(InvocationOnMock invocation) throws Throwable {
-            return sharedExecutor.createExecutorService(
-          }
-        });
+            (Answer<ExecutorService>) invocation -> sharedExecutor.createExecutorService(
                 invocation.getArgument(0, Integer.class),
                 invocation.getArgument(1, String.class)));
     return inputContext;
@@ -212,8 +205,8 @@ public class TestShuffleInputEventHandlerImpl {
     conf.setStrings(TezRuntimeFrameworkConfigs.LOCAL_DIRS, inputContext.getWorkDirs());
 
     DataOutputBuffer out = new DataOutputBuffer();
-    Token<JobTokenIdentifier> token = new Token<JobTokenIdentifier>(new JobTokenIdentifier(),
-        new JobTokenSecretManager(null));
+    Token<JobTokenIdentifier> token = new Token<>(new JobTokenIdentifier(),
+            new JobTokenSecretManager(null));
     token.write(out);
     doReturn(ByteBuffer.wrap(out.getData())).when(inputContext).getServiceConsumerMetaData(
         conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
@@ -369,7 +362,7 @@ public class TestShuffleInputEventHandlerImpl {
     ByteBuffer payload = payloadBuilder.build().toByteString().asReadOnlyByteBuffer();
     return  DataMovementEvent.create(srcIdx, targetIdx, attemptNum, payload);
   }
-  
+
   private Event createDataMovementEvent(int srcIndex, int targetIndex,
       ByteString emptyPartitionByteString) {
     DataMovementEventPayloadProto.Builder builder = DataMovementEventPayloadProto.newBuilder();
