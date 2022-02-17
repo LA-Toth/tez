@@ -119,7 +119,7 @@ public class HadoopShimsLoader {
               + overrideProviderClassStr);
           Class<HadoopShimProvider> clazz = (Class<HadoopShimProvider>)Class.forName(
               overrideProviderClassStr, true, Thread.currentThread().getContextClassLoader());
-          selectedShimProvider = clazz.newInstance();
+          selectedShimProvider = clazz.getDeclaredConstructor().newInstance();
           selectedShim = selectedShimProvider.createHadoopShim(versionStr,
               version.majorVersion, version.minorVersion);
         } catch (Exception e) {
