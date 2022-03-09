@@ -91,7 +91,10 @@
         <module name="ConstantName"/>
         <module name="LocalFinalVariableName"/>
         <module name="LocalVariableName"/>
-        <module name="MemberName"/>
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9]*$|^LOG$"/>
+            <property name="applyToPrivate" value="false"/>
+        </module>
         <module name="MethodName"/>
         <module name="PackageName"/>
         <module name="ParameterName"/>
@@ -160,6 +163,8 @@
         </module>
         <module name="EmptyLineSeparator">
             <property name="allowMultipleEmptyLines" value="false"/>
+            <!-- empty line is required before everything but VARIABLE_DEF -->
+            <property name="tokens" value="PACKAGE_DEF , IMPORT , STATIC_IMPORT , CLASS_DEF , INTERFACE_DEF , ENUM_DEF , STATIC_INIT , INSTANCE_INIT , METHOD_DEF , CTOR_DEF, RECORD_DEF , COMPACT_CTOR_DEF"/>
         </module>
 
         <module name="NoLineWrap"/>
@@ -197,7 +202,7 @@
         </module>
         <module name="IllegalInstantiation"/>
         <module name="InnerAssignment"/>
-        <module name="MissingSwitchDefault"/>
+        <!--<module name="MissingSwitchDefault"/>-->
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
@@ -208,7 +213,9 @@
         <module name="FinalClass"/>
         <module name="HideUtilityClassConstructor"/>
         <module name="InterfaceIsType"/>
-        <module name="VisibilityModifier"/>
+        <module name="VisibilityModifier">
+            <property name="packageAllowed" value="true"/>
+        </module>
 
 
         <!-- Miscellaneous other checks.                   -->
