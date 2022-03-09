@@ -14,7 +14,6 @@
 
 package org.apache.tez.mapreduce.grouper;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,16 +25,17 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.apache.tez.common.Preconditions;
+import javax.annotation.Nullable;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.util.RackResolver;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.dag.api.TezUncheckedException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class TezSplitGrouper {
-
-  private static final Logger LOG = LoggerFactory.getLogger(TezSplitGrouper.class);
 
   /**
    * Specify the number of splits desired to be created
@@ -51,7 +51,6 @@ public abstract class TezSplitGrouper {
    */
   public static final String TEZ_GROUPING_SPLIT_BY_COUNT = "tez.grouping.by-count";
   public static final boolean TEZ_GROUPING_SPLIT_BY_COUNT_DEFAULT = false;
-
   /**
    * The multiplier for available queue capacity when determining number of
    * tasks for a Vertex. 1.7 with 100% queue available implies generating a
@@ -64,19 +63,16 @@ public abstract class TezSplitGrouper {
    */
   public static final String TEZ_GROUPING_SPLIT_WAVES = "tez.grouping.split-waves";
   public static final float TEZ_GROUPING_SPLIT_WAVES_DEFAULT = 1.7f;
-
   /**
    * Upper bound on the size (in bytes) of a grouped split, to avoid generating excessively large splits.
    */
   public static final String TEZ_GROUPING_SPLIT_MAX_SIZE = "tez.grouping.max-size";
-  public static final long TEZ_GROUPING_SPLIT_MAX_SIZE_DEFAULT = 1024*1024*1024L;
-
+  public static final long TEZ_GROUPING_SPLIT_MAX_SIZE_DEFAULT = 1024 * 1024 * 1024L;
   /**
    * Lower bound on the size (in bytes) of a grouped split, to avoid generating too many small splits.
    */
   public static final String TEZ_GROUPING_SPLIT_MIN_SIZE = "tez.grouping.min-size";
-  public static final long TEZ_GROUPING_SPLIT_MIN_SIZE_DEFAULT = 50*1024*1024L;
-
+  public static final long TEZ_GROUPING_SPLIT_MIN_SIZE_DEFAULT = 50 * 1024 * 1024L;
   /**
    * This factor is used to decrease the per group desired (length and count) limits for groups
    * created by combining splits within a rack. Since reading this split involves reading data intra
@@ -84,9 +80,8 @@ public abstract class TezSplitGrouper {
    * reads. The value should be a fraction <= 1.
    */
   public static final String TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION =
-      "tez.grouping.rack-split-reduction";
+    "tez.grouping.rack-split-reduction";
   public static final float TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION_DEFAULT = 0.75f;
-
   /**
    * Repeated invocations of grouping on the same splits with the same parameters will produce the
    * same groups. This may help in cache reuse but may cause hot-spotting on nodes when there are a
@@ -94,70 +89,38 @@ public abstract class TezSplitGrouper {
    */
   public static final String TEZ_GROUPING_REPEATABLE = "tez.grouping.repeatable";
   public static final boolean TEZ_GROUPING_REPEATABLE_DEFAULT = true;
-
   /**
    * Generate node local splits only. This prevents fallback to rack locality etc, and overrides
    * the target size for small splits.
    */
   public static final String TEZ_GROUPING_NODE_LOCAL_ONLY = "tez.grouping.node.local.only";
   public static final boolean TEZ_GROUPING_NODE_LOCAL_ONLY_DEFAULT = false;
-
-
-  static class LocationHolder {
-    List<SplitContainer> splits;
-    int headIndex = 0;
-    LocationHolder(int capacity) {
-      splits = new ArrayList<SplitContainer>(capacity);
-    }
-    boolean isEmpty() {
-      return (headIndex == splits.size());
-    }
-    SplitContainer getUnprocessedHeadSplit() {
-      while (!isEmpty()) {
-        SplitContainer holder = splits.get(headIndex);
-        if (!holder.isProcessed()) {
-          return holder;
-        }
-        incrementHeadIndex();
-      }
-      return null;
-    }
-    void incrementHeadIndex() {
-      headIndex++;
-    }
-  }
-
+  private static final Logger LOG = LoggerFactory.getLogger(TezSplitGrouper.class);
   private static final SplitSizeEstimatorWrapper DEFAULT_SPLIT_ESTIMATOR = new DefaultSplitSizeEstimatorWrapper();
+  private static final SplitLocationProviderWrapper DEFAULT_SPLIT_LOCATION_PROVIDER =
+    new DefaultSplitLocationProvider();
 
-  static final class DefaultSplitSizeEstimatorWrapper implements SplitSizeEstimatorWrapper {
-
-    @Override
-    public long getEstimatedSize(SplitContainer splitContainer) throws IOException,
-        InterruptedException {
-      return splitContainer.getLength();
-    }
-  }
-
-  private static final SplitLocationProviderWrapper DEFAULT_SPLIT_LOCATION_PROVIDER = new DefaultSplitLocationProvider();
-
-  static final class DefaultSplitLocationProvider implements SplitLocationProviderWrapper {
-
-    @Override
-    public String[] getPreferredLocations(SplitContainer splitContainer) throws IOException,
-        InterruptedException {
-      return splitContainer.getPreferredLocations();
-    }
+  /**
+   * Builder that can be used to configure grouping in Tez
+   *
+   * @param conf {@link Configuration} This will be modified in place. If
+   *             configuration values may be changed at runtime via a config file
+   *             then pass in a {@link Configuration} that is initialized from a
+   *             config file. The parameters that are not overridden in code will
+   *             be derived from the Configuration object.
+   * @return {@link org.apache.tez.mapreduce.grouper.TezSplitGrouper.TezMRSplitsGrouperConfigBuilder}
+   */
+  public static TezMRSplitsGrouperConfigBuilder newConfigBuilder(Configuration conf) {
+    return new TezMRSplitsGrouperConfigBuilder(conf);
   }
 
   Map<String, LocationHolder> createLocationsMap(Configuration conf) {
     if (conf.getBoolean(TEZ_GROUPING_REPEATABLE,
-        TEZ_GROUPING_REPEATABLE_DEFAULT)) {
+      TEZ_GROUPING_REPEATABLE_DEFAULT)) {
       return new TreeMap<String, LocationHolder>();
     }
     return new HashMap<String, LocationHolder>();
   }
-
-
 
   public List<GroupedSplitContainer> getGroupedSplits(Configuration conf,
                                                       List<SplitContainer> originalSplits,
@@ -165,7 +128,7 @@ public abstract class TezSplitGrouper {
                                                       String wrappedInputFormatName,
                                                       SplitSizeEstimatorWrapper estimator,
                                                       SplitLocationProviderWrapper locationProvider) throws
-      IOException, InterruptedException {
+    IOException, InterruptedException {
     LOG.info("Grouping splits in Tez");
     Objects.requireNonNull(originalSplits, "Splits must be specified");
 
@@ -201,7 +164,7 @@ public abstract class TezSplitGrouper {
         locations = emptyLocations;
         allSplitsHaveLocalhost = false;
       }
-      for (String location : locations ) {
+      for (String location : locations) {
         if (location == null) {
           location = emptyLocation;
           allSplitsHaveLocalhost = false;
@@ -213,43 +176,43 @@ public abstract class TezSplitGrouper {
       }
     }
 
-    if (! (configNumSplits > 0 ||
-        originalSplits.size() == 0)) {
+    if (!(configNumSplits > 0 ||
+      originalSplits.size() == 0)) {
       // numSplits has not been overridden by config
       // numSplits has been set at runtime
       // there are splits generated
       // desired splits is less than number of splits generated
       // Do sanity checks
 
-      int splitCount = desiredNumSplits>0?desiredNumSplits:originalSplits.size();
-      long lengthPerGroup = totalLength/splitCount;
+      int splitCount = desiredNumSplits > 0 ? desiredNumSplits : originalSplits.size();
+      long lengthPerGroup = totalLength / splitCount;
 
       long maxLengthPerGroup = conf.getLong(
-          TEZ_GROUPING_SPLIT_MAX_SIZE,
-          TEZ_GROUPING_SPLIT_MAX_SIZE_DEFAULT);
+        TEZ_GROUPING_SPLIT_MAX_SIZE,
+        TEZ_GROUPING_SPLIT_MAX_SIZE_DEFAULT);
       long minLengthPerGroup = conf.getLong(
-          TEZ_GROUPING_SPLIT_MIN_SIZE,
-          TEZ_GROUPING_SPLIT_MIN_SIZE_DEFAULT);
+        TEZ_GROUPING_SPLIT_MIN_SIZE,
+        TEZ_GROUPING_SPLIT_MIN_SIZE_DEFAULT);
       if (maxLengthPerGroup < minLengthPerGroup ||
-          minLengthPerGroup <=0) {
+        minLengthPerGroup <= 0) {
         throw new TezUncheckedException(
-            "Invalid max/min group lengths. Required min>0, max>=min. " +
-                " max: " + maxLengthPerGroup + " min: " + minLengthPerGroup);
+          "Invalid max/min group lengths. Required min>0, max>=min. " +
+            " max: " + maxLengthPerGroup + " min: " + minLengthPerGroup);
       }
       if (lengthPerGroup > maxLengthPerGroup) {
         // splits too big to work. Need to override with max size.
-        int newDesiredNumSplits = (int)(totalLength/maxLengthPerGroup) + 1;
+        int newDesiredNumSplits = (int) (totalLength / maxLengthPerGroup) + 1;
         LOG.info("Desired splits: " + desiredNumSplits + " too small. " +
-            " Desired splitLength: " + lengthPerGroup +
-            " Max splitLength: " + maxLengthPerGroup +
-            " New desired splits: " + newDesiredNumSplits +
-            " Total length: " + totalLength +
-            " Original splits: " + originalSplits.size());
+          " Desired splitLength: " + lengthPerGroup +
+          " Max splitLength: " + maxLengthPerGroup +
+          " New desired splits: " + newDesiredNumSplits +
+          " Total length: " + totalLength +
+          " Original splits: " + originalSplits.size());
 
         desiredNumSplits = newDesiredNumSplits;
       } else if (lengthPerGroup < minLengthPerGroup) {
         // splits too small to work. Need to override with size.
-        int newDesiredNumSplits = (int)(totalLength/minLengthPerGroup) + 1;
+        int newDesiredNumSplits = (int) (totalLength / minLengthPerGroup) + 1;
         /**
          * This is a workaround for systems like S3 that pass the same
          * fake hostname for all splits.
@@ -259,41 +222,42 @@ public abstract class TezSplitGrouper {
         }
 
         LOG.info("Desired splits: " + desiredNumSplits + " too large. " +
-            " Desired splitLength: " + lengthPerGroup +
-            " Min splitLength: " + minLengthPerGroup +
-            " New desired splits: " + newDesiredNumSplits +
-            " Final desired splits: " + desiredNumSplits +
-            " All splits have localhost: " + allSplitsHaveLocalhost +
-            " Total length: " + totalLength +
-            " Original splits: " + originalSplits.size());
+          " Desired splitLength: " + lengthPerGroup +
+          " Min splitLength: " + minLengthPerGroup +
+          " New desired splits: " + newDesiredNumSplits +
+          " Final desired splits: " + desiredNumSplits +
+          " All splits have localhost: " + allSplitsHaveLocalhost +
+          " Total length: " + totalLength +
+          " Original splits: " + originalSplits.size());
       }
     }
 
     if (desiredNumSplits == 0 ||
-        originalSplits.size() == 0 ||
-        desiredNumSplits >= originalSplits.size()) {
+      originalSplits.size() == 0 ||
+      desiredNumSplits >= originalSplits.size()) {
       // nothing set. so return all the splits as is
       LOG.info("Using original number of splits: " + originalSplits.size() +
-          " desired splits: " + desiredNumSplits);
+        " desired splits: " + desiredNumSplits);
       groupedSplits = new ArrayList<GroupedSplitContainer>(originalSplits.size());
       for (SplitContainer split : originalSplits) {
         GroupedSplitContainer newSplit =
-            new GroupedSplitContainer(1, wrappedInputFormatName, cleanupLocations(locationProvider.getPreferredLocations(split)),
-                null);
+          new GroupedSplitContainer(1, wrappedInputFormatName,
+            cleanupLocations(locationProvider.getPreferredLocations(split)),
+            null);
         newSplit.addSplit(split);
         groupedSplits.add(newSplit);
       }
       return groupedSplits;
     }
 
-    long lengthPerGroup = totalLength/desiredNumSplits;
+    long lengthPerGroup = totalLength / desiredNumSplits;
     int numNodeLocations = distinctLocations.size();
-    int numSplitsPerLocation = originalSplits.size()/numNodeLocations;
-    int numSplitsInGroup = originalSplits.size()/desiredNumSplits;
+    int numSplitsPerLocation = originalSplits.size() / numNodeLocations;
+    int numSplitsInGroup = originalSplits.size() / desiredNumSplits;
 
     // allocation loop here so that we have a good initial size for the lists
     for (String location : distinctLocations.keySet()) {
-      distinctLocations.put(location, new LocationHolder(numSplitsPerLocation+1));
+      distinctLocations.put(location, new LocationHolder(numSplitsPerLocation + 1));
     }
 
     Set<String> locSet = new HashSet<String>();
@@ -316,30 +280,30 @@ public abstract class TezSplitGrouper {
     }
 
     boolean groupByLength = conf.getBoolean(
-        TEZ_GROUPING_SPLIT_BY_LENGTH,
-        TEZ_GROUPING_SPLIT_BY_LENGTH_DEFAULT);
+      TEZ_GROUPING_SPLIT_BY_LENGTH,
+      TEZ_GROUPING_SPLIT_BY_LENGTH_DEFAULT);
     boolean groupByCount = conf.getBoolean(
-        TEZ_GROUPING_SPLIT_BY_COUNT,
-        TEZ_GROUPING_SPLIT_BY_COUNT_DEFAULT);
+      TEZ_GROUPING_SPLIT_BY_COUNT,
+      TEZ_GROUPING_SPLIT_BY_COUNT_DEFAULT);
     boolean nodeLocalOnly = conf.getBoolean(
-        TEZ_GROUPING_NODE_LOCAL_ONLY,
-        TEZ_GROUPING_NODE_LOCAL_ONLY_DEFAULT);
+      TEZ_GROUPING_NODE_LOCAL_ONLY,
+      TEZ_GROUPING_NODE_LOCAL_ONLY_DEFAULT);
     if (!(groupByLength || groupByCount)) {
       throw new TezUncheckedException(
-          "None of the grouping parameters are true: "
-              + TEZ_GROUPING_SPLIT_BY_LENGTH + ", "
-              + TEZ_GROUPING_SPLIT_BY_COUNT);
+        "None of the grouping parameters are true: "
+          + TEZ_GROUPING_SPLIT_BY_LENGTH + ", "
+          + TEZ_GROUPING_SPLIT_BY_COUNT);
     }
     LOG.info("Desired numSplits: " + desiredNumSplits +
-        " lengthPerGroup: " + lengthPerGroup +
-        " numLocations: " + numNodeLocations +
-        " numSplitsPerLocation: " + numSplitsPerLocation +
-        " numSplitsInGroup: " + numSplitsInGroup +
-        " totalLength: " + totalLength +
-        " numOriginalSplits: " + originalSplits.size() +
-        " . Grouping by length: " + groupByLength +
-        " count: " + groupByCount +
-        " nodeLocalOnly: " + nodeLocalOnly);
+      " lengthPerGroup: " + lengthPerGroup +
+      " numLocations: " + numNodeLocations +
+      " numSplitsPerLocation: " + numSplitsPerLocation +
+      " numSplitsInGroup: " + numSplitsInGroup +
+      " totalLength: " + totalLength +
+      " numOriginalSplits: " + originalSplits.size() +
+      " . Grouping by length: " + groupByLength +
+      " count: " + groupByCount +
+      " nodeLocalOnly: " + nodeLocalOnly);
 
     // go through locations and group splits
     int splitsProcessed = 0;
@@ -370,16 +334,16 @@ public abstract class TezSplitGrouper {
           groupNumSplits++;
           holder.incrementHeadIndex();
           splitContainer = holder.getUnprocessedHeadSplit();
-        } while(splitContainer != null
-            && (!groupByLength ||
-            (groupLength + estimator.getEstimatedSize(splitContainer) <= lengthPerGroup))
-            && (!groupByCount ||
-            (groupNumSplits + 1 <= numSplitsInGroup)));
+        } while (splitContainer != null
+          && (!groupByLength ||
+          (groupLength + estimator.getEstimatedSize(splitContainer) <= lengthPerGroup))
+          && (!groupByCount ||
+          (groupNumSplits + 1 <= numSplitsInGroup)));
 
         if (holder.isEmpty()
-            && !allowSmallGroups
-            && (!groupByLength || groupLength < lengthPerGroup/2)
-            && (!groupByCount || groupNumSplits < numSplitsInGroup/2)) {
+          && !allowSmallGroups
+          && (!groupByLength || groupLength < lengthPerGroup / 2)
+          && (!groupByCount || groupNumSplits < numSplitsInGroup / 2)) {
           // group too small, reset it
           holder.headIndex = oldHeadIndex;
           continue;
@@ -405,21 +369,21 @@ public abstract class TezSplitGrouper {
           groupLocation = groupLocationSet.toArray(groupLocation);
         }
         GroupedSplitContainer groupedSplit =
-            new GroupedSplitContainer(group.size(), wrappedInputFormatName,
-                groupLocation,
-                // pass rack local hint directly to AM
-                ((doingRackLocal && location != emptyLocation)?location:null));
+          new GroupedSplitContainer(group.size(), wrappedInputFormatName,
+            groupLocation,
+            // pass rack local hint directly to AM
+            ((doingRackLocal && location != emptyLocation) ? location : null));
         for (SplitContainer groupedSplitContainer : group) {
           groupedSplit.addSplit(groupedSplitContainer);
           Preconditions.checkState(groupedSplitContainer.isProcessed() == false,
-              "Duplicates in grouping at location: " + location);
+            "Duplicates in grouping at location: " + location);
           groupedSplitContainer.setIsProcessed(true);
           splitsProcessed++;
         }
         if (LOG.isDebugEnabled()) {
           LOG.debug("Grouped " + group.size()
-              + " length: " + groupedSplit.getLength()
-              + " split at: " + location);
+            + " length: " + groupedSplit.getLength()
+            + " split at: " + location);
         }
         groupedSplits.add(groupedSplit);
       }
@@ -430,8 +394,9 @@ public abstract class TezSplitGrouper {
         // Allow small groups if that is configured.
         if (nodeLocalOnly && !allowSmallGroups) {
           LOG.info(
-              "Allowing small groups early after attempting to create full groups at iteration: {}, groupsCreatedSoFar={}",
-              iterations, groupedSplits.size());
+            "Allowing small groups early after attempting to create full groups at iteration: {}, " +
+              "groupsCreatedSoFar={}",
+            iterations, groupedSplits.size());
           allowSmallGroups = true;
           continue;
         }
@@ -454,7 +419,7 @@ public abstract class TezSplitGrouper {
         }
         if (remainingSplits.size() != numRemainingSplits) {
           throw new TezUncheckedException("Expected: " + numRemainingSplits
-              + " got: " + remainingSplits.size());
+            + " got: " + remainingSplits.size());
         }
 
         // doing all this now instead of up front because the number of remaining
@@ -492,7 +457,7 @@ public abstract class TezSplitGrouper {
           if (locations == null || locations.length == 0) {
             locations = emptyLocations;
           }
-          for (String location : locations ) {
+          for (String location : locations) {
             if (location == null) {
               location = emptyLocation;
             }
@@ -507,11 +472,11 @@ public abstract class TezSplitGrouper {
         distinctLocations = rackLocations;
         // adjust split length to be smaller because the data is non local
         float rackSplitReduction = conf.getFloat(
-            TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION,
-            TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION_DEFAULT);
+          TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION,
+          TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION_DEFAULT);
         if (rackSplitReduction > 0) {
-          long newLengthPerGroup = (long)(lengthPerGroup*rackSplitReduction);
-          int newNumSplitsInGroup = (int) (numSplitsInGroup*rackSplitReduction);
+          long newLengthPerGroup = (long) (lengthPerGroup * rackSplitReduction);
+          int newNumSplitsInGroup = (int) (numSplitsInGroup * rackSplitReduction);
           if (newLengthPerGroup > 0) {
             lengthPerGroup = newLengthPerGroup;
           }
@@ -521,36 +486,36 @@ public abstract class TezSplitGrouper {
         }
 
         LOG.info("Doing rack local after iteration: " + iterations +
-            " splitsProcessed: " + splitsProcessed +
-            " numFullGroupsInRound: " + numFullGroupsCreated +
-            " totalGroups: " + groupedSplits.size() +
-            " lengthPerGroup: " + lengthPerGroup +
-            " numSplitsInGroup: " + numSplitsInGroup);
+          " splitsProcessed: " + splitsProcessed +
+          " numFullGroupsInRound: " + numFullGroupsCreated +
+          " totalGroups: " + groupedSplits.size() +
+          " lengthPerGroup: " + lengthPerGroup +
+          " numSplitsInGroup: " + numSplitsInGroup);
 
         // dont do smallGroups for the first pass
         continue;
       }
 
-      if (!allowSmallGroups && numFullGroupsCreated <= numNodeLocations/10) {
+      if (!allowSmallGroups && numFullGroupsCreated <= numNodeLocations / 10) {
         // a few nodes have a lot of data or data is thinly spread across nodes
         // so allow small groups now
         allowSmallGroups = true;
         LOG.info("Allowing small groups after iteration: " + iterations +
-            " splitsProcessed: " + splitsProcessed +
-            " numFullGroupsInRound: " + numFullGroupsCreated +
-            " totalGroups: " + groupedSplits.size());
+          " splitsProcessed: " + splitsProcessed +
+          " numFullGroupsInRound: " + numFullGroupsCreated +
+          " totalGroups: " + groupedSplits.size());
       }
 
       if (LOG.isDebugEnabled()) {
         LOG.debug("Iteration: " + iterations +
-            " splitsProcessed: " + splitsProcessed +
-            " numFullGroupsInRound: " + numFullGroupsCreated +
-            " totalGroups: " + groupedSplits.size());
+          " splitsProcessed: " + splitsProcessed +
+          " numFullGroupsInRound: " + numFullGroupsCreated +
+          " totalGroups: " + groupedSplits.size());
       }
     }
     LOG.info("Number of splits desired: " + desiredNumSplits +
-        " created: " + groupedSplits.size() +
-        " splitsProcessed: " + splitsProcessed);
+      " created: " + groupedSplits.size() +
+      " splitsProcessed: " + splitsProcessed);
     return groupedSplits;
   }
 
@@ -582,19 +547,50 @@ public abstract class TezSplitGrouper {
     }
   }
 
-  /**
-   * Builder that can be used to configure grouping in Tez
-   *
-   * @param conf
-   *          {@link Configuration} This will be modified in place. If
-   *          configuration values may be changed at runtime via a config file
-   *          then pass in a {@link Configuration} that is initialized from a
-   *          config file. The parameters that are not overridden in code will
-   *          be derived from the Configuration object.
-   * @return {@link org.apache.tez.mapreduce.grouper.TezSplitGrouper.TezMRSplitsGrouperConfigBuilder}
-   */
-  public static TezMRSplitsGrouperConfigBuilder newConfigBuilder(Configuration conf) {
-    return new TezMRSplitsGrouperConfigBuilder(conf);
+  static class LocationHolder {
+    List<SplitContainer> splits;
+    int headIndex = 0;
+
+    LocationHolder(int capacity) {
+      splits = new ArrayList<SplitContainer>(capacity);
+    }
+
+    boolean isEmpty() {
+      return (headIndex == splits.size());
+    }
+
+    SplitContainer getUnprocessedHeadSplit() {
+      while (!isEmpty()) {
+        SplitContainer holder = splits.get(headIndex);
+        if (!holder.isProcessed()) {
+          return holder;
+        }
+        incrementHeadIndex();
+      }
+      return null;
+    }
+
+    void incrementHeadIndex() {
+      headIndex++;
+    }
+  }
+
+  static final class DefaultSplitSizeEstimatorWrapper implements SplitSizeEstimatorWrapper {
+
+    @Override
+    public long getEstimatedSize(SplitContainer splitContainer) throws IOException,
+      InterruptedException {
+      return splitContainer.getLength();
+    }
+  }
+
+  static final class DefaultSplitLocationProvider implements SplitLocationProviderWrapper {
+
+    @Override
+    public String[] getPreferredLocations(SplitContainer splitContainer) throws IOException,
+      InterruptedException {
+      return splitContainer.getPreferredLocations();
+    }
   }
 
   public static final class TezMRSplitsGrouperConfigBuilder {

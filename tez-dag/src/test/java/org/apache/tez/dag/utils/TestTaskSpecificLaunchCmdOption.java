@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,6 +26,7 @@ import java.util.Random;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.tez.dag.api.TezConfiguration;
+
 import org.junit.Test;
 
 public class TestTaskSpecificLaunchCmdOption {
@@ -41,7 +42,6 @@ public class TestTaskSpecificLaunchCmdOption {
     return new TaskSpecificLaunchCmdOption(conf);
   }
 
-
   @Test(timeout = 5000)
   public void testTaskSpecificJavaOptions() {
     Random rnd = new Random();
@@ -54,14 +54,14 @@ public class TestTaskSpecificLaunchCmdOption {
     assertTrue(option.addTaskSpecificLaunchCmdOption("v-10", 1));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v-10", 2));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v-10",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[0,1,2]");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 0));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 1));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 2));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v1",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[,5]", "dummyOpts");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 5));
@@ -70,9 +70,9 @@ public class TestTaskSpecificLaunchCmdOption {
     assertTrue(option.addTaskSpecificLaunchCmdOption("v 1", 1));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v 1", 5));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
     assertFalse(option.addTaskSpecificLaunchCmdOption("1",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v 1[1,5], 5 [50,60], m  1[10, 11],", "dummyOpts");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v 1", 1));
@@ -84,9 +84,9 @@ public class TestTaskSpecificLaunchCmdOption {
     assertFalse(option.addTaskSpecificLaunchCmdOption("5", 600));
     assertFalse(option.addTaskSpecificLaunchCmdOption("m  1", 1));
     assertFalse(option.addTaskSpecificLaunchCmdOption("1",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
     assertFalse(option.addTaskSpecificLaunchCmdOption("",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v 1[1,5], 5 [50,60],  @#425[10, 11]", "dummyOpts");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v 1", 1));
@@ -101,7 +101,7 @@ public class TestTaskSpecificLaunchCmdOption {
     assertTrue(option.addTaskSpecificLaunchCmdOption("v2", 7));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v2", 8));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v5",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[1:3,5]");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 1));
@@ -109,7 +109,7 @@ public class TestTaskSpecificLaunchCmdOption {
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 3));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 5));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v5",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[3:1,5]");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 1));
@@ -125,26 +125,26 @@ public class TestTaskSpecificLaunchCmdOption {
     option = getOptions(conf, "v[]");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 0));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[,, ,]");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[    ]");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[:,,]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, " v[3:1,4]");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 4));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 1));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 3));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, " v[1:3,4, 5]");
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 4));
@@ -153,7 +153,7 @@ public class TestTaskSpecificLaunchCmdOption {
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 1));
     assertTrue(option.addTaskSpecificLaunchCmdOption("v", 5));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, " v[:,,:, 5]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 0));
@@ -163,7 +163,7 @@ public class TestTaskSpecificLaunchCmdOption {
     option = getOptions(conf, " v[ : ,,]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 0));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     //-ve tests
     option = getOptions(conf, "v12#fs[0,1,2]");
@@ -182,27 +182,27 @@ public class TestTaskSpecificLaunchCmdOption {
     assertFalse(option.addTaskSpecificLaunchCmdOption("^&*%", 0));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 0));
     assertFalse(option.addTaskSpecificLaunchCmdOption("^&*%",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[-1]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 1));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", -1));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, " [:, 4:]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 1));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 4));
     assertFalse(option.addTaskSpecificLaunchCmdOption("", 0));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[:,,:]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 1));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 4));
     assertFalse(option.addTaskSpecificLaunchCmdOption("", 0));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[:5,1]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 0));
@@ -213,13 +213,13 @@ public class TestTaskSpecificLaunchCmdOption {
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 5));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 6));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[1:,5]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 1));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 5));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, "v[:1,5]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 0));
@@ -227,7 +227,7 @@ public class TestTaskSpecificLaunchCmdOption {
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 5));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", -1));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, " v[1:,4, 5],    [5,4]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 4));
@@ -236,7 +236,7 @@ public class TestTaskSpecificLaunchCmdOption {
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 3));
     assertFalse(option.addTaskSpecificLaunchCmdOption(" ", 4));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
 
     option = getOptions(conf, " v[-3:1,4]");
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 4));
@@ -244,7 +244,7 @@ public class TestTaskSpecificLaunchCmdOption {
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", 3));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v", -3));
     assertFalse(option.addTaskSpecificLaunchCmdOption("v",
-        rnd.nextInt(Integer.MAX_VALUE)));
+      rnd.nextInt(Integer.MAX_VALUE)));
   }
 
   @Test(timeout = 5000)
@@ -273,7 +273,6 @@ public class TestTaskSpecificLaunchCmdOption {
     assertTrue(optionStr.equals("dir=/tmp/v/4"));
   }
 
-
   @Test(timeout = 5000)
   public void testTaskSpecificLogOptions() {
     Configuration conf = new Configuration(false);
@@ -298,7 +297,7 @@ public class TestTaskSpecificLaunchCmdOption {
     assertEquals(1, options.getTaskSpecificLogParams().length);
   }
 
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void testTaskSpecificLogOptionsWithCommandOptions() {
     Configuration conf = new Configuration(false);
     conf.set(TezConfiguration.TEZ_TASK_SPECIFIC_LAUNCH_CMD_OPTS_LIST, "v1[0,2,5]");

@@ -18,6 +18,11 @@
 
 package org.apache.tez.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -47,13 +52,12 @@ import org.apache.tez.runtime.api.LogicalOutput;
 import org.apache.tez.runtime.api.ProcessorContext;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.processor.SleepProcessor;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import static org.junit.Assert.*;
 
 /**
  * Tests for running Tez in local execution mode (without YARN).
@@ -62,7 +66,7 @@ import static org.junit.Assert.*;
 public class TestLocalMode {
 
   private static final File STAGING_DIR = new File(System.getProperty("test.build.data"),
-      TestLocalMode.class.getName());
+    TestLocalMode.class.getName());
 
   private static MiniDFSCluster dfsCluster;
   private static FileSystem remoteFs;
@@ -70,14 +74,14 @@ public class TestLocalMode {
   private final boolean useDfs;
   private final boolean useLocalModeWithoutNetwork;
 
-  @Parameterized.Parameters(name = "useDFS:{0} useLocalModeWithoutNetwork:{1}")
-  public static Collection<Object[]> params() {
-    return Arrays.asList(new Object[][]{{false, false}, {true, false}, {false, true}, {true, true}});
-  }
-
   public TestLocalMode(boolean useDfs, boolean useLocalModeWithoutNetwork) {
     this.useDfs = useDfs;
     this.useLocalModeWithoutNetwork = useLocalModeWithoutNetwork;
+  }
+
+  @Parameterized.Parameters(name = "useDFS:{0} useLocalModeWithoutNetwork:{1}")
+  public static Collection<Object[]> params() {
+    return Arrays.asList(new Object[][]{{false, false}, {true, false}, {false, true}, {true, true}});
   }
 
   @BeforeClass
@@ -85,8 +89,8 @@ public class TestLocalMode {
     try {
       Configuration conf = new Configuration();
       dfsCluster =
-          new MiniDFSCluster.Builder(conf).numDataNodes(3).format(true)
-              .racks(null).build();
+        new MiniDFSCluster.Builder(conf).numDataNodes(3).format(true)
+          .racks(null).build();
       remoteFs = dfsCluster.getFileSystem();
     } catch (IOException io) {
       throw new RuntimeException("problem starting mini dfs cluster", io);
@@ -121,7 +125,7 @@ public class TestLocalMode {
 
   @Test(timeout = 30000)
   public void testMultipleClientsWithSession() throws TezException, InterruptedException,
-      IOException {
+    IOException {
     TezConfiguration tezConf1 = createConf();
     TezClient tezClient1 = TezClient.create("commonName", tezConf1, true);
     tezClient1.start();
@@ -149,7 +153,7 @@ public class TestLocalMode {
 
   @Test(timeout = 10000)
   public void testMultipleClientsWithoutSession() throws TezException, InterruptedException,
-      IOException {
+    IOException {
     TezConfiguration tezConf1 = createConf();
     TezClient tezClient1 = TezClient.create("commonName", tezConf1, false);
     tezClient1.start();
@@ -162,7 +166,6 @@ public class TestLocalMode {
 
     dagClient1.close();
     tezClient1.stop();
-
 
     TezConfiguration tezConf2 = createConf();
     DAG dag2 = createSimpleDAG("dag2", SleepProcessor.class.getName());
@@ -178,7 +181,7 @@ public class TestLocalMode {
 
   @Test(timeout = 20000)
   public void testNoSysExitOnSuccessfulDAG() throws TezException, InterruptedException,
-      IOException {
+    IOException {
     TezConfiguration tezConf1 = createConf();
     // Run in non-session mode so that the AM terminates
     TezClient tezClient1 = TezClient.create("commonName", tezConf1, false);
@@ -199,7 +202,7 @@ public class TestLocalMode {
 
   @Test(timeout = 20000)
   public void testNoSysExitOnFailinglDAG() throws TezException, InterruptedException,
-      IOException {
+    IOException {
     TezConfiguration tezConf1 = createConf();
     // Run in non-session mode so that the AM terminates
     TezClient tezClient1 = TezClient.create("commonName", tezConf1, false);
@@ -216,6 +219,70 @@ public class TestLocalMode {
 
     dagClient1.close();
     tezClient1.stop();
+  }
+
+  private DAG createSimpleDAG(String dagName, String processorName) {
+    DAG dag = DAG.create(dagName).addVertex(Vertex.create("Sleep", ProcessorDescriptor.create(
+      processorName).setUserPayload(
+      new SleepProcessor.SleepProcessorConfig(1).toUserPayload()), 1));
+    return dag;
+  }
+
+  @Test(timeout = 30000)
+  public void testMultiDAGsOnSession() throws IOException, TezException, InterruptedException {
+    int dags = 2;//two dags will be submitted to session
+    String[] inputPaths = new String[dags];
+    String[] outputPaths = new String[dags];
+    DAGClient[] dagClients = new DAGClient[dags];
+
+    TezConfiguration tezConf = createConf();
+    TezClient tezClient = TezClient.create("testMultiDAGOnSession", tezConf, true);
+    tezClient.start();
+
+    //create inputs and outputs
+    FileSystem fs = FileSystem.get(tezConf);
+    for (int i = 0; i < dags; i++) {
+      inputPaths[i] = new Path(STAGING_DIR.getAbsolutePath(), "in-" + i).toString();
+      createInputFile(fs, inputPaths[i]);
+      outputPaths[i] = new Path(STAGING_DIR.getAbsolutePath(), "out-" + i).toString();
+    }
+
+    //start testing
+    try {
+      for (int i = 0; i < inputPaths.length; ++i) {
+        DAG dag = OrderedWordCount.createDAG(tezConf, inputPaths[i], outputPaths[i], 1,
+          false, false, ("DAG-Iteration-" + i)); // the names of the DAGs must be unique in a session
+
+        tezClient.waitTillReady();
+        System.out.println("Running dag number " + i);
+        dagClients[i] = tezClient.submitDAG(dag);
+
+        // wait to finish
+        DAGStatus dagStatus = dagClients[i].waitForCompletion();
+        if (dagStatus.getState() != DAGStatus.State.SUCCEEDED) {
+          fail("Iteration " + i + " failed with diagnostics: "
+            + dagStatus.getDiagnostics());
+        }
+        //verify all dags sharing the same execution context
+        if (i > 0) {
+          assertTrue(dagClients[i - 1].getExecutionContext().equals(dagClients[i].getExecutionContext()));
+        }
+      }
+    } finally {
+      tezClient.stop();
+    }
+  }
+
+  private void createInputFile(FileSystem fs, String path) throws IOException {
+    Path file = new Path(new Path(path), "input.txt");
+    try {
+      FSDataOutputStream fsdos = fs.create(file);
+      fsdos.write("This is a small test file !".getBytes());
+      fsdos.flush();
+      fsdos.close();
+    } catch (IOException ioe) {
+      fail("Can not create input File!");
+    }
   }
 
   public static class FailingProcessor extends AbstractLogicalIOProcessor {
@@ -238,73 +305,8 @@ public class TestLocalMode {
 
     @Override
     public void run(Map<String, LogicalInput> inputs, Map<String, LogicalOutput> outputs) throws
-        Exception {
+      Exception {
       throw new TezException("FailingProcessor");
-
-    }
-  }
-
-  private DAG createSimpleDAG(String dagName, String processorName) {
-    DAG dag = DAG.create(dagName).addVertex(Vertex.create("Sleep", ProcessorDescriptor.create(
-        processorName).setUserPayload(
-        new SleepProcessor.SleepProcessorConfig(1).toUserPayload()), 1));
-    return dag;
-
-  }
-  @Test(timeout=30000)
-  public void testMultiDAGsOnSession() throws IOException, TezException, InterruptedException {
-    int dags = 2;//two dags will be submitted to session
-    String[] inputPaths = new String[dags];
-    String[] outputPaths =  new String[dags];
-    DAGClient[] dagClients = new DAGClient[dags];
-
-    TezConfiguration tezConf = createConf();
-    TezClient tezClient = TezClient.create("testMultiDAGOnSession", tezConf, true);
-    tezClient.start();
-
-    //create inputs and outputs
-    FileSystem fs = FileSystem.get(tezConf);
-    for(int i = 0; i < dags; i++) {
-      inputPaths[i] = new Path(STAGING_DIR.getAbsolutePath(), "in-" + i).toString();
-      createInputFile(fs, inputPaths[i]);
-      outputPaths[i] = new Path(STAGING_DIR.getAbsolutePath(), "out-" + i).toString();
-    }
-
-    //start testing
-    try {
-      for (int i=0; i<inputPaths.length; ++i) {
-        DAG dag = OrderedWordCount.createDAG(tezConf, inputPaths[i], outputPaths[i], 1,
-            false, false, ("DAG-Iteration-" + i)); // the names of the DAGs must be unique in a session
-
-        tezClient.waitTillReady();
-        System.out.println("Running dag number " + i);
-        dagClients[i] = tezClient.submitDAG(dag);
-
-        // wait to finish
-        DAGStatus dagStatus = dagClients[i].waitForCompletion();
-        if (dagStatus.getState() != DAGStatus.State.SUCCEEDED) {
-          fail("Iteration " + i + " failed with diagnostics: "
-              + dagStatus.getDiagnostics());
-        }
-        //verify all dags sharing the same execution context
-        if(i>0) {
-          assertTrue(dagClients[i-1].getExecutionContext().equals(dagClients[i].getExecutionContext()));
-        }
-      }
-    } finally {
-      tezClient.stop();
-    }
-  }
-
-  private void createInputFile(FileSystem fs, String path) throws IOException {
-    Path file = new Path(new Path(path), "input.txt");
-    try {
-      FSDataOutputStream fsdos = fs.create(file);
-      fsdos.write("This is a small test file !".getBytes());
-      fsdos.flush();
-      fsdos.close();
-    } catch (IOException ioe) {
-      fail("Can not create input File!");
     }
   }
 }

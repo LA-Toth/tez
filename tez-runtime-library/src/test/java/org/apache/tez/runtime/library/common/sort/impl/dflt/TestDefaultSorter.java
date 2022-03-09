@@ -18,11 +18,6 @@
 
 package org.apache.tez.runtime.library.common.sort.impl.dflt;
 
-import org.apache.hadoop.fs.LocalDirAllocator;
-import org.apache.tez.runtime.library.api.Partitioner;
-import org.apache.tez.runtime.library.common.Constants;
-import org.apache.tez.runtime.library.common.TezRuntimeUtils;
-import org.junit.Assert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -42,23 +37,23 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import com.google.protobuf.ByteString;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.tez.common.TezCommonUtils;
 import org.apache.tez.common.TezRuntimeFrameworkConfigs;
 import org.apache.tez.common.TezUtils;
+import org.apache.tez.common.TezUtilsInternal;
 import org.apache.tez.common.counters.TaskCounter;
 import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.common.counters.TezCounters;
-import org.apache.tez.common.TezCommonUtils;
-import org.apache.tez.common.TezUtilsInternal;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.runtime.api.Event;
@@ -68,8 +63,11 @@ import org.apache.tez.runtime.api.OutputContext;
 import org.apache.tez.runtime.api.OutputStatisticsReporter;
 import org.apache.tez.runtime.api.events.CompositeDataMovementEvent;
 import org.apache.tez.runtime.api.impl.ExecutionContextImpl;
+import org.apache.tez.runtime.library.api.Partitioner;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
+import org.apache.tez.runtime.library.common.Constants;
 import org.apache.tez.runtime.library.common.MemoryUpdateCallbackHandler;
+import org.apache.tez.runtime.library.common.TezRuntimeUtils;
 import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
 import org.apache.tez.runtime.library.common.sort.impl.ExternalSorter;
 import org.apache.tez.runtime.library.common.sort.impl.TezIndexRecord;
@@ -78,8 +76,11 @@ import org.apache.tez.runtime.library.conf.OrderedPartitionedKVOutputConfig.Sort
 import org.apache.tez.runtime.library.partitioner.HashPartitioner;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads;
 import org.apache.tez.util.StringInterner;
+
+import com.google.protobuf.ByteString;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -98,6 +99,19 @@ public class TestDefaultSorter {
   private Configuration conf;
   private LocalDirAllocator dirAllocator;
 
+  @AfterClass
+  public static void cleanup() throws IOException {
+    localFs.delete(workingDir, true);
+  }
+
+  private static Text[] generateData(int numKeys, int keyLen) {
+    Text[] ret = new Text[numKeys];
+    for (int i = 0; i < numKeys; i++) {
+      ret[i] = new Text(RandomStringUtils.randomAlphanumeric(keyLen));
+    }
+    return ret;
+  }
+
   @Before
   public void setup() throws IOException {
     conf = new Configuration();
@@ -107,21 +121,16 @@ public class TestDefaultSorter {
     localFs = FileSystem.getLocal(conf);
 
     workingDir = new Path(
-        new Path(System.getProperty("test.build.data", "/tmp")),
-        TestDefaultSorter.class.getName())
-        .makeQualified(localFs.getUri(), localFs.getWorkingDirectory());
+      new Path(System.getProperty("test.build.data", "/tmp")),
+      TestDefaultSorter.class.getName())
+      .makeQualified(localFs.getUri(), localFs.getWorkingDirectory());
     String localDirs = workingDir.toString();
     conf.set(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_CLASS, Text.class.getName());
     conf.set(TezRuntimeConfiguration.TEZ_RUNTIME_VALUE_CLASS, Text.class.getName());
     conf.set(TezRuntimeConfiguration.TEZ_RUNTIME_PARTITIONER_CLASS,
-        HashPartitioner.class.getName());
+      HashPartitioner.class.getName());
     conf.setStrings(TezRuntimeFrameworkConfigs.LOCAL_DIRS, localDirs);
     dirAllocator = new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
-  }
-
-  @AfterClass
-  public static void cleanup() throws IOException {
-    localFs.delete(workingDir, true);
   }
 
   @After
@@ -138,7 +147,7 @@ public class TestDefaultSorter {
     try {
       new DefaultSorter(context, conf, 10, (10 * 1024 * 1024l));
       fail();
-    } catch(IllegalArgumentException e) {
+    } catch (IllegalArgumentException e) {
       assertTrue(e.getMessage().contains(TezRuntimeConfiguration.TEZ_RUNTIME_SORT_SPILL_PERCENT));
     }
 
@@ -146,11 +155,10 @@ public class TestDefaultSorter {
     try {
       new DefaultSorter(context, conf, 10, (10 * 1024 * 1024l));
       fail();
-    } catch(IllegalArgumentException e) {
+    } catch (IllegalArgumentException e) {
       assertTrue(e.getMessage().contains(TezRuntimeConfiguration.TEZ_RUNTIME_SORT_SPILL_PERCENT));
     }
   }
-
 
   @Test
   @Ignore
@@ -168,8 +176,8 @@ public class TestDefaultSorter {
     //Setting IO_SORT_MB to 2047 MB
     conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 2047);
     context.requestInitialMemory(
-        ExternalSorter.getInitialMemoryRequirement(conf,
-            context.getTotalMemoryAvailableToTask()), new MemoryUpdateCallbackHandler());
+      ExternalSorter.getInitialMemoryRequirement(conf,
+        context.getTotalMemoryAvailableToTask()), new MemoryUpdateCallbackHandler());
 
     DefaultSorter sorter = new DefaultSorter(context, conf, 2, 2047 << 20);
 
@@ -207,8 +215,8 @@ public class TestDefaultSorter {
     //Setting IO_SORT_MB to 2047 MB
     conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 2047);
     context.requestInitialMemory(
-        ExternalSorter.getInitialMemoryRequirement(conf,
-            context.getTotalMemoryAvailableToTask()), new MemoryUpdateCallbackHandler());
+      ExternalSorter.getInitialMemoryRequirement(conf,
+        context.getTotalMemoryAvailableToTask()), new MemoryUpdateCallbackHandler());
 
     DefaultSorter sorter = new DefaultSorter(context, conf, 2, 2047 << 20);
 
@@ -228,26 +236,25 @@ public class TestDefaultSorter {
     }
   }
 
-
   @Test(timeout = 5000)
   public void testSortMBLimits() throws Exception {
 
     assertTrue("Expected " + DefaultSorter.MAX_IO_SORT_MB,
-        DefaultSorter.computeSortBufferSize(4096, "") == DefaultSorter.MAX_IO_SORT_MB);
+      DefaultSorter.computeSortBufferSize(4096, "") == DefaultSorter.MAX_IO_SORT_MB);
     assertTrue("Expected " + DefaultSorter.MAX_IO_SORT_MB,
-        DefaultSorter.computeSortBufferSize(2047, "") == DefaultSorter.MAX_IO_SORT_MB);
+      DefaultSorter.computeSortBufferSize(2047, "") == DefaultSorter.MAX_IO_SORT_MB);
     assertTrue("Expected 1024", DefaultSorter.computeSortBufferSize(1024, "") == 1024);
 
     try {
       DefaultSorter.computeSortBufferSize(0, "");
       fail("Should have thrown error for setting buffer size to 0");
-    } catch(RuntimeException re) {
+    } catch (RuntimeException re) {
     }
 
     try {
       DefaultSorter.computeSortBufferSize(-100, "");
       fail("Should have thrown error for setting buffer size to negative value");
-    } catch(RuntimeException re) {
+    } catch (RuntimeException re) {
     }
   }
 
@@ -261,16 +268,16 @@ public class TestDefaultSorter {
       //Setting IO_SORT_MB to greater than available mem limit (should throw exception)
       conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 300);
       context.requestInitialMemory(
-          ExternalSorter.getInitialMemoryRequirement(conf,
-              context.getTotalMemoryAvailableToTask()), new MemoryUpdateCallbackHandler());
+        ExternalSorter.getInitialMemoryRequirement(conf,
+          context.getTotalMemoryAvailableToTask()), new MemoryUpdateCallbackHandler());
       fail();
-    } catch(IllegalArgumentException e) {
+    } catch (IllegalArgumentException e) {
       assertTrue(e.getMessage().contains(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB));
     }
 
     conf.setLong(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 1);
     context.requestInitialMemory(ExternalSorter.getInitialMemoryRequirement(conf,
-        context.getTotalMemoryAvailableToTask()), handler);
+      context.getTotalMemoryAvailableToTask()), handler);
     SorterWrapper sorterWrapper = new SorterWrapper(context, conf, 5, handler.getMemoryAssigned());
     DefaultSorter sorter = sorterWrapper.getSorter();
 
@@ -284,7 +291,7 @@ public class TestDefaultSorter {
       sorterWrapper.close();
       assertTrue(sorter.getNumSpills() > 2);
       verifyCounters(sorter, context);
-    } catch(IOException ioe) {
+    } catch (IOException ioe) {
       fail(ioe.getMessage());
     }
 
@@ -293,21 +300,22 @@ public class TestDefaultSorter {
 
   @Test(timeout = 30000)
   public void testEmptyCaseFileLengths() throws IOException {
-    testEmptyCaseFileLengthsHelper(50, new String[] {"a", "b"}, new String[] {"1", "2"});
-    testEmptyCaseFileLengthsHelper(50, new String[] {"a", "a"}, new String[] {"1", "2"});
-    testEmptyCaseFileLengthsHelper(50, new String[] {"aaa", "bbb", "aaa"}, new String[] {"1", "2", "3"});
-    testEmptyCaseFileLengthsHelper(1, new String[] {"abcdefghij"}, new String[] {"1234567890"});
+    testEmptyCaseFileLengthsHelper(50, new String[]{"a", "b"}, new String[]{"1", "2"});
+    testEmptyCaseFileLengthsHelper(50, new String[]{"a", "a"}, new String[]{"1", "2"});
+    testEmptyCaseFileLengthsHelper(50, new String[]{"aaa", "bbb", "aaa"}, new String[]{"1", "2", "3"});
+    testEmptyCaseFileLengthsHelper(1, new String[]{"abcdefghij"}, new String[]{"1234567890"});
   }
 
   public void testEmptyCaseFileLengthsHelper(int numPartitions, String[] keys, String[] values)
-      throws IOException {
+    throws IOException {
     OutputContext context = createTezOutputContext();
 
     MemoryUpdateCallbackHandler handler = new MemoryUpdateCallbackHandler();
     conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 1);
     context.requestInitialMemory(ExternalSorter.getInitialMemoryRequirement(conf,
-        context.getTotalMemoryAvailableToTask()), handler);
-    String auxService = conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID, TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
+      context.getTotalMemoryAvailableToTask()), handler);
+    String auxService = conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
+      TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
     SorterWrapper sorterWrapper = new SorterWrapper(context, conf, numPartitions, handler.getMemoryAssigned());
     DefaultSorter sorter = sorterWrapper.getSorter();
     assertEquals("Key and Values must have the same number of elements", keys.length, values.length);
@@ -321,22 +329,22 @@ public class TestDefaultSorter {
     List<Event> events = new ArrayList<>();
     String pathComponent = (context.getUniqueIdentifier() + "_" + 0);
     ShuffleUtils.generateEventOnSpill(events, true, true, context, 0,
-        sorter.indexCacheList.get(0), 0, true, pathComponent, sorter.getPartitionStats(),
-        sorter.reportDetailedPartitionStats(), auxService, TezCommonUtils.newBestCompressionDeflater());
+      sorter.indexCacheList.get(0), 0, true, pathComponent, sorter.getPartitionStats(),
+      sorter.reportDetailedPartitionStats(), auxService, TezCommonUtils.newBestCompressionDeflater());
 
     CompositeDataMovementEvent compositeDataMovementEvent =
-        (CompositeDataMovementEvent) events.get(1);
+      (CompositeDataMovementEvent) events.get(1);
     ByteBuffer bb = compositeDataMovementEvent.getUserPayload();
     ShuffleUserPayloads.DataMovementEventPayloadProto shufflePayload =
-        ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(bb));
+      ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(bb));
 
     if (shufflePayload.hasEmptyPartitions()) {
       byte[] emptyPartitionsBytesString =
-          TezCommonUtils.decompressByteStringToByteArray(
-              shufflePayload.getEmptyPartitions());
+        TezCommonUtils.decompressByteStringToByteArray(
+          shufflePayload.getEmptyPartitions());
       BitSet emptyPartitionBitSet = TezUtilsInternal.fromByteArray(emptyPartitionsBytesString);
       Assert.assertEquals("Number of empty partitions did not match!",
-          emptyPartitionBitSet.cardinality(), sorterWrapper.getEmptyPartitionsCount());
+        emptyPartitionBitSet.cardinality(), sorterWrapper.getEmptyPartitionsCount());
     } else {
       Assert.assertEquals(sorterWrapper.getEmptyPartitionsCount(), 0);
     }
@@ -348,7 +356,8 @@ public class TestDefaultSorter {
       // Each Record adds 1 byte for value length, 1 byte Text overhead (length), value.length bytes for value
       expectedFileOutLength += values[i].length() + 2;
     }
-    assertEquals("Unexpected Output File Size!", localFs.getFileStatus(sorter.getFinalOutputFile()).getLen(), expectedFileOutLength);
+    assertEquals("Unexpected Output File Size!", localFs.getFileStatus(sorter.getFinalOutputFile()).getLen(),
+      expectedFileOutLength);
     assertEquals(sorter.getNumSpills(), 1);
     verifyCounters(sorter, context);
   }
@@ -360,7 +369,7 @@ public class TestDefaultSorter {
     conf.setLong(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 1);
     MemoryUpdateCallbackHandler handler = new MemoryUpdateCallbackHandler();
     context.requestInitialMemory(ExternalSorter.getInitialMemoryRequirement(conf,
-        context.getTotalMemoryAvailableToTask()), handler);
+      context.getTotalMemoryAvailableToTask()), handler);
     DefaultSorter sorter = new DefaultSorter(context, conf, 1, handler.getMemoryAssigned());
 
     //no data written. Empty
@@ -370,7 +379,7 @@ public class TestDefaultSorter {
       assertTrue(sorter.isClosed());
       assertTrue(sorter.getFinalOutputFile().getParent().getName().equalsIgnoreCase(UniqueID));
       verifyCounters(sorter, context);
-    } catch(Exception e) {
+    } catch (Exception e) {
       fail();
     }
   }
@@ -383,7 +392,7 @@ public class TestDefaultSorter {
     conf.setLong(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 1);
     MemoryUpdateCallbackHandler handler = new MemoryUpdateCallbackHandler();
     context.requestInitialMemory(ExternalSorter.getInitialMemoryRequirement(conf,
-        context.getTotalMemoryAvailableToTask()), handler);
+      context.getTotalMemoryAvailableToTask()), handler);
     DefaultSorter sorter = new DefaultSorter(context, conf, 5, handler.getMemoryAssigned());
 
     //no data written. Empty
@@ -392,9 +401,9 @@ public class TestDefaultSorter {
       sorter.close();
       assertTrue(sorter.isClosed());
       assertTrue(sorter.getFinalOutputFile().getParent().getName().equalsIgnoreCase(UniqueID +
-          "_0"));
+        "_0"));
       verifyCounters(sorter, context);
-    } catch(Exception e) {
+    } catch (Exception e) {
       fail();
     }
   }
@@ -409,12 +418,13 @@ public class TestDefaultSorter {
 
   public void testEmptyPartitionsHelper(int numKeys, boolean sendEmptyPartitionDetails) throws IOException {
     OutputContext context = createTezOutputContext();
-    conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_EMPTY_PARTITION_INFO_VIA_EVENTS_ENABLED, sendEmptyPartitionDetails);
+    conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_EMPTY_PARTITION_INFO_VIA_EVENTS_ENABLED,
+      sendEmptyPartitionDetails);
     conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_ENABLE_FINAL_MERGE_IN_OUTPUT, true);
     conf.setLong(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 1);
     MemoryUpdateCallbackHandler handler = new MemoryUpdateCallbackHandler();
     context.requestInitialMemory(ExternalSorter.getInitialMemoryRequirement(conf,
-        context.getTotalMemoryAvailableToTask()), handler);
+      context.getTotalMemoryAvailableToTask()), handler);
     int partitions = 50;
     SorterWrapper sorterWrapper = new SorterWrapper(context, conf, partitions, handler.getMemoryAssigned());
     DefaultSorter sorter = sorterWrapper.getSorter();
@@ -471,7 +481,7 @@ public class TestDefaultSorter {
     conf.setLong(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 4);
     MemoryUpdateCallbackHandler handler = new MemoryUpdateCallbackHandler();
     context.requestInitialMemory(ExternalSorter.getInitialMemoryRequirement(conf,
-        context.getTotalMemoryAvailableToTask()), handler);
+      context.getTotalMemoryAvailableToTask()), handler);
     SorterWrapper sorterWrapper = new SorterWrapper(context, conf, 1, handler.getMemoryAssigned());
     DefaultSorter sorter = sorterWrapper.getSorter();
 
@@ -510,7 +520,7 @@ public class TestDefaultSorter {
     conf.setLong(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 4);
     MemoryUpdateCallbackHandler handler = new MemoryUpdateCallbackHandler();
     context.requestInitialMemory(ExternalSorter.getInitialMemoryRequirement(conf,
-        context.getTotalMemoryAvailableToTask()), handler);
+      context.getTotalMemoryAvailableToTask()), handler);
 
     SorterWrapper sorterWrapper = new SorterWrapper(context, conf, 1, handler.getMemoryAssigned());
     DefaultSorter sorter = sorterWrapper.getSorter();
@@ -525,11 +535,11 @@ public class TestDefaultSorter {
     ArgumentCaptor<List> eventCaptor = ArgumentCaptor.forClass(List.class);
     verify(context, times(1)).sendEvents(eventCaptor.capture());
     List<Event> events = eventCaptor.getValue();
-    for(Event event : events) {
+    for (Event event : events) {
       if (event instanceof CompositeDataMovementEvent) {
         CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) event;
         ShuffleUserPayloads.DataMovementEventPayloadProto shufflePayload = ShuffleUserPayloads
-            .DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(cdme.getUserPayload()));
+          .DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(cdme.getUserPayload()));
         assertTrue(shufflePayload.getPathComponent().equalsIgnoreCase(UniqueID + "_0"));
         verifyOutputPermissions(shufflePayload.getPathComponent());
       }
@@ -548,7 +558,7 @@ public class TestDefaultSorter {
     conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_INDEX_CACHE_MEMORY_LIMIT_BYTES, 1);
     MemoryUpdateCallbackHandler handler = new MemoryUpdateCallbackHandler();
     context.requestInitialMemory(ExternalSorter.getInitialMemoryRequirement(conf,
-        context.getTotalMemoryAvailableToTask()), handler);
+      context.getTotalMemoryAvailableToTask()), handler);
     SorterWrapper sorterWrapper = new SorterWrapper(context, conf, 1, handler.getMemoryAssigned());
     DefaultSorter sorter = sorterWrapper.getSorter();
 
@@ -564,11 +574,11 @@ public class TestDefaultSorter {
     verify(context, times(1)).sendEvents(eventCaptor.capture());
     List<Event> events = eventCaptor.getValue();
     int spillIndex = 0;
-    for(Event event : events) {
+    for (Event event : events) {
       if (event instanceof CompositeDataMovementEvent) {
         CompositeDataMovementEvent cdme = (CompositeDataMovementEvent) event;
         ShuffleUserPayloads.DataMovementEventPayloadProto shufflePayload = ShuffleUserPayloads
-            .DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(cdme.getUserPayload()));
+          .DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(cdme.getUserPayload()));
         assertTrue(shufflePayload.getPathComponent().equalsIgnoreCase(UniqueID + "_" + spillIndex));
         verifyOutputPermissions(shufflePayload.getPathComponent());
         spillIndex++;
@@ -580,19 +590,21 @@ public class TestDefaultSorter {
 
   private void verifyOutputPermissions(String spillId) throws IOException {
     String subpath = Constants.TEZ_RUNTIME_TASK_OUTPUT_DIR + "/" + spillId
-        + "/" + Constants.TEZ_RUNTIME_TASK_OUTPUT_FILENAME_STRING;
+      + "/" + Constants.TEZ_RUNTIME_TASK_OUTPUT_FILENAME_STRING;
     Path outputPath = dirAllocator.getLocalPathToRead(subpath, conf);
-    Path indexPath = dirAllocator.getLocalPathToRead(subpath + Constants.TEZ_RUNTIME_TASK_OUTPUT_INDEX_SUFFIX_STRING, conf);
-    Assert.assertEquals("Incorrect output permissions", (short)0640,
-        localFs.getFileStatus(outputPath).getPermission().toShort());
-    Assert.assertEquals("Incorrect index permissions", (short)0640,
-        localFs.getFileStatus(indexPath).getPermission().toShort());
+    Path indexPath = dirAllocator.getLocalPathToRead(subpath + Constants.TEZ_RUNTIME_TASK_OUTPUT_INDEX_SUFFIX_STRING,
+      conf);
+    Assert.assertEquals("Incorrect output permissions", (short) 0640,
+      localFs.getFileStatus(outputPath).getPermission().toShort());
+    Assert.assertEquals("Incorrect index permissions", (short) 0640,
+      localFs.getFileStatus(indexPath).getPermission().toShort());
   }
 
   private void verifyCounters(DefaultSorter sorter, OutputContext context) {
     TezCounter numShuffleChunks = context.getCounters().findCounter(TaskCounter.SHUFFLE_CHUNK_COUNT);
     TezCounter additionalSpills = context.getCounters().findCounter(TaskCounter.ADDITIONAL_SPILL_COUNT);
-    TezCounter additionalSpillBytesWritten = context.getCounters().findCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_WRITTEN);
+    TezCounter additionalSpillBytesWritten = context.getCounters()
+      .findCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_WRITTEN);
     TezCounter additionalSpillBytesRead = context.getCounters().findCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_READ);
 
     if (sorter.isFinalMergeEnabled()) {
@@ -615,9 +627,44 @@ public class TestDefaultSorter {
     assertTrue(finalOutputBytes.getValue() >= 0);
 
     TezCounter outputBytesWithOverheadCounter = context.getCounters().findCounter
-        (TaskCounter.OUTPUT_BYTES_WITH_OVERHEAD);
+      (TaskCounter.OUTPUT_BYTES_WITH_OVERHEAD);
     assertTrue(outputBytesWithOverheadCounter.getValue() >= 0);
     verify(context, atLeastOnce()).notifyProgress();
+  }
+
+  private OutputContext createTezOutputContext() throws IOException {
+    String[] workingDirs = {workingDir.toString()};
+    UserPayload payLoad = TezUtils.createUserPayloadFromConf(conf);
+    DataOutputBuffer serviceProviderMetaData = new DataOutputBuffer();
+    serviceProviderMetaData.writeInt(PORT);
+
+    TezCounters counters = new TezCounters();
+
+    OutputContext context = mock(OutputContext.class);
+    ExecutionContext execContext = new ExecutionContextImpl("localhost");
+    doReturn(mock(OutputStatisticsReporter.class)).when(context).getStatisticsReporter();
+    doReturn(execContext).when(context).getExecutionContext();
+    doReturn(counters).when(context).getCounters();
+    doReturn(workingDirs).when(context).getWorkDirs();
+    doReturn(payLoad).when(context).getUserPayload();
+    doReturn(5 * 1024 * 1024l).when(context).getTotalMemoryAvailableToTask();
+    doReturn(UniqueID).when(context).getUniqueIdentifier();
+    doReturn("v1").when(context).getDestinationVertexName();
+    doReturn(ByteBuffer.wrap(serviceProviderMetaData.getData())).when(context)
+      .getServiceProviderMetaData
+        (conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
+          TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
+    doAnswer(new Answer() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        long requestedSize = (Long) invocation.getArguments()[0];
+        MemoryUpdateCallbackHandler callback = (MemoryUpdateCallbackHandler) invocation
+          .getArguments()[1];
+        callback.memoryAssigned(requestedSize);
+        return null;
+      }
+    }).when(context).requestInitialMemory(anyLong(), any(MemoryUpdateCallback.class));
+    return context;
   }
 
   private static class SorterWrapper {
@@ -627,7 +674,6 @@ public class TestDefaultSorter {
     private final BitSet nonEmptyPartitions;
     private final Object[] lastKeys;
     private final int numPartitions;
-
 
     public SorterWrapper(OutputContext context, Configuration conf, int numPartitions, long memoryAssigned) throws IOException {
       sorter = new DefaultSorter(context, conf, numPartitions, memoryAssigned);
@@ -655,7 +701,7 @@ public class TestDefaultSorter {
       return numPartitions - nonEmptyPartitions.cardinality();
     }
 
-    public void close () throws IOException {
+    public void close() throws IOException {
       sorter.flush();
       sorter.close();
     }
@@ -663,47 +709,5 @@ public class TestDefaultSorter {
     public DefaultSorter getSorter() {
       return sorter;
     }
-  }
-
-  private static Text[] generateData(int numKeys, int keyLen) {
-    Text[] ret = new Text[numKeys];
-    for (int i = 0; i < numKeys; i++) {
-      ret[i] = new Text(RandomStringUtils.randomAlphanumeric(keyLen));
-    }
-    return ret;
-  }
-
-  private OutputContext createTezOutputContext() throws IOException {
-    String[] workingDirs = { workingDir.toString() };
-    UserPayload payLoad = TezUtils.createUserPayloadFromConf(conf);
-    DataOutputBuffer serviceProviderMetaData = new DataOutputBuffer();
-    serviceProviderMetaData.writeInt(PORT);
-
-    TezCounters counters = new TezCounters();
-
-    OutputContext context = mock(OutputContext.class);
-    ExecutionContext execContext = new ExecutionContextImpl("localhost");
-    doReturn(mock(OutputStatisticsReporter.class)).when(context).getStatisticsReporter();
-    doReturn(execContext).when(context).getExecutionContext();
-    doReturn(counters).when(context).getCounters();
-    doReturn(workingDirs).when(context).getWorkDirs();
-    doReturn(payLoad).when(context).getUserPayload();
-    doReturn(5 * 1024 * 1024l).when(context).getTotalMemoryAvailableToTask();
-    doReturn(UniqueID).when(context).getUniqueIdentifier();
-    doReturn("v1").when(context).getDestinationVertexName();
-    doReturn(ByteBuffer.wrap(serviceProviderMetaData.getData())).when(context)
-        .getServiceProviderMetaData
-            (conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-                TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
-    doAnswer(new Answer() {
-      @Override public Object answer(InvocationOnMock invocation) throws Throwable {
-        long requestedSize = (Long) invocation.getArguments()[0];
-        MemoryUpdateCallbackHandler callback = (MemoryUpdateCallbackHandler) invocation
-            .getArguments()[1];
-        callback.memoryAssigned(requestedSize);
-        return null;
-      }
-    }).when(context).requestInitialMemory(anyLong(), any(MemoryUpdateCallback.class));
-    return context;
   }
 }

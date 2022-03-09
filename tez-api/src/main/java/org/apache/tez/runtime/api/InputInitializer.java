@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,10 +19,9 @@
 package org.apache.tez.runtime.api;
 
 import java.util.List;
-import java.util.Map;
 
-import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
+import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.runtime.api.events.InputInitializerEvent;
 
@@ -57,13 +56,13 @@ public abstract class InputInitializer {
    * processing the event being done via this method. The moment this method
    * returns a list of events, input initialization is considered to be
    * complete.
-   * 
+   *
    * @return a list of events which are eventually routed to a
    *         {@link org.apache.tez.dag.api.VertexManagerPlugin} for routing
    * @throws Exception
    */
   public abstract List<Event> initialize()
-      throws Exception;
+    throws Exception;
 
   /**
    * Handle events meant for the specific Initializer. This is a notification mechanism to inform
@@ -75,12 +74,12 @@ public abstract class InputInitializer {
    * @throws Exception
    */
   public abstract void handleInputInitializerEvent(List<InputInitializerEvent> events)
-      throws Exception;
+    throws Exception;
 
   /**
    * Return ahe {@link org.apache.tez.runtime.api.InputInitializerContext}
    * for this specific instance of the Initializer.
-   * 
+   *
    * @return the {@link org.apache.tez.runtime.api.InputInitializerContext}
    *         for the initializer
    */

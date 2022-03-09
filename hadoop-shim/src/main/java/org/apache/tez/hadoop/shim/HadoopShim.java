@@ -29,8 +29,12 @@ import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 @Unstable
 public abstract class HadoopShim {
 
+  public static String CPU_RESOURCE = "CPU";
+  public static String MEMORY_RESOURCE = "MEMORY";
+
   /**
    * Set up Hadoop Caller Context
+   *
    * @param context Context to be set
    */
   public void setHadoopCallerContext(String context) {
@@ -44,11 +48,9 @@ public abstract class HadoopShim {
     // Nothing to do
   }
 
-  public static String CPU_RESOURCE = "CPU";
-  public static String MEMORY_RESOURCE = "MEMORY";
-
   /**
    * Extract supported Resource types from the RM's response when the AM registers
+   *
    * @param response ApplicationMasterResponse from RM after registering
    * @return Set of Resource types that are supported
    */
@@ -57,7 +59,7 @@ public abstract class HadoopShim {
   }
 
   public FinalApplicationStatus applyFinalApplicationStatusCorrection(FinalApplicationStatus orig,
-      boolean isSessionMode, boolean isError) {
+                                                                      boolean isSessionMode, boolean isError) {
     return orig;
   }
 }

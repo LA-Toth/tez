@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,8 +18,6 @@
 
 package org.apache.tez.mapreduce.partition;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
@@ -29,11 +27,14 @@ import org.apache.tez.mapreduce.hadoop.MRJobConfig;
 import org.apache.tez.runtime.library.api.Partitioner;
 import org.apache.tez.runtime.library.common.ConfigUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Provides an implementation of {@link Partitioner} that is compatible
  * with Map Reduce partitioners. 
  */
-@SuppressWarnings({ "rawtypes", "unchecked" })
+@SuppressWarnings({"rawtypes", "unchecked"})
 @Public
 public class MRPartitioner implements org.apache.tez.runtime.library.api.Partitioner {
 
@@ -52,12 +53,12 @@ public class MRPartitioner implements org.apache.tez.runtime.library.api.Partiti
       oldPartitioner = null;
       if (partitions > 1) {
         Class<? extends org.apache.hadoop.mapreduce.Partitioner<?, ?>> clazz =
-            (Class<? extends org.apache.hadoop.mapreduce.Partitioner<?, ?>>) conf
-                .getClass(MRJobConfig.PARTITIONER_CLASS_ATTR,
-                    org.apache.hadoop.mapreduce.lib.partition.HashPartitioner.class);
+          (Class<? extends org.apache.hadoop.mapreduce.Partitioner<?, ?>>) conf
+            .getClass(MRJobConfig.PARTITIONER_CLASS_ATTR,
+              org.apache.hadoop.mapreduce.lib.partition.HashPartitioner.class);
         LOG.info("Using newApi, MRpartitionerClass=" + clazz.getName());
         newPartitioner = (org.apache.hadoop.mapreduce.Partitioner) ReflectionUtils
-            .newInstance(clazz, conf);
+          .newInstance(clazz, conf);
       } else {
         newPartitioner = new org.apache.hadoop.mapreduce.Partitioner() {
           @Override
@@ -70,11 +71,11 @@ public class MRPartitioner implements org.apache.tez.runtime.library.api.Partiti
       newPartitioner = null;
       if (partitions > 1) {
         Class<? extends org.apache.hadoop.mapred.Partitioner> clazz =
-            (Class<? extends org.apache.hadoop.mapred.Partitioner>) conf.getClass(
-                "mapred.partitioner.class", org.apache.hadoop.mapred.lib.HashPartitioner.class);
+          (Class<? extends org.apache.hadoop.mapred.Partitioner>) conf.getClass(
+            "mapred.partitioner.class", org.apache.hadoop.mapred.lib.HashPartitioner.class);
         LOG.info("Using oldApi, MRpartitionerClass=" + clazz.getName());
         oldPartitioner = (org.apache.hadoop.mapred.Partitioner) ReflectionUtils.newInstance(
-            clazz, new JobConf(conf));
+          clazz, new JobConf(conf));
       } else {
         oldPartitioner = new org.apache.hadoop.mapred.Partitioner() {
           @Override

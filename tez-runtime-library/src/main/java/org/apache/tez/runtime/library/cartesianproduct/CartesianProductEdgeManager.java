@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,15 +17,16 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
-import com.google.protobuf.ByteString;
-import org.apache.tez.dag.api.EdgeManagerPluginContext;
-import org.apache.tez.dag.api.EdgeManagerPluginOnDemand;
+import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
 
 import javax.annotation.Nullable;
 
-import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.*;
+import org.apache.tez.common.Preconditions;
+import org.apache.tez.dag.api.EdgeManagerPluginContext;
+import org.apache.tez.dag.api.EdgeManagerPluginOnDemand;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.protobuf.ByteString;
 
 /**
  * This EM wrap a real edge manager implementation object. It choose whether it's partitioned or

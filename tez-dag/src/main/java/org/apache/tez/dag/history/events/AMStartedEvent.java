@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,13 +20,14 @@ package org.apache.tez.dag.history.events;
 
 import java.io.IOException;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.AMStartedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class AMStartedEvent implements HistoryEvent {
 
@@ -38,7 +39,7 @@ public class AMStartedEvent implements HistoryEvent {
   }
 
   public AMStartedEvent(ApplicationAttemptId appAttemptId,
-      long startTime, String user) {
+                        long startTime, String user) {
     this.applicationAttemptId = appAttemptId;
     this.startTime = startTime;
     this.user = user;
@@ -62,19 +63,19 @@ public class AMStartedEvent implements HistoryEvent {
   @Override
   public String toString() {
     return "appAttemptId=" + applicationAttemptId
-        + ", startTime=" + startTime;
+      + ", startTime=" + startTime;
   }
 
   public AMStartedProto toProto() {
     return AMStartedProto.newBuilder()
-        .setApplicationAttemptId(this.applicationAttemptId.toString())
-        .setStartTime(startTime)
-        .build();
+      .setApplicationAttemptId(this.applicationAttemptId.toString())
+      .setStartTime(startTime)
+      .build();
   }
 
   public void fromProto(AMStartedProto proto) {
     this.applicationAttemptId =
-        ConverterUtils.toApplicationAttemptId(proto.getApplicationAttemptId());
+      ConverterUtils.toApplicationAttemptId(proto.getApplicationAttemptId());
     this.startTime = proto.getStartTime();
   }
 
@@ -103,5 +104,4 @@ public class AMStartedEvent implements HistoryEvent {
   public String getUser() {
     return user;
   }
-
 }

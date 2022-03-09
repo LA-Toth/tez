@@ -36,7 +36,6 @@ import org.apache.tez.history.parser.datamodel.VertexInfo;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Get locality information for tasks for vertices and get their task execution times.
  * This would be helpeful to co-relate if the vertex runtime is anyways related to the data
@@ -44,19 +43,25 @@ import java.util.Map;
  */
 public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
 
-  private final String[] headers = { "vertexName", "numTasks", "dataLocalRatio", "rackLocalRatio",
-      "otherRatio", "avgDataLocalTaskRuntime", "avgRackLocalTaskRuntime",
-      "avgOtherLocalTaskRuntime", "noOfInputs", "avgHDFSBytesRead_DataLocal",
-      "avgHDFSBytesRead_RackLocal", "avgHDFSBytesRead_Others", "recommendation" };
-
   private static final String DATA_LOCAL_RATIO = "tez.locality-analyzer.data.local.ratio";
   private static final float DATA_LOCAL_RATIO_DEFAULT = 0.5f;
-
+  private final String[] headers = {"vertexName", "numTasks", "dataLocalRatio", "rackLocalRatio",
+    "otherRatio", "avgDataLocalTaskRuntime", "avgRackLocalTaskRuntime",
+    "avgOtherLocalTaskRuntime", "noOfInputs", "avgHDFSBytesRead_DataLocal",
+    "avgHDFSBytesRead_RackLocal", "avgHDFSBytesRead_Others", "recommendation"};
   private final CSVResult csvResult;
 
   public LocalityAnalyzer(Configuration config) {
     super(config);
     csvResult = new CSVResult(headers);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    LocalityAnalyzer analyzer = new LocalityAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -65,9 +70,9 @@ public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
       String vertexName = vertexInfo.getVertexName();
 
       Map<String, TezCounter> dataLocalTask = vertexInfo.getCounter(DAGCounter.class.getName(),
-          DAGCounter.DATA_LOCAL_TASKS.toString());
+        DAGCounter.DATA_LOCAL_TASKS.toString());
       Map<String, TezCounter> rackLocalTask = vertexInfo.getCounter(DAGCounter.class.getName(),
-          DAGCounter.RACK_LOCAL_TASKS.toString());
+        DAGCounter.RACK_LOCAL_TASKS.toString());
 
       long dataLocalTasks = 0;
       long rackLocalTasks = 0;
@@ -87,7 +92,7 @@ public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
         float dataLocalRatio = dataLocalTasks * 1.0f / totalVertexTasks;
         float rackLocalRatio = rackLocalTasks * 1.0f / totalVertexTasks;
         float othersRatio = (totalVertexTasks - (dataLocalTasks + rackLocalTasks)) * 1.0f /
-            totalVertexTasks;
+          totalVertexTasks;
 
         List<String> record = Lists.newLinkedList();
         record.add(vertexName);
@@ -97,11 +102,11 @@ public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
         record.add(othersRatio + "");
 
         TaskAttemptDetails dataLocalResult = computeAverages(vertexInfo,
-            DAGCounter.DATA_LOCAL_TASKS);
+          DAGCounter.DATA_LOCAL_TASKS);
         TaskAttemptDetails rackLocalResult = computeAverages(vertexInfo,
-            DAGCounter.RACK_LOCAL_TASKS);
+          DAGCounter.RACK_LOCAL_TASKS);
         TaskAttemptDetails otherTaskResult = computeAverages(vertexInfo,
-            DAGCounter.OTHER_LOCAL_TASKS);
+          DAGCounter.OTHER_LOCAL_TASKS);
 
         record.add(dataLocalResult.avgRuntime + "");
         record.add(rackLocalResult.avgRuntime + "");
@@ -109,7 +114,7 @@ public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
 
         //Get the number of inputs to this vertex
         record.add(vertexInfo.getInputEdges().size()
-            + vertexInfo.getAdditionalInputInfoList().size() + "");
+          + vertexInfo.getAdditionalInputInfoList().size() + "");
 
         //Get the avg HDFS bytes read in this vertex for different type of locality
         record.add(dataLocalResult.avgHDFSBytesRead + "");
@@ -119,9 +124,9 @@ public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
         String recommendation = "";
         if (dataLocalRatio < getConf().getFloat(DATA_LOCAL_RATIO, DATA_LOCAL_RATIO_DEFAULT)) {
           recommendation = "Data locality is poor for this vertex. Try tuning "
-              + TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS + ", "
-              + TezConfiguration.TEZ_AM_CONTAINER_REUSE_RACK_FALLBACK_ENABLED + ", "
-              + TezConfiguration.TEZ_AM_CONTAINER_REUSE_NON_LOCAL_FALLBACK_ENABLED;
+            + TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS + ", "
+            + TezConfiguration.TEZ_AM_CONTAINER_REUSE_RACK_FALLBACK_ENABLED + ", "
+            + TezConfiguration.TEZ_AM_CONTAINER_REUSE_NON_LOCAL_FALLBACK_ENABLED;
         }
 
         record.add(recommendation);
@@ -144,19 +149,19 @@ public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
 
     TaskAttemptDetails result = new TaskAttemptDetails();
 
-    for(TaskAttemptInfo attemptInfo : vertexInfo.getTaskAttempts()) {
+    for (TaskAttemptInfo attemptInfo : vertexInfo.getTaskAttempts()) {
       Map<String, TezCounter> localityCounter = attemptInfo.getCounter(DAGCounter.class.getName(),
-          counter.toString());
+        counter.toString());
 
       if (!localityCounter.isEmpty() &&
-          localityCounter.get(DAGCounter.class.getName()).getValue() > 0) {
+        localityCounter.get(DAGCounter.class.getName()).getValue() > 0) {
         totalTime += attemptInfo.getTimeTaken();
         totalTasks++;
 
         //get HDFSBytes read counter
         Map<String, TezCounter> hdfsBytesReadCounter = attemptInfo.getCounter(FileSystemCounter
-            .class.getName(), FileSystemCounter.HDFS_BYTES_READ.name());
-        for(Map.Entry<String, TezCounter> entry : hdfsBytesReadCounter.entrySet()) {
+          .class.getName(), FileSystemCounter.HDFS_BYTES_READ.name());
+        for (Map.Entry<String, TezCounter> entry : hdfsBytesReadCounter.entrySet()) {
           totalHDFSBytesRead += entry.getValue().getValue();
         }
       }
@@ -168,15 +173,18 @@ public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
     return result;
   }
 
-  @Override public CSVResult getResult() throws TezException {
+  @Override
+  public CSVResult getResult() throws TezException {
     return csvResult;
   }
 
-  @Override public String getName() {
+  @Override
+  public String getName() {
     return "Locality Analyzer";
   }
 
-  @Override public String getDescription() {
+  @Override
+  public String getDescription() {
     return "Analyze for locality information (data local, rack local, off-rack)";
   }
 
@@ -186,13 +194,5 @@ public class LocalityAnalyzer extends TezAnalyzerBase implements Analyzer {
   static class TaskAttemptDetails {
     float avgHDFSBytesRead;
     float avgRuntime;
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    LocalityAnalyzer analyzer = new LocalityAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

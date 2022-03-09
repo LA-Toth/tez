@@ -26,10 +26,10 @@ import org.apache.hadoop.yarn.api.records.NodeId;
  * ExtendedNodeId extends NodeId with unique identifier in addition to hostname and port.
  */
 public class ExtendedNodeId extends NodeId {
+  private final String uniqueIdentifier;
   private NodeId nodeId;
   private String host;
   private int port;
-  private final String uniqueIdentifier;
 
   public ExtendedNodeId(NodeId nodeId, String uniqueIdentifier) {
     this.nodeId = Objects.requireNonNull(nodeId);

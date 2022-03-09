@@ -20,14 +20,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.tez.common.ContainerContext;
 import org.apache.tez.common.ContainerTask;
+
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.Test;
 
 public class TestContainerExecution {
@@ -44,7 +45,7 @@ public class TestContainerExecution {
       ContainerId containerId = ContainerId.newInstance(appAttemptId, 1);
 
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       ContainerContext containerContext = new ContainerContext(containerId.toString());
 
       ContainerReporter containerReporter = new ContainerReporter(umbilical, containerContext, 100);
@@ -52,7 +53,6 @@ public class TestContainerExecution {
 
       getTaskFuture.get();
       assertEquals(1, umbilical.getTaskInvocations);
-
     } finally {
       executor.shutdownNow();
     }

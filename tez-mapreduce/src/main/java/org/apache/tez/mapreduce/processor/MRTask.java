@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.mapreduce.processor;
 
@@ -31,8 +31,6 @@ import javax.crypto.SecretKey;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -62,8 +60,8 @@ import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.util.Progress;
 import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.tez.common.MRFrameworkConfigs;
-import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.TezRuntimeFrameworkConfigs;
+import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.common.security.TokenCache;
@@ -83,77 +81,208 @@ import org.apache.tez.runtime.api.ProcessorContext;
 import org.apache.tez.runtime.library.common.Constants;
 import org.apache.tez.runtime.library.common.sort.impl.TezRawKeyValueIterator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Private
 public abstract class MRTask extends AbstractLogicalIOProcessor {
 
   static final Logger LOG = LoggerFactory.getLogger(MRTask.class);
-
-  protected JobConf jobConf;
-  protected JobContext jobContext;
-  protected TaskAttemptContext taskAttemptContext;
-  protected OutputCommitter committer;
-
-  // Current counters
-  transient TezCounters counters;
-  protected ProcessorContext processorContext;
-  protected TaskAttemptID taskAttemptId;
-  protected Progress progress = new Progress();
-  protected SecretKey jobTokenSecret;
-  
-  LogicalInput input;
-  LogicalOutput output;
-
-  boolean isMap;
-
-  /* flag to track whether task is done */
-  AtomicBoolean taskDone = new AtomicBoolean(false);
-
   /** Construct output file names so that, when an output directory listing is
    * sorted lexicographically, positions correspond to output partitions.*/
   private static final NumberFormat NUMBER_FORMAT = NumberFormat.getInstance();
+
   static {
     NUMBER_FORMAT.setMinimumIntegerDigits(5);
     NUMBER_FORMAT.setGroupingUsed(false);
   }
 
+  protected JobConf jobConf;
+  protected JobContext jobContext;
+  protected TaskAttemptContext taskAttemptContext;
+  protected OutputCommitter committer;
+  protected ProcessorContext processorContext;
+  protected TaskAttemptID taskAttemptId;
+  protected Progress progress = new Progress();
+  protected SecretKey jobTokenSecret;
   protected MRTaskReporter mrReporter;
   protected boolean useNewApi;
+  // Current counters
+  transient TezCounters counters;
+  LogicalInput input;
+  LogicalOutput output;
+  boolean isMap;
+  /* flag to track whether task is done */
+  AtomicBoolean taskDone = new AtomicBoolean(false);
 
   public MRTask(ProcessorContext processorContext, boolean isMap) {
     super(processorContext);
     this.isMap = isMap;
   }
 
+  /**
+   * Set up the DistributedCache related configs to make
+   * {@link DistributedCache#getLocalCacheFiles(Configuration)} and
+   * {@link DistributedCache#getLocalCacheArchives(Configuration)} working.
+   *
+   * @param job
+   * @throws IOException
+   */
+  @SuppressWarnings("deprecation")
+  private static void setupDistributedCacheConfig(final JobConf job)
+    throws IOException {
+
+    String localWorkDir = (job.get(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR));
+    // ^ ^ all symlinks are created in the current work-dir
+
+    // Update the configuration object with localized archives.
+    URI[] cacheArchives = DistributedCache.getCacheArchives(job);
+    if (cacheArchives != null) {
+      List<String> localArchives = new ArrayList<String>();
+      for (int i = 0; i < cacheArchives.length; ++i) {
+        URI u = cacheArchives[i];
+        Path p = new Path(u);
+        Path name = new Path((null == u.getFragment()) ? p.getName()
+          : u.getFragment());
+        String linkName = name.toUri().getPath();
+        localArchives.add(new Path(localWorkDir, linkName).toUri().getPath());
+      }
+      if (!localArchives.isEmpty()) {
+        job.set(MRJobConfig.CACHE_LOCALARCHIVES, StringUtils
+          .join(localArchives, ','));
+      }
+    }
+
+    // Update the configuration object with localized files.
+    URI[] cacheFiles = DistributedCache.getCacheFiles(job);
+    if (cacheFiles != null) {
+      List<String> localFiles = new ArrayList<String>();
+      for (int i = 0; i < cacheFiles.length; ++i) {
+        URI u = cacheFiles[i];
+        Path p = new Path(u);
+        Path name = new Path((null == u.getFragment()) ? p.getName()
+          : u.getFragment());
+        String linkName = name.toUri().getPath();
+        localFiles.add(new Path(localWorkDir, linkName).toUri().getPath());
+      }
+      if (!localFiles.isEmpty()) {
+        job.set(MRJobConfig.CACHE_LOCALFILES, StringUtils
+          .join(localFiles, ','));
+      }
+    }
+  }
+
+  public static String normalizeStatus(String status, Configuration conf) {
+    // Check to see if the status string is too long
+    // and truncate it if needed.
+    int progressStatusLength = conf.getInt(
+      MRConfig.PROGRESS_STATUS_LEN_LIMIT_KEY,
+      MRConfig.PROGRESS_STATUS_LEN_LIMIT_DEFAULT);
+    if (status.length() > progressStatusLength) {
+      LOG.warn("Task status: \"" + status + "\" truncated to max limit ("
+        + progressStatusLength + " characters)");
+      status = status.substring(0, progressStatusLength);
+    }
+    return status;
+  }
+
+  protected static <INKEY, INVALUE, OUTKEY, OUTVALUE>
+  org.apache.hadoop.mapreduce.Reducer<INKEY, INVALUE, OUTKEY, OUTVALUE>.Context
+  createReduceContext(org.apache.hadoop.mapreduce.Reducer
+                        <INKEY, INVALUE, OUTKEY, OUTVALUE> reducer,
+                      Configuration job,
+                      TaskAttemptID taskId,
+                      final TezRawKeyValueIterator rIter,
+                      org.apache.hadoop.mapreduce.Counter inputKeyCounter,
+                      org.apache.hadoop.mapreduce.Counter inputValueCounter,
+                      org.apache.hadoop.mapreduce.RecordWriter<OUTKEY, OUTVALUE> output,
+                      org.apache.hadoop.mapreduce.OutputCommitter committer,
+                      org.apache.hadoop.mapreduce.StatusReporter reporter,
+                      RawComparator<INKEY> comparator,
+                      Class<INKEY> keyClass, Class<INVALUE> valueClass
+  ) throws IOException, InterruptedException {
+    RawKeyValueIterator r =
+      new RawKeyValueIterator() {
+
+        @Override
+        public boolean next() throws IOException {
+          return rIter.next();
+        }
+
+        @Override
+        public DataInputBuffer getValue() throws IOException {
+          return rIter.getValue();
+        }
+
+        @Override
+        public Progress getProgress() {
+          return rIter.getProgress();
+        }
+
+        @Override
+        public DataInputBuffer getKey() throws IOException {
+          return rIter.getKey();
+        }
+
+        @Override
+        public void close() throws IOException {
+          rIter.close();
+        }
+      };
+    org.apache.hadoop.mapreduce.ReduceContext<INKEY, INVALUE, OUTKEY, OUTVALUE>
+      reduceContext =
+      new ReduceContextImpl<INKEY, INVALUE, OUTKEY, OUTVALUE>(
+        job,
+        taskId,
+        r,
+        inputKeyCounter,
+        inputValueCounter,
+        output,
+        committer,
+        reporter,
+        comparator,
+        keyClass,
+        valueClass);
+    LOG.debug("Using key class: {}, valueClass: {}", keyClass, valueClass);
+
+    org.apache.hadoop.mapreduce.Reducer<INKEY, INVALUE, OUTKEY, OUTVALUE>.Context
+      reducerContext =
+      new WrappedReducer<INKEY, INVALUE, OUTKEY, OUTVALUE>().getReducerContext(
+        reduceContext);
+
+    return reducerContext;
+  }
+
   // TODO how to update progress
   @Override
   public void initialize() throws IOException,
-  InterruptedException {
+    InterruptedException {
 
     DeprecatedKeys.init();
 
     processorContext = getContext();
     counters = processorContext.getCounters();
     this.taskAttemptId = new TaskAttemptID(
-        new TaskID(
-            Long.toString(processorContext.getApplicationId().getClusterTimestamp()),
-            processorContext.getApplicationId().getId(),
-            (isMap ? TaskType.MAP : TaskType.REDUCE),
-            processorContext.getTaskIndex()),
-        processorContext.getTaskAttemptNumber());
+      new TaskID(
+        Long.toString(processorContext.getApplicationId().getClusterTimestamp()),
+        processorContext.getApplicationId().getId(),
+        (isMap ? TaskType.MAP : TaskType.REDUCE),
+        processorContext.getTaskIndex()),
+      processorContext.getTaskAttemptNumber());
 
     UserPayload userPayload = processorContext.getUserPayload();
     Configuration conf = TezUtils.createConfFromUserPayload(userPayload);
     if (conf instanceof JobConf) {
-      this.jobConf = (JobConf)conf;
+      this.jobConf = (JobConf) conf;
     } else {
       this.jobConf = new JobConf(conf);
     }
     jobConf.set(Constants.TEZ_RUNTIME_TASK_ATTEMPT_ID,
-        taskAttemptId.toString());
+      taskAttemptId.toString());
     jobConf.set(MRJobConfig.TASK_ATTEMPT_ID,
       taskAttemptId.toString());
     jobConf.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID,
-        processorContext.getDAGAttemptNumber());
+      processorContext.getDAGAttemptNumber());
 
     LOG.info("MRTask.inited: taskAttemptId = " + taskAttemptId.toString());
 
@@ -174,9 +303,9 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
       while (iter.hasNext()) {
         Entry<String, String> confEntry = iter.next();
         LOG.debug("TaskConf Entry"
-            + ", taskId=" + taskIdStr
-            + ", key=" + confEntry.getKey()
-            + ", value=" + confEntry.getValue());
+          + ", taskId=" + taskIdStr
+          + ", key=" + confEntry.getKey()
+          + ", value=" + confEntry.getValue());
       }
     }
 
@@ -184,10 +313,10 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
   }
 
   private void configureMRTask()
-      throws IOException, InterruptedException {
+    throws IOException, InterruptedException {
 
     Credentials credentials = UserGroupInformation.getCurrentUser()
-        .getCredentials();
+      .getCredentials();
     jobConf.setCredentials(credentials);
     // TODO Can this be avoided all together. Have the MRTezOutputCommitter use
     // the Tez parameter.
@@ -200,7 +329,7 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
     if (jobToken != null) {
       // Will MR ever run without a job token.
       SecretKey sk = JobTokenSecretManager.createSecretKey(jobToken
-          .getPassword());
+        .getPassword());
       this.jobTokenSecret = sk;
     } else {
       LOG.warn("No job token set");
@@ -246,8 +375,8 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
         workDir = lDirAlloc.getLocalPathToRead("work", jobConf);
       }
       if (!madeDir) {
-          throw new IOException("Mkdirs failed to create "
-              + workDir.toString());
+        throw new IOException("Mkdirs failed to create "
+          + workDir.toString());
       }
     }
     // TODO NEWTEZ Is this required ?
@@ -255,68 +384,16 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
     jobConf.set(MRJobConfig.JOB_LOCAL_DIR, workDir.toString());
   }
 
-  /**
-   * Set up the DistributedCache related configs to make
-   * {@link DistributedCache#getLocalCacheFiles(Configuration)} and
-   * {@link DistributedCache#getLocalCacheArchives(Configuration)} working.
-   *
-   * @param job
-   * @throws IOException
-   */
-  @SuppressWarnings("deprecation")
-  private static void setupDistributedCacheConfig(final JobConf job)
-      throws IOException {
-
-    String localWorkDir = (job.get(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR));
-    // ^ ^ all symlinks are created in the current work-dir
-
-    // Update the configuration object with localized archives.
-    URI[] cacheArchives = DistributedCache.getCacheArchives(job);
-    if (cacheArchives != null) {
-      List<String> localArchives = new ArrayList<String>();
-      for (int i = 0; i < cacheArchives.length; ++i) {
-        URI u = cacheArchives[i];
-        Path p = new Path(u);
-        Path name = new Path((null == u.getFragment()) ? p.getName()
-            : u.getFragment());
-        String linkName = name.toUri().getPath();
-        localArchives.add(new Path(localWorkDir, linkName).toUri().getPath());
-      }
-      if (!localArchives.isEmpty()) {
-        job.set(MRJobConfig.CACHE_LOCALARCHIVES, StringUtils
-            .join(localArchives, ','));
-      }
-    }
-
-    // Update the configuration object with localized files.
-    URI[] cacheFiles = DistributedCache.getCacheFiles(job);
-    if (cacheFiles != null) {
-      List<String> localFiles = new ArrayList<String>();
-      for (int i = 0; i < cacheFiles.length; ++i) {
-        URI u = cacheFiles[i];
-        Path p = new Path(u);
-        Path name = new Path((null == u.getFragment()) ? p.getName()
-            : u.getFragment());
-        String linkName = name.toUri().getPath();
-        localFiles.add(new Path(localWorkDir, linkName).toUri().getPath());
-      }
-      if (!localFiles.isEmpty()) {
-        job.set(MRJobConfig.CACHE_LOCALFILES, StringUtils
-            .join(localFiles, ','));
-      }
-    }
-  }
-
   public ProcessorContext getUmbilical() {
     return this.processorContext;
   }
 
   public void initTask(LogicalOutput output) throws IOException,
-                                InterruptedException {
+    InterruptedException {
     // By this time output has been initialized
     this.output = output;
     if (output instanceof MROutputLegacy) {
-      committer = ((MROutputLegacy)output).getOutputCommitter();
+      committer = ((MROutputLegacy) output).getOutputCommitter();
     }
     this.mrReporter = new MRTaskReporter(processorContext);
     this.useNewApi = jobConf.getUseNewMapper();
@@ -324,7 +401,7 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
 
     this.jobContext = new JobContextImpl(jobConf, dagId, mrReporter);
     this.taskAttemptContext =
-        new TaskAttemptContextImpl(jobConf, taskAttemptId, mrReporter);
+      new TaskAttemptContextImpl(jobConf, taskAttemptId, mrReporter);
 
     localizeConfiguration(jobConf);
   }
@@ -333,14 +410,14 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
     return mrReporter;
   }
 
-  public TezCounters getCounters() { return counters; }
-
-  public void setConf(JobConf jobConf) {
-    this.jobConf = jobConf;
-  }
+  public TezCounters getCounters() {return counters;}
 
   public JobConf getConf() {
     return this.jobConf;
+  }
+
+  public void setConf(JobConf jobConf) {
+    this.jobConf = jobConf;
   }
 
   @Private
@@ -349,17 +426,17 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
   }
 
   public void waitBeforeCompletion(MRTaskReporter reporter) throws IOException,
-      InterruptedException {
+    InterruptedException {
   }
 
   public void done() throws IOException, InterruptedException {
 
     LOG.info("Task:" + taskAttemptId + " is done."
-        + " And is in the process of committing");
+      + " And is in the process of committing");
     // TODO change this to use the new context
     // TODO TEZ Interaciton between Commit and OutputReady. Merge ?
     if (output instanceof MROutputLegacy) {
-      MROutputLegacy sOut = (MROutputLegacy)output;
+      MROutputLegacy sOut = (MROutputLegacy) output;
       if (sOut.isCommitRequired()) {
         //wait for commit approval and commit
         // TODO EVENTUALLY - Commit is not required for map tasks.
@@ -383,7 +460,7 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
    * Sends last status update before sending umbilical.done();
    */
   private void sendLastUpdate()
-      throws IOException, InterruptedException {
+    throws IOException, InterruptedException {
     statusUpdate();
   }
 
@@ -398,11 +475,11 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
           break;
         }
         Thread.sleep(1000);
-      } catch(InterruptedException ie) {
+      } catch (InterruptedException ie) {
         //ignore
       } catch (IOException ie) {
         LOG.warn("Failure sending canCommit: "
-            + ExceptionUtils.getStackTrace(ie));
+          + ExceptionUtils.getStackTrace(ie));
         if (--retries == 0) {
           throw ie;
         }
@@ -419,106 +496,24 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
       return;
     } catch (IOException iee) {
       LOG.warn("Failure committing: " +
-          ExceptionUtils.getStackTrace(iee));
+        ExceptionUtils.getStackTrace(iee));
       //if it couldn't commit a successfully then delete the output
       discardOutput(output);
       throw iee;
     }
   }
 
-  private
-  void discardOutput(MROutputLegacy output) {
+  private void discardOutput(MROutputLegacy output) {
     try {
       output.abort();
-    } catch (IOException ioe)  {
+    } catch (IOException ioe) {
       LOG.warn("Failure cleaning up: " +
-               ExceptionUtils.getStackTrace(ioe));
+        ExceptionUtils.getStackTrace(ioe));
     }
-  }
-
-  public static String normalizeStatus(String status, Configuration conf) {
-    // Check to see if the status string is too long
-    // and truncate it if needed.
-    int progressStatusLength = conf.getInt(
-        MRConfig.PROGRESS_STATUS_LEN_LIMIT_KEY,
-        MRConfig.PROGRESS_STATUS_LEN_LIMIT_DEFAULT);
-    if (status.length() > progressStatusLength) {
-      LOG.warn("Task status: \"" + status + "\" truncated to max limit ("
-          + progressStatusLength + " characters)");
-      status = status.substring(0, progressStatusLength);
-    }
-    return status;
-  }
-
-  protected static <INKEY,INVALUE,OUTKEY,OUTVALUE>
-  org.apache.hadoop.mapreduce.Reducer<INKEY,INVALUE,OUTKEY,OUTVALUE>.Context
-  createReduceContext(org.apache.hadoop.mapreduce.Reducer
-                        <INKEY,INVALUE,OUTKEY,OUTVALUE> reducer,
-                      Configuration job,
-                      TaskAttemptID taskId,
-                      final TezRawKeyValueIterator rIter,
-                      org.apache.hadoop.mapreduce.Counter inputKeyCounter,
-                      org.apache.hadoop.mapreduce.Counter inputValueCounter,
-                      org.apache.hadoop.mapreduce.RecordWriter<OUTKEY,OUTVALUE> output,
-                      org.apache.hadoop.mapreduce.OutputCommitter committer,
-                      org.apache.hadoop.mapreduce.StatusReporter reporter,
-                      RawComparator<INKEY> comparator,
-                      Class<INKEY> keyClass, Class<INVALUE> valueClass
-  ) throws IOException, InterruptedException {
-    RawKeyValueIterator r =
-        new RawKeyValueIterator() {
-
-          @Override
-          public boolean next() throws IOException {
-            return rIter.next();
-          }
-
-          @Override
-          public DataInputBuffer getValue() throws IOException {
-            return rIter.getValue();
-          }
-
-          @Override
-          public Progress getProgress() {
-            return rIter.getProgress();
-          }
-
-          @Override
-          public DataInputBuffer getKey() throws IOException {
-            return rIter.getKey();
-          }
-
-          @Override
-          public void close() throws IOException {
-            rIter.close();
-          }
-        };
-    org.apache.hadoop.mapreduce.ReduceContext<INKEY, INVALUE, OUTKEY, OUTVALUE>
-    reduceContext =
-      new ReduceContextImpl<INKEY, INVALUE, OUTKEY, OUTVALUE>(
-          job,
-          taskId,
-          r,
-          inputKeyCounter,
-          inputValueCounter,
-          output,
-          committer,
-          reporter,
-          comparator,
-          keyClass,
-          valueClass);
-    LOG.debug("Using key class: {}, valueClass: {}", keyClass, valueClass);
-
-    org.apache.hadoop.mapreduce.Reducer<INKEY,INVALUE,OUTKEY,OUTVALUE>.Context
-        reducerContext =
-          new WrappedReducer<INKEY, INVALUE, OUTKEY, OUTVALUE>().getReducerContext(
-              reduceContext);
-
-    return reducerContext;
   }
 
   public void taskCleanup()
-      throws IOException, InterruptedException {
+    throws IOException, InterruptedException {
     // set phase for this task
     statusUpdate();
     LOG.info("Runnning cleanup for the task");
@@ -529,20 +524,20 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
   }
 
   public void localizeConfiguration(JobConf jobConf)
-      throws IOException, InterruptedException {
+    throws IOException, InterruptedException {
     jobConf.set(JobContext.TASK_ID, taskAttemptId.getTaskID().toString());
     jobConf.set(JobContext.TASK_ATTEMPT_ID, taskAttemptId.toString());
     jobConf.setInt(JobContext.TASK_PARTITION,
-        taskAttemptId.getTaskID().getId());
+      taskAttemptId.getTaskID().getId());
     jobConf.set(JobContext.ID, taskAttemptId.getJobID().toString());
-    
+
     jobConf.setBoolean(MRJobConfig.TASK_ISMAP, isMap);
-    
+
     Path outputPath = FileOutputFormat.getOutputPath(jobConf);
     if (outputPath != null) {
       if ((committer instanceof FileOutputCommitter)) {
-        FileOutputFormat.setWorkOutputPath(jobConf, 
-          ((FileOutputCommitter)committer).getTaskAttemptPath(taskAttemptContext));
+        FileOutputFormat.setWorkOutputPath(jobConf,
+          ((FileOutputCommitter) committer).getTaskAttemptPath(taskAttemptContext));
       } else {
         FileOutputFormat.setWorkOutputPath(jobConf, outputPath);
       }
@@ -560,5 +555,4 @@ public abstract class MRTask extends AbstractLogicalIOProcessor {
   public TaskAttemptID getTaskAttemptId() {
     return taskAttemptId;
   }
-
 }

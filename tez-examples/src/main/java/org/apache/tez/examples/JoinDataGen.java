@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Random;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -33,20 +31,22 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.tez.client.TezClient;
+import org.apache.tez.common.Preconditions;
+import org.apache.tez.common.io.NonSyncByteArrayInputStream;
+import org.apache.tez.common.io.NonSyncByteArrayOutputStream;
+import org.apache.tez.common.io.NonSyncDataOutputStream;
 import org.apache.tez.dag.api.DAG;
 import org.apache.tez.dag.api.ProcessorDescriptor;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.dag.api.Vertex;
-import org.apache.tez.common.io.NonSyncByteArrayInputStream;
-import org.apache.tez.common.io.NonSyncByteArrayOutputStream;
-import org.apache.tez.common.io.NonSyncDataOutputStream;
 import org.apache.tez.mapreduce.output.MROutput;
 import org.apache.tez.mapreduce.processor.SimpleMRProcessor;
 import org.apache.tez.runtime.api.ProcessorContext;
 import org.apache.tez.runtime.library.api.KeyValueWriter;
 
-import org.apache.tez.common.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class JoinDataGen extends TezExampleBase {
 
@@ -65,14 +65,14 @@ public class JoinDataGen extends TezExampleBase {
   @Override
   protected void printUsage() {
     System.err
-        .println("Usage: "
-            + "joindatagen <outPath1> <path1Size> <outPath2> <path2Size> <expectedResultPath> <numTasks>");
+      .println("Usage: "
+        + "joindatagen <outPath1> <path1Size> <outPath2> <path2Size> <expectedResultPath> <numTasks>");
     ToolRunner.printGenericCommandUsage(System.err);
   }
 
   @Override
   protected int runJob(String[] args, TezConfiguration tezConf,
-      TezClient tezClient) throws Exception {
+                       TezClient tezClient) throws Exception {
     LOG.info("Running JoinDataGen");
 
     String outDir1 = args[0];
@@ -104,8 +104,8 @@ public class JoinDataGen extends TezExampleBase {
     // Verify output path existence
     int res = 0;
     res = checkOutputDirectory(tezConf, largeOutPath)
-        + checkOutputDirectory(tezConf, smallOutPath)
-        + checkOutputDirectory(tezConf, expectedOutputPath);
+      + checkOutputDirectory(tezConf, smallOutPath)
+      + checkOutputDirectory(tezConf, expectedOutputPath);
     if (res != 0) {
       return 3;
     }
@@ -116,7 +116,7 @@ public class JoinDataGen extends TezExampleBase {
     }
 
     DAG dag = createDag(tezConf, largeOutPath, smallOutPath, expectedOutputPath, numTasks,
-        largeOutSize, smallOutSize);
+      largeOutSize, smallOutSize);
 
     return runDag(dag, isCountersLog(), LOG);
   }
@@ -130,8 +130,8 @@ public class JoinDataGen extends TezExampleBase {
   }
 
   private DAG createDag(TezConfiguration tezConf, Path largeOutPath, Path smallOutPath,
-      Path expectedOutputPath, int numTasks, long largeOutSize, long smallOutSize)
-      throws IOException {
+                        Path expectedOutputPath, int numTasks, long largeOutSize, long smallOutSize)
+    throws IOException {
 
     long largeOutSizePerTask = largeOutSize / numTasks;
     long smallOutSizePerTask = smallOutSize / numTasks;
@@ -139,22 +139,32 @@ public class JoinDataGen extends TezExampleBase {
     DAG dag = DAG.create("JoinDataGen");
 
     Vertex genDataVertex = Vertex.create("datagen", ProcessorDescriptor.create(
-        GenDataProcessor.class.getName()).setUserPayload(
-        UserPayload.create(ByteBuffer.wrap(GenDataProcessor.createConfiguration(largeOutSizePerTask,
-            smallOutSizePerTask)))), numTasks);
-    genDataVertex.addDataSink(STREAM_OUTPUT_NAME, 
-        MROutput.createConfigBuilder(new Configuration(tezConf),
-            TextOutputFormat.class, largeOutPath.toUri().toString()).build());
-    genDataVertex.addDataSink(HASH_OUTPUT_NAME, 
-        MROutput.createConfigBuilder(new Configuration(tezConf),
-            TextOutputFormat.class, smallOutPath.toUri().toString()).build());
-    genDataVertex.addDataSink(EXPECTED_OUTPUT_NAME, 
-        MROutput.createConfigBuilder(new Configuration(tezConf),
-            TextOutputFormat.class, expectedOutputPath.toUri().toString()).build());
+      GenDataProcessor.class.getName()).setUserPayload(
+      UserPayload.create(ByteBuffer.wrap(GenDataProcessor.createConfiguration(largeOutSizePerTask,
+        smallOutSizePerTask)))), numTasks);
+    genDataVertex.addDataSink(STREAM_OUTPUT_NAME,
+      MROutput.createConfigBuilder(new Configuration(tezConf),
+        TextOutputFormat.class, largeOutPath.toUri().toString()).build());
+    genDataVertex.addDataSink(HASH_OUTPUT_NAME,
+      MROutput.createConfigBuilder(new Configuration(tezConf),
+        TextOutputFormat.class, smallOutPath.toUri().toString()).build());
+    genDataVertex.addDataSink(EXPECTED_OUTPUT_NAME,
+      MROutput.createConfigBuilder(new Configuration(tezConf),
+        TextOutputFormat.class, expectedOutputPath.toUri().toString()).build());
 
     dag.addVertex(genDataVertex);
 
     return dag;
+  }
+
+  private int checkOutputDirectory(Configuration conf, Path path) throws IOException {
+    FileSystem fs = path.getFileSystem(conf);
+    path = fs.makeQualified(path);
+    if (fs.exists(path)) {
+      System.err.println("Output directory: " + path + " already exists");
+      return 2;
+    }
+    return 0;
   }
 
   public static class GenDataProcessor extends SimpleMRProcessor {
@@ -170,7 +180,7 @@ public class JoinDataGen extends TezExampleBase {
     }
 
     public static byte[] createConfiguration(long streamOutputFileSize, long hashOutputFileSize)
-        throws IOException {
+      throws IOException {
       NonSyncByteArrayOutputStream bos = new NonSyncByteArrayOutputStream();
       NonSyncDataOutputStream dos = new NonSyncDataOutputStream(bos);
       dos.writeLong(streamOutputFileSize);
@@ -188,7 +198,7 @@ public class JoinDataGen extends TezExampleBase {
       streamOutputFileSize = dis.readLong();
       hashOutputFileSize = dis.readLong();
       LOG.info("Initialized with largeFileTargetSize=" + streamOutputFileSize
-          + ", smallFileTragetSize=" + hashOutputFileSize);
+        + ", smallFileTragetSize=" + hashOutputFileSize);
       dis.close();
       bis.close();
     }
@@ -199,11 +209,11 @@ public class JoinDataGen extends TezExampleBase {
       Preconditions.checkState(getOutputs().size() == 3);
 
       KeyValueWriter streamOutputWriter = (KeyValueWriter) getOutputs().get(STREAM_OUTPUT_NAME)
-          .getWriter();
+        .getWriter();
       KeyValueWriter hashOutputWriter = (KeyValueWriter) getOutputs().get(HASH_OUTPUT_NAME)
-          .getWriter();
+        .getWriter();
       KeyValueWriter expectedOutputWriter = (KeyValueWriter) getOutputs().get(EXPECTED_OUTPUT_NAME)
-          .getWriter();
+        .getWriter();
 
       float fileSizeFraction = hashOutputFileSize / (float) streamOutputFileSize;
       Preconditions.checkState(fileSizeFraction > 0.0f && fileSizeFraction <= 1.0f);
@@ -249,8 +259,8 @@ public class JoinDataGen extends TezExampleBase {
         count++;
       }
       LOG.info("OutputStats: " + "largeFileNumKeys=" + numLargeFileKeys + ", smallFileNumKeys="
-          + numSmallFileKeys + ", expFileNumKeys=" + numExpectedKeys + ", largeFileSize="
-          + sizeLarge + ", smallFileSize=" + sizeSmall);
+        + numSmallFileKeys + ", expFileNumKeys=" + numExpectedKeys + ", largeFileSize="
+        + sizeLarge + ", smallFileSize=" + sizeSmall);
     }
 
     private String createOverlapString(int size, long count) {
@@ -276,17 +286,5 @@ public class JoinDataGen extends TezExampleBase {
       sb.append("_").append(getContext().getTaskIndex()).append("_").append(count);
       return sb.toString();
     }
-
   }
-
-  private int checkOutputDirectory(Configuration conf, Path path) throws IOException {
-    FileSystem fs = path.getFileSystem(conf);
-    path = fs.makeQualified(path);
-    if (fs.exists(path)) {
-      System.err.println("Output directory: " + path + " already exists");
-      return 2;
-    }
-    return 0;
-  }
-
 }

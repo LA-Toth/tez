@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.history.SummaryEvent;
@@ -33,12 +31,14 @@ import org.apache.tez.dag.recovery.records.RecoveryProtos.SummaryEventProto;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.VertexCommitStartedProto;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class VertexCommitStartedEvent implements HistoryEvent, SummaryEvent {
 
+  private final Charset charSet = Charset.forName("UTF-8");
   private TezVertexID vertexID;
   private long commitStartTime;
-  private final Charset charSet = Charset.forName("UTF-8");
 
   public VertexCommitStartedEvent() {
   }
@@ -65,8 +65,8 @@ public class VertexCommitStartedEvent implements HistoryEvent, SummaryEvent {
 
   public VertexCommitStartedProto toProto() {
     return VertexCommitStartedProto.newBuilder()
-        .setVertexId(vertexID.toString())
-        .build();
+      .setVertexId(vertexID.toString())
+      .build();
   }
 
   public void fromProto(VertexCommitStartedProto proto) {
@@ -99,18 +99,18 @@ public class VertexCommitStartedEvent implements HistoryEvent, SummaryEvent {
   @Override
   public void toSummaryProtoStream(OutputStream outputStream) throws IOException {
     SummaryEventProto.Builder builder = RecoveryProtos.SummaryEventProto.newBuilder()
-        .setDagId(vertexID.getDAGID().toString())
-        .setTimestamp(commitStartTime)
-        .setEventType(getEventType().ordinal())
-        .setEventPayload(
-            ByteString.copyFrom(vertexID.toString().getBytes(charSet)));
+      .setDagId(vertexID.getDAGID().toString())
+      .setTimestamp(commitStartTime)
+      .setEventType(getEventType().ordinal())
+      .setEventPayload(
+        ByteString.copyFrom(vertexID.toString().getBytes(charSet)));
     builder.build().writeDelimitedTo(outputStream);
   }
 
   @Override
   public void fromSummaryProtoStream(SummaryEventProto proto) throws IOException {
     this.vertexID = TezVertexID.fromString(
-        new String(proto.getEventPayload().toByteArray(), charSet));
+      new String(proto.getEventPayload().toByteArray(), charSet));
     this.commitStartTime = proto.getTimestamp();
   }
 
@@ -118,6 +118,4 @@ public class VertexCommitStartedEvent implements HistoryEvent, SummaryEvent {
   public boolean writeToRecoveryImmediately() {
     return false;
   }
-
-
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,6 +20,7 @@ package org.apache.tez.dag.app.dag.speculation.legacy;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.oldrecords.TaskAttemptState;
@@ -49,16 +50,20 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
    */
   private static final double CONFIDENCE_INTERVAL_FACTOR = 0.25;
   /**
+   * A map of TA Id to the statistic model of smooth exponential.
+   */
+  private final ConcurrentMap<TezTaskAttemptID,
+    AtomicReference<SimpleExponentialSmoothing>>
+    estimates = new ConcurrentHashMap<>();
+  /**
    * Constant time used to calculate the smoothing exponential factor.
    */
   private long constTime;
-
   /**
    * Number of readings before we consider the estimate stable.
    * Otherwise, the estimate will be skewed due to the initial estimate
    */
   private int skipCount;
-
   /**
    * Time window to automatically update the count of the skipCount. This is
    * needed when a task stalls without any progress, causing the estimator to
@@ -66,17 +71,10 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
    */
   private long stagnatedWindow;
 
-  /**
-   * A map of TA Id to the statistic model of smooth exponential.
-   */
-  private final ConcurrentMap<TezTaskAttemptID,
-      AtomicReference<SimpleExponentialSmoothing>>
-      estimates = new ConcurrentHashMap<>();
-
   private SimpleExponentialSmoothing getForecastEntry(
-      final TezTaskAttemptID attemptID) {
+    final TezTaskAttemptID attemptID) {
     AtomicReference<SimpleExponentialSmoothing> entryRef = estimates
-        .get(attemptID);
+      .get(attemptID);
     if (entryRef == null) {
       return null;
     }
@@ -84,7 +82,7 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
   }
 
   private void incorporateReading(final TezTaskAttemptID attemptID,
-      final float newRawData, final long newTimeStamp) {
+                                  final float newRawData, final long newTimeStamp) {
     SimpleExponentialSmoothing foreCastEntry = getForecastEntry(attemptID);
     if (foreCastEntry == null) {
       Long tStartTime = startTimes.get(attemptID);
@@ -93,9 +91,9 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
         return;
       }
       estimates.putIfAbsent(attemptID,
-          new AtomicReference<>(SimpleExponentialSmoothing.createForecast(
-              constTime, skipCount, stagnatedWindow,
-              tStartTime - 1)));
+        new AtomicReference<>(SimpleExponentialSmoothing.createForecast(
+          constTime, skipCount, stagnatedWindow,
+          tStartTime - 1)));
       incorporateReading(attemptID, newRawData, newTimeStamp);
       return;
     }
@@ -107,17 +105,17 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
     super.contextualize(conf, vertex);
 
     constTime
-        = conf.getLong(TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_LAMBDA_MS,
-        TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_LAMBDA_MS_DEFAULT);
+      = conf.getLong(TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_LAMBDA_MS,
+      TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_LAMBDA_MS_DEFAULT);
 
     stagnatedWindow = Math.max(2 * constTime, conf.getLong(
-        TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_STAGNATED_MS,
-        TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_STAGNATED_MS_DEFAULT));
+      TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_STAGNATED_MS,
+      TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_STAGNATED_MS_DEFAULT));
 
     skipCount = conf
-        .getInt(TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_SKIP_INITIALS,
-            TezConfiguration
-                .TEZ_AM_ESTIMATOR_EXPONENTIAL_SKIP_INITIALS_DEFAULT);
+      .getInt(TezConfiguration.TEZ_AM_ESTIMATOR_EXPONENTIAL_SKIP_INITIALS,
+        TezConfiguration
+          .TEZ_AM_ESTIMATOR_EXPONENTIAL_SKIP_INITIALS_DEFAULT);
   }
 
   @Override
@@ -127,12 +125,12 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
       return DEFAULT_ESTIMATE_RUNTIME;
     }
     double remainingWork =
-        Math.max(0.0, Math.min(1.0, 1.0 - foreCastEntry.getRawData()));
+      Math.max(0.0, Math.min(1.0, 1.0 - foreCastEntry.getRawData()));
     double forecast =
-        Math.max(DEFAULT_PROGRESS_VALUE, foreCastEntry.getForecast());
+      Math.max(DEFAULT_PROGRESS_VALUE, foreCastEntry.getForecast());
     long remainingTime = (long) (remainingWork / forecast);
     long estimatedRuntime =
-        remainingTime + foreCastEntry.getTimeStamp() - foreCastEntry.getStartTime();
+      remainingTime + foreCastEntry.getTimeStamp() - foreCastEntry.getStartTime();
     return estimatedRuntime;
   }
 
@@ -144,14 +142,14 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
 
     double statsMeanCI = taskStatistics.meanCI();
     double expectedVal =
-        statsMeanCI + Math.min(statsMeanCI * CONFIDENCE_INTERVAL_FACTOR,
-            taskStatistics.std() / 2);
+      statsMeanCI + Math.min(statsMeanCI * CONFIDENCE_INTERVAL_FACTOR,
+        taskStatistics.std() / 2);
     return (long) (expectedVal);
   }
 
   @Override
   public boolean hasStagnatedProgress(final TezTaskAttemptID id,
-      final long timeStamp) {
+                                      final long timeStamp) {
     SimpleExponentialSmoothing foreCastEntry = getForecastEntry(id);
     if (foreCastEntry == null) {
       return false;
@@ -173,11 +171,10 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
     return 0L;
   }
 
-
   @Override
   public void updateAttempt(final TezTaskAttemptID attemptID,
-      final TaskAttemptState state,
-      final long timestamp) {
+                            final TaskAttemptState state,
+                            final long timestamp) {
     super.updateAttempt(attemptID, state, timestamp);
     Task task = vertex.getTask(attemptID.getTaskID());
     if (task == null) {
@@ -191,4 +188,3 @@ public class SimpleExponentialTaskRuntimeEstimator extends StartEndTimesBase {
     incorporateReading(attemptID, progress, timestamp);
   }
 }
-

@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.mapreduce.client;
 
@@ -69,18 +69,23 @@ import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 
 public class NotRunningJob implements MRClientProtocol {
 
+  private final JobState jobState;
+  private final ApplicationReport applicationReport;
   private RecordFactory recordFactory =
     RecordFactoryProvider.getRecordFactory(null);
 
-  private final JobState jobState;
-  private final ApplicationReport applicationReport;
-
+  NotRunningJob(ApplicationReport applicationReport, JobState jobState) {
+    this.applicationReport =
+      (applicationReport == null) ?
+        getUnknownApplicationReport() : applicationReport;
+    this.jobState = jobState;
+  }
 
   private ApplicationReport getUnknownApplicationReport() {
     ApplicationId unknownAppId = recordFactory
-        .newRecordInstance(ApplicationId.class);
+      .newRecordInstance(ApplicationId.class);
     ApplicationAttemptId unknownAttemptId = recordFactory
-        .newRecordInstance(ApplicationAttemptId.class);
+      .newRecordInstance(ApplicationAttemptId.class);
 
     ApplicationReport report = recordFactory.newRecordInstance(ApplicationReport.class);
     report.setApplicationId(unknownAppId);
@@ -94,16 +99,9 @@ public class NotRunningJob implements MRClientProtocol {
     return report;
   }
 
-  NotRunningJob(ApplicationReport applicationReport, JobState jobState) {
-    this.applicationReport =
-        (applicationReport ==  null) ?
-            getUnknownApplicationReport() : applicationReport;
-    this.jobState = jobState;
-  }
-
   @Override
   public FailTaskAttemptResponse failTaskAttempt(
-      FailTaskAttemptRequest request) throws IOException {
+    FailTaskAttemptRequest request) throws IOException {
     FailTaskAttemptResponse resp =
       recordFactory.newRecordInstance(FailTaskAttemptResponse.class);
     return resp;
@@ -111,7 +109,7 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public GetCountersResponse getCounters(GetCountersRequest request)
-      throws IOException {
+    throws IOException {
     GetCountersResponse resp =
       recordFactory.newRecordInstance(GetCountersResponse.class);
     Counters counters = recordFactory.newRecordInstance(Counters.class);
@@ -122,7 +120,7 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public GetDiagnosticsResponse getDiagnostics(GetDiagnosticsRequest request)
-      throws IOException {
+    throws IOException {
     GetDiagnosticsResponse resp =
       recordFactory.newRecordInstance(GetDiagnosticsResponse.class);
     resp.addDiagnostics("");
@@ -131,7 +129,7 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public GetJobReportResponse getJobReport(GetJobReportRequest request)
-      throws IOException {
+    throws IOException {
     JobReport jobReport =
       recordFactory.newRecordInstance(JobReport.class);
     jobReport.setJobId(request.getJobId());
@@ -144,15 +142,15 @@ public class NotRunningJob implements MRClientProtocol {
     jobReport.setFinishTime(applicationReport.getFinishTime());
 
     GetJobReportResponse resp =
-        recordFactory.newRecordInstance(GetJobReportResponse.class);
+      recordFactory.newRecordInstance(GetJobReportResponse.class);
     resp.setJobReport(jobReport);
     return resp;
   }
 
   @Override
   public GetTaskAttemptCompletionEventsResponse getTaskAttemptCompletionEvents(
-      GetTaskAttemptCompletionEventsRequest request)
-      throws IOException {
+    GetTaskAttemptCompletionEventsRequest request)
+    throws IOException {
     GetTaskAttemptCompletionEventsResponse resp =
       recordFactory.newRecordInstance(GetTaskAttemptCompletionEventsResponse.class);
     resp.addAllCompletionEvents(new ArrayList<TaskAttemptCompletionEvent>());
@@ -161,14 +159,14 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public GetTaskAttemptReportResponse getTaskAttemptReport(
-      GetTaskAttemptReportRequest request) throws IOException {
+    GetTaskAttemptReportRequest request) throws IOException {
     //not invoked by anybody
     throw new NotImplementedException();
   }
 
   @Override
   public GetTaskReportResponse getTaskReport(GetTaskReportRequest request)
-      throws IOException {
+    throws IOException {
     GetTaskReportResponse resp =
       recordFactory.newRecordInstance(GetTaskReportResponse.class);
     TaskReport report = recordFactory.newRecordInstance(TaskReport.class);
@@ -183,7 +181,7 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public GetTaskReportsResponse getTaskReports(GetTaskReportsRequest request)
-      throws IOException {
+    throws IOException {
     GetTaskReportsResponse resp =
       recordFactory.newRecordInstance(GetTaskReportsResponse.class);
     resp.addAllTaskReports(new ArrayList<TaskReport>());
@@ -192,7 +190,7 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public KillJobResponse killJob(KillJobRequest request)
-      throws IOException {
+    throws IOException {
     KillJobResponse resp =
       recordFactory.newRecordInstance(KillJobResponse.class);
     return resp;
@@ -200,7 +198,7 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public KillTaskResponse killTask(KillTaskRequest request)
-      throws IOException {
+    throws IOException {
     KillTaskResponse resp =
       recordFactory.newRecordInstance(KillTaskResponse.class);
     return resp;
@@ -208,7 +206,7 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public KillTaskAttemptResponse killTaskAttempt(
-      KillTaskAttemptRequest request) throws IOException {
+    KillTaskAttemptRequest request) throws IOException {
     KillTaskAttemptResponse resp =
       recordFactory.newRecordInstance(KillTaskAttemptResponse.class);
     return resp;
@@ -216,21 +214,21 @@ public class NotRunningJob implements MRClientProtocol {
 
   @Override
   public GetDelegationTokenResponse getDelegationToken(
-      GetDelegationTokenRequest request) throws IOException {
+    GetDelegationTokenRequest request) throws IOException {
     /* Should not be invoked by anyone. */
     throw new NotImplementedException();
   }
 
   @Override
   public RenewDelegationTokenResponse renewDelegationToken(
-      RenewDelegationTokenRequest request) throws IOException {
+    RenewDelegationTokenRequest request) throws IOException {
     /* Should not be invoked by anyone. */
     throw new NotImplementedException();
   }
 
   @Override
   public CancelDelegationTokenResponse cancelDelegationToken(
-      CancelDelegationTokenRequest request) throws IOException {
+    CancelDelegationTokenRequest request) throws IOException {
     /* Should not be invoked by anyone. */
     throw new NotImplementedException();
   }

@@ -35,7 +35,6 @@ import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Find out tasks which have more than 1 spill (ADDITIONAL_SPILL_COUNT).
  * <p/>
@@ -43,28 +42,33 @@ import java.util.Map;
  */
 public class SpillAnalyzerImpl extends TezAnalyzerBase implements Analyzer {
 
-  private static final String[] headers = { "vertexName", "taskAttemptId",
-      "Node", "counterGroupName",
-      "spillCount", "taskDuration",
-      "OUTPUT_BYTES", "OUTPUT_RECORDS",
-      "SPILLED_RECORDS", "Recommendation" };
-
-  private final CSVResult csvResult;
-
+  private static final String[] headers = {"vertexName", "taskAttemptId",
+    "Node", "counterGroupName",
+    "spillCount", "taskDuration",
+    "OUTPUT_BYTES", "OUTPUT_RECORDS",
+    "SPILLED_RECORDS", "Recommendation"};
   /**
    * Minimum output bytes that should be chunrned out by a task
    */
   private static final String OUTPUT_BYTES_THRESHOLD = "tez.spill-analyzer.min.output.bytes"
-      + ".threshold";
+    + ".threshold";
   private static long OUTPUT_BYTES_THRESHOLD_DEFAULT = 1 * 1024 * 1024 * 1024l;
-
+  private final CSVResult csvResult;
   private final long minOutputBytesPerTask;
 
   public SpillAnalyzerImpl(Configuration config) {
     super(config);
     minOutputBytesPerTask = Math.max(0, config.getLong(OUTPUT_BYTES_THRESHOLD,
-        OUTPUT_BYTES_THRESHOLD_DEFAULT));
+      OUTPUT_BYTES_THRESHOLD_DEFAULT));
     this.csvResult = new CSVResult(headers);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    SpillAnalyzerImpl analyzer = new SpillAnalyzerImpl(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -75,14 +79,14 @@ public class SpillAnalyzerImpl extends TezAnalyzerBase implements Analyzer {
       for (TaskAttemptInfo attemptInfo : vertexInfo.getTaskAttempts()) {
         //Get ADDITIONAL_SPILL_COUNT, OUTPUT_BYTES for every source
         Map<String, TezCounter> spillCountMap =
-            attemptInfo.getCounter(TaskCounter.ADDITIONAL_SPILL_COUNT.name());
+          attemptInfo.getCounter(TaskCounter.ADDITIONAL_SPILL_COUNT.name());
         Map<String, TezCounter> spilledRecordsMap =
-            attemptInfo.getCounter(TaskCounter.SPILLED_RECORDS.name());
+          attemptInfo.getCounter(TaskCounter.SPILLED_RECORDS.name());
         Map<String, TezCounter> outputRecordsMap =
-            attemptInfo.getCounter(TaskCounter.OUTPUT_RECORDS.name());
+          attemptInfo.getCounter(TaskCounter.OUTPUT_RECORDS.name());
 
         Map<String, TezCounter> outputBytesMap =
-            attemptInfo.getCounter(TaskCounter.OUTPUT_BYTES.name());
+          attemptInfo.getCounter(TaskCounter.OUTPUT_BYTES.name());
 
         for (Map.Entry<String, TezCounter> entry : spillCountMap.entrySet()) {
           String source = entry.getKey();
@@ -104,7 +108,7 @@ public class SpillAnalyzerImpl extends TezAnalyzerBase implements Analyzer {
             recorList.add(outputRecords + "");
             recorList.add(spilledRecords + "");
             recorList.add("Consider increasing " + TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB
-                + ". Try increasing container size.");
+              + ". Try increasing container size.");
 
             csvResult.addRecord(recorList.toArray(new String[recorList.size()]));
           }
@@ -126,13 +130,5 @@ public class SpillAnalyzerImpl extends TezAnalyzerBase implements Analyzer {
   @Override
   public String getDescription() {
     return "Analyze spill details in the task";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    SpillAnalyzerImpl analyzer = new SpillAnalyzerImpl(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

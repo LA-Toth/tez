@@ -34,7 +34,7 @@ import org.apache.tez.history.parser.datamodel.VertexInfo;
 
 /**
  * Get simple count of task attempt states on vertex:node:status level, like below.
- *
+ * <p>
  * vertex (+task stats: all/succeeded/failed/killed),node,status,numAttempts
  * Map 1 (vertex_x_y_z) (216/153/0/63),node1,KILLED:INTERNAL_PREEMPTION,1185
  * Map 1 (vertex_x_y_z) (216/153/0/63),node1,KILLED:TERMINATED_AT_SHUTDOWN,22
@@ -43,12 +43,20 @@ import org.apache.tez.history.parser.datamodel.VertexInfo;
  */
 public class TaskAttemptResultStatisticsAnalyzer extends TezAnalyzerBase implements Analyzer {
   private final String[] headers =
-      { "vertex (+task stats: all/succeeded/failed/killed)", "node", "status", "numAttempts" };
+    {"vertex (+task stats: all/succeeded/failed/killed)", "node", "status", "numAttempts"};
   private final CSVResult csvResult;
 
   public TaskAttemptResultStatisticsAnalyzer(Configuration config) {
     super(config);
     csvResult = new CSVResult(headers);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    TaskAttemptResultStatisticsAnalyzer analyzer = new TaskAttemptResultStatisticsAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -57,13 +65,13 @@ public class TaskAttemptResultStatisticsAnalyzer extends TezAnalyzerBase impleme
 
     for (VertexInfo vertex : dagInfo.getVertices()) {
       String taskStatsInVertex =
-          String.format("%s/%s/%s/%s", vertex.getNumTasks(), vertex.getSucceededTasksCount(),
-              vertex.getFailedTasksCount(), vertex.getKilledTasksCount());
+        String.format("%s/%s/%s/%s", vertex.getNumTasks(), vertex.getSucceededTasksCount(),
+          vertex.getFailedTasksCount(), vertex.getKilledTasksCount());
       for (TaskAttemptInfo attempt : vertex.getTaskAttempts()) {
         String key = String.format("%s#%s#%s",
-            String.format("%s (%s) (%s)", vertex.getVertexName(), vertex.getVertexId(),
-                taskStatsInVertex),
-            attempt.getNodeId(), attempt.getDetailedStatus());
+          String.format("%s (%s) (%s)", vertex.getVertexName(), vertex.getVertexId(),
+            taskStatsInVertex),
+          attempt.getNodeId(), attempt.getDetailedStatus());
         Integer previousValue = (Integer) map.get(key);
         map.put(key, previousValue == null ? 1 : previousValue + 1);
       }
@@ -86,7 +94,7 @@ public class TaskAttemptResultStatisticsAnalyzer extends TezAnalyzerBase impleme
   }
 
   private void addARecord(String vertexData, String node, String status,
-      int numAttempts) {
+                          int numAttempts) {
     String[] record = new String[4];
     record[0] = vertexData;
     record[1] = node;
@@ -108,13 +116,5 @@ public class TaskAttemptResultStatisticsAnalyzer extends TezAnalyzerBase impleme
   @Override
   public String getDescription() {
     return "Get statistics about task attempts states in vertex:node:status level";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    TaskAttemptResultStatisticsAnalyzer analyzer = new TaskAttemptResultStatisticsAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

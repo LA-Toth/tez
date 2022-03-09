@@ -20,37 +20,23 @@ package org.apache.tez.dag.app.rm.container;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-
-import java.net.InetSocketAddress;
-import java.util.Map;
+import static org.mockito.Mockito.when;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.hadoop.yarn.api.records.Priority;
-import org.apache.hadoop.yarn.api.records.Resource;
-import org.apache.hadoop.yarn.api.records.Token;
 import org.apache.tez.common.ContainerSignatureMatcher;
-import org.apache.tez.dag.app.TaskCommunicatorWrapper;
-import org.apache.tez.dag.app.dag.DAG;
-import org.apache.tez.dag.app.rm.container.TestAMContainer.WrappedContainer;
-import org.apache.tez.serviceplugins.api.TaskCommunicator;
 import org.apache.tez.dag.app.AppContext;
 import org.apache.tez.dag.app.ContainerHeartbeatHandler;
 import org.apache.tez.dag.app.TaskCommunicatorManagerInterface;
-import org.apache.tez.serviceplugins.api.ServicePluginException;
+import org.apache.tez.dag.app.dag.DAG;
+import org.apache.tez.dag.app.rm.container.TestAMContainer.WrappedContainer;
+
 import org.junit.Test;
-import static org.mockito.Mockito.when;
 
 public class TestAMContainerMap {
 
-
-  @Test (timeout = 10000)
+  @Test(timeout = 10000)
   public void testCleanupOnDagComplete() {
 
     ContainerHeartbeatHandler chh = mock(ContainerHeartbeatHandler.class);
@@ -58,23 +44,20 @@ public class TestAMContainerMap {
     AppContext appContext = mock(AppContext.class);
     when(appContext.getAMConf()).thenReturn(new Configuration());
 
-
-
     int numContainers = 7;
     WrappedContainer[] wContainers = new WrappedContainer[numContainers];
-    for (int i = 0 ; i < numContainers ; i++) {
+    for (int i = 0; i < numContainers; i++) {
       WrappedContainer wc =
-          new WrappedContainer(false, null, i);
+        new WrappedContainer(false, null, i);
       wContainers[i] = wc;
     }
 
     AMContainerMap amContainerMap = new AMContainerMapForTest(chh, tal, mock(
-        ContainerSignatureMatcher.class), appContext, wContainers);
+      ContainerSignatureMatcher.class), appContext, wContainers);
 
-    for (int i = 0 ; i < numContainers ; i++) {
+    for (int i = 0; i < numContainers; i++) {
       amContainerMap.addContainerIfNew(wContainers[i].container, 0, 0, 0);
     }
-
 
     // Container 1 in LAUNCHING state
     wContainers[0].launchContainer();
@@ -128,7 +111,6 @@ public class TestAMContainerMap {
 
   private static class AMContainerMapForTest extends AMContainerMap {
 
-
     private WrappedContainer[] wrappedContainers;
 
     public AMContainerMapForTest(ContainerHeartbeatHandler chh,
@@ -148,6 +130,5 @@ public class TestAMContainerMap {
                                   int launcherId, int taskCommId, String auxiliaryService) {
       return wrappedContainers[container.getId().getId()].amContainer;
     }
-
   }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,6 +25,94 @@ import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
 
 @Private
 class MapHost {
+
+  private final String host;
+  private final int port;
+  private final int partition;
+  private final int partitionCount;
+  private State state = State.IDLE;
+  // Tracks attempt IDs
+  private List<InputAttemptIdentifier> maps = new ArrayList<InputAttemptIdentifier>();
+  public MapHost(String host, int port, int partition, int partitionCount) {
+    this.host = host;
+    this.port = port;
+    this.partition = partition;
+    this.partitionCount = partitionCount;
+  }
+
+  public int getPartitionId() {
+    return partition;
+  }
+
+  public int getPartitionCount() {
+    return partitionCount;
+  }
+
+  public State getState() {
+    return state;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public String getHostIdentifier() {
+    return host + ":" + port;
+  }
+
+  public synchronized void addKnownMap(InputAttemptIdentifier srcAttempt) {
+    maps.add(srcAttempt);
+    if (state == State.IDLE) {
+      state = State.PENDING;
+    }
+  }
+
+  public synchronized List<InputAttemptIdentifier> getAndClearKnownMaps() {
+    List<InputAttemptIdentifier> currentKnownMaps = maps;
+    maps = new ArrayList<InputAttemptIdentifier>();
+    return currentKnownMaps;
+  }
+
+  public synchronized void markBusy() {
+    state = State.BUSY;
+  }
+
+  public synchronized void markPenalized() {
+    state = State.PENALIZED;
+  }
+
+  public synchronized int getNumKnownMapOutputs() {
+    return maps.size();
+  }
+
+  /**
+   * Called when the node is done with its penalty or done copying.
+   * @return the host's new state
+   */
+  public synchronized State markAvailable() {
+    if (maps.isEmpty()) {
+      state = State.IDLE;
+    } else {
+      state = State.PENDING;
+    }
+    return state;
+  }
+
+  @Override
+  public String toString() {
+    return getHostIdentifier();
+  }
+
+  /**
+   * Mark the host as penalized
+   */
+  public synchronized void penalize() {
+    state = State.PENALIZED;
+  }
 
   public static enum State {
     IDLE,               // No map outputs available
@@ -80,94 +168,5 @@ class MapHost {
     public String toString() {
       return "HostPortPartition [host=" + host + ", port=" + port + ", partition=" + partition + "]";
     }
-  }
-
-  private State state = State.IDLE;
-  private final String host;
-  private final int port;
-  private final int partition;
-  private final int partitionCount;
-  // Tracks attempt IDs
-  private List<InputAttemptIdentifier> maps = new ArrayList<InputAttemptIdentifier>();
-  
-  public MapHost(String host, int port, int partition, int partitionCount) {
-    this.host = host;
-    this.port = port;
-    this.partition = partition;
-    this.partitionCount = partitionCount;
-  }
-
-  public int getPartitionId() {
-    return partition;
-  }
-
-  public int getPartitionCount() {
-    return partitionCount;
-  }
-
-  public State getState() {
-    return state;
-  }
-
-  public String getHost() {
-    return host;
-  }
-
-  public int getPort() {
-    return port;
-  }
-
-  public String getHostIdentifier() {
-    return host + ":" + port;
-  }
-
-  public synchronized void addKnownMap(InputAttemptIdentifier srcAttempt) {
-    maps.add(srcAttempt);
-    if (state == State.IDLE) {
-      state = State.PENDING;
-    }
-  }
-
-  public synchronized List<InputAttemptIdentifier> getAndClearKnownMaps() {
-    List<InputAttemptIdentifier> currentKnownMaps = maps;
-    maps = new ArrayList<InputAttemptIdentifier>();
-    return currentKnownMaps;
-  }
-  
-  public synchronized void markBusy() {
-    state = State.BUSY;
-  }
-  
-  public synchronized void markPenalized() {
-    state = State.PENALIZED;
-  }
-  
-  public synchronized int getNumKnownMapOutputs() {
-    return maps.size();
-  }
-
-  /**
-   * Called when the node is done with its penalty or done copying.
-   * @return the host's new state
-   */
-  public synchronized State markAvailable() {
-    if (maps.isEmpty()) {
-      state = State.IDLE;
-    } else {
-      state = State.PENDING;
-    }
-    return state;
-  }
-  
-  @Override
-  public String toString() {
-    return getHostIdentifier();
-  }
-  
-  /**
-   * Mark the host as penalized
-   */
-  public synchronized void penalize() {
-    state = State.PENALIZED;
   }
 }

@@ -40,13 +40,13 @@ import com.google.common.collect.Iterators;
  */
 @InterfaceAudience.Private
 public abstract class AbstractCounterGroup<T extends TezCounter>
-    implements CounterGroupBase<T> {
+  implements CounterGroupBase<T> {
 
   private final String name;
-  private String displayName;
   private final ConcurrentMap<String, T> counters =
-      new ConcurrentSkipListMap<String, T>();
+    new ConcurrentSkipListMap<String, T>();
   private final Limits limits;
+  private String displayName;
 
   public AbstractCounterGroup(String name, String displayName,
                               Limits limits) {
@@ -128,9 +128,10 @@ public abstract class AbstractCounterGroup<T extends TezCounter>
 
   /**
    * Abstract factory method to create a new counter of type T
+   *
    * @param counterName of the counter
    * @param displayName of the counter
-   * @param value of the counter
+   * @param value       of the counter
    * @return a new counter
    */
   protected abstract T newCounter(String counterName, String displayName,
@@ -138,6 +139,7 @@ public abstract class AbstractCounterGroup<T extends TezCounter>
 
   /**
    * Abstract factory method to create a new counter of type T
+   *
    * @return a new counter object
    */
   protected abstract T newCounter();
@@ -154,7 +156,7 @@ public abstract class AbstractCounterGroup<T extends TezCounter>
   public synchronized void write(DataOutput out) throws IOException {
     Text.writeString(out, displayName);
     WritableUtils.writeVInt(out, counters.size());
-    for(TezCounter counter: counters.values()) {
+    for (TezCounter counter : counters.values()) {
       counter.write(out);
     }
   }

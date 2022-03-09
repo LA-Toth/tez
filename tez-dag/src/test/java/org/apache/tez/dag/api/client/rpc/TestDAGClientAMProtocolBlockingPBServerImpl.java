@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,18 +18,21 @@
 
 package org.apache.tez.dag.api.client.rpc;
 
+import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
-import static junit.framework.TestCase.assertEquals;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.*;
 
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FileSystem;
@@ -48,6 +51,7 @@ import org.apache.tez.dag.api.Vertex;
 import org.apache.tez.dag.api.client.DAGClientHandler;
 import org.apache.tez.dag.api.client.rpc.DAGClientAMProtocolRPC.SubmitDAGRequestProto;
 import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -91,12 +95,12 @@ public class TestDAGClientAMProtocolBlockingPBServerImpl {
     String path = "/test";
     URL lrURL = URL.newInstance(scheme, host, port, path);
     LocalResource localResource = LocalResource.newInstance(lrURL, LocalResourceType.FILE,
-        LocalResourceVisibility.PUBLIC, 1, 1);
+      LocalResourceVisibility.PUBLIC, 1, 1);
     Map<String, LocalResource> localResources = new HashMap<>();
     localResources.put(lrName, localResource);
 
     SubmitDAGRequestProto.Builder requestBuilder = SubmitDAGRequestProto.newBuilder().setDAGPlan(dagPlan)
-        .setAdditionalAmResources(DagTypeConverters.convertFromLocalResources(localResources));
+      .setAdditionalAmResources(DagTypeConverters.convertFromLocalResources(localResources));
     try (FileOutputStream fileOutputStream = new FileOutputStream(requestFile)) {
       requestBuilder.build().writeTo(fileOutputStream);
     }
@@ -104,9 +108,9 @@ public class TestDAGClientAMProtocolBlockingPBServerImpl {
     DAGClientHandler dagClientHandler = mock(DAGClientHandler.class);
     ACLManager aclManager = mock(ACLManager.class);
     DAGClientAMProtocolBlockingPBServerImpl serverImpl = spy(new DAGClientAMProtocolBlockingPBServerImpl(
-        dagClientHandler, FileSystem.get(conf)));
+      dagClientHandler, FileSystem.get(conf)));
     when(dagClientHandler.getACLManager()).thenReturn(aclManager);
-    when(dagClientHandler.submitDAG((DAGPlan)any(), (Map<String, LocalResource>)any())).thenReturn("dag-id");
+    when(dagClientHandler.submitDAG((DAGPlan) any(), (Map<String, LocalResource>) any())).thenReturn("dag-id");
     when(aclManager.checkAMModifyAccess((UserGroupInformation) any())).thenReturn(true);
 
     requestBuilder.clear().setSerializedRequestPath(requestFile.getAbsolutePath());
@@ -121,7 +125,7 @@ public class TestDAGClientAMProtocolBlockingPBServerImpl {
     assertEquals(dagPlan.getVertexCount(), 1);
     assertTrue(dagPlan.getSerializedSize() > maxIPCMsgSize);
     assertArrayEquals(randomBytes, dagPlan.getVertex(0).getProcessorDescriptor().getTezUserPayload().getUserPayload().
-        toByteArray());
+      toByteArray());
     assertEquals(localResources.size(), 1);
     assertTrue(localResources.containsKey(lrName));
     localResource = localResources.get(lrName);

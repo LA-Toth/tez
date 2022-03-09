@@ -18,14 +18,21 @@
 
 package org.apache.tez.dag.app.dag;
 
-
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.Objects;
+
+import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.tez.dag.api.TezUncheckedException;
+import org.apache.tez.dag.api.event.VertexStateUpdate;
+import org.apache.tez.dag.app.dag.event.DAGEventInternalError;
+import org.apache.tez.dag.records.TezTaskID;
+import org.apache.tez.dag.records.TezVertexID;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.HashMultimap;
@@ -33,16 +40,6 @@ import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.SetMultimap;
-
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.apache.tez.dag.api.TezUncheckedException;
-import org.apache.tez.dag.api.event.VertexStateUpdate;
-import org.apache.tez.dag.app.dag.event.DAGEvent;
-import org.apache.tez.dag.app.dag.event.DAGEventInternalError;
-import org.apache.tez.dag.app.dag.event.DAGEventType;
-import org.apache.tez.dag.records.TezTaskID;
-import org.apache.tez.dag.records.TezVertexID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,44 +50,33 @@ import org.slf4j.LoggerFactory;
 public class StateChangeNotifier {
 
   private static final Logger LOG = LoggerFactory.getLogger(StateChangeNotifier.class);
-  
+
   private final DAG dag;
   private final SetMultimap<TezVertexID, ListenerContainer> vertexListeners;
   private final ListMultimap<TezVertexID, VertexStateUpdate> lastKnowStatesMap;
   private final ReentrantReadWriteLock listenersLock = new ReentrantReadWriteLock();
   private final ReentrantReadWriteLock.WriteLock writeLock = listenersLock.writeLock();
-
+  // Task updates are not buffered to avoid storing unnecessary information.
+  // Components (non user facing) which use this will receive notifications after registration.
+  // They will have to query task states, prior to registration.
+  // Currently only handling Task SUCCESS events.
+  private final SetMultimap<TezVertexID, TaskStateUpdateListener> taskListeners =
+    Multimaps.synchronizedSetMultimap(HashMultimap.<TezVertexID, TaskStateUpdateListener>create());
+  private final ReentrantReadWriteLock taskListenerLock = new ReentrantReadWriteLock();
+  private final ReentrantReadWriteLock.ReadLock taskReadLock = taskListenerLock.readLock();
+  private final ReentrantReadWriteLock.WriteLock taskWriteLock = taskListenerLock.writeLock();
   BlockingQueue<NotificationEvent> eventQueue = new LinkedBlockingQueue<NotificationEvent>();
   private Thread eventHandlingThread;
   private volatile boolean stopEventHandling = false;
-  
-  private static class NotificationEvent {
-    final VertexStateUpdate update;
-    final VertexStateUpdateListener listener;
-    
-    public NotificationEvent(VertexStateUpdate update, VertexStateUpdateListener listener) {
-      this.update = update;
-      this.listener = listener;
-    }
-    
-    void sendUpdate() {
-      listener.onStateUpdated(update);
-    }
-    
-    @Override
-    public String toString() {
-      return "[ VertexState:(" + update + ") Listener:" + listener + " ]";
-    }
-  }
 
   public StateChangeNotifier(DAG dag) {
     this.dag = dag;
     this.vertexListeners = Multimaps.synchronizedSetMultimap(
-        HashMultimap.<TezVertexID, ListenerContainer>create());
+      HashMultimap.<TezVertexID, ListenerContainer>create());
     this.lastKnowStatesMap = LinkedListMultimap.create();
     startThread();
   }
-  
+
   private void startThread() {
     this.eventHandlingThread = new Thread("State Change Notifier DAG: " + dag.getID()) {
       @SuppressWarnings("unchecked")
@@ -101,7 +87,7 @@ public class StateChangeNotifier {
           try {
             event = eventQueue.take();
           } catch (InterruptedException e) {
-            if(!stopEventHandling) {
+            if (!stopEventHandling) {
               LOG.warn("Continuing after interrupt : ", e);
             }
             continue;
@@ -113,9 +99,9 @@ public class StateChangeNotifier {
             // TODO send user code exception - TEZ-2332
             LOG.error("Error in state update notification for " + event, e);
             dag.getEventHandler().handle(
-                new DAGEventInternalError(dag.getID(),
-                    "Internal Error in State Update Notification: "
-                        + ExceptionUtils.getStackTrace(e)));
+              new DAGEventInternalError(dag.getID(),
+                "Internal Error in State Update Notification: "
+                  + ExceptionUtils.getStackTrace(e)));
             return;
           }
         }
@@ -124,15 +110,15 @@ public class StateChangeNotifier {
     this.eventHandlingThread.setDaemon(true); // dont block exit on this
     this.eventHandlingThread.start();
   }
-  
+
   @VisibleForTesting
   protected void processedEventFromQueue() {
   }
-  
+
   @VisibleForTesting
   protected void addedEventToQueue() {
   }
-  
+
   public void stop() {
     this.stopEventHandling = true;
     if (eventHandlingThread != null)
@@ -162,8 +148,8 @@ public class StateChangeNotifier {
       } else {
         // Disallow multiple register calls.
         throw new TezUncheckedException(
-            "Only allowed to register once for a listener. CurrentContext: vertexName=" +
-                vertexName + ", Listener: " + listener);
+          "Only allowed to register once for a listener. CurrentContext: vertexName=" +
+            vertexName + ", Listener: " + listener);
       }
     } finally {
       writeLock.unlock();
@@ -193,6 +179,10 @@ public class StateChangeNotifier {
     }
   }
 
+  // -------------- END OF VERTEX STATE CHANGE SECTION ---------------
+
+  // -------------- TASK STATE CHANGE SECTION ---------------
+
   private void sendStateUpdate(TezVertexID vertexId,
                                VertexStateUpdate event) {
     for (ListenerContainer listenerContainer : vertexListeners.get(vertexId)) {
@@ -208,7 +198,68 @@ public class StateChangeNotifier {
       LOG.error("Failed to put event", e);
     }
   }
-  
+
+  public void registerForTaskSuccessUpdates(String vertexName, TaskStateUpdateListener listener) {
+    TezVertexID vertexId = validateAndGetVertexId(vertexName);
+    Objects.requireNonNull(listener, "listener cannot be null");
+    taskWriteLock.lock();
+    try {
+      taskListeners.put(vertexId, listener);
+    } finally {
+      taskWriteLock.unlock();
+    }
+  }
+
+  public void unregisterForTaskSuccessUpdates(String vertexName, TaskStateUpdateListener listener) {
+    TezVertexID vertexId = validateAndGetVertexId(vertexName);
+    Objects.requireNonNull(listener, "listener cannot be null");
+    taskWriteLock.lock();
+    try {
+      taskListeners.remove(vertexId, listener);
+    } finally {
+      taskWriteLock.unlock();
+    }
+  }
+
+  public void taskSucceeded(String vertexName, TezTaskID taskId, int attemptId) {
+    taskReadLock.lock();
+    try {
+      for (TaskStateUpdateListener listener : taskListeners.get(taskId.getVertexID())) {
+        listener.onTaskSucceeded(vertexName, taskId, attemptId);
+      }
+    } finally {
+      taskReadLock.unlock();
+    }
+  }
+
+  private TezVertexID validateAndGetVertexId(String vertexName) {
+    Objects.requireNonNull(vertexName, "VertexName cannot be null");
+    Vertex vertex = dag.getVertex(vertexName);
+    Objects.requireNonNull(vertex, "Vertex does not exist: " + vertexName);
+    return vertex.getVertexId();
+  }
+
+  private static class NotificationEvent {
+    final VertexStateUpdate update;
+    final VertexStateUpdateListener listener;
+
+    public NotificationEvent(VertexStateUpdate update, VertexStateUpdateListener listener) {
+      this.update = update;
+      this.listener = listener;
+    }
+
+    void sendUpdate() {
+      listener.onStateUpdated(update);
+    }
+
+    @Override
+    public String toString() {
+      return "[ VertexState:(" + update + ") Listener:" + listener + " ]";
+    }
+  }
+
+  // -------------- END OF TASK STATE CHANGE SECTION ---------------
+
   private final class ListenerContainer {
     final VertexStateUpdateListener listener;
     final Set<org.apache.tez.dag.api.event.VertexState> states;
@@ -249,64 +300,4 @@ public class StateChangeNotifier {
       return System.identityHashCode(listener);
     }
   }
-
-  // -------------- END OF VERTEX STATE CHANGE SECTION ---------------
-
-  // -------------- TASK STATE CHANGE SECTION ---------------
-
-  // Task updates are not buffered to avoid storing unnecessary information.
-  // Components (non user facing) which use this will receive notifications after registration.
-  // They will have to query task states, prior to registration.
-  // Currently only handling Task SUCCESS events.
-  private final SetMultimap<TezVertexID, TaskStateUpdateListener> taskListeners =
-      Multimaps.synchronizedSetMultimap(HashMultimap.<TezVertexID, TaskStateUpdateListener>create());
-  private final ReentrantReadWriteLock taskListenerLock = new ReentrantReadWriteLock();
-  private final ReentrantReadWriteLock.ReadLock taskReadLock = taskListenerLock.readLock();
-  private final ReentrantReadWriteLock.WriteLock taskWriteLock = taskListenerLock.writeLock();
-
-
-
-  public void registerForTaskSuccessUpdates(String vertexName, TaskStateUpdateListener listener) {
-    TezVertexID vertexId = validateAndGetVertexId(vertexName);
-    Objects.requireNonNull(listener, "listener cannot be null");
-    taskWriteLock.lock();
-    try {
-      taskListeners.put(vertexId, listener);
-    } finally {
-      taskWriteLock.unlock();
-    }
-  }
-
-  public void unregisterForTaskSuccessUpdates(String vertexName, TaskStateUpdateListener listener) {
-    TezVertexID vertexId = validateAndGetVertexId(vertexName);
-    Objects.requireNonNull(listener, "listener cannot be null");
-    taskWriteLock.lock();
-    try {
-      taskListeners.remove(vertexId, listener);
-    } finally {
-      taskWriteLock.unlock();
-    }
-  }
-
-  public void taskSucceeded(String vertexName, TezTaskID taskId, int attemptId) {
-    taskReadLock.lock();
-    try {
-      for (TaskStateUpdateListener listener : taskListeners.get(taskId.getVertexID())) {
-        listener.onTaskSucceeded(vertexName, taskId, attemptId);
-      }
-    } finally {
-      taskReadLock.unlock();
-    }
-  }
-
-  // -------------- END OF TASK STATE CHANGE SECTION ---------------
-
-
-  private TezVertexID validateAndGetVertexId(String vertexName) {
-    Objects.requireNonNull(vertexName, "VertexName cannot be null");
-    Vertex vertex = dag.getVertex(vertexName);
-    Objects.requireNonNull(vertex, "Vertex does not exist: " + vertexName);
-    return vertex.getVertexId();
-  }
-
 }

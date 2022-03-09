@@ -21,15 +21,14 @@ import org.apache.tez.serviceplugins.api.ContainerLaunchRequest;
 import org.apache.tez.serviceplugins.api.ContainerLauncher;
 import org.apache.tez.serviceplugins.api.ContainerLauncherContext;
 import org.apache.tez.serviceplugins.api.ContainerStopRequest;
-import org.apache.tez.serviceplugins.api.ServicePluginErrorDefaults;
 
 public class TezTestServiceContainerLauncherWithErrors extends ContainerLauncher {
 
   private final ErrorPluginConfiguration conf;
 
   public TezTestServiceContainerLauncherWithErrors(
-      ContainerLauncherContext containerLauncherContext) throws IOException,
-      ClassNotFoundException {
+    ContainerLauncherContext containerLauncherContext) throws IOException,
+    ClassNotFoundException {
     super(containerLauncherContext);
     conf = ErrorPluginConfiguration.toErrorPluginConfiguration(containerLauncherContext.getInitialUserPayload());
   }

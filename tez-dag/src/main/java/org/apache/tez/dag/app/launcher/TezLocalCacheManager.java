@@ -18,16 +18,6 @@
 
 package org.apache.tez.dag.app.launcher;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileContext;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.yarn.api.records.LocalResource;
-import org.apache.hadoop.yarn.api.records.LocalResourceType;
-import org.apache.hadoop.yarn.util.FSDownload;
-import org.apache.tez.dag.api.TezConfiguration;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -41,6 +31,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileContext;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.yarn.api.records.LocalResource;
+import org.apache.hadoop.yarn.api.records.LocalResourceType;
+import org.apache.hadoop.yarn.util.FSDownload;
+import org.apache.tez.dag.api.TezConfiguration;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,8 +80,8 @@ public class TezLocalCacheManager {
     try {
       // construct new threads with helpful names
       ThreadFactory threadFactory = new ThreadFactoryBuilder()
-          .setNameFormat("TezLocalCacheManager Downloader #%d")
-          .build();
+        .setNameFormat("TezLocalCacheManager Downloader #%d")
+        .build();
       threadPool = Executors.newCachedThreadPool(threadFactory);
 
       // start all fetches
@@ -184,7 +184,7 @@ public class TezLocalCacheManager {
 
   private java.nio.file.Path getLocalCacheRoot() {
     return Paths.get(conf.get(TezConfiguration.TEZ_LOCAL_CACHE_ROOT_FOLDER,
-        TezConfiguration.TEZ_LOCAL_CACHE_ROOT_FOLDER_DEFAULT));
+      TezConfiguration.TEZ_LOCAL_CACHE_ROOT_FOLDER_DEFAULT));
   }
 
   /**

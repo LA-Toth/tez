@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@
 package org.apache.tez.history.parser.datamodel;
 
 import org.apache.tez.common.Preconditions;
+
 import com.google.common.base.Predicate;
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
@@ -34,6 +35,7 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.tez.dag.api.oldrecords.TaskAttemptState;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.util.StringInterner;
+
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -63,14 +65,14 @@ public class TaskInfo extends BaseInfo {
   private VertexInfo vertexInfo;
 
   private Map<String, TaskAttemptInfo> attemptInfoMap = Maps
-      .newHashMap();
+    .newHashMap();
 
   TaskInfo(JSONObject jsonObject) throws JSONException {
     super(jsonObject);
 
     Preconditions.checkArgument(
-        jsonObject.getString(Constants.ENTITY_TYPE).equalsIgnoreCase
-            (Constants.TEZ_TASK_ID));
+      jsonObject.getString(Constants.ENTITY_TYPE).equalsIgnoreCase
+        (Constants.TEZ_TASK_ID));
 
     taskId = StringInterner.intern(jsonObject.optString(Constants.ENTITY));
 
@@ -81,26 +83,26 @@ public class TaskInfo extends BaseInfo {
     long eTime = otherInfoNode.optLong(Constants.FINISH_TIME);
     if (eTime < sTime) {
       LOG.warn("Task has got wrong start/end values. "
-          + "startTime=" + sTime + ", endTime=" + eTime + ". Will check "
-          + "timestamps in DAG started/finished events");
+        + "startTime=" + sTime + ", endTime=" + eTime + ". Will check "
+        + "timestamps in DAG started/finished events");
 
       // Check if events TASK_STARTED, TASK_FINISHED can be made use of
-      for(Event event : eventList) {
+      for (Event event : eventList) {
         switch (HistoryEventType.valueOf(event.getType())) {
-        case TASK_STARTED:
-          sTime = event.getAbsoluteTime();
-          break;
-        case TASK_FINISHED:
-          eTime = event.getAbsoluteTime();
-          break;
-        default:
-          break;
+          case TASK_STARTED:
+            sTime = event.getAbsoluteTime();
+            break;
+          case TASK_FINISHED:
+            eTime = event.getAbsoluteTime();
+            break;
+          default:
+            break;
         }
       }
 
       if (eTime < sTime) {
         LOG.warn("Task has got wrong start/end values in events as well. "
-            + "startTime=" + sTime + ", endTime=" + eTime);
+          + "startTime=" + sTime + ", endTime=" + eTime);
       }
     }
     startTime = sTime;
@@ -108,9 +110,14 @@ public class TaskInfo extends BaseInfo {
 
     diagnostics = otherInfoNode.optString(Constants.DIAGNOSTICS);
     successfulAttemptId = StringInterner
-        .intern(otherInfoNode.optString(Constants.SUCCESSFUL_ATTEMPT_ID));
+      .intern(otherInfoNode.optString(Constants.SUCCESSFUL_ATTEMPT_ID));
     scheduledTime = otherInfoNode.optLong(Constants.SCHEDULED_TIME);
     status = StringInterner.intern(otherInfoNode.optString(Constants.STATUS));
+  }
+
+  public static TaskInfo create(JSONObject taskInfoObject) throws
+    JSONException {
+    return new TaskInfo(taskInfoObject);
   }
 
   @Override
@@ -128,12 +135,12 @@ public class TaskInfo extends BaseInfo {
 
   @Override
   public final long getFinishTimeInterval() {
-    long taskFinishTime =  endTime - (vertexInfo.getDagInfo().getStartTime());
+    long taskFinishTime = endTime - (vertexInfo.getDagInfo().getStartTime());
     if (taskFinishTime < 0) {
       //probably vertex is not complete or failed in middle. get the last task attempt time
       for (TaskAttemptInfo attemptInfo : getTaskAttempts()) {
         taskFinishTime = (attemptInfo.getFinishTimeInterval() > taskFinishTime)
-            ? attemptInfo.getFinishTimeInterval() : taskFinishTime;
+          ? attemptInfo.getFinishTimeInterval() : taskFinishTime;
       }
     }
     return taskFinishTime;
@@ -144,23 +151,18 @@ public class TaskInfo extends BaseInfo {
     return diagnostics;
   }
 
-  public static TaskInfo create(JSONObject taskInfoObject) throws
-      JSONException {
-    return new TaskInfo(taskInfoObject);
-  }
-
   void addTaskAttemptInfo(TaskAttemptInfo taskAttemptInfo) {
     attemptInfoMap.put(taskAttemptInfo.getTaskAttemptId(), taskAttemptInfo);
+  }
+
+  public final VertexInfo getVertexInfo() {
+    return vertexInfo;
   }
 
   void setVertexInfo(VertexInfo vertexInfo) {
     this.vertexInfo = Objects.requireNonNull(vertexInfo, "Provide valid vertexInfo");
     //link it to vertex
     vertexInfo.addTaskInfo(this);
-  }
-
-  public final VertexInfo getVertexInfo() {
-    return vertexInfo;
   }
 
   /**
@@ -209,14 +211,14 @@ public class TaskInfo extends BaseInfo {
    */
   public final List<TaskAttemptInfo> getTaskAttempts(final TaskAttemptState state) {
     return Collections.unmodifiableList(Lists.newLinkedList(Iterables.filter(Lists.newLinkedList
-                    (attemptInfoMap.values()), new Predicate<TaskAttemptInfo>() {
-                  @Override
-                  public boolean apply(TaskAttemptInfo input) {
-                    return input.getStatus() != null && input.getStatus().equals(state.toString());
-                  }
-                }
-            )
+            (attemptInfoMap.values()), new Predicate<TaskAttemptInfo>() {
+            @Override
+            public boolean apply(TaskAttemptInfo input) {
+              return input.getStatus() != null && input.getStatus().equals(state.toString());
+            }
+          }
         )
+      )
     );
   }
 
@@ -267,10 +269,11 @@ public class TaskInfo extends BaseInfo {
     }
 
     return Ordering.from(new Comparator<TaskAttemptInfo>() {
-      @Override public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
+      @Override
+      public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
         return (o1.getFinishTimeInterval() < o2.getFinishTimeInterval()) ? -1 :
-            ((o1.getFinishTimeInterval() == o2.getFinishTimeInterval()) ?
-                0 : 1);
+          ((o1.getFinishTimeInterval() == o2.getFinishTimeInterval()) ?
+            0 : 1);
       }
     }).max(attemptsList);
   }
@@ -294,19 +297,21 @@ public class TaskInfo extends BaseInfo {
 
   private Ordering<TaskAttemptInfo> orderingOnTimeTaken() {
     return Ordering.from(new Comparator<TaskAttemptInfo>() {
-      @Override public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
+      @Override
+      public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
         return (o1.getTimeTaken() < o2.getTimeTaken()) ? -1 :
-            ((o1.getTimeTaken() == o2.getTimeTaken()) ?
-                0 : 1);
+          ((o1.getTimeTaken() == o2.getTimeTaken()) ?
+            0 : 1);
       }
     });
   }
 
   private Ordering<TaskAttemptInfo> orderingOnAttemptStartTime() {
     return Ordering.from(new Comparator<TaskAttemptInfo>() {
-      @Override public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
+      @Override
+      public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
         return (o1.getStartTimeInterval() < o2.getStartTimeInterval()) ? -1 :
-            ((o1.getStartTimeInterval() == o2.getStartTimeInterval()) ? 0 : 1);
+          ((o1.getStartTimeInterval() == o2.getStartTimeInterval()) ? 0 : 1);
       }
     });
   }

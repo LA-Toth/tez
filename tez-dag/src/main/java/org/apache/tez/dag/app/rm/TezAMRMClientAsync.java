@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,8 +25,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
@@ -37,58 +35,47 @@ import org.apache.hadoop.yarn.client.api.async.AMRMClientAsync;
 import org.apache.hadoop.yarn.client.api.async.impl.AMRMClientAsyncImpl;
 import org.apache.hadoop.yarn.client.api.impl.AMRMClientImpl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class TezAMRMClientAsync<T extends ContainerRequest> extends AMRMClientAsyncImpl<T> {
 
   private static final Logger LOG = LoggerFactory.getLogger(TezAMRMClientAsync.class);
-
-  /**
-   * Used to track the type of requests at a given priority.
-   */
-  private static class LocalityRequestCounter {
-    final AtomicInteger localityRequests;
-    final AtomicInteger noLocalityRequests;
-
-    public LocalityRequestCounter() {
-      this.localityRequests = new AtomicInteger(0);
-      this.noLocalityRequests = new AtomicInteger(0);
-    }
-  }
-
   private TreeMap<Priority, LocalityRequestCounter> knownRequestsByPriority =
     new TreeMap<Priority, LocalityRequestCounter>();
-
-  public static <T extends ContainerRequest> TezAMRMClientAsync<T> createAMRMClientAsync(
-      int intervalMs, CallbackHandler callbackHandler) {
-    return new TezAMRMClientAsync<T>(intervalMs, callbackHandler);
-  }
 
   public TezAMRMClientAsync(int intervalMs, CallbackHandler callbackHandler) {
     super(new AMRMClientImpl<T>(), intervalMs, callbackHandler);
   }
 
   public TezAMRMClientAsync(
-      AMRMClient<T> client,
-      int intervalMs,
-      AMRMClientAsync.CallbackHandler callbackHandler) {
+    AMRMClient<T> client,
+    int intervalMs,
+    AMRMClientAsync.CallbackHandler callbackHandler) {
     super(client, intervalMs, callbackHandler);
   }
-  
+
+  public static <T extends ContainerRequest> TezAMRMClientAsync<T> createAMRMClientAsync(
+    int intervalMs, CallbackHandler callbackHandler) {
+    return new TezAMRMClientAsync<T>(intervalMs, callbackHandler);
+  }
+
   public synchronized Priority getTopPriority() {
     if (knownRequestsByPriority.isEmpty()) {
       return null;
     }
     return knownRequestsByPriority.lastKey();
   }
-  
+
   // Remove after YARN-1723 is fixed
   public synchronized void addNodeToBlacklist(NodeId nodeId) {
     client.updateBlacklist(Collections.singletonList(nodeId.getHost()), null);
   }
-  
+
   //Remove after YARN-1723 is fixed
-   public synchronized void removeNodeFromBlacklist(NodeId nodeId) {
-     client.updateBlacklist(null, Collections.singletonList(nodeId.getHost()));
-   }
+  public synchronized void removeNodeFromBlacklist(NodeId nodeId) {
+    client.updateBlacklist(null, Collections.singletonList(nodeId.getHost()));
+  }
 
   @Override
   public synchronized void addContainerRequest(T req) {
@@ -120,17 +107,17 @@ public class TezAMRMClientAsync<T extends ContainerRequest> extends AMRMClientAs
       lrc.noLocalityRequests.decrementAndGet();
     }
     if (lrc.localityRequests.get() == 0
-        && lrc.noLocalityRequests.get() == 0) {
+      && lrc.noLocalityRequests.get() == 0) {
       knownRequestsByPriority.remove(req.getPriority());
     }
   }
 
   public synchronized List<? extends Collection<T>>
-    getMatchingRequestsForTopPriority(
-        String resourceName, Resource capability) {
+  getMatchingRequestsForTopPriority(
+    String resourceName, Resource capability) {
     // Sort based on reverse order. By default, Priority ordering is based on
     // highest numeric value being considered to be lowest priority.
-    Map.Entry<Priority,LocalityRequestCounter> entry = knownRequestsByPriority.lastEntry();
+    Map.Entry<Priority, LocalityRequestCounter> entry = knownRequestsByPriority.lastEntry();
     if (entry == null || entry.getValue() == null) {
       return Collections.emptyList();
     }
@@ -157,4 +144,16 @@ public class TezAMRMClientAsync<T extends ContainerRequest> extends AMRMClientAs
     return Collections.emptyList();
   }
 
+  /**
+   * Used to track the type of requests at a given priority.
+   */
+  private static class LocalityRequestCounter {
+    final AtomicInteger localityRequests;
+    final AtomicInteger noLocalityRequests;
+
+    public LocalityRequestCounter() {
+      this.localityRequests = new AtomicInteger(0);
+      this.noLocalityRequests = new AtomicInteger(0);
+    }
+  }
 }

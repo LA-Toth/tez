@@ -44,16 +44,12 @@ import java.util.Map;
  * Identify a set of vertices which fall in the critical path in a DAG.
  */
 public class VertexLevelCriticalPathAnalyzer extends TezAnalyzerBase implements Analyzer {
-  private static final String[] headers = { "CriticalPath", "Score" };
-
-  private final CSVResult csvResult;
-
+  private static final String[] headers = {"CriticalPath", "Score"};
   private static final String DOT_FILE_DIR = "tez.critical-path.analyzer.dot.output.loc";
   private static final String DOT_FILE_DIR_DEFAULT = "."; //current directory
-
-  private final String dotFileLocation;
-
   private static final String CONNECTOR = "-->";
+  private final CSVResult csvResult;
+  private final String dotFileLocation;
 
   public VertexLevelCriticalPathAnalyzer(Configuration config) {
     super(config);
@@ -61,7 +57,48 @@ public class VertexLevelCriticalPathAnalyzer extends TezAnalyzerBase implements 
     this.dotFileLocation = config.get(DOT_FILE_DIR, DOT_FILE_DIR_DEFAULT);
   }
 
-  @Override public void analyze(DagInfo dagInfo) throws TezException {
+  private static Map<String, Long> sortByValues(Map<String, Long> result) {
+    //Sort result by time in reverse order
+    final Ordering<String> reversValueOrdering =
+      Ordering.natural().reverse().nullsLast().onResultOf(Functions.forMap(result, null));
+    Map<String, Long> orderedMap = ImmutableSortedMap.copyOf(result, reversValueOrdering);
+    return orderedMap;
+  }
+
+  private static void getCriticalPath(String predecessor, VertexInfo dest, long time,
+                                      Map<String, Long> result) {
+    String destVertexName = (dest != null) ? (dest.getVertexName()) : "";
+
+    if (dest != null) {
+      time += dest.getTimeTaken();
+      predecessor += destVertexName + CONNECTOR;
+
+      for (VertexInfo incomingVertex : dest.getInputVertices()) {
+        getCriticalPath(predecessor, incomingVertex, time, result);
+      }
+
+      result.put(predecessor, time);
+    }
+  }
+
+  private static List<String> getVertexNames(String criticalPath) {
+    if (Strings.isNullOrEmpty(criticalPath)) {
+      return Lists.newLinkedList();
+    }
+    return Lists.newLinkedList(Splitter.on(CONNECTOR).trimResults().omitEmptyStrings().split
+      (criticalPath));
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    VertexLevelCriticalPathAnalyzer analyzer = new VertexLevelCriticalPathAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
+  }
+
+  @Override
+  public void analyze(DagInfo dagInfo) throws TezException {
     Map<String, Long> result = Maps.newLinkedHashMap();
     getCriticalPath("", dagInfo.getVertices().get(dagInfo.getVertices().size() - 1), 0, result);
 
@@ -101,45 +138,5 @@ public class VertexLevelCriticalPathAnalyzer extends TezAnalyzerBase implements 
   @Override
   public String getDescription() {
     return "Analyze vertex level critical path of the DAG";
-  }
-
-  private static Map<String, Long> sortByValues(Map<String, Long> result) {
-    //Sort result by time in reverse order
-    final Ordering<String> reversValueOrdering =
-        Ordering.natural().reverse().nullsLast().onResultOf(Functions.forMap(result, null));
-    Map<String, Long> orderedMap = ImmutableSortedMap.copyOf(result, reversValueOrdering);
-    return orderedMap;
-  }
-
-  private static void getCriticalPath(String predecessor, VertexInfo dest, long time,
-      Map<String, Long> result) {
-    String destVertexName = (dest != null) ? (dest.getVertexName()) : "";
-
-    if (dest != null) {
-      time += dest.getTimeTaken();
-      predecessor += destVertexName + CONNECTOR;
-
-      for (VertexInfo incomingVertex : dest.getInputVertices()) {
-        getCriticalPath(predecessor, incomingVertex, time, result);
-      }
-
-      result.put(predecessor, time);
-    }
-  }
-
-  private static List<String> getVertexNames(String criticalPath) {
-    if (Strings.isNullOrEmpty(criticalPath)) {
-      return Lists.newLinkedList();
-    }
-    return Lists.newLinkedList(Splitter.on(CONNECTOR).trimResults().omitEmptyStrings().split
-        (criticalPath));
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    VertexLevelCriticalPathAnalyzer analyzer = new VertexLevelCriticalPathAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

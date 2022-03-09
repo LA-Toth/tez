@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,35 +27,23 @@ import java.util.Map.Entry;
 import org.apache.tez.runtime.api.ObjectRegistry;
 
 public class ObjectRegistryImpl implements ObjectRegistry {
-  
-  public enum ObjectLifeCycle {
-    /** Objects are valid for the lifetime of the Tez JVM/Session
-     */
-    SESSION,
-    /** Objects are valid for the lifetime of the DAG.
-     */
-    DAG,
-    /** Objects are valid for the lifetime of the Vertex.
-     */
-    VERTEX,
-  }
 
   private Map<String, Map.Entry<Object, ObjectLifeCycle>> objectCache =
-      new HashMap<String, Entry<Object, ObjectLifeCycle>>();
+    new HashMap<String, Entry<Object, ObjectLifeCycle>>();
 
   private synchronized Object add(ObjectLifeCycle lifeCycle,
-      String key, Object value) {
+                                  String key, Object value) {
     Map.Entry<Object, ObjectLifeCycle> oldEntry =
-        objectCache.put(key,
-            new AbstractMap.SimpleImmutableEntry<Object, ObjectLifeCycle>(
-                value, lifeCycle));
+      objectCache.put(key,
+        new AbstractMap.SimpleImmutableEntry<Object, ObjectLifeCycle>(
+          value, lifeCycle));
     return oldEntry != null ? oldEntry.getKey() : null;
   }
 
   @Override
   public synchronized Object get(String key) {
     Map.Entry<Object, ObjectLifeCycle> entry =
-        objectCache.get(key);
+      objectCache.get(key);
     return entry != null ? entry.getKey() : null;
   }
 
@@ -90,4 +78,15 @@ public class ObjectRegistryImpl implements ObjectRegistry {
     return add(ObjectLifeCycle.SESSION, key, value);
   }
 
+  public enum ObjectLifeCycle {
+    /** Objects are valid for the lifetime of the Tez JVM/Session
+     */
+    SESSION,
+    /** Objects are valid for the lifetime of the DAG.
+     */
+    DAG,
+    /** Objects are valid for the lifetime of the Vertex.
+     */
+    VERTEX,
+  }
 }

@@ -42,26 +42,29 @@ import java.util.Map;
  */
 public class SlowestVertexAnalyzer extends TezAnalyzerBase implements Analyzer {
 
-  private static final String[] headers = { "vertexName", "taskAttempts", "totalTime",
-      "shuffleTime", "shuffleTime_Max", "LastEventReceived", "LastEventReceivedFrom",
-      "75thPercentile", "95thPercentile", "98thPercentile", "Median",
-      "observation", "comments" };
-
-  private final CSVResult csvResult = new CSVResult(headers);
-
-  private final MetricRegistry metrics = new MetricRegistry();
-  private Histogram taskAttemptRuntimeHistorgram;
-
+  private static final String[] headers = {"vertexName", "taskAttempts", "totalTime",
+    "shuffleTime", "shuffleTime_Max", "LastEventReceived", "LastEventReceivedFrom",
+    "75thPercentile", "95thPercentile", "98thPercentile", "Median",
+    "observation", "comments"};
   private final static String MAX_VERTEX_RUNTIME = "tez.slowest-vertex-analyzer.max.vertex.runtime";
   private final static long MAX_VERTEX_RUNTIME_DEFAULT = 100000;
-
+  private final CSVResult csvResult = new CSVResult(headers);
+  private final MetricRegistry metrics = new MetricRegistry();
   private final long vertexRuntimeThreshold;
+  private Histogram taskAttemptRuntimeHistorgram;
 
   public SlowestVertexAnalyzer(Configuration config) {
     super(config);
     this.vertexRuntimeThreshold = Math.max(1, config.getLong(MAX_VERTEX_RUNTIME,
-        MAX_VERTEX_RUNTIME_DEFAULT));
+      MAX_VERTEX_RUNTIME_DEFAULT));
+  }
 
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    SlowestVertexAnalyzer analyzer = new SlowestVertexAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   private long getTaskRuntime(VertexInfo vertexInfo) {
@@ -70,8 +73,8 @@ public class SlowestVertexAnalyzer extends TezAnalyzerBase implements Analyzer {
 
     DagInfo dagInfo = vertexInfo.getDagInfo();
     long totalTime = ((lastTaskToFinish == null) ?
-        dagInfo.getFinishTime() : lastTaskToFinish.getFinishTime()) -
-        ((firstTaskToStart == null) ? dagInfo.getStartTime() : firstTaskToStart.getStartTime());
+      dagInfo.getFinishTime() : lastTaskToFinish.getFinishTime()) -
+      ((firstTaskToStart == null) ? dagInfo.getStartTime() : firstTaskToStart.getStartTime());
     return totalTime;
   }
 
@@ -80,7 +83,7 @@ public class SlowestVertexAnalyzer extends TezAnalyzerBase implements Analyzer {
 
     for (VertexInfo vertexInfo : dagInfo.getVertices()) {
       String vertexName = vertexInfo.getVertexName();
-      if (vertexInfo.getFirstTaskToStart()  == null || vertexInfo.getLastTaskToFinish() == null) {
+      if (vertexInfo.getFirstTaskToStart() == null || vertexInfo.getLastTaskToFinish() == null) {
         continue;
       }
 
@@ -90,14 +93,13 @@ public class SlowestVertexAnalyzer extends TezAnalyzerBase implements Analyzer {
       String maxSourceName = "";
       taskAttemptRuntimeHistorgram = metrics.histogram(vertexName);
 
-
       for (TaskAttemptInfo attemptInfo : vertexInfo.getTaskAttempts()) {
 
         taskAttemptRuntimeHistorgram.update(attemptInfo.getTimeTaken());
 
         //Get the last event received from the incoming vertices
         Map<String, TezCounter> lastEventReceivedMap = attemptInfo.getCounter(
-            TaskCounter.LAST_EVENT_RECEIVED.toString());
+          TaskCounter.LAST_EVENT_RECEIVED.toString());
 
         for (Map.Entry<String, TezCounter> entry : lastEventReceivedMap.entrySet()) {
           if (entry.getKey().equals(TaskCounter.class.getName())) {
@@ -118,7 +120,7 @@ public class SlowestVertexAnalyzer extends TezAnalyzerBase implements Analyzer {
       for (TaskAttemptInfo attemptInfo : vertexInfo.getTaskAttempts()) {
         //Get the last event received from the incoming vertices
         Map<String, TezCounter> lastEventReceivedMap = attemptInfo.getCounter(
-            TaskCounter.SHUFFLE_PHASE_TIME.toString());
+          TaskCounter.SHUFFLE_PHASE_TIME.toString());
 
         for (Map.Entry<String, TezCounter> entry : lastEventReceivedMap.entrySet()) {
           if (entry.getKey().equals(TaskCounter.class.getName())) {
@@ -169,15 +171,15 @@ public class SlowestVertexAnalyzer extends TezAnalyzerBase implements Analyzer {
         if ((shuffleMax * 1.0f / totalTime) > 0.5) {
           if ((slowestLastEventTime * 1.0f / totalTime) > 0.5) {
             comments = "This vertex is slow due to its dependency on parent. Got a lot delayed last"
-                + " event received";
+              + " event received";
           } else {
             comments =
-                "Spending too much time on shuffle. Check shuffle bytes from previous vertex";
+              "Spending too much time on shuffle. Check shuffle bytes from previous vertex";
           }
         } else {
           if (totalTime > vertexRuntimeThreshold) { //greater than X seconds.
             comments = "Concentrate on this vertex (totalTime > " + vertexRuntimeThreshold
-                + " seconds)";
+              + " seconds)";
           }
         }
       }
@@ -186,7 +188,6 @@ public class SlowestVertexAnalyzer extends TezAnalyzerBase implements Analyzer {
       csvResult.addRecord(record.toArray(new String[record.size()]));
     }
   }
-
 
   @Override
   public CSVResult getResult() throws TezException {
@@ -201,13 +202,5 @@ public class SlowestVertexAnalyzer extends TezAnalyzerBase implements Analyzer {
   @Override
   public String getDescription() {
     return "Identify the slowest vertex in the DAG, which needs to be looked into first";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    SlowestVertexAnalyzer analyzer = new SlowestVertexAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

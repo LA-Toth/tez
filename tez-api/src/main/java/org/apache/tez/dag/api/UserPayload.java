@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,12 +18,14 @@
 
 package org.apache.tez.dag.api;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.nio.ByteBuffer;
+
 import javax.annotation.Nullable;
 
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Wrapper class to hold user payloads
@@ -31,9 +33,9 @@ import org.apache.hadoop.classification.InterfaceStability;
  */
 @Public
 public final class UserPayload {
+  private static final ByteBuffer EMPTY_BYTE = ByteBuffer.wrap(new byte[0]);
   private final ByteBuffer payload;
   private final int version;
-  private static final ByteBuffer EMPTY_BYTE = ByteBuffer.wrap(new byte[0]);
 
   private UserPayload(@Nullable ByteBuffer payload) {
     this(payload, 0);
@@ -73,6 +75,7 @@ public final class UserPayload {
     // ByteBuffer - deepCopyAsArray and TezEntityDescriptor need to be looked at.
     return payload == EMPTY_BYTE ? null : payload.duplicate();
   }
+
   /**
    * Return the payload as a read-only ByteBuffer.
    * @return read-only ByteBuffer.

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -60,6 +60,7 @@ import org.apache.tez.test.TestProcessor;
 import org.apache.tez.test.dag.SimpleReverseVTestDAG;
 import org.apache.tez.test.dag.SimpleVTestDAG;
 import org.apache.tez.tests.MiniTezClusterWithTimeline;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -72,24 +73,21 @@ import com.google.common.collect.Lists;
 
 public class TestAnalyzer {
   private static final Logger LOG = LoggerFactory.getLogger(TestAnalyzer.class);
-
-  private static String TEST_ROOT_DIR =
-      "target" + Path.SEPARATOR + TestAnalyzer.class.getName() + "-tmpDir";
-  private static String DOWNLOAD_DIR = TEST_ROOT_DIR + Path.SEPARATOR + "download";
   private final static String SIMPLE_HISTORY_DIR = "/tmp/simplehistory/";
   private final static String HISTORY_TXT = "history.txt";
-
+  private static String TEST_ROOT_DIR =
+    "target" + Path.SEPARATOR + TestAnalyzer.class.getName() + "-tmpDir";
+  private static String DOWNLOAD_DIR = TEST_ROOT_DIR + Path.SEPARATOR + "download";
   private static MiniDFSCluster dfsCluster;
   private static MiniTezClusterWithTimeline miniTezCluster;
 
   private static Configuration conf = new Configuration();
   private static FileSystem fs;
-  
+
   private static TezClient tezSession = null;
-  
+  private static String yarnTimelineAddress;
   private boolean usingATS = true;
   private boolean downloadedSimpleHistoryFile = false;
-  private static String yarnTimelineAddress;
 
   @BeforeClass
   public static void setupClass() throws Exception {
@@ -98,13 +96,13 @@ public class TestAnalyzer {
     EditLogFileOutputStream.setShouldSkipFsyncForTesting(true);
     conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, TEST_ROOT_DIR);
     dfsCluster =
-        new MiniDFSCluster.Builder(conf).numDataNodes(1).format(true).build();
+      new MiniDFSCluster.Builder(conf).numDataNodes(1).format(true).build();
     fs = dfsCluster.getFileSystem();
     conf.set("fs.defaultFS", fs.getUri().toString());
 
     setupTezCluster();
   }
-  
+
   @AfterClass
   public static void tearDownClass() throws Exception {
     LOG.info("Stopping mini clusters");
@@ -117,7 +115,23 @@ public class TestAnalyzer {
       dfsCluster = null;
     }
   }
-  
+
+  private static void setupTezCluster() throws Exception {
+    // make the test run faster by speeding heartbeat frequency
+    conf.setInt(YarnConfiguration.RM_NM_HEARTBEAT_INTERVAL_MS, 100);
+    conf.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, true);
+    conf.setBoolean(TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS, true);
+    conf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS, ATSHistoryLoggingService
+      .class.getName());
+
+    miniTezCluster =
+      new MiniTezClusterWithTimeline(TestAnalyzer.class.getName(), 1, 1, 1, true);
+
+    miniTezCluster.init(conf);
+    miniTezCluster.start();
+    yarnTimelineAddress = miniTezCluster.getConfig().get(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS);
+  }
+
   private CriticalPathAnalyzer setupCPAnalyzer() {
     Configuration analyzerConf = new Configuration(false);
     analyzerConf.setBoolean(CriticalPathAnalyzer.DRAW_SVG, false);
@@ -126,33 +140,17 @@ public class TestAnalyzer {
     return cp;
   }
 
-  private static void setupTezCluster() throws Exception {
-    // make the test run faster by speeding heartbeat frequency
-    conf.setInt(YarnConfiguration.RM_NM_HEARTBEAT_INTERVAL_MS, 100);
-    conf.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, true);
-    conf.setBoolean(TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS, true);
-    conf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS, ATSHistoryLoggingService
-        .class.getName());
-
-    miniTezCluster =
-        new MiniTezClusterWithTimeline(TestAnalyzer.class.getName(), 1, 1, 1, true);
-
-    miniTezCluster.init(conf);
-    miniTezCluster.start();
-    yarnTimelineAddress = miniTezCluster.getConfig().get(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS);
-  }
-
   private TezConfiguration createCommonTezLog() throws Exception {
     TezConfiguration tezConf = new TezConfiguration(miniTezCluster.getConfig());
-    
+
     tezConf.setInt(TezConfiguration.TEZ_AM_RM_HEARTBEAT_INTERVAL_MS_MAX, 100);
     Path remoteStagingDir = dfsCluster.getFileSystem().makeQualified(new Path(TEST_ROOT_DIR, String
-        .valueOf(new Random().nextInt(100000))));
-    
+      .valueOf(new Random().nextInt(100000))));
+
     tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR,
-        remoteStagingDir.toString());
+      remoteStagingDir.toString());
     tezConf.setBoolean(TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED, false);
-    
+
     return tezConf;
   }
 
@@ -160,76 +158,49 @@ public class TestAnalyzer {
     TezConfiguration tezConf = createCommonTezLog();
     tezConf.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, true);
     tezConf.set(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS,
-        miniTezCluster.getConfig().get(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS));
+      miniTezCluster.getConfig().get(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS));
     tezConf.setBoolean(TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS, true);
     tezConf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-        ATSHistoryLoggingService.class.getName());
-    
+      ATSHistoryLoggingService.class.getName());
+
     Path remoteStagingDir = dfsCluster.getFileSystem().makeQualified(new Path(TEST_ROOT_DIR, String
-        .valueOf(new Random().nextInt(100000))));
-    
+      .valueOf(new Random().nextInt(100000))));
+
     tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR,
-        remoteStagingDir.toString());
+      remoteStagingDir.toString());
     tezConf.setBoolean(TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED, false);
 
     tezSession = TezClient.create("TestAnalyzer", tezConf, true);
     tezSession.start();
   }
-  
+
   private void createTezSessionSimpleHistory() throws Exception {
     TezConfiguration tezConf = createCommonTezLog();
     tezConf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-        SimpleHistoryLoggingService.class.getName());
+      SimpleHistoryLoggingService.class.getName());
 
     tezConf.set(TezConfiguration.TEZ_SIMPLE_HISTORY_LOGGING_DIR, SIMPLE_HISTORY_DIR);
 
     Path remoteStagingDir = dfsCluster.getFileSystem().makeQualified(new Path(TEST_ROOT_DIR, String
-        .valueOf(new Random().nextInt(100000))));
-    
+      .valueOf(new Random().nextInt(100000))));
+
     tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR,
-        remoteStagingDir.toString());
+      remoteStagingDir.toString());
     tezConf.setBoolean(TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED, false);
 
     tezSession = TezClient.create("TestFaultTolerance", tezConf, true);
     tezSession.start();
   }
-  
+
   private StepCheck createStep(String attempt, CriticalPathDependency reason) {
     return createStep(attempt, reason, null, null);
   }
-  
-  private StepCheck createStep(String attempt, CriticalPathDependency reason, 
-      TaskAttemptTerminationCause errCause, List<String> notes) {
+
+  private StepCheck createStep(String attempt, CriticalPathDependency reason,
+                               TaskAttemptTerminationCause errCause, List<String> notes) {
     return new StepCheck(attempt, reason, errCause, notes);
   }
-  
-  private class StepCheck {
-    String attempt; // attempt is the TaskAttemptInfo short name with regex
-    CriticalPathDependency reason;
-    TaskAttemptTerminationCause errCause;
-    List<String> notesStr;
 
-    StepCheck(String attempt, CriticalPathDependency reason, 
-        TaskAttemptTerminationCause cause, List<String> notes) {
-      this.attempt = attempt;
-      this.reason = reason;
-      this.errCause = cause;
-      this.notesStr = notes;
-    }
-    String getAttemptDetail() {
-      return attempt;
-    }
-    CriticalPathDependency getReason() {
-      return reason;
-    }
-    TaskAttemptTerminationCause getErrCause() {
-      return errCause;
-    }
-    List<String> getNotesStr() {
-      return notesStr;
-    }
-  }
-  
   private void runDAG(DAG dag, DAGStatus.State finalState) throws Exception {
     tezSession.waitTillReady();
     LOG.info("ABC Running DAG name: " + dag.getName());
@@ -237,37 +208,38 @@ public class TestAnalyzer {
     DAGStatus dagStatus = dagClient.getDAGStatus(null);
     while (!dagStatus.isCompleted()) {
       LOG.info("Waiting for dag to complete. Sleeping for 500ms."
-          + " DAG name: " + dag.getName()
-          + " DAG appContext: " + dagClient.getExecutionContext()
-          + " Current state: " + dagStatus.getState());
+        + " DAG name: " + dag.getName()
+        + " DAG appContext: " + dagClient.getExecutionContext()
+        + " Current state: " + dagStatus.getState());
       Thread.sleep(100);
       dagStatus = dagClient.getDAGStatus(null);
     }
 
     Assert.assertEquals(finalState, dagStatus.getState());
   }
-  
+
   private void verify(ApplicationId appId, int dagNum, List<StepCheck[]> steps) throws Exception {
     String dagId = TezDAGID.getInstance(appId, dagNum).toString();
     DagInfo dagInfo = getDagInfo(dagId);
-    
+
     verifyCriticalPath(dagInfo, steps);
   }
-  
+
   private DagInfo getDagInfo(String dagId) throws Exception {
     // sleep for a bit to let ATS events be sent from AM
     DagInfo dagInfo = null;
     if (usingATS) {
       //Export the data from ATS
-      String[] args = { "--dagId=" + dagId, "--downloadDir=" + DOWNLOAD_DIR, "--yarnTimelineAddress=" + yarnTimelineAddress };
-  
+      String[] args = {
+        "--dagId=" + dagId, "--downloadDir=" + DOWNLOAD_DIR, "--yarnTimelineAddress=" + yarnTimelineAddress};
+
       int result = ATSImportTool.process(args);
       assertTrue(result == 0);
-  
+
       //Parse ATS data and verify results
       //Parse downloaded contents
       File downloadedFile = new File(DOWNLOAD_DIR
-          + Path.SEPARATOR + dagId + ".zip");
+        + Path.SEPARATOR + dagId + ".zip");
       ATSFileParser parser = new ATSFileParser(Arrays.asList(downloadedFile));
       dagInfo = parser.getDAGData(dagId);
       assertTrue(dagInfo.getDagId().equals(dagId));
@@ -276,12 +248,12 @@ public class TestAnalyzer {
         downloadedSimpleHistoryFile = true;
         TezDAGID tezDAGID = TezDAGID.fromString(dagId);
         ApplicationAttemptId applicationAttemptId = ApplicationAttemptId.newInstance(tezDAGID
-            .getApplicationId(), 1);
+          .getApplicationId(), 1);
         Path historyPath = new Path(miniTezCluster.getConfig().get("fs.defaultFS")
-            + SIMPLE_HISTORY_DIR + HISTORY_TXT + "."
-            + applicationAttemptId);
+          + SIMPLE_HISTORY_DIR + HISTORY_TXT + "."
+          + applicationAttemptId);
         FileSystem fs = historyPath.getFileSystem(miniTezCluster.getConfig());
-  
+
         Path localPath = new Path(DOWNLOAD_DIR, HISTORY_TXT);
         fs.copyToLocalFile(historyPath, localPath);
       }
@@ -293,18 +265,18 @@ public class TestAnalyzer {
     }
     return dagInfo;
   }
-  
+
   private void verifyCriticalPath(DagInfo dagInfo, List<StepCheck[]> stepsOptions) throws Exception {
     CriticalPathAnalyzer cp = setupCPAnalyzer();
     cp.analyze(dagInfo);
-    
+
     List<CriticalPathStep> criticalPath = cp.getCriticalPath();
 
     for (CriticalPathStep step : criticalPath) {
       LOG.info("ABC Step: " + step.getType());
       if (step.getType() == EntityType.ATTEMPT) {
-        LOG.info("ABC Attempt: " + step.getAttempt().getShortName() 
-            + " " + step.getAttempt().getDetailedStatus());
+        LOG.info("ABC Attempt: " + step.getAttempt().getShortName()
+          + " " + step.getAttempt().getDetailedStatus());
       }
       LOG.info("ABC Reason: " + step.getReason());
       String notes = Joiner.on(";").join(step.getNotes());
@@ -317,18 +289,18 @@ public class TestAnalyzer {
         foundMatchingLength = true;
         Assert.assertEquals(CriticalPathStep.EntityType.VERTEX_INIT, criticalPath.get(0).getType());
         Assert.assertEquals(criticalPath.get(1).getAttempt().getShortName(),
-            criticalPath.get(0).getAttempt().getShortName());
+          criticalPath.get(0).getAttempt().getShortName());
 
-        for (int i=1; i<criticalPath.size() - 1; ++i) {
-          StepCheck check = steps[i-1];
+        for (int i = 1; i < criticalPath.size() - 1; ++i) {
+          StepCheck check = steps[i - 1];
           CriticalPathStep step = criticalPath.get(i);
           Assert.assertEquals(CriticalPathStep.EntityType.ATTEMPT, step.getType());
-          Assert.assertTrue(check.getAttemptDetail(), 
-              step.getAttempt().getShortName().matches(check.getAttemptDetail()));
-          Assert.assertEquals(steps[i-1].getReason(), step.getReason());
+          Assert.assertTrue(check.getAttemptDetail(),
+            step.getAttempt().getShortName().matches(check.getAttemptDetail()));
+          Assert.assertEquals(steps[i - 1].getReason(), step.getReason());
           if (check.getErrCause() != null) {
             Assert.assertEquals(check.getErrCause(),
-                TaskAttemptTerminationCause.valueOf(step.getAttempt().getTerminationCause()));
+              TaskAttemptTerminationCause.valueOf(step.getAttempt().getTerminationCause()));
           }
           if (check.getNotesStr() != null) {
             String notes = Joiner.on("#").join(step.getNotes());
@@ -337,31 +309,30 @@ public class TestAnalyzer {
             }
           }
         }
-    
+
         Assert.assertEquals(CriticalPathStep.EntityType.DAG_COMMIT,
-            criticalPath.get(criticalPath.size() - 1).getType());
+          criticalPath.get(criticalPath.size() - 1).getType());
         break;
       }
     }
-    
+
     Assert.assertTrue(foundMatchingLength);
-    
   }
-  
-  @Test (timeout=300000)
+
+  @Test(timeout = 300000)
   public void testWithATS() throws Exception {
     usingATS = true;
     createTezSessionATS();
     runTests();
   }
-  
-  @Test (timeout=300000)
+
+  @Test(timeout = 300000)
   public void testWithSimpleHistory() throws Exception {
     usingATS = false;
     createTezSessionSimpleHistory();
     runTests();
   }
-  
+
   private void runTests() throws Exception {
     ApplicationId appId = tezSession.getAppMasterApplicationId();
     List<List<StepCheck[]>> stepsOptions = Lists.newArrayList();
@@ -379,117 +350,117 @@ public class TestAnalyzer {
     stepsOptions.add(testInputFailureRerunCanSendOutputToTwoDownstreamVertices());
     stepsOptions.add(testCascadingInputFailureWithExitSuccess());
     stepsOptions.add(testInternalPreemption());
-    
+
     // close session to flush
     if (tezSession != null) {
       tezSession.stop();
     }
-    Thread.sleep((TezConstants.TEZ_DAG_SLEEP_TIME_BEFORE_EXIT*3)/2);
-    
+    Thread.sleep((TezConstants.TEZ_DAG_SLEEP_TIME_BEFORE_EXIT * 3) / 2);
+
     // verify all dags
-    for (int i=0; i<stepsOptions.size(); ++i) {
-      verify(appId, i+1, stepsOptions.get(i));
-    }    
+    for (int i = 0; i < stepsOptions.size(); ++i) {
+      verify(appId, i + 1, stepsOptions.get(i));
+    }
   }
-  
+
   private List<StepCheck[]> testBasicSuccessScatterGather() throws Exception {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleTestDAG.TEZ_SIMPLE_DAG_NUM_TASKS, 1);
-    StepCheck[] check = { 
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY)
-        };
+    StepCheck[] check = {
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY)
+    };
     DAG dag = SimpleTestDAG.createDAG("testBasicSuccessScatterGather", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   private List<StepCheck[]> testBasicTaskFailure() throws Exception {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleTestDAG.TEZ_SIMPLE_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_DO_FAIL, "v1"), true);
+      TestProcessor.TEZ_FAILING_PROCESSOR_DO_FAIL, "v1"), true);
     testConf.set(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_TASK_INDEX, "v1"), "0");
+      TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_TASK_INDEX, "v1"), "0");
     testConf.setInt(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_UPTO_TASK_ATTEMPT, "v1"), 0);
+      TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_UPTO_TASK_ATTEMPT, "v1"), 0);
 
     StepCheck[] check = {
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.RETRY_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.RETRY_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
     };
     DAG dag = SimpleTestDAG.createDAG("testBasicTaskFailure", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   private List<StepCheck[]> testTaskMultipleFailures() throws Exception {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleTestDAG.TEZ_SIMPLE_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_DO_FAIL, "v1"), true);
+      TestProcessor.TEZ_FAILING_PROCESSOR_DO_FAIL, "v1"), true);
     testConf.set(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_TASK_INDEX, "v1"), "0");
+      TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_TASK_INDEX, "v1"), "0");
     testConf.setInt(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_UPTO_TASK_ATTEMPT, "v1"), 1);
+      TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_UPTO_TASK_ATTEMPT, "v1"), 1);
 
     StepCheck[] check = {
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.RETRY_DEPENDENCY),
-        createStep("v1 : 000000_2", CriticalPathDependency.RETRY_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-    };    
-    
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.RETRY_DEPENDENCY),
+      createStep("v1 : 000000_2", CriticalPathDependency.RETRY_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+    };
+
     DAG dag = SimpleTestDAG.createDAG("testTaskMultipleFailures", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   private List<StepCheck[]> testBasicInputFailureWithExit() throws Exception {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleTestDAG.TEZ_SIMPLE_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v2"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v2"), true);
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
 
     StepCheck[] check = {
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v2 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY),
-      };
-    
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v2 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY),
+    };
+
     DAG dag = SimpleTestDAG.createDAG("testBasicInputFailureWithExit", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   private List<StepCheck[]> testBasicInputFailureWithoutExit() throws Exception {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleTestDAG.TEZ_SIMPLE_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
 
     StepCheck[] check = {
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-      };
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+    };
 
     DAG dag = SimpleTestDAG.createDAG("testBasicInputFailureWithoutExit", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
@@ -500,26 +471,26 @@ public class TestAnalyzer {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleTestDAG.TEZ_SIMPLE_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v2"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v2"), true);
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0,1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0,1");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
     testConf.setInt(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v2"), 1);
+      TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v2"), 1);
 
     StepCheck[] check = {
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v2 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v1 : 000000_2", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v2 : 000000_2", CriticalPathDependency.DATA_DEPENDENCY),
-      };
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v2 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v1 : 000000_2", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v2 : 000000_2", CriticalPathDependency.DATA_DEPENDENCY),
+    };
 
     DAG dag = SimpleTestDAG.createDAG("testMultiVersionInputFailureWithExit", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
@@ -530,72 +501,72 @@ public class TestAnalyzer {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleTestDAG.TEZ_SIMPLE_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
     testConf.setInt(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v2"), 1);
+      TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v2"), 1);
 
     StepCheck[] check = {
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v1 : 000000_2", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-      };
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v1 : 000000_2", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+    };
 
     DAG dag = SimpleTestDAG.createDAG("testMultiVersionInputFailureWithoutExit", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   /**
    * Sets configuration for cascading input failure tests that
    * use SimpleTestDAG3Vertices.
    * @param testConf configuration
-   * @param failAndExit whether input failure should trigger attempt exit 
+   * @param failAndExit whether input failure should trigger attempt exit
    */
-  private void setCascadingInputFailureConfig(Configuration testConf, 
+  private void setCascadingInputFailureConfig(Configuration testConf,
                                               boolean failAndExit,
                                               int numTasks) {
     // v2 attempt0 succeeds.
     // v2 all tasks attempt1 input0 fail up to version 0.
     testConf.setInt(SimpleTestDAG3Vertices.TEZ_SIMPLE_DAG_NUM_TASKS, numTasks);
     testConf.setBoolean(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
     testConf.setBoolean(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v2"), failAndExit);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v2"), failAndExit);
     testConf.set(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "-1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "-1");
     testConf.set(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "1");
     testConf.set(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "0");
     testConf.setInt(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v2"),
-            0);
+        TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v2"),
+      0);
 
     //v3 task0 attempt0 all inputs fails up to version 0.
     testConf.setBoolean(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v3"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v3"), true);
     testConf.setBoolean(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v3"), failAndExit);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v3"), failAndExit);
     testConf.set(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v3"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v3"), "0");
     testConf.set(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v3"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v3"), "0");
     testConf.set(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v3"), "-1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v3"), "-1");
     testConf.setInt(TestInput.getVertexConfName(
-            TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v3"),
-            0);
+        TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v3"),
+      0);
   }
-  
+
   /**
    * Test cascading input failure without exit. Expecting success.
    * v1 -- v2 -- v3
@@ -603,7 +574,7 @@ public class TestAnalyzer {
    * v2 task0 attempt1 input0 fails. Wait. Triggering v1 rerun.
    * v1 attempt1 rerun and succeeds. v2 accepts v1 attempt1 output. v2 attempt1 succeeds.
    * v3 attempt0 accepts v2 attempt1 output.
-   * 
+   *
    * AM vertex succeeded order is v1, v2, v1, v2, v3.
    * @throws Exception
    */
@@ -612,21 +583,21 @@ public class TestAnalyzer {
     setCascadingInputFailureConfig(testConf, false, 1);
 
     StepCheck[] check = {
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v2 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v2 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v2 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v2 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
     };
-    
+
     DAG dag = SimpleTestDAG3Vertices.createDAG(
-              "testCascadingInputFailureWithoutExitSuccess", testConf);
+      "testCascadingInputFailureWithoutExitSuccess", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   /**
    * Test cascading input failure with exit. Expecting success.
    * v1 -- v2 -- v3
@@ -634,32 +605,32 @@ public class TestAnalyzer {
    * v2 task0 attempt1 input0 fails. v2 attempt1 exits. Triggering v1 rerun.
    * v1 attempt1 rerun and succeeds. v2 accepts v1 attempt1 output. v2 attempt2 succeeds.
    * v3 attempt1 accepts v2 attempt2 output.
-   * 
+   *
    * AM vertex succeeded order is v1, v2, v3, v1, v2, v3.
    * @throws Exception
    */
   private List<StepCheck[]> testCascadingInputFailureWithExitSuccess() throws Exception {
     Configuration testConf = new Configuration(false);
     setCascadingInputFailureConfig(testConf, true, 1);
-    
+
     StepCheck[] check = {
-        createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v2 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v2 : 000000_2", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v3 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY),
-      };
+      createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v2 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v2 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v2 : 000000_2", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v3 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY),
+    };
 
     DAG dag = SimpleTestDAG3Vertices.createDAG(
-              "testCascadingInputFailureWithExitSuccess", testConf);
+      "testCascadingInputFailureWithExitSuccess", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   /**
-   * 1 NM is running and can run 4 containers based on YARN mini cluster defaults and 
+   * 1 NM is running and can run 4 containers based on YARN mini cluster defaults and
    * Tez defaults for AM/task memory
    * v3 task0 reports read errors against both tasks of v2. This re-starts both of them.
    * Now all 4 slots are occupied 1 AM + 3 tasks
@@ -674,111 +645,111 @@ public class TestAnalyzer {
     setCascadingInputFailureConfig(testConf, false, 2);
 
     StepCheck[] check = {
-        createStep("v1 : 00000[01]_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v2 : 00000[01]_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY, 
-            TaskAttemptTerminationCause.INTERNAL_PREEMPTION, null),
-        createStep("v2 : 00000[01]_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY,
-            null, Collections.singletonList("preemption of v3")),
-        createStep("v2 : 00000[01]_1", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v3 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY)
+      createStep("v1 : 00000[01]_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v2 : 00000[01]_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY,
+        TaskAttemptTerminationCause.INTERNAL_PREEMPTION, null),
+      createStep("v2 : 00000[01]_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY,
+        null, Collections.singletonList("preemption of v3")),
+      createStep("v2 : 00000[01]_1", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v3 : 000000_1", CriticalPathDependency.DATA_DEPENDENCY)
     };
-    
+
     DAG dag = SimpleTestDAG3Vertices.createDAG(
-              "testInternalPreemption", testConf);
+      "testInternalPreemption", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   /**
-   * Input failure of v3 causes rerun of both both v1 and v2 vertices. 
+   * Input failure of v3 causes rerun of both both v1 and v2 vertices.
    *   v1  v2
    *    \ /
    *    v3
-   * 
+   *
    * @throws Exception
    */
   private List<StepCheck[]> testInputFailureCausesRerunOfTwoVerticesWithoutExit() throws Exception {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleVTestDAG.TEZ_SIMPLE_V_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v3"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v3"), true);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v3"), false);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v3"), false);
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v3"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v3"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v3"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v3"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v3"), "-1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v3"), "-1");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v3"), "1");
-    
+      TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v3"), "1");
+
     StepCheck[] check = {
-        // use regex for either vertices being possible on the path
-        createStep("v[12] : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v[12] : 000000_[01]", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v[12] : 000000_[012]", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v[12] : 000000_[12]", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v[12] : 000000_2", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-      };
+      // use regex for either vertices being possible on the path
+      createStep("v[12] : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v[12] : 000000_[01]", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v[12] : 000000_[012]", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v[12] : 000000_[12]", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v[12] : 000000_2", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+    };
 
     DAG dag = SimpleVTestDAG.createDAG(
-            "testInputFailureCausesRerunOfTwoVerticesWithoutExit", testConf);
+      "testInputFailureCausesRerunOfTwoVerticesWithoutExit", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
   /**
-   * Downstream(v3) attempt failure of a vertex connected with 
-   * 2 upstream vertices.. 
+   * Downstream(v3) attempt failure of a vertex connected with
+   * 2 upstream vertices..
    *   v1  v2
    *    \ /
    *    v3
-   * 
+   *
    * @throws Exception
    */
-  private List<StepCheck[]> testAttemptOfDownstreamVertexConnectedWithTwoUpstreamVerticesFailure() 
-      throws Exception {
+  private List<StepCheck[]> testAttemptOfDownstreamVertexConnectedWithTwoUpstreamVerticesFailure()
+    throws Exception {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleVTestDAG.TEZ_SIMPLE_V_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_DO_FAIL, "v3"), true);
+      TestProcessor.TEZ_FAILING_PROCESSOR_DO_FAIL, "v3"), true);
     testConf.set(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_TASK_INDEX, "v3"), "0");
+      TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_TASK_INDEX, "v3"), "0");
     testConf.setInt(TestProcessor.getVertexConfName(
-        TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_UPTO_TASK_ATTEMPT, "v3"), 1);
-    
+      TestProcessor.TEZ_FAILING_PROCESSOR_FAILING_UPTO_TASK_ATTEMPT, "v3"), 1);
+
     StepCheck[] check = {
-        // use regex for either vertices being possible on the path
-        createStep("v[12] : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
-        createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
-        createStep("v3 : 000000_1", CriticalPathDependency.RETRY_DEPENDENCY),
-        createStep("v3 : 000000_2", CriticalPathDependency.RETRY_DEPENDENCY),
-      };
+      // use regex for either vertices being possible on the path
+      createStep("v[12] : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
+      createStep("v3 : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
+      createStep("v3 : 000000_1", CriticalPathDependency.RETRY_DEPENDENCY),
+      createStep("v3 : 000000_2", CriticalPathDependency.RETRY_DEPENDENCY),
+    };
 
     DAG dag = SimpleVTestDAG.createDAG(
-            "testAttemptOfDownstreamVertexConnectedWithTwoUpstreamVerticesFailure", testConf);
+      "testAttemptOfDownstreamVertexConnectedWithTwoUpstreamVerticesFailure", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-    
+
   /**
    * Input failure of v2,v3 trigger v1 rerun.
    * Both v2 and v3 report error on v1 and dont exit. So one of them triggers next
    * version of v1 and also consume the output of the next version. While the other
-   * consumes the output of the next version of v1. 
-   * Reruns can send output to 2 downstream vertices. 
+   * consumes the output of the next version of v1.
+   * Reruns can send output to 2 downstream vertices.
    *     v1
    *    /  \
-   *   v2   v3 
-   * 
+   *   v2   v3
+   *
    * Also covers multiple consumer vertices report failure against same producer task.
    * @throws Exception
    */
@@ -786,42 +757,72 @@ public class TestAnalyzer {
     Configuration testConf = new Configuration(false);
     testConf.setInt(SimpleReverseVTestDAG.TEZ_SIMPLE_REVERSE_V_DAG_NUM_TASKS, 1);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v2"), true);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v2"), false);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v2"), false);
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "-1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v2"), "-1");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v2"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "-1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v2"), "-1");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v2"), "0");
-    
+      TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v2"), "0");
+
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v3"), true);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL, "v3"), true);
     testConf.setBoolean(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v3"), false);
+      TestInput.TEZ_FAILING_INPUT_DO_FAIL_AND_EXIT, "v3"), false);
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v3"), "-1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_INDEX, "v3"), "-1");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v3"), "0");
+      TestInput.TEZ_FAILING_INPUT_FAILING_TASK_ATTEMPT, "v3"), "0");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v3"), "-1");
+      TestInput.TEZ_FAILING_INPUT_FAILING_INPUT_INDEX, "v3"), "-1");
     testConf.set(TestInput.getVertexConfName(
-        TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v3"), "0");
-    
+      TestInput.TEZ_FAILING_INPUT_FAILING_UPTO_INPUT_ATTEMPT, "v3"), "0");
+
     StepCheck[] check = {
-        // use regex for either vertices being possible on the path
+      // use regex for either vertices being possible on the path
       createStep("v1 : 000000_0", CriticalPathDependency.INIT_DEPENDENCY),
       createStep("v[23] : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
       createStep("v1 : 000000_1", CriticalPathDependency.OUTPUT_RECREATE_DEPENDENCY),
       createStep("v[23] : 000000_0", CriticalPathDependency.DATA_DEPENDENCY),
     };
     DAG dag = SimpleReverseVTestDAG.createDAG(
-            "testInputFailureRerunCanSendOutputToTwoDownstreamVertices", testConf);
+      "testInputFailureRerunCanSendOutputToTwoDownstreamVertices", testConf);
     runDAG(dag, DAGStatus.State.SUCCEEDED);
     return Collections.singletonList(check);
   }
-  
+
+  private class StepCheck {
+    String attempt; // attempt is the TaskAttemptInfo short name with regex
+    CriticalPathDependency reason;
+    TaskAttemptTerminationCause errCause;
+    List<String> notesStr;
+
+    StepCheck(String attempt, CriticalPathDependency reason,
+              TaskAttemptTerminationCause cause, List<String> notes) {
+      this.attempt = attempt;
+      this.reason = reason;
+      this.errCause = cause;
+      this.notesStr = notes;
+    }
+
+    String getAttemptDetail() {
+      return attempt;
+    }
+
+    CriticalPathDependency getReason() {
+      return reason;
+    }
+
+    TaskAttemptTerminationCause getErrCause() {
+      return errCause;
+    }
+
+    List<String> getNotesStr() {
+      return notesStr;
+    }
+  }
 }

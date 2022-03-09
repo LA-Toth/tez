@@ -26,8 +26,6 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -51,6 +49,9 @@ import org.apache.tez.runtime.api.ProcessorContext;
 import org.apache.tez.runtime.library.processor.SimpleProcessor;
 import org.apache.tez.util.StopWatch;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class RPCLoadGen extends TezExampleBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(RPCLoadGen.class);
@@ -68,15 +69,20 @@ public class RPCLoadGen extends TezExampleBase {
   private FileSystem fs;
   private Path resourcePath;
 
+  public static void main(String[] args) throws Exception {
+    int res = ToolRunner.run(new Configuration(), new RPCLoadGen(), args);
+    System.exit(res);
+  }
+
   @Override
   protected final int runJob(String[] args, TezConfiguration tezConf, TezClient tezClient) throws
-      TezException, InterruptedException, IOException {
+    TezException, InterruptedException, IOException {
     LOG.info("Running: " +
-        this.getClass().getSimpleName());
+      this.getClass().getSimpleName());
     String mode = VIA_RPC;
     if (args.length == 4) {
       if (args[3].equals(VIA_RPC) || args[3].equals(VIA_HDFS_DIRECT_READ) ||
-          args[3].equals(VIA_HDFS_DIST_CACHE)) {
+        args[3].equals(VIA_HDFS_DIST_CACHE)) {
         mode = args[3];
       } else {
         printUsage();
@@ -88,7 +94,7 @@ public class RPCLoadGen extends TezExampleBase {
     int maxSleepTimeMillis = Integer.parseInt(args[1]);
     int payloadSizeBytes = Integer.parseInt(args[2]);
     LOG.info("Parameters: numTasks=" + numTasks + ", maxSleepTime(ms)=" + maxSleepTimeMillis +
-        ", payloadSize(bytes)=" + payloadSizeBytes + ", mode=" + mode);
+      ", payloadSize(bytes)=" + payloadSizeBytes + ", mode=" + mode);
 
     DAG dag = createDAG(tezConf, numTasks, maxSleepTimeMillis, payloadSizeBytes, mode);
     try {
@@ -105,14 +111,14 @@ public class RPCLoadGen extends TezExampleBase {
   @Override
   protected void printUsage() {
     System.err.println(
-        "Usage: " + "RPCLoadGen <numTasks> <max_sleep_time_millis> <get_task_payload_size> [" +
-            "<" + VIA_RPC + ">|" + VIA_HDFS_DIST_CACHE + "|" + VIA_HDFS_DIRECT_READ + "]");
+      "Usage: " + "RPCLoadGen <numTasks> <max_sleep_time_millis> <get_task_payload_size> [" +
+        "<" + VIA_RPC + ">|" + VIA_HDFS_DIST_CACHE + "|" + VIA_HDFS_DIRECT_READ + "]");
     ToolRunner.printGenericCommandUsage(System.err);
   }
 
   @Override
   protected final int validateArgs(String[] otherArgs) {
-    return (otherArgs.length >=3 && otherArgs.length <=4) ? 0 : 2;
+    return (otherArgs.length >= 3 && otherArgs.length <= 4) ? 0 : 2;
   }
 
   private DAG createDAG(TezConfiguration conf, int numTasks, int maxSleepTimeMillis,
@@ -120,11 +126,11 @@ public class RPCLoadGen extends TezExampleBase {
 
     Map<String, LocalResource> localResourceMap = new HashMap<String, LocalResource>();
     UserPayload payload =
-        createUserPayload(conf, maxSleepTimeMillis, payloadSize, mode, localResourceMap);
+      createUserPayload(conf, maxSleepTimeMillis, payloadSize, mode, localResourceMap);
 
     Vertex vertex = Vertex.create("RPCLoadVertex",
-        ProcessorDescriptor.create(RPCSleepProcessor.class.getName()).setUserPayload(
-            payload), numTasks).addTaskLocalFiles(localResourceMap);
+      ProcessorDescriptor.create(RPCSleepProcessor.class.getName()).setUserPayload(
+        payload), numTasks).addTaskLocalFiles(localResourceMap);
 
     return DAG.create("RPCLoadGen").addVertex(vertex);
   }
@@ -132,7 +138,7 @@ public class RPCLoadGen extends TezExampleBase {
   private UserPayload createUserPayload(TezConfiguration conf, int maxSleepTimeMillis,
                                         int payloadSize, String mode,
                                         Map<String, LocalResource> localResources) throws
-      IOException {
+    IOException {
     ByteBuffer payload;
     if (mode.equals(VIA_RPC)) {
       if (payloadSize < 5) {
@@ -156,13 +162,13 @@ public class RPCLoadGen extends TezExampleBase {
       FSDataOutputStream dataOut = fs.create(resourcePath, true);
       dataOut.write(diskPayload);
       dataOut.close();
-      fs.setReplication(resourcePath, (short)10);
+      fs.setReplication(resourcePath, (short) 10);
       FileStatus fileStatus = fs.getFileStatus(resourcePath);
 
       if (mode.equals(VIA_HDFS_DIST_CACHE)) {
         LocalResource lr = LocalResource.newInstance(ConverterUtils.getYarnUrlFromPath(resourcePath),
-            LocalResourceType.ARCHIVE.FILE, LocalResourceVisibility.PRIVATE, fileStatus.getLen(),
-            fileStatus.getModificationTime());
+          LocalResourceType.ARCHIVE.FILE, LocalResourceVisibility.PRIVATE, fileStatus.getLen(),
+          fileStatus.getModificationTime());
         localResources.put(DISK_PAYLOAD_NAME, lr);
         payload.put(4, VIA_HDFS_DIST_CACHE_BYTE); // ViaRPC
       } else if (mode.equals(VIA_HDFS_DIRECT_READ)) {
@@ -208,10 +214,5 @@ public class RPCLoadGen extends TezExampleBase {
       LOG.info("Sleeping for: " + sleepTime);
       Thread.sleep(sleepTime);
     }
-  }
-
-  public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(new Configuration(), new RPCLoadGen(), args);
-    System.exit(res);
   }
 }

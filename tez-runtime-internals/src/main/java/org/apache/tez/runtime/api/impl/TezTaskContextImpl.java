@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,16 +18,14 @@
 
 package org.apache.tez.runtime.api.impl;
 
-
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.Objects;
 
 import javax.annotation.Nullable;
 
@@ -35,19 +33,18 @@ import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.util.AuxiliaryServiceHelper;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezExecutors;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.EntityDescriptor;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.LogicalIOProcessorRuntimeTask;
-import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.ExecutionContext;
 import org.apache.tez.runtime.api.MemoryUpdateCallback;
 import org.apache.tez.runtime.api.ObjectRegistry;
 import org.apache.tez.runtime.api.TaskContext;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.common.resources.MemoryDistributor;
-
-import org.apache.tez.common.Preconditions;
 
 public abstract class TezTaskContextImpl implements TaskContext, Closeable {
 
@@ -55,32 +52,33 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
 
   protected final String taskVertexName;
   protected final TezTaskAttemptID taskAttemptID;
-  private final TezCounters counters;
-  private Configuration configuration;
-  private String[] workDirs;
-  private String uniqueIdentifier;
   protected final LogicalIOProcessorRuntimeTask runtimeTask;
   protected final TezUmbilical tezUmbilical;
+  protected final EntityDescriptor<?> descriptor;
+  private final TezCounters counters;
   private final Map<String, ByteBuffer> serviceConsumerMetadata;
   private final int appAttemptNumber;
   private final Map<String, String> auxServiceEnv;
-  protected volatile MemoryDistributor initialMemoryDistributor;
-  protected final EntityDescriptor<?> descriptor;
   private final String dagName;
-  private volatile ObjectRegistry objectRegistry;
   private final int vertexParallelism;
   private final ExecutionContext ExecutionContext;
   private final long memAvailable;
   private final TezExecutors sharedExecutor;
+  protected volatile MemoryDistributor initialMemoryDistributor;
+  private Configuration configuration;
+  private String[] workDirs;
+  private String uniqueIdentifier;
+  private volatile ObjectRegistry objectRegistry;
 
   @Private
   public TezTaskContextImpl(Configuration conf, String[] workDirs, int appAttemptNumber,
-      String dagName, String taskVertexName, int vertexParallelism, 
-      TezTaskAttemptID taskAttemptID, TezCounters counters, LogicalIOProcessorRuntimeTask runtimeTask,
-      TezUmbilical tezUmbilical, Map<String, ByteBuffer> serviceConsumerMetadata,
-      Map<String, String> auxServiceEnv, MemoryDistributor memDist,
-      EntityDescriptor<?> descriptor, ObjectRegistry objectRegistry,
-      ExecutionContext ExecutionContext, long memAvailable, TezExecutors sharedExecutor) {
+                            String dagName, String taskVertexName, int vertexParallelism,
+                            TezTaskAttemptID taskAttemptID, TezCounters counters,
+                            LogicalIOProcessorRuntimeTask runtimeTask,
+                            TezUmbilical tezUmbilical, Map<String, ByteBuffer> serviceConsumerMetadata,
+                            Map<String, String> auxServiceEnv, MemoryDistributor memDist,
+                            EntityDescriptor<?> descriptor, ObjectRegistry objectRegistry,
+                            ExecutionContext ExecutionContext, long memAvailable, TezExecutors sharedExecutor) {
     Objects.requireNonNull(conf, "conf is null");
     Objects.requireNonNull(dagName, "dagName is null");
     Objects.requireNonNull(taskVertexName, "taskVertexName is null");
@@ -106,7 +104,7 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
     this.appAttemptNumber = appAttemptNumber;
     this.auxServiceEnv = auxServiceEnv;
     this.uniqueIdentifier = String.format("%s_%05d", taskAttemptID.toString(),
-        generateId());
+      generateId());
     this.initialMemoryDistributor = memDist;
     this.descriptor = descriptor;
     this.objectRegistry = objectRegistry;
@@ -180,7 +178,7 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
   public String getUniqueIdentifier() {
     return uniqueIdentifier;
   }
-  
+
   @Override
   public ObjectRegistry getObjectRegistry() {
     return objectRegistry;
@@ -190,11 +188,11 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
   public final void notifyProgress() {
     runtimeTask.notifyProgressInvocation();
   }
-  
+
   @Override
   public ByteBuffer getServiceConsumerMetaData(String serviceName) {
     return (ByteBuffer) serviceConsumerMetadata.get(serviceName)
-        .asReadOnlyBuffer().rewind();
+      .asReadOnlyBuffer().rewind();
   }
 
   @Nullable
@@ -202,7 +200,7 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
   public ByteBuffer getServiceProviderMetaData(String serviceName) {
     Objects.requireNonNull(serviceName, "serviceName is null");
     return AuxiliaryServiceHelper.getServiceDataFromEnv(
-        serviceName, auxServiceEnv);
+      serviceName, auxServiceEnv);
   }
 
   @Override
@@ -210,11 +208,11 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
     // Nulls allowed since all IOs have to make this call.
     if (callbackHandler == null) {
       Preconditions.checkArgument(size == 0,
-          "A Null callback handler can only be used with a request size of 0");
+        "A Null callback handler can only be used with a request size of 0");
       callbackHandler = new MemoryUpdateCallback() {
         @Override
         public void memoryAssigned(long assignedSize) {
-          
+
         }
       };
     }
@@ -225,7 +223,7 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
   public long getTotalMemoryAvailableToTask() {
     return memAvailable;
   }
-  
+
   protected void signalFatalError(Throwable t, String message, EventMetaData sourceInfo) {
     signalFailure(TaskFailureType.NON_FATAL, t, message, sourceInfo);
   }
@@ -251,7 +249,7 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
 
   @Override
   public ExecutorService createTezFrameworkExecutorService(
-      int parallelism, String threadNameFormat) {
+    int parallelism, String threadNameFormat) {
     return sharedExecutor.createExecutorService(parallelism, threadNameFormat);
   }
 
@@ -262,7 +260,7 @@ public abstract class TezTaskContextImpl implements TaskContext, Closeable {
   @Override
   public void close() throws IOException {
     Preconditions.checkState(runtimeTask.isTaskDone(),
-        "Runtime task must be complete before calling cleanup");
+      "Runtime task must be complete before calling cleanup");
     this.objectRegistry = null;
     this.initialMemoryDistributor = null;
   }

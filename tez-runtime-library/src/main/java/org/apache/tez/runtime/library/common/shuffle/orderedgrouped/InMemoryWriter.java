@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,16 +19,17 @@ package org.apache.tez.runtime.library.common.shuffle.orderedgrouped;
 
 import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.io.BoundedByteArrayOutputStream;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.tez.common.io.NonSyncDataOutputStream;
 import org.apache.tez.runtime.library.common.sort.impl.IFile;
-import org.apache.tez.runtime.library.common.sort.impl.IFileOutputStream;
 import org.apache.tez.runtime.library.common.sort.impl.IFile.Writer;
+import org.apache.tez.runtime.library.common.sort.impl.IFileOutputStream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @InterfaceAudience.Private
 @InterfaceStability.Unstable
@@ -36,12 +37,6 @@ public class InMemoryWriter extends Writer {
   private static final Logger LOG = LoggerFactory.getLogger(InMemoryWriter.class);
 
   // TODO Verify and fix counters if required.
-
-  private static class InMemoryBoundedByteArrayOutputStream extends BoundedByteArrayOutputStream {
-    InMemoryBoundedByteArrayOutputStream(byte[] array) {
-      super(array, 0, array.length);
-    }
-  }
 
   public InMemoryWriter(byte[] array) {
     this(new InMemoryBoundedByteArrayOutputStream(array));
@@ -58,7 +53,7 @@ public class InMemoryWriter extends Writer {
 
   public void append(Object key, Object value) throws IOException {
     throw new UnsupportedOperationException
-    ("InMemoryWriter.append(K key, V value");
+      ("InMemoryWriter.append(K key, V value");
   }
 
   public void close() throws IOException {
@@ -75,4 +70,9 @@ public class InMemoryWriter extends Writer {
     out = null;
   }
 
+  private static class InMemoryBoundedByteArrayOutputStream extends BoundedByteArrayOutputStream {
+    InMemoryBoundedByteArrayOutputStream(byte[] array) {
+      super(array, 0, array.length);
+    }
+  }
 }

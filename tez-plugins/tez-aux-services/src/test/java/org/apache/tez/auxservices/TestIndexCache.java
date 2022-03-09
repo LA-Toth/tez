@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,6 +34,7 @@ import org.apache.hadoop.security.UserGroupInformation;
 
 import org.apache.tez.runtime.library.common.Constants;
 import org.apache.tez.runtime.library.common.sort.impl.TezIndexRecord;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,12 +46,32 @@ public class TestIndexCache {
   private FileSystem fs;
   private Path p;
 
+  private static void checkRecord(TezIndexRecord rec, long fill) {
+    assertEquals(fill, rec.getStartOffset());
+    assertEquals(fill, rec.getRawLength());
+    assertEquals(fill, rec.getPartLength());
+  }
+
+  private static void writeFile(FileSystem fs, Path f, long fill, int parts)
+    throws IOException {
+    FSDataOutputStream out = fs.create(f, false);
+    CheckedOutputStream iout = new CheckedOutputStream(out, new CRC32());
+    DataOutputStream dout = new DataOutputStream(iout);
+    for (int i = 0; i < parts; ++i) {
+      for (int j = 0; j < Constants.MAP_OUTPUT_INDEX_RECORD_LENGTH / 8; ++j) {
+        dout.writeLong(fill);
+      }
+    }
+    out.writeLong(iout.getChecksum().getValue());
+    dout.close();
+  }
+
   @Before
   public void setUp() throws IOException {
     conf = new Configuration();
     fs = FileSystem.getLocal(conf).getRaw();
-    p =  new Path(System.getProperty("test.build.data", "/tmp"),
-        "cache").makeQualified(fs.getUri(), fs.getWorkingDirectory());
+    p = new Path(System.getProperty("test.build.data", "/tmp"),
+      "cache").makeQualified(fs.getUri(), fs.getWorkingDirectory());
   }
 
   @Test
@@ -78,7 +99,7 @@ public class TestIndexCache {
 
     // delete files, ensure cache retains all elem
     for (FileStatus stat : fs.listStatus(p)) {
-      fs.delete(stat.getPath(),true);
+      fs.delete(stat.getPath(), true);
     }
     for (int i = bytesPerFile; i < 1024 * 1024; i += bytesPerFile) {
       Path f = new Path(p, Integer.toString(i, 36));
@@ -92,8 +113,8 @@ public class TestIndexCache {
     Path f = new Path(p, Integer.toString(totalsize, 36));
     writeFile(fs, f, totalsize, partsPerMap);
     cache.getIndexInformation(Integer.toString(totalsize, 36),
-        r.nextInt(partsPerMap), f,
-        UserGroupInformation.getCurrentUser().getShortUserName());
+      r.nextInt(partsPerMap), f,
+      UserGroupInformation.getCurrentUser().getShortUserName());
     fs.delete(f, false);
 
     // oldest fails to read, or error
@@ -104,10 +125,9 @@ public class TestIndexCache {
         UserGroupInformation.getCurrentUser().getShortUserName());
     } catch (IOException e) {
       if (e.getCause() == null ||
-          !(e.getCause()  instanceof FileNotFoundException)) {
+        !(e.getCause() instanceof FileNotFoundException)) {
         throw e;
-      }
-      else {
+      } else {
         fnf = true;
       }
     }
@@ -116,8 +136,8 @@ public class TestIndexCache {
     // should find all the other entries
     for (int i = bytesPerFile << 1; i < 1024 * 1024; i += bytesPerFile) {
       TezIndexRecord rec = cache.getIndexInformation(Integer.toString(i, 36),
-          r.nextInt(partsPerMap), new Path(p, Integer.toString(i, 36)),
-          UserGroupInformation.getCurrentUser().getShortUserName());
+        r.nextInt(partsPerMap), new Path(p, Integer.toString(i, 36)),
+        UserGroupInformation.getCurrentUser().getShortUserName());
       checkRecord(rec, i);
     }
     TezIndexRecord rec = cache.getIndexInformation(Integer.toString(totalsize, 36),
@@ -178,8 +198,8 @@ public class TestIndexCache {
     try {
       // Number of reducers equal to partsPerMap
       cache.getIndexInformation("reduceEqualPartsPerMap",
-               partsPerMap, // reduce number == partsPerMap
-               feq, UserGroupInformation.getCurrentUser().getShortUserName());
+        partsPerMap, // reduce number == partsPerMap
+        feq, UserGroupInformation.getCurrentUser().getShortUserName());
       fail("Number of reducers equal to partsPerMap did not fail");
     } catch (Exception e) {
       if (!(e instanceof IOException)) {
@@ -190,9 +210,9 @@ public class TestIndexCache {
     try {
       // Number of reducers more than partsPerMap
       cache.getIndexInformation(
-      "reduceMorePartsPerMap",
-      partsPerMap + 1, // reduce number > partsPerMap
-      feq, UserGroupInformation.getCurrentUser().getShortUserName());
+        "reduceMorePartsPerMap",
+        partsPerMap + 1, // reduce number > partsPerMap
+        feq, UserGroupInformation.getCurrentUser().getShortUserName());
       fail("Number of reducers more than partsPerMap did not fail");
     } catch (Exception e) {
       if (!(e instanceof IOException)) {
@@ -239,7 +259,7 @@ public class TestIndexCache {
           cache.removeMap("bigIndex");
         }
       };
-      if (i%2==0) {
+      if (i % 2 == 0) {
         getInfoThread.start();
         removeMapThread.start();
       } else {
@@ -311,25 +331,5 @@ public class TestIndexCache {
     // must be something wrong, although it wasn't a deadlock. No need to
     // catch and swallow.
     timeoutThread.interrupt();
-  }
-
-  private static void checkRecord(TezIndexRecord rec, long fill) {
-    assertEquals(fill, rec.getStartOffset());
-    assertEquals(fill, rec.getRawLength());
-    assertEquals(fill, rec.getPartLength());
-  }
-
-  private static void writeFile(FileSystem fs, Path f, long fill, int parts)
-      throws IOException {
-    FSDataOutputStream out = fs.create(f, false);
-    CheckedOutputStream iout = new CheckedOutputStream(out, new CRC32());
-    DataOutputStream dout = new DataOutputStream(iout);
-    for (int i = 0; i < parts; ++i) {
-      for (int j = 0; j < Constants.MAP_OUTPUT_INDEX_RECORD_LENGTH / 8; ++j) {
-        dout.writeLong(fill);
-      }
-    }
-    out.writeLong(iout.getChecksum().getValue());
-    dout.close();
   }
 }

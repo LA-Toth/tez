@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,7 +20,9 @@ package org.apache.tez.history;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
+
 import org.apache.tez.common.Preconditions;
+
 import com.google.common.base.Strings;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientHandlerException;
@@ -32,6 +34,7 @@ import com.sun.jersey.api.client.config.DefaultClientConfig;
 import com.sun.jersey.client.urlconnection.HttpURLConnectionFactory;
 import com.sun.jersey.client.urlconnection.URLConnectionClientHandler;
 import com.sun.jersey.json.impl.provider.entity.JSONRootElementProvider;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.HelpFormatter;
@@ -53,6 +56,7 @@ import org.apache.tez.dag.history.logging.EntityTypes;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.history.parser.datamodel.Constants;
 import org.apache.tez.history.parser.utils.Utils;
+
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -60,6 +64,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MediaType;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -147,7 +152,130 @@ public class ATSImportTool extends Configured implements Tool {
     }
 
     LOG.info("Using baseURL={}, dagId={}, batchSize={}, downloadDir={}", baseUri, dagId,
-        batchSize, downloadDir);
+      batchSize, downloadDir);
+  }
+
+  private static Options buildOptions() {
+    Option dagIdOption = OptionBuilder.withArgName(DAG_ID).withLongOpt(DAG_ID)
+      .withDescription("DagId that needs to be downloaded").hasArg().isRequired(true).create();
+
+    Option downloadDirOption = OptionBuilder.withArgName(BASE_DOWNLOAD_DIR).withLongOpt
+        (BASE_DOWNLOAD_DIR)
+      .withDescription("Download directory where data needs to be downloaded").hasArg()
+      .isRequired(true).create();
+
+    Option atsAddressOption = OptionBuilder.withArgName(YARN_TIMELINE_SERVICE_ADDRESS).withLongOpt(
+        YARN_TIMELINE_SERVICE_ADDRESS)
+      .withDescription("Optional. ATS address (e.g http://clusterATSNode:8188)").hasArg()
+      .isRequired(false)
+      .create();
+
+    Option batchSizeOption = OptionBuilder.withArgName(BATCH_SIZE).withLongOpt(BATCH_SIZE)
+      .withDescription("Optional. batch size for downloading data").hasArg()
+      .isRequired(false)
+      .create();
+
+    Option help = OptionBuilder.withArgName("help").withLongOpt("help")
+      .withDescription("print help").isRequired(false).create();
+
+    Options opts = new Options();
+    opts.addOption(dagIdOption);
+    opts.addOption(downloadDirOption);
+    opts.addOption(atsAddressOption);
+    opts.addOption(batchSizeOption);
+    opts.addOption(help);
+    return opts;
+  }
+
+  static void printHelp(Options options) {
+    HelpFormatter formatter = new HelpFormatter();
+    formatter.setWidth(240);
+    String help = LINE_SEPARATOR
+      + "java -cp tez-history-parser-x.y.z-jar-with-dependencies.jar org.apache.tez.history.ATSImportTool"
+      + LINE_SEPARATOR
+      + "OR"
+      + LINE_SEPARATOR
+      + "HADOOP_CLASSPATH=$TEZ_HOME/*:$TEZ_HOME/lib/*:$HADOOP_CLASSPATH hadoop jar "
+      + "tez-history-parser-x.y.z.jar " + ATSImportTool.class.getName()
+      + LINE_SEPARATOR;
+    formatter.printHelp(240, help, "Options", options, "", true);
+  }
+
+  static boolean hasHttpsPolicy(Configuration conf) {
+    YarnConfiguration yarnConf = new YarnConfiguration(conf);
+    return (HttpConfig.Policy.HTTPS_ONLY == HttpConfig.Policy.fromString(yarnConf
+      .get(YarnConfiguration.YARN_HTTP_POLICY_KEY, YarnConfiguration.YARN_HTTP_POLICY_DEFAULT)));
+  }
+
+  static String getBaseTimelineURL(String yarnTimelineAddress, Configuration conf)
+    throws TezException {
+    boolean isHttps = hasHttpsPolicy(conf);
+
+    if (yarnTimelineAddress == null) {
+      if (isHttps) {
+        yarnTimelineAddress = conf.get(Constants.TIMELINE_SERVICE_WEBAPP_HTTPS_ADDRESS_CONF_NAME);
+      } else {
+        yarnTimelineAddress = conf.get(Constants.TIMELINE_SERVICE_WEBAPP_HTTP_ADDRESS_CONF_NAME);
+      }
+      Preconditions.checkArgument(!Strings.isNullOrEmpty(yarnTimelineAddress), "Yarn timeline address can"
+        + " not be empty. Please check configurations.");
+    } else {
+      yarnTimelineAddress = yarnTimelineAddress.trim();
+      Preconditions.checkArgument(!Strings.isNullOrEmpty(yarnTimelineAddress), "Yarn timeline address can"
+        + " not be empty. Please provide valid url with --" +
+        YARN_TIMELINE_SERVICE_ADDRESS + " option");
+    }
+
+    yarnTimelineAddress = yarnTimelineAddress.toLowerCase();
+    if (!yarnTimelineAddress.startsWith(HTTP_SCHEME)
+      && !yarnTimelineAddress.startsWith(HTTPS_SCHEME)) {
+      yarnTimelineAddress = ((isHttps) ? HTTPS_SCHEME : HTTP_SCHEME) + yarnTimelineAddress;
+    }
+
+    try {
+      yarnTimelineAddress = new URI(yarnTimelineAddress).normalize().toString().trim();
+      yarnTimelineAddress = (yarnTimelineAddress.endsWith("/")) ?
+        yarnTimelineAddress.substring(0, yarnTimelineAddress.length() - 1) :
+        yarnTimelineAddress;
+    } catch (URISyntaxException e) {
+      throw new TezException("Please provide a valid URL. url=" + yarnTimelineAddress, e);
+    }
+
+    return Joiner.on("").join(yarnTimelineAddress, Constants.RESOURCE_URI_BASE);
+  }
+
+  @VisibleForTesting
+  public static int process(String[] args) throws Exception {
+    Options options = buildOptions();
+    try {
+      Configuration conf = new Configuration();
+      CommandLine cmdLine = new GnuParser().parse(options, args);
+      String dagId = cmdLine.getOptionValue(DAG_ID);
+
+      File downloadDir = new File(cmdLine.getOptionValue(BASE_DOWNLOAD_DIR));
+
+      String yarnTimelineAddress = cmdLine.getOptionValue(YARN_TIMELINE_SERVICE_ADDRESS);
+      String baseTimelineURL = getBaseTimelineURL(yarnTimelineAddress, conf);
+
+      int batchSize = (cmdLine.hasOption(BATCH_SIZE)) ?
+        (Integer.parseInt(cmdLine.getOptionValue(BATCH_SIZE))) : BATCH_SIZE_DEFAULT;
+
+      return ToolRunner.run(conf, new ATSImportTool(baseTimelineURL, dagId,
+        downloadDir, batchSize), args);
+    } catch (ParseException e) {
+      LOG.error("Error in parsing options ", e);
+      printHelp(options);
+      throw e;
+    } catch (Exception e) {
+      LOG.error("Error in processing ", e);
+      throw e;
+    }
+  }
+
+  public static void main(String[] args) throws Exception {
+    Utils.setupRootLogger();
+    int res = process(args);
+    System.exit(res);
   }
 
   /**
@@ -197,7 +325,7 @@ public class ATSImportTool extends Configured implements Tool {
     // We have added dag extra info, if we find any from ATS we copy the info into dag object
     // extra info.
     String dagExtraInfoUrl = String.format("%s/%s/%s", baseUri, EntityTypes.TEZ_DAG_EXTRA_INFO,
-        dagId);
+      dagId);
     JSONObject dagExtraInfo = getJsonRootEntity(dagExtraInfoUrl);
     if (dagExtraInfo.has(Constants.OTHER_INFO)) {
       JSONObject dagOtherInfo = dagRoot.getJSONObject(Constants.OTHER_INFO);
@@ -219,18 +347,18 @@ public class ATSImportTool extends Configured implements Tool {
 
     //Download vertex
     String vertexURL =
-        String.format(VERTEX_QUERY_STRING, baseUri,
-            Constants.TEZ_VERTEX_ID, batchSize, Constants.TEZ_DAG_ID, dagId);
+      String.format(VERTEX_QUERY_STRING, baseUri,
+        Constants.TEZ_VERTEX_ID, batchSize, Constants.TEZ_DAG_ID, dagId);
     downloadJSONArrayFromATS(vertexURL, zos, Constants.VERTICES);
 
     //Download task
     String taskURL = String.format(TASK_QUERY_STRING, baseUri,
-        Constants.TEZ_TASK_ID, batchSize, Constants.TEZ_DAG_ID, dagId);
+      Constants.TEZ_TASK_ID, batchSize, Constants.TEZ_DAG_ID, dagId);
     downloadJSONArrayFromATS(taskURL, zos, Constants.TASKS);
 
     //Download task attempts
     String taskAttemptURL = String.format(TASK_ATTEMPT_QUERY_STRING, baseUri,
-        Constants.TEZ_TASK_ATTEMPT_ID, batchSize, Constants.TEZ_DAG_ID, dagId);
+      Constants.TEZ_TASK_ATTEMPT_ID, batchSize, Constants.TEZ_DAG_ID, dagId);
     downloadJSONArrayFromATS(taskAttemptURL, zos, Constants.TASK_ATTEMPTS);
   }
 
@@ -246,7 +374,7 @@ public class ATSImportTool extends Configured implements Tool {
    * @throws NullPointerException if {@code zos} is {@code null}
    */
   private void downloadJSONArrayFromATS(String url, ZipOutputStream zos, String tag)
-      throws IOException, TezException, JSONException {
+    throws IOException, TezException, JSONException {
 
     Objects.requireNonNull(zos, "ZipOutputStream can not be null");
 
@@ -255,7 +383,7 @@ public class ATSImportTool extends Configured implements Tool {
 
     long downloadedCount = 0;
     while ((entities = getJsonRootEntity(url).optJSONArray(Constants.ENTITIES)) != null
-        && entities.length() > 0) {
+      && entities.length() > 0) {
 
       int limit = (entities.length() >= batchSize) ? (entities.length() - 1) : entities.length();
       LOG.debug("Limit={}, downloaded entities len={}", limit, entities.length());
@@ -275,12 +403,12 @@ public class ATSImportTool extends Configured implements Tool {
 
       //Set the last item in entities as the fromId
       url = baseUrl + "&fromId="
-          + entities.getJSONObject(entities.length() - 1).getString(Constants.ENTITY);
+        + entities.getJSONObject(entities.length() - 1).getString(Constants.ENTITY);
 
       String firstItem = entities.getJSONObject(0).getString(Constants.ENTITY);
       String lastItem = entities.getJSONObject(entities.length() - 1).getString(Constants.ENTITY);
       LOG.info("Downloaded={}, First item={}, LastItem={}, new url={}", downloadedCount,
-          firstItem, lastItem, url);
+        firstItem, lastItem, url);
     }
   }
 
@@ -305,8 +433,8 @@ public class ATSImportTool extends Configured implements Tool {
     try {
       WebResource wr = getHttpClient().resource(url);
       ClientResponse response = wr.accept(MediaType.APPLICATION_JSON_TYPE)
-          .type(MediaType.APPLICATION_JSON_TYPE)
-          .get(ClientResponse.class);
+        .type(MediaType.APPLICATION_JSON_TYPE)
+        .get(ClientResponse.class);
 
       if (response.getClientResponseStatus() != ClientResponse.Status.OK) {
         // In the case of secure cluster, if there is any auth exception it sends the data back as
@@ -320,10 +448,10 @@ public class ATSImportTool extends Configured implements Tool {
       throw new TezException("Error processing response from YARN Timeline. URL=" + url, e);
     } catch (UniformInterfaceException e) {
       throw new TezException("Error accessing content from YARN Timeline - unexpected response. "
-          + "URL=" + url, e);
+        + "URL=" + url, e);
     } catch (IllegalArgumentException e) {
       throw new TezException("Error accessing content from YARN Timeline - invalid url. URL=" + url,
-          e);
+        e);
     }
   }
 
@@ -334,15 +462,6 @@ public class ATSImportTool extends Configured implements Tool {
       return new Client(new URLConnectionClientHandler(urlFactory), config);
     }
     return httpClient;
-  }
-
-  static class PseudoAuthenticatedURLConnectionFactory implements HttpURLConnectionFactory {
-    @Override
-    public HttpURLConnection getHttpURLConnection(URL url) throws IOException {
-      String tokenString = (url.getQuery() == null ? "?" : "&") + "user.name=" +
-          URLEncoder.encode(UserGroupInformation.getCurrentUser().getShortUserName(), "UTF8");
-      return (HttpURLConnection) (new URL(url.toString() + tokenString)).openConnection();
-    }
   }
 
   @Override
@@ -357,126 +476,12 @@ public class ATSImportTool extends Configured implements Tool {
     }
   }
 
-  private static Options buildOptions() {
-    Option dagIdOption = OptionBuilder.withArgName(DAG_ID).withLongOpt(DAG_ID)
-        .withDescription("DagId that needs to be downloaded").hasArg().isRequired(true).create();
-
-    Option downloadDirOption = OptionBuilder.withArgName(BASE_DOWNLOAD_DIR).withLongOpt
-        (BASE_DOWNLOAD_DIR)
-        .withDescription("Download directory where data needs to be downloaded").hasArg()
-        .isRequired(true).create();
-
-    Option atsAddressOption = OptionBuilder.withArgName(YARN_TIMELINE_SERVICE_ADDRESS).withLongOpt(
-        YARN_TIMELINE_SERVICE_ADDRESS)
-        .withDescription("Optional. ATS address (e.g http://clusterATSNode:8188)").hasArg()
-        .isRequired(false)
-        .create();
-
-    Option batchSizeOption = OptionBuilder.withArgName(BATCH_SIZE).withLongOpt(BATCH_SIZE)
-        .withDescription("Optional. batch size for downloading data").hasArg()
-        .isRequired(false)
-        .create();
-
-    Option help = OptionBuilder.withArgName("help").withLongOpt("help")
-        .withDescription("print help").isRequired(false).create();
-
-    Options opts = new Options();
-    opts.addOption(dagIdOption);
-    opts.addOption(downloadDirOption);
-    opts.addOption(atsAddressOption);
-    opts.addOption(batchSizeOption);
-    opts.addOption(help);
-    return opts;
-  }
-
-  static void printHelp(Options options) {
-    HelpFormatter formatter = new HelpFormatter();
-    formatter.setWidth(240);
-    String help = LINE_SEPARATOR
-        + "java -cp tez-history-parser-x.y.z-jar-with-dependencies.jar org.apache.tez.history.ATSImportTool"
-        + LINE_SEPARATOR
-        + "OR"
-        + LINE_SEPARATOR
-        + "HADOOP_CLASSPATH=$TEZ_HOME/*:$TEZ_HOME/lib/*:$HADOOP_CLASSPATH hadoop jar "
-        + "tez-history-parser-x.y.z.jar " + ATSImportTool.class.getName()
-        + LINE_SEPARATOR;
-    formatter.printHelp(240, help, "Options", options, "", true);
-  }
-
-  static boolean hasHttpsPolicy(Configuration conf) {
-    YarnConfiguration yarnConf = new YarnConfiguration(conf);
-    return (HttpConfig.Policy.HTTPS_ONLY == HttpConfig.Policy.fromString(yarnConf
-        .get(YarnConfiguration.YARN_HTTP_POLICY_KEY, YarnConfiguration.YARN_HTTP_POLICY_DEFAULT)));
-  }
-
-  static String getBaseTimelineURL(String yarnTimelineAddress, Configuration conf)
-      throws TezException {
-    boolean isHttps = hasHttpsPolicy(conf);
-
-    if (yarnTimelineAddress == null) {
-      if (isHttps) {
-        yarnTimelineAddress = conf.get(Constants.TIMELINE_SERVICE_WEBAPP_HTTPS_ADDRESS_CONF_NAME);
-      } else {
-        yarnTimelineAddress = conf.get(Constants.TIMELINE_SERVICE_WEBAPP_HTTP_ADDRESS_CONF_NAME);
-      }
-      Preconditions.checkArgument(!Strings.isNullOrEmpty(yarnTimelineAddress), "Yarn timeline address can"
-          + " not be empty. Please check configurations.");
-    } else {
-      yarnTimelineAddress = yarnTimelineAddress.trim();
-      Preconditions.checkArgument(!Strings.isNullOrEmpty(yarnTimelineAddress), "Yarn timeline address can"
-          + " not be empty. Please provide valid url with --" +
-          YARN_TIMELINE_SERVICE_ADDRESS + " option");
+  static class PseudoAuthenticatedURLConnectionFactory implements HttpURLConnectionFactory {
+    @Override
+    public HttpURLConnection getHttpURLConnection(URL url) throws IOException {
+      String tokenString = (url.getQuery() == null ? "?" : "&") + "user.name=" +
+        URLEncoder.encode(UserGroupInformation.getCurrentUser().getShortUserName(), "UTF8");
+      return (HttpURLConnection) (new URL(url.toString() + tokenString)).openConnection();
     }
-
-    yarnTimelineAddress = yarnTimelineAddress.toLowerCase();
-    if (!yarnTimelineAddress.startsWith(HTTP_SCHEME)
-        && !yarnTimelineAddress.startsWith(HTTPS_SCHEME)) {
-      yarnTimelineAddress = ((isHttps) ? HTTPS_SCHEME : HTTP_SCHEME) + yarnTimelineAddress;
-    }
-
-    try {
-      yarnTimelineAddress = new URI(yarnTimelineAddress).normalize().toString().trim();
-      yarnTimelineAddress = (yarnTimelineAddress.endsWith("/")) ?
-          yarnTimelineAddress.substring(0, yarnTimelineAddress.length() - 1) :
-          yarnTimelineAddress;
-    } catch (URISyntaxException e) {
-      throw new TezException("Please provide a valid URL. url=" + yarnTimelineAddress, e);
-    }
-
-    return Joiner.on("").join(yarnTimelineAddress, Constants.RESOURCE_URI_BASE);
-  }
-
-  @VisibleForTesting
-  public static int process(String[] args) throws Exception {
-    Options options = buildOptions();
-    try {
-      Configuration conf = new Configuration();
-      CommandLine cmdLine = new GnuParser().parse(options, args);
-      String dagId = cmdLine.getOptionValue(DAG_ID);
-
-      File downloadDir = new File(cmdLine.getOptionValue(BASE_DOWNLOAD_DIR));
-
-      String yarnTimelineAddress = cmdLine.getOptionValue(YARN_TIMELINE_SERVICE_ADDRESS);
-      String baseTimelineURL = getBaseTimelineURL(yarnTimelineAddress, conf);
-
-      int batchSize = (cmdLine.hasOption(BATCH_SIZE)) ?
-          (Integer.parseInt(cmdLine.getOptionValue(BATCH_SIZE))) : BATCH_SIZE_DEFAULT;
-
-      return ToolRunner.run(conf, new ATSImportTool(baseTimelineURL, dagId,
-          downloadDir, batchSize), args);
-    } catch (ParseException e) {
-      LOG.error("Error in parsing options ", e);
-      printHelp(options);
-      throw e;
-    } catch (Exception e) {
-      LOG.error("Error in processing ", e);
-      throw e;
-    }
-  }
-
-  public static void main(String[] args) throws Exception {
-    Utils.setupRootLogger();
-    int res = process(args);
-    System.exit(res);
   }
 }

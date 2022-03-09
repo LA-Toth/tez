@@ -20,14 +20,11 @@
 
 package org.apache.tez.runtime.library.conf;
 
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
@@ -39,6 +36,9 @@ import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.common.ConfigUtils;
 import org.apache.tez.runtime.library.output.UnorderedPartitionedKVOutput;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
+
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
 /**
@@ -48,6 +48,59 @@ import org.apache.tez.runtime.library.output.UnorderedPartitionedKVOutput;
  * {@link org.apache.tez.runtime.library.api.TezRuntimeConfiguration} will be used.
  */
 public class UnorderedPartitionedKVOutputConfig {
+  @InterfaceAudience.Private
+  @VisibleForTesting
+  Configuration conf;
+
+  @InterfaceAudience.Private
+  @VisibleForTesting
+  UnorderedPartitionedKVOutputConfig() {
+  }
+
+  private UnorderedPartitionedKVOutputConfig(Configuration conf) {
+    this.conf = conf;
+  }
+
+  public static Builder newBuilder(String keyClass, String valClass, String partitionerClassName) {
+    return newBuilder(keyClass, valClass, partitionerClassName, null);
+  }
+
+  public static Builder newBuilder(String keyClass, String valClass, String partitionerClassName,
+                                   Map<String, String> partitionerConf) {
+    return new Builder(keyClass, valClass, partitionerClassName, partitionerConf);
+  }
+
+  /**
+   * Get a UserPayload representation of the Configuration
+   *
+   * @return a {@link org.apache.tez.dag.api.UserPayload} instance
+   */
+  public UserPayload toUserPayload() {
+    try {
+      return TezUtils.createUserPayloadFromConf(conf);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @InterfaceAudience.Private
+  public void fromUserPayload(UserPayload payload) {
+    try {
+      this.conf = TezUtils.createConfFromUserPayload(payload);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @InterfaceAudience.Private
+  String toHistoryText() {
+    if (conf.getBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT,
+      TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT_DEFAULT)) {
+      return TezUtils.convertToHistoryText(conf);
+    }
+    return null;
+  }
+
   /**
    * Configure parameters which are specific to the Output.
    */
@@ -66,7 +119,7 @@ public class UnorderedPartitionedKVOutputConfig {
   @InterfaceAudience.Public
   @InterfaceStability.Evolving
   public static class SpecificBuilder<E extends HadoopKeyValuesBasedBaseEdgeConfig.Builder> implements
-      SpecificConfigBuilder<SpecificBuilder> {
+    SpecificConfigBuilder<SpecificBuilder> {
 
     private final E edgeBuilder;
     private final Builder builder;
@@ -102,7 +155,7 @@ public class UnorderedPartitionedKVOutputConfig {
 
     @Override
     public SpecificBuilder setFromConfigurationUnfiltered(
-        Configuration conf) {
+      Configuration conf) {
       builder.setFromConfigurationUnfiltered(conf);
       return this;
     }
@@ -110,58 +163,6 @@ public class UnorderedPartitionedKVOutputConfig {
     public E done() {
       return edgeBuilder;
     }
-  }
-
-  @InterfaceAudience.Private
-  @VisibleForTesting
-  Configuration conf;
-
-  @InterfaceAudience.Private
-  @VisibleForTesting
-  UnorderedPartitionedKVOutputConfig() {
-  }
-
-  private UnorderedPartitionedKVOutputConfig(Configuration conf) {
-    this.conf = conf;
-  }
-
-  /**
-   * Get a UserPayload representation of the Configuration
-   * @return a {@link org.apache.tez.dag.api.UserPayload} instance
-   */
-  public UserPayload toUserPayload() {
-    try {
-      return TezUtils.createUserPayloadFromConf(conf);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @InterfaceAudience.Private
-  public void fromUserPayload(UserPayload payload) {
-    try {
-      this.conf = TezUtils.createConfFromUserPayload(payload);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  @InterfaceAudience.Private
-  String toHistoryText() {
-    if (conf.getBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT,
-        TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT_DEFAULT)) {
-      return TezUtils.convertToHistoryText(conf);
-    }
-    return null;
-  }
-
-  public static Builder newBuilder(String keyClass, String valClass, String partitionerClassName) {
-    return newBuilder(keyClass, valClass, partitionerClassName, null);
-  }
-
-  public static Builder newBuilder(String keyClass, String valClass, String partitionerClassName,
-                                   Map<String, String> partitionerConf) {
-    return new Builder(keyClass, valClass, partitionerClassName, partitionerConf);
   }
 
   @InterfaceAudience.Public
@@ -181,7 +182,7 @@ public class UnorderedPartitionedKVOutputConfig {
      */
     @InterfaceAudience.Private
     Builder(String keyClassName, String valueClassName, String partitionerClassName,
-                   Map<String, String> partitionerConf) {
+            Map<String, String> partitionerConf) {
       this();
       Objects.requireNonNull(keyClassName, "Key class name cannot be null");
       Objects.requireNonNull(valueClassName, "Value class name cannot be null");
@@ -194,8 +195,8 @@ public class UnorderedPartitionedKVOutputConfig {
     @InterfaceAudience.Private
     Builder() {
       Map<String, String> tezDefaults = ConfigUtils
-          .extractConfigurationMap(TezRuntimeConfiguration.getTezRuntimeConfigDefaults(),
-              UnorderedPartitionedKVOutput.getConfigurationKeySet());
+        .extractConfigurationMap(TezRuntimeConfiguration.getTezRuntimeConfigDefaults(),
+          UnorderedPartitionedKVOutput.getConfigurationKeySet());
       ConfigUtils.addConfigMapToConfiguration(this.conf, tezDefaults);
       ConfigUtils.addConfigMapToConfiguration(this.conf, TezRuntimeConfiguration.getOtherConfigDefaults());
     }
@@ -221,7 +222,7 @@ public class UnorderedPartitionedKVOutputConfig {
       if (partitionerConf != null) {
         // Merging the confs for now. Change to be specific in the future.
         ConfigUtils.mergeConfsWithExclusions(this.conf, partitionerConf,
-            TezRuntimeConfiguration.getRuntimeConfigKeySet());
+          TezRuntimeConfiguration.getRuntimeConfigKeySet());
       }
       return this;
     }
@@ -229,7 +230,7 @@ public class UnorderedPartitionedKVOutputConfig {
     @Override
     public Builder setAvailableBufferSize(int availableBufferSize) {
       this.conf
-          .setInt(TezRuntimeConfiguration.TEZ_RUNTIME_UNORDERED_OUTPUT_BUFFER_SIZE_MB, availableBufferSize);
+        .setInt(TezRuntimeConfiguration.TEZ_RUNTIME_UNORDERED_OUTPUT_BUFFER_SIZE_MB, availableBufferSize);
       return this;
     }
 
@@ -238,9 +239,9 @@ public class UnorderedPartitionedKVOutputConfig {
     public Builder setAdditionalConfiguration(String key, String value) {
       Objects.requireNonNull(key, "Key cannot be null");
       if (ConfigUtils.doesKeyQualify(key,
-          Lists.newArrayList(UnorderedPartitionedKVOutput.getConfigurationKeySet(),
-              TezRuntimeConfiguration.getRuntimeAdditionalConfigKeySet()),
-          TezRuntimeConfiguration.getAllowedPrefixes())) {
+        Lists.newArrayList(UnorderedPartitionedKVOutput.getConfigurationKeySet(),
+          TezRuntimeConfiguration.getRuntimeAdditionalConfigKeySet()),
+        TezRuntimeConfiguration.getAllowedPrefixes())) {
         if (value == null) {
           this.conf.unset(key);
         } else {
@@ -255,8 +256,8 @@ public class UnorderedPartitionedKVOutputConfig {
     public Builder setAdditionalConfiguration(Map<String, String> confMap) {
       Objects.requireNonNull(confMap, "ConfMap cannot be null");
       Map<String, String> map = ConfigUtils.extractConfigurationMap(confMap,
-          Lists.newArrayList(UnorderedPartitionedKVOutput.getConfigurationKeySet(),
-              TezRuntimeConfiguration.getRuntimeAdditionalConfigKeySet()), TezRuntimeConfiguration.getAllowedPrefixes());
+        Lists.newArrayList(UnorderedPartitionedKVOutput.getConfigurationKeySet(),
+          TezRuntimeConfiguration.getRuntimeAdditionalConfigKeySet()), TezRuntimeConfiguration.getAllowedPrefixes());
       ConfigUtils.addConfigMapToConfiguration(this.conf, map);
       return this;
     }
@@ -267,8 +268,8 @@ public class UnorderedPartitionedKVOutputConfig {
       // Maybe ensure this is the first call ? Otherwise this can end up overriding other parameters
       Objects.requireNonNull(conf, "Configuration cannot be null");
       Map<String, String> map = ConfigUtils.extractConfigurationMap(conf,
-          Lists.newArrayList(UnorderedPartitionedKVOutput.getConfigurationKeySet(),
-              TezRuntimeConfiguration.getRuntimeAdditionalConfigKeySet()), TezRuntimeConfiguration.getAllowedPrefixes());
+        Lists.newArrayList(UnorderedPartitionedKVOutput.getConfigurationKeySet(),
+          TezRuntimeConfiguration.getRuntimeAdditionalConfigKeySet()), TezRuntimeConfiguration.getAllowedPrefixes());
       ConfigUtils.addConfigMapToConfiguration(this.conf, map);
       return this;
     }
@@ -287,12 +288,12 @@ public class UnorderedPartitionedKVOutputConfig {
       this.conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS, enabled);
       if (enabled && compressionCodec != null) {
         this.conf
-            .set(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, compressionCodec);
+          .set(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, compressionCodec);
       }
       if (codecConf != null) {
         // Merging the confs for now. Change to be specific in the future.
         ConfigUtils.mergeConfsWithExclusions(this.conf, codecConf,
-            TezRuntimeConfiguration.getRuntimeConfigKeySet());
+          TezRuntimeConfiguration.getRuntimeConfigKeySet());
       }
       return this;
     }
@@ -310,12 +311,13 @@ public class UnorderedPartitionedKVOutputConfig {
                                             @Nullable Map<String, String> serializerConf) {
       Objects.requireNonNull(serializationClassName, "serializationClassName cannot be null");
       this.conf.set(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY, serializationClassName + ","
-          + conf.get(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY));
+        + conf.get(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY));
       if (serializerConf != null) {
         // Merging the confs for now. Change to be specific in the future.
         ConfigUtils.mergeConfsWithExclusions(this.conf, serializerConf,
-            TezRuntimeConfiguration.getRuntimeConfigKeySet());
-      }      return this;
+          TezRuntimeConfiguration.getRuntimeConfigKeySet());
+      }
+      return this;
     }
 
     /**
@@ -331,11 +333,11 @@ public class UnorderedPartitionedKVOutputConfig {
                                               @Nullable Map<String, String> serializerConf) {
       Objects.requireNonNull(serializationClassName, "serializationClassName cannot be null");
       this.conf.set(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY, serializationClassName + ","
-          + conf.get(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY));
+        + conf.get(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY));
       if (serializerConf != null) {
         // Merging the confs for now. Change to be specific in the future.
         ConfigUtils.mergeConfsWithExclusions(this.conf, serializerConf,
-            TezRuntimeConfiguration.getRuntimeConfigKeySet());
+          TezRuntimeConfiguration.getRuntimeConfigKeySet());
       }
       return this;
     }

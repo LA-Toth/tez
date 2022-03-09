@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,7 +34,37 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.hadoop.yarn.util.AuxiliaryServiceHelper;
+import org.apache.tez.common.DagContainerLauncher;
 import org.apache.tez.common.Preconditions;
+import org.apache.tez.common.ReflectionUtils;
+import org.apache.tez.common.TezCommonUtils;
+import org.apache.tez.common.TezTaskUmbilicalProtocol;
+import org.apache.tez.common.TezUtils;
+import org.apache.tez.common.security.JobTokenSecretManager;
+import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.dag.api.TezException;
+import org.apache.tez.dag.api.TezUncheckedException;
+import org.apache.tez.dag.app.AppContext;
+import org.apache.tez.dag.app.TaskCommunicatorManagerInterface;
+import org.apache.tez.dag.app.TezTaskCommunicatorImpl;
+import org.apache.tez.dag.records.TezDAGID;
+import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.runtime.api.ExecutionContext;
+import org.apache.tez.runtime.api.impl.ExecutionContextImpl;
+import org.apache.tez.runtime.library.common.TezRuntimeUtils;
+import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
+import org.apache.tez.runtime.task.TezChild;
+import org.apache.tez.serviceplugins.api.ContainerLaunchRequest;
+import org.apache.tez.serviceplugins.api.ContainerLauncherContext;
+import org.apache.tez.serviceplugins.api.ContainerStopRequest;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
@@ -42,39 +72,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
-import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.tez.common.DagContainerLauncher;
-import org.apache.tez.common.ReflectionUtils;
-import org.apache.tez.common.TezUtils;
-import org.apache.tez.dag.records.TezDAGID;
-import org.apache.tez.common.security.JobTokenSecretManager;
-import org.apache.tez.dag.records.TezTaskAttemptID;
-import org.apache.tez.runtime.library.common.TezRuntimeUtils;
-import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
-import org.apache.tez.serviceplugins.api.ContainerLaunchRequest;
-import org.apache.tez.serviceplugins.api.ContainerLauncherContext;
-import org.apache.tez.serviceplugins.api.ContainerStopRequest;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.security.Credentials;
-import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.util.AuxiliaryServiceHelper;
-import org.apache.tez.common.TezCommonUtils;
-import org.apache.tez.common.TezTaskUmbilicalProtocol;
-import org.apache.tez.dag.api.TezConfiguration;
-import org.apache.tez.dag.api.TezException;
-import org.apache.tez.dag.api.TezUncheckedException;
-import org.apache.tez.dag.app.AppContext;
-import org.apache.tez.dag.app.TaskCommunicatorManagerInterface;
-import org.apache.tez.dag.app.TezTaskCommunicatorImpl;
-import org.apache.tez.runtime.api.ExecutionContext;
-import org.apache.tez.runtime.api.impl.ExecutionContextImpl;
-import org.apache.tez.runtime.task.TezChild;
-
 
 /**
  * Runs the container task locally in a thread.
@@ -93,27 +92,21 @@ public class LocalContainerLauncher extends DagContainerLauncher {
   private final ExecutionContext executionContext;
   private final int numExecutors;
   private final boolean isLocalMode;
+  private final ConcurrentHashMap<ContainerId, ListenableFuture<?>>
+    runningContainers =
+    new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<ContainerId, TezLocalCacheManager>
+    cacheManagers = new ConcurrentHashMap<>();
+  private final ExecutorService callbackExecutor = Executors.newFixedThreadPool(1,
+    new ThreadFactoryBuilder().setDaemon(true).setNameFormat("CallbackExecutor").build());
   int shufflePort = TezRuntimeUtils.INVALID_PORT;
   private DeletionTracker deletionTracker;
   private boolean dagDelete;
   private boolean failedTaskAttemptDelete;
-
-  private final ConcurrentHashMap<ContainerId, ListenableFuture<?>>
-      runningContainers =
-      new ConcurrentHashMap<>();
-
-  private final ConcurrentHashMap<ContainerId, TezLocalCacheManager>
-          cacheManagers = new ConcurrentHashMap<>();
-
-  private final ExecutorService callbackExecutor = Executors.newFixedThreadPool(1,
-      new ThreadFactoryBuilder().setDaemon(true).setNameFormat("CallbackExecutor").build());
-
   private BlockingQueue<ContainerOp> eventQueue = new LinkedBlockingQueue<>();
   private Thread eventHandlingThread;
 
-
   private ListeningExecutorService taskExecutorService;
-
 
   public LocalContainerLauncher(ContainerLauncherContext containerLauncherContext,
                                 AppContext context,
@@ -132,7 +125,7 @@ public class LocalContainerLauncher extends DagContainerLauncher {
 
     // Check if the hostname is set in the environment before overriding it.
     String host = isLocalMode ? InetAddress.getLocalHost().getHostName() :
-        System.getenv(Environment.NM_HOST.name());
+      System.getenv(Environment.NM_HOST.name());
     executionContext = new ExecutionContextImpl(host);
 
     Configuration conf;
@@ -140,44 +133,44 @@ public class LocalContainerLauncher extends DagContainerLauncher {
       conf = TezUtils.createConfFromUserPayload(getContext().getInitialUserPayload());
     } catch (IOException e) {
       throw new TezUncheckedException(
-          "Failed to parse user payload for " + LocalContainerLauncher.class.getSimpleName(), e);
+        "Failed to parse user payload for " + LocalContainerLauncher.class.getSimpleName(), e);
     }
     if (isLocalMode) {
       String auxiliaryService = conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-          TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
+        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
       localEnv = Maps.newHashMap();
       shufflePort = 0;
       AuxiliaryServiceHelper.setServiceDataIntoEnv(
-          auxiliaryService, ByteBuffer.allocate(4).putInt(shufflePort), localEnv);
+        auxiliaryService, ByteBuffer.allocate(4).putInt(shufflePort), localEnv);
     } else {
       localEnv = System.getenv();
     }
     numExecutors = conf.getInt(TezConfiguration.TEZ_AM_INLINE_TASK_EXECUTION_MAX_TASKS,
-        TezConfiguration.TEZ_AM_INLINE_TASK_EXECUTION_MAX_TASKS_DEFAULT);
-    Preconditions.checkState(numExecutors >=1, "Must have at least 1 executor");
+      TezConfiguration.TEZ_AM_INLINE_TASK_EXECUTION_MAX_TASKS_DEFAULT);
+    Preconditions.checkState(numExecutors >= 1, "Must have at least 1 executor");
     ExecutorService rawExecutor = Executors.newFixedThreadPool(numExecutors,
-        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("LocalTaskExecutionThread #%d")
-            .build());
+      new ThreadFactoryBuilder().setDaemon(true).setNameFormat("LocalTaskExecutionThread #%d")
+        .build());
     this.taskExecutorService = MoreExecutors.listeningDecorator(rawExecutor);
     dagDelete = ShuffleUtils.isTezShuffleHandler(conf) &&
-        conf.getBoolean(TezConfiguration.TEZ_AM_DAG_CLEANUP_ON_COMPLETION,
+      conf.getBoolean(TezConfiguration.TEZ_AM_DAG_CLEANUP_ON_COMPLETION,
         TezConfiguration.TEZ_AM_DAG_CLEANUP_ON_COMPLETION_DEFAULT);
     failedTaskAttemptDelete = ShuffleUtils.isTezShuffleHandler(conf) &&
-        conf.getBoolean(TezConfiguration.TEZ_AM_TASK_ATTEMPT_CLEANUP_ON_FAILURE,
+      conf.getBoolean(TezConfiguration.TEZ_AM_TASK_ATTEMPT_CLEANUP_ON_FAILURE,
         TezConfiguration.TEZ_AM_TASK_ATTEMPT_CLEANUP_ON_FAILURE_DEFAULT);
 
     if (dagDelete || failedTaskAttemptDelete) {
       String deletionTrackerClassName = conf.get(TezConfiguration.TEZ_AM_DELETION_TRACKER_CLASS,
-          TezConfiguration.TEZ_AM_DELETION_TRACKER_CLASS_DEFAULT);
+        TezConfiguration.TEZ_AM_DELETION_TRACKER_CLASS_DEFAULT);
       deletionTracker = ReflectionUtils.createClazzInstance(
-          deletionTrackerClassName, new Class[]{Configuration.class}, new Object[]{conf});
+        deletionTrackerClassName, new Class[]{Configuration.class}, new Object[]{conf});
     }
   }
 
   @Override
   public void start() throws Exception {
     eventHandlingThread =
-        new Thread(new TezSubTaskRunner(), "LocalContainerLauncher-SubTaskRunner");
+      new Thread(new TezSubTaskRunner(), "LocalContainerLauncher-SubTaskRunner");
     eventHandlingThread.start();
   }
 
@@ -197,37 +190,6 @@ public class LocalContainerLauncher extends DagContainerLauncher {
     callbackExecutor.shutdownNow();
     if (deletionTracker != null) {
       deletionTracker.shutdown();
-    }
-  }
-
-
-
-  // Thread to monitor the queue of incoming NMCommunicator events
-  private class TezSubTaskRunner implements Runnable {
-    @Override
-    public void run() {
-      while (!Thread.currentThread().isInterrupted() && !serviceStopped.get()) {
-        ContainerOp event;
-        try {
-          event = eventQueue.take();
-          switch (event.getOpType()) {
-            case LAUNCH_REQUEST:
-              launch(event.getLaunchRequest());
-              break;
-            case STOP_REQUEST:
-              stop(event.getStopRequest());
-              break;
-          }
-        } catch (InterruptedException e) {
-          if (!serviceStopped.get()) {
-            LOG.error("TezSubTaskRunner interrupted ", e);
-          }
-          return;
-        } catch (Throwable e) {
-          LOG.error("TezSubTaskRunner failed due to exception", e);
-          throw e;
-        }
-      }
     }
   }
 
@@ -264,18 +226,18 @@ public class LocalContainerLauncher extends DagContainerLauncher {
         Configuration conf = context.getAMConf();
         if (isLocalMode) {
           TezLocalCacheManager cacheManager = new TezLocalCacheManager(
-              event.getContainerLaunchContext().getLocalResources(),
-              conf
+            event.getContainerLaunchContext().getLocalResources(),
+            conf
           );
           cacheManagers.put(event.getContainerId(), cacheManager);
           cacheManager.localize();
         }
 
         tezChild =
-            createTezChild(conf, event.getContainerId(), tokenIdentifier,
-                context.getApplicationAttemptId().getAttemptId(), context.getLocalDirs(),
-                ((TezTaskCommunicatorImpl)tal.getTaskCommunicator(taskCommId).getTaskCommunicator()).getUmbilical(),
-                TezCommonUtils.parseCredentialsBytes(event.getContainerLaunchContext().getTokens().array()));
+          createTezChild(conf, event.getContainerId(), tokenIdentifier,
+            context.getApplicationAttemptId().getAttemptId(), context.getLocalDirs(),
+            ((TezTaskCommunicatorImpl) tal.getTaskCommunicator(taskCommId).getTaskCommunicator()).getUmbilical(),
+            TezCommonUtils.parseCredentialsBytes(event.getContainerLaunchContext().getTokens().array()));
       } catch (InterruptedException e) {
         handleLaunchFailed(e, event.getContainerId());
         return;
@@ -287,7 +249,7 @@ public class LocalContainerLauncher extends DagContainerLauncher {
         return;
       }
       ListenableFuture<TezChild.ContainerExecutionResult> runningTaskFuture =
-          taskExecutorService.submit(createSubTask(tezChild, event.getContainerId()));
+        taskExecutorService.submit(createSubTask(tezChild, event.getContainerId()));
       RunningTaskCallback callback = new RunningTaskCallback(event.getContainerId());
       runningContainers.put(event.getContainerId(), runningTaskFuture);
       Futures.addCallback(runningTaskFuture, callback, callbackExecutor);
@@ -303,74 +265,18 @@ public class LocalContainerLauncher extends DagContainerLauncher {
     // A stop_request will come in when a task completes and reports back or a preemption decision
     // is made.
     ListenableFuture future =
-        runningContainers.get(event.getContainerId());
+      runningContainers.get(event.getContainerId());
     if (future == null) {
       LOG.info("Ignoring stop request for containerId: " + event.getContainerId());
     } else {
       LOG.info("Stopping containerId: {}, isDone: {}", event.getContainerId(),
-          future.isDone());
+        future.isDone());
       future.cancel(false);
       LOG.debug("Stopped containerId: {}, isCancelled: {}", event.getContainerId(),
-          future.isCancelled());
+        future.isCancelled());
     }
     // Send this event to maintain regular control flow. This isn't of much use though.
     getContext().containerStopRequested(event.getContainerId());
-  }
-
-  private class RunningTaskCallback
-      implements FutureCallback<TezChild.ContainerExecutionResult> {
-
-    private final ContainerId containerId;
-
-    RunningTaskCallback(ContainerId containerId) {
-      this.containerId = containerId;
-    }
-
-    @Override
-    public void onSuccess(TezChild.ContainerExecutionResult result) {
-      runningContainers.remove(containerId);
-      LOG.info("ContainerExecutionResult for: " + containerId + " = " + result);
-      if (result.getExitStatus() == TezChild.ContainerExecutionResult.ExitStatus.SUCCESS ||
-          result.getExitStatus() ==
-              TezChild.ContainerExecutionResult.ExitStatus.ASKED_TO_DIE) {
-        LOG.info("Container: " + containerId + " completed successfully");
-        getContext()
-            .containerCompleted(containerId, result.getExitStatus().getExitCode(), null,
-                TaskAttemptEndReason.CONTAINER_EXITED);
-      } else {
-        LOG.info("Container: " + containerId + " completed but with errors");
-        getContext().containerCompleted(
-            containerId, result.getExitStatus().getExitCode(),
-            result.getErrorMessage() == null ?
-                (result.getThrowable() == null ? null : result.getThrowable().getMessage()) :
-                result.getErrorMessage(), TaskAttemptEndReason.APPLICATION_ERROR);
-      }
-
-      // clean up distributed cache files
-      cleanupCacheFiles(containerId);
-    }
-
-    @Override
-    public void onFailure(Throwable t) {
-      runningContainers.remove(containerId);
-      // Ignore CancellationException since that is triggered by the LocalContainerLauncher itself
-      // TezChild would have exited by this time. There's no need to invoke shutdown again.
-      if (!(t instanceof CancellationException)) {
-        LOG.info("Container: " + containerId + ": Execution Failed: ", t);
-        // Inform of failure with exit code 1.
-        getContext().containerCompleted(containerId,
-            TezChild.ContainerExecutionResult.ExitStatus.EXECUTION_FAILURE.getExitCode(),
-            t.getMessage(), TaskAttemptEndReason.APPLICATION_ERROR);
-      } else {
-        LOG.info("Ignoring CancellationException - triggered by LocalContainerLauncher");
-        getContext().containerCompleted(containerId,
-            TezChild.ContainerExecutionResult.ExitStatus.SUCCESS.getExitCode(),
-            "CancellationException", TaskAttemptEndReason.COMMUNICATION_ERROR.CONTAINER_EXITED);
-      }
-
-      // clean up distributed cache files
-      cleanupCacheFiles(containerId);
-    }
   }
 
   private void cleanupCacheFiles(ContainerId container) {
@@ -386,15 +292,14 @@ public class LocalContainerLauncher extends DagContainerLauncher {
     }
   }
 
-
   //create a SubTask
   private synchronized Callable<TezChild.ContainerExecutionResult> createSubTask(
-      final TezChild tezChild, final ContainerId containerId) {
+    final TezChild tezChild, final ContainerId containerId) {
 
     return new Callable<TezChild.ContainerExecutionResult>() {
       @Override
       public TezChild.ContainerExecutionResult call() throws InterruptedException, TezException,
-          IOException {
+        IOException {
         // Reset the interrupt status. Ideally the thread should not be in an interrupted state.
         // TezTaskRunner needs to be fixed to ensure this.
         Thread.interrupted();
@@ -409,7 +314,7 @@ public class LocalContainerLauncher extends DagContainerLauncher {
                                   String tokenIdentifier, int attemptNumber, String[] localDirs,
                                   TezTaskUmbilicalProtocol tezTaskUmbilicalProtocol,
                                   Credentials credentials) throws
-      InterruptedException, TezException, IOException {
+    InterruptedException, TezException, IOException {
     Map<String, String> containerEnv = new HashMap<String, String>();
     containerEnv.putAll(localEnv);
     // Use the user from env if it's available.
@@ -421,13 +326,12 @@ public class LocalContainerLauncher extends DagContainerLauncher {
       memAvailable = Runtime.getRuntime().maxMemory() / numExecutors;
     }
     TezChild tezChild =
-        TezChild.newTezChild(defaultConf, null, 0, containerId.toString(), tokenIdentifier,
-            attemptNumber, localDirs, workingDirectory, containerEnv, "", executionContext, credentials,
-            memAvailable, context.getUser(), tezTaskUmbilicalProtocol, false,
-            context.getHadoopShim());
+      TezChild.newTezChild(defaultConf, null, 0, containerId.toString(), tokenIdentifier,
+        attemptNumber, localDirs, workingDirectory, containerEnv, "", executionContext, credentials,
+        memAvailable, context.getUser(), tezTaskUmbilicalProtocol, false,
+        context.getHadoopShim());
     return tezChild;
   }
-
 
   @Override
   public void launchContainer(ContainerLaunchRequest launchRequest) {
@@ -459,6 +363,91 @@ public class LocalContainerLauncher extends DagContainerLauncher {
                                 NodeId nodeId) {
     if (failedTaskAttemptDelete && deletionTracker != null) {
       deletionTracker.taskAttemptFailed(taskAttemptID, jobTokenSecretManager, nodeId);
+    }
+  }
+
+  // Thread to monitor the queue of incoming NMCommunicator events
+  private class TezSubTaskRunner implements Runnable {
+    @Override
+    public void run() {
+      while (!Thread.currentThread().isInterrupted() && !serviceStopped.get()) {
+        ContainerOp event;
+        try {
+          event = eventQueue.take();
+          switch (event.getOpType()) {
+            case LAUNCH_REQUEST:
+              launch(event.getLaunchRequest());
+              break;
+            case STOP_REQUEST:
+              stop(event.getStopRequest());
+              break;
+          }
+        } catch (InterruptedException e) {
+          if (!serviceStopped.get()) {
+            LOG.error("TezSubTaskRunner interrupted ", e);
+          }
+          return;
+        } catch (Throwable e) {
+          LOG.error("TezSubTaskRunner failed due to exception", e);
+          throw e;
+        }
+      }
+    }
+  }
+
+  private class RunningTaskCallback
+    implements FutureCallback<TezChild.ContainerExecutionResult> {
+
+    private final ContainerId containerId;
+
+    RunningTaskCallback(ContainerId containerId) {
+      this.containerId = containerId;
+    }
+
+    @Override
+    public void onSuccess(TezChild.ContainerExecutionResult result) {
+      runningContainers.remove(containerId);
+      LOG.info("ContainerExecutionResult for: " + containerId + " = " + result);
+      if (result.getExitStatus() == TezChild.ContainerExecutionResult.ExitStatus.SUCCESS ||
+        result.getExitStatus() ==
+          TezChild.ContainerExecutionResult.ExitStatus.ASKED_TO_DIE) {
+        LOG.info("Container: " + containerId + " completed successfully");
+        getContext()
+          .containerCompleted(containerId, result.getExitStatus().getExitCode(), null,
+            TaskAttemptEndReason.CONTAINER_EXITED);
+      } else {
+        LOG.info("Container: " + containerId + " completed but with errors");
+        getContext().containerCompleted(
+          containerId, result.getExitStatus().getExitCode(),
+          result.getErrorMessage() == null ?
+            (result.getThrowable() == null ? null : result.getThrowable().getMessage()) :
+            result.getErrorMessage(), TaskAttemptEndReason.APPLICATION_ERROR);
+      }
+
+      // clean up distributed cache files
+      cleanupCacheFiles(containerId);
+    }
+
+    @Override
+    public void onFailure(Throwable t) {
+      runningContainers.remove(containerId);
+      // Ignore CancellationException since that is triggered by the LocalContainerLauncher itself
+      // TezChild would have exited by this time. There's no need to invoke shutdown again.
+      if (!(t instanceof CancellationException)) {
+        LOG.info("Container: " + containerId + ": Execution Failed: ", t);
+        // Inform of failure with exit code 1.
+        getContext().containerCompleted(containerId,
+          TezChild.ContainerExecutionResult.ExitStatus.EXECUTION_FAILURE.getExitCode(),
+          t.getMessage(), TaskAttemptEndReason.APPLICATION_ERROR);
+      } else {
+        LOG.info("Ignoring CancellationException - triggered by LocalContainerLauncher");
+        getContext().containerCompleted(containerId,
+          TezChild.ContainerExecutionResult.ExitStatus.SUCCESS.getExitCode(),
+          "CancellationException", TaskAttemptEndReason.COMMUNICATION_ERROR.CONTAINER_EXITED);
+      }
+
+      // clean up distributed cache files
+      cleanupCacheFiles(containerId);
     }
   }
 }

@@ -34,21 +34,33 @@ import org.apache.tez.history.parser.datamodel.TaskInfo;
 import org.apache.tez.history.parser.datamodel.VertexInfo;
 
 public class DagOverviewAnalyzer extends TezAnalyzerBase implements Analyzer {
-  private final String[] headers =
-      { "name", "id", "event_type", "status", "event_time", "event_time_str", "vertex_task_stats", "diagnostics" };
-  private final CSVResult csvResult;
   private static final SimpleDateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+  private final String[] headers =
+    {"name", "id", "event_type", "status", "event_time", "event_time_str", "vertex_task_stats", "diagnostics"};
+  private final CSVResult csvResult;
 
   public DagOverviewAnalyzer(Configuration config) {
     super(config);
     csvResult = new CSVResult(headers);
   }
 
+  private static synchronized String toDateStr(long time) {
+    return FORMAT.format(new Date(time));
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    DagOverviewAnalyzer analyzer = new DagOverviewAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
+  }
+
   @Override
   public void analyze(DagInfo dagInfo) throws TezException {
     for (Event event : dagInfo.getEvents()) {
-      csvResult.addRecord(new String[] { dagInfo.getDagId(), dagInfo.getDagId(), event.getType(),
-          dagInfo.getStatus(), Long.toString(event.getTime()), toDateStr(event.getTime()), "", "" });
+      csvResult.addRecord(new String[]{dagInfo.getDagId(), dagInfo.getDagId(), event.getType(),
+        dagInfo.getStatus(), Long.toString(event.getTime()), toDateStr(event.getTime()), "", ""});
     }
     for (VertexInfo vertex : dagInfo.getVertices()) {
       for (Event event : vertex.getEvents()) {
@@ -56,34 +68,34 @@ public class DagOverviewAnalyzer extends TezAnalyzerBase implements Analyzer {
         for (TaskAttemptInfo attempt : vertex.getTaskAttempts()) {
           if (attempt.getStatus().contains("FAILED")) {
             vertexFailureInfoIfAny = attempt.getTaskAttemptId() + ": "
-                + attempt.getDiagnostics().replaceAll(",", " ").replaceAll("\n", " ");
+              + attempt.getDiagnostics().replaceAll(",", " ").replaceAll("\n", " ");
             break;
           }
         }
-        csvResult.addRecord(new String[] { vertex.getVertexName(), vertex.getVertexId(),
-            event.getType(), vertex.getStatus(), Long.toString(event.getTime()),
-            toDateStr(event.getTime()), getTaskStats(vertex), vertexFailureInfoIfAny });
+        csvResult.addRecord(new String[]{vertex.getVertexName(), vertex.getVertexId(),
+          event.getType(), vertex.getStatus(), Long.toString(event.getTime()),
+          toDateStr(event.getTime()), getTaskStats(vertex), vertexFailureInfoIfAny});
       }
 
       // a failed task can lead to dag failure, so hopefully holds valuable information
       for (TaskInfo failedTask : vertex.getFailedTasks()) {
         for (Event failedTaskEvent : failedTask.getEvents()) {
           if (failedTaskEvent.getType().equalsIgnoreCase("TASK_FINISHED")) {
-            csvResult.addRecord(new String[] { vertex.getVertexName(), failedTask.getTaskId(),
-                failedTaskEvent.getType(), failedTask.getStatus(), Long.toString(failedTaskEvent.getTime()),
-                toDateStr(failedTaskEvent.getTime()), getTaskStats(vertex),
-                failedTask.getDiagnostics().replaceAll(",", " ").replaceAll("\n", " ") });
+            csvResult.addRecord(new String[]{vertex.getVertexName(), failedTask.getTaskId(),
+              failedTaskEvent.getType(), failedTask.getStatus(), Long.toString(failedTaskEvent.getTime()),
+              toDateStr(failedTaskEvent.getTime()), getTaskStats(vertex),
+              failedTask.getDiagnostics().replaceAll(",", " ").replaceAll("\n", " ")});
           }
         }
         // if we already found a failing task, let's scan the failing attempts as well
         for (TaskAttemptInfo failedAttempt : failedTask.getFailedTaskAttempts()) {
           for (Event failedTaskAttemptEvent : failedAttempt.getEvents()) {
             if (failedTaskAttemptEvent.getType().equalsIgnoreCase("TASK_ATTEMPT_FINISHED")) {
-              csvResult.addRecord(new String[] { vertex.getVertexName(),
-                  failedAttempt.getTaskAttemptId(), failedTaskAttemptEvent.getType(),
-                  failedAttempt.getStatus(), Long.toString(failedTaskAttemptEvent.getTime()),
-                  toDateStr(failedTaskAttemptEvent.getTime()), getTaskStats(vertex),
-                  failedAttempt.getDiagnostics().replaceAll(",", " ").replaceAll("\n", " ") });
+              csvResult.addRecord(new String[]{vertex.getVertexName(),
+                failedAttempt.getTaskAttemptId(), failedTaskAttemptEvent.getType(),
+                failedAttempt.getStatus(), Long.toString(failedTaskAttemptEvent.getTime()),
+                toDateStr(failedTaskAttemptEvent.getTime()), getTaskStats(vertex),
+                failedAttempt.getDiagnostics().replaceAll(",", " ").replaceAll("\n", " ")});
             }
           }
         }
@@ -99,11 +111,7 @@ public class DagOverviewAnalyzer extends TezAnalyzerBase implements Analyzer {
 
   private String getTaskStats(VertexInfo vertex) {
     return String.format("numTasks: %d failedTasks: %d completedTasks: %d", vertex.getNumTasks(),
-        vertex.getFailedTasksCount(), vertex.getCompletedTasksCount());
-  }
-
-  private static synchronized String toDateStr(long time) {
-    return FORMAT.format(new Date(time));
+      vertex.getFailedTasksCount(), vertex.getCompletedTasksCount());
   }
 
   @Override
@@ -119,14 +127,6 @@ public class DagOverviewAnalyzer extends TezAnalyzerBase implements Analyzer {
   @Override
   public String getDescription() {
     return "High level dag events overview (dag, vertex event summary)."
-        + " Helps understand the overall progress of a dag by simply listing the dag/vertex related events";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    DagOverviewAnalyzer analyzer = new DagOverviewAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
+      + " Helps understand the overall progress of a dag by simply listing the dag/vertex related events";
   }
 }

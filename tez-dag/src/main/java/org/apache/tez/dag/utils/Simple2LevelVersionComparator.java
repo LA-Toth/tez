@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,6 +35,40 @@ import org.slf4j.LoggerFactory;
 public class Simple2LevelVersionComparator {
 
   private static final Logger LOG = LoggerFactory.getLogger(Simple2LevelVersionComparator.class);
+
+  public int compare(String versionStr1, String versionStr2) {
+    Version v1 = new Version(versionStr1);
+    Version v2 = new Version(versionStr2);
+
+    if (LOG.isDebugEnabled()) {
+      LOG.debug("Comparing versions"
+        + " version1=" + v1.majorVersion + "." + v1.minorVersion
+        + ", version2=" + v2.majorVersion + "." + v2.minorVersion);
+    }
+
+    if (v1.majorVersion == -1 || v2.majorVersion == -1) {
+      return -1;
+    }
+    if (v1.majorVersion == v2.majorVersion) {
+      if ((v1.minorVersion == -1 && v2.minorVersion != -1)
+        || (v1.minorVersion != -1 && v2.minorVersion == -1)) {
+        return -1;
+      }
+      if (v1.minorVersion > v2.minorVersion) {
+        return 1;
+      } else if (v1.minorVersion < v2.minorVersion) {
+        return -1;
+      } else {
+        return 0;
+      }
+    } else {
+      if (v1.majorVersion > v2.majorVersion) {
+        return 1;
+      } else {
+        return -1;
+      }
+    }
+  }
 
   public static class Version {
 
@@ -64,41 +98,6 @@ public class Simple2LevelVersionComparator {
         } catch (NumberFormatException nfe) {
           break;
         }
-      }
-    }
-
-  }
-
-  public int compare(String versionStr1, String versionStr2) {
-    Version v1 = new Version(versionStr1);
-    Version v2 = new Version(versionStr2);
-
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("Comparing versions"
-          + " version1=" + v1.majorVersion + "." + v1.minorVersion
-          + ", version2=" + v2.majorVersion + "." + v2.minorVersion);
-    }
-
-    if (v1.majorVersion == -1 || v2.majorVersion == -1) {
-      return -1;
-    }
-    if (v1.majorVersion == v2.majorVersion) {
-      if ((v1.minorVersion == -1 && v2.minorVersion != -1)
-          || (v1.minorVersion != -1 && v2.minorVersion == -1)) {
-        return -1;
-      }
-      if (v1.minorVersion > v2.minorVersion) {
-        return 1;
-      } else if (v1.minorVersion < v2.minorVersion) {
-        return -1;
-      } else {
-        return 0;
-      }
-    } else {
-      if (v1.majorVersion > v2.majorVersion) {
-        return 1;
-      } else {
-        return -1;
       }
     }
   }

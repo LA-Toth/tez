@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,8 +26,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
@@ -36,6 +34,8 @@ import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezConstants;
 
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Parser for extracting ACL information from Configs
@@ -44,11 +44,10 @@ import com.google.common.collect.Sets;
 public class ACLConfigurationParser {
 
   private static final Logger LOG = LoggerFactory.getLogger(ACLConfigurationParser.class);
-
+  private static final Pattern splitPattern = Pattern.compile("\\s+");
   private final Configuration conf;
   private final Map<ACLType, Set<String>> allowedUsers;
   private final Map<ACLType, Set<String>> allowedGroups;
-  private static final Pattern splitPattern = Pattern.compile("\\s+");
 
   public ACLConfigurationParser(Configuration conf) {
     this(conf, false);
@@ -60,7 +59,6 @@ public class ACLConfigurationParser {
     allowedGroups = new HashMap<ACLType, Set<String>>(2);
     parse(dagACLs);
   }
-
 
   private void parse(boolean dagACLs) {
     if (!dagACLs) {
@@ -105,7 +103,7 @@ public class ACLConfigurationParser {
         groupListStr = s;
       } else {
         LOG.warn("Invalid configuration specified for " + configProperty
-            + ", ignoring configured ACLs, value=" + aclsStr);
+          + ", ignoring configured ACLs, value=" + aclsStr);
         return;
       }
     }
@@ -148,5 +146,4 @@ public class ACLConfigurationParser {
       }
     }
   }
-
 }

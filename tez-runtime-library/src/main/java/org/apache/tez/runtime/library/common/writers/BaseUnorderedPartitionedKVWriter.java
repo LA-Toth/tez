@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.runtime.library.common.writers;
 
@@ -22,13 +22,11 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.hadoop.io.serializer.Serialization;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.RawLocalFileSystem;
 import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.serializer.Serialization;
 import org.apache.hadoop.io.serializer.SerializationFactory;
 import org.apache.hadoop.io.serializer.Serializer;
 import org.apache.tez.common.counters.TaskCounter;
@@ -43,11 +41,14 @@ import org.apache.tez.runtime.library.common.TezRuntimeUtils;
 import org.apache.tez.runtime.library.common.task.local.output.TezTaskOutput;
 import org.apache.tez.runtime.library.utils.CodecUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @SuppressWarnings("rawtypes")
 public abstract class BaseUnorderedPartitionedKVWriter extends KeyValuesWriter {
 
   private static final Logger LOG = LoggerFactory.getLogger(BaseUnorderedPartitionedKVWriter.class);
-  
+
   protected final OutputContext outputContext;
   protected final Configuration conf;
   protected final RawLocalFileSystem localFs;
@@ -62,7 +63,7 @@ public abstract class BaseUnorderedPartitionedKVWriter extends KeyValuesWriter {
   protected final int numPartitions;
   protected final CompressionCodec codec;
   protected final TezTaskOutput outputFileHandler;
-  
+
   protected final boolean ifileReadAhead;
   protected final int ifileReadAheadLength;
   protected final int ifileBufferSize;
@@ -82,7 +83,7 @@ public abstract class BaseUnorderedPartitionedKVWriter extends KeyValuesWriter {
    * meta-information.
    */
   protected final TezCounter outputBytesWithOverheadCounter;
-  
+
   /**
    * Represents the final output size, with file format overheads and compression factored in.
    * Does not consider spills.
@@ -121,7 +122,7 @@ public abstract class BaseUnorderedPartitionedKVWriter extends KeyValuesWriter {
       throw new RuntimeException(e);
     }
     this.numPartitions = numOutputs;
-    
+
     // k/v serialization
     keyClass = ConfigUtils.getIntermediateOutputKeyClass(this.conf);
     valClass = ConfigUtils.getIntermediateOutputValueClass(this.conf);
@@ -130,13 +131,14 @@ public abstract class BaseUnorderedPartitionedKVWriter extends KeyValuesWriter {
     valSerialization = serializationFactory.getSerialization(valClass);
     keySerializer = keySerialization.getSerializer(keyClass);
     valSerializer = valSerialization.getSerializer(valClass);
-    
+
     outputRecordBytesCounter = outputContext.getCounters().findCounter(TaskCounter.OUTPUT_BYTES);
     outputRecordsCounter = outputContext.getCounters().findCounter(TaskCounter.OUTPUT_RECORDS);
     outputBytesWithOverheadCounter = outputContext.getCounters().findCounter(TaskCounter.OUTPUT_BYTES_WITH_OVERHEAD);
     fileOutputBytesCounter = outputContext.getCounters().findCounter(TaskCounter.OUTPUT_BYTES_PHYSICAL);
     spilledRecordsCounter = outputContext.getCounters().findCounter(TaskCounter.SPILLED_RECORDS);
-    additionalSpillBytesWritternCounter = outputContext.getCounters().findCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_WRITTEN);
+    additionalSpillBytesWritternCounter = outputContext.getCounters()
+      .findCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_WRITTEN);
     additionalSpillBytesReadCounter = outputContext.getCounters().findCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_READ);
     numAdditionalSpillsCounter = outputContext.getCounters().findCounter(TaskCounter.ADDITIONAL_SPILL_COUNT);
     dataViaEventSize = outputContext.getCounters().findCounter(TaskCounter.DATA_BYTES_VIA_EVENT);
@@ -149,18 +151,18 @@ public abstract class BaseUnorderedPartitionedKVWriter extends KeyValuesWriter {
     }
 
     this.ifileReadAhead = this.conf.getBoolean(
-        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD,
-        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT);
+      TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD,
+      TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT);
     if (this.ifileReadAhead) {
       this.ifileReadAheadLength = conf.getInt(
-          TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES,
-          TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES_DEFAULT);
+        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES,
+        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES_DEFAULT);
     } else {
       this.ifileReadAheadLength = 0;
     }
     this.ifileBufferSize = conf.getInt("io.file.buffer.size",
-        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_BUFFER_SIZE_DEFAULT);
-    
+      TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_BUFFER_SIZE_DEFAULT);
+
     LOG.info("Instantiating Partitioner: [" + conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_PARTITIONER_CLASS) + "]");
     try {
       this.partitioner = TezRuntimeUtils.instantiatePartitioner(this.conf);
@@ -177,11 +179,10 @@ public abstract class BaseUnorderedPartitionedKVWriter extends KeyValuesWriter {
   public void write(Object key, Iterable<Object> values) throws IOException {
     //TODO: UnorderedPartitionedKVWriter should override this method later.
     Iterator<Object> it = values.iterator();
-    while(it.hasNext()) {
+    while (it.hasNext()) {
       write(key, it.next());
     }
   }
 
   public abstract List<Event> close() throws IOException, InterruptedException;
-
 }

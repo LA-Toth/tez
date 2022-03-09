@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,7 +22,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,31 +38,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tez.common.TezAbstractEvent;
-import org.apache.tez.dag.api.TezConstants;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEvent;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventAttemptFailed;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventContainerTerminated;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventSchedule;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventStartedRemotely;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventSubmitted;
-import org.apache.tez.dag.app.dag.event.DAGEventType;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventTerminationCauseEvent;
-import org.apache.tez.dag.app.dag.event.TaskEvent;
-import org.apache.tez.dag.app.dag.event.TaskEventTAFailed;
-import org.apache.tez.dag.app.dag.event.TaskEventTAKilled;
-import org.apache.tez.dag.app.dag.event.TaskEventTALaunched;
-import org.apache.tez.dag.app.dag.event.TaskEventTASucceeded;
-import org.apache.tez.dag.app.dag.TaskAttemptStateInternal;
-import org.apache.tez.runtime.api.events.InputReadErrorEvent;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.apache.tez.dag.history.DAGHistoryEvent;
-import org.apache.tez.dag.history.HistoryEvent;
-import org.apache.tez.dag.history.HistoryEventHandler;
-import org.apache.tez.dag.history.events.TaskFinishedEvent;
-import org.mockito.ArgumentCaptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -68,8 +50,10 @@ import org.apache.hadoop.yarn.event.Event;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.hadoop.yarn.util.Clock;
 import org.apache.hadoop.yarn.util.SystemClock;
+import org.apache.tez.common.TezAbstractEvent;
 import org.apache.tez.dag.api.TaskLocationHint;
 import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.dag.api.oldrecords.TaskAttemptState;
 import org.apache.tez.dag.api.oldrecords.TaskState;
 import org.apache.tez.dag.app.AppContext;
@@ -77,39 +61,61 @@ import org.apache.tez.dag.app.ContainerContext;
 import org.apache.tez.dag.app.TaskCommunicatorManagerInterface;
 import org.apache.tez.dag.app.TaskHeartbeatHandler;
 import org.apache.tez.dag.app.dag.StateChangeNotifier;
+import org.apache.tez.dag.app.dag.TaskAttemptStateInternal;
 import org.apache.tez.dag.app.dag.TaskStateInternal;
 import org.apache.tez.dag.app.dag.Vertex;
+import org.apache.tez.dag.app.dag.event.DAGEventType;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEvent;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventAttemptFailed;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventAttemptKilled;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventContainerTerminated;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventKillRequest;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventOutputFailed;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventSchedule;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventStartedRemotely;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventSubmitted;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventTerminationCauseEvent;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventType;
+import org.apache.tez.dag.app.dag.event.TaskEvent;
 import org.apache.tez.dag.app.dag.event.TaskEventScheduleTask;
+import org.apache.tez.dag.app.dag.event.TaskEventTAFailed;
+import org.apache.tez.dag.app.dag.event.TaskEventTAKilled;
+import org.apache.tez.dag.app.dag.event.TaskEventTALaunched;
+import org.apache.tez.dag.app.dag.event.TaskEventTASucceeded;
 import org.apache.tez.dag.app.dag.event.TaskEventTermination;
 import org.apache.tez.dag.app.dag.event.TaskEventType;
 import org.apache.tez.dag.app.dag.event.VertexEventType;
 import org.apache.tez.dag.app.rm.container.AMContainer;
 import org.apache.tez.dag.app.rm.node.AMNodeEventType;
+import org.apache.tez.dag.history.DAGHistoryEvent;
+import org.apache.tez.dag.history.HistoryEvent;
+import org.apache.tez.dag.history.HistoryEventHandler;
+import org.apache.tez.dag.history.events.TaskFinishedEvent;
 import org.apache.tez.dag.records.TaskAttemptTerminationCause;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.dag.utils.TezBuilderUtils;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.events.DataMovementEvent;
+import org.apache.tez.runtime.api.events.InputReadErrorEvent;
 import org.apache.tez.runtime.api.impl.EventMetaData;
+import org.apache.tez.runtime.api.impl.EventMetaData.EventProducerConsumerType;
 import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.runtime.api.impl.TezEvent;
-import org.apache.tez.runtime.api.impl.EventMetaData.EventProducerConsumerType;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestTaskImpl {
   private static final Logger LOG = LoggerFactory.getLogger(TestTaskImpl.class);
-
-  private int taskCounter = 0;
   private final int partition = 1;
-
+  private int taskCounter = 0;
   private Configuration conf;
   private TaskCommunicatorManagerInterface taskCommunicatorManagerInterface;
   private TaskHeartbeatHandler taskHeartbeatHandler;
@@ -136,15 +142,6 @@ public class TestTaskImpl {
   private MockTaskImpl mockTask;
   private TaskSpec mockTaskSpec;
   private Vertex mockVertex;
-  
-  @SuppressWarnings("rawtypes")
-  class TestEventHandler implements EventHandler<Event> {
-    List<Event> events = new ArrayList<Event>();
-    @Override
-    public void handle(Event event) {
-      events.add(event);
-    }
-  }
   private TestEventHandler eventHandler;
 
   @Before
@@ -181,15 +178,15 @@ public class TestTaskImpl {
     javaOpts = "";
     leafVertex = false;
     containerContext = new ContainerContext(localResources, credentials,
-        environment, javaOpts);
+      environment, javaOpts);
     Vertex vertex = mock(Vertex.class);
     doReturn(new VertexImpl.VertexConfigImpl(conf)).when(vertex).getVertexConfig();
     eventHandler = new TestEventHandler();
 
     mockTask = new MockTaskImpl(vertexId, partition,
-        eventHandler, conf, taskCommunicatorManagerInterface, clock,
-        taskHeartbeatHandler, appContext, leafVertex,
-        taskResource, containerContext, vertex);
+      eventHandler, conf, taskCommunicatorManagerInterface, clock,
+      taskHeartbeatHandler, appContext, leafVertex,
+      taskResource, containerContext, vertex);
     mockTaskSpec = mock(TaskSpec.class);
     mockVertex = mock(Vertex.class);
     ServicePluginInfo servicePluginInfo = new ServicePluginInfo()
@@ -282,7 +279,7 @@ public class TestTaskImpl {
   }
 
   private void updateAttemptState(MockTaskAttemptImpl attempt,
-      TaskAttemptState s) {
+                                  TaskAttemptState s) {
     attempt.setState(s);
   }
 
@@ -291,7 +288,7 @@ public class TestTaskImpl {
   }
 
   private void killRunningTaskAttempt(TezTaskAttemptID attemptId, TaskState stateToVerify,
-      int killedCountToVerify) {
+                                      int killedCountToVerify) {
     mockTask.handle(createTaskTAKilledEvent(attemptId));
     assertTaskState(stateToVerify);
     verify(mockTask.getVertex(), times(killedCountToVerify)).incrementKilledTaskAttemptCount();
@@ -377,7 +374,7 @@ public class TestTaskImpl {
     scheduleTaskAttempt(taskId);
     killTask(taskId);
   }
-  
+
   /**
    * {@link TaskState#RUNNING}->{@link TaskState#KILLED}
    */
@@ -425,9 +422,9 @@ public class TestTaskImpl {
     Vertex vertex = mock(Vertex.class);
     doReturn(new VertexImpl.VertexConfigImpl(conf)).when(vertex).getVertexConfig();
     mockTask = new MockTaskImpl(vertexId, partition,
-        eventHandler, conf, taskCommunicatorManagerInterface, clock,
-        taskHeartbeatHandler, appContext, leafVertex,
-        taskResource, containerContext, vertex);
+      eventHandler, conf, taskCommunicatorManagerInterface, clock,
+      taskHeartbeatHandler, appContext, leafVertex,
+      taskResource, containerContext, vertex);
 
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId, TaskState.SCHEDULED); // attempt_0
@@ -448,7 +445,7 @@ public class TestTaskImpl {
     scheduleTaskAttempt(taskId, TaskState.SCHEDULED);
     launchTaskAttempt(mockTask.getLastAttempt().getTaskAttemptID());
     mockTask.handle(
-        createTaskTAFailedEvent(mockTask.getLastAttempt().getTaskAttemptID(), TaskFailureType.FATAL, null));
+      createTaskTAFailedEvent(mockTask.getLastAttempt().getTaskAttemptID(), TaskFailureType.FATAL, null));
 
     assertEquals(TaskStateInternal.FAILED, mockTask.getInternalState());
     assertEquals(1, mockTask.failedAttempts);
@@ -483,7 +480,7 @@ public class TestTaskImpl {
     mockTask.handle(createTaskTASucceededEvent(mockTask.getLastAttempt().getTaskAttemptID()));
     assertEquals(TaskStateInternal.KILLED, mockTask.getInternalState());
   }
-  
+
   /**
    * {@link TaskState#RUNNING}->{@link TaskState#KILLED}
    */
@@ -552,7 +549,7 @@ public class TestTaskImpl {
     scheduleTaskAttempt(taskId);
     launchTaskAttempt(mockTask.getLastAttempt().getTaskAttemptID());
     mockTask.handle(createTaskTAKilledEvent(
-        mockTask.getLastAttempt().getTaskAttemptID(), new ServiceBusyEvent()));
+      mockTask.getLastAttempt().getTaskAttemptID(), new ServiceBusyEvent()));
     assertTaskRunningState();
     verify(mockTask.getVertex(), times(0)).incrementKilledTaskAttemptCount();
     verify(mockTask.getVertex(), times(1)).incrementRejectedTaskAttemptCount();
@@ -576,7 +573,6 @@ public class TestTaskImpl {
     // of killed attempts in killed state.
     mockTask.handle(createTaskTAKilledEvent(mockTask.getLastAttempt().getTaskAttemptID()));
     assertEquals(TaskStateInternal.KILLED, mockTask.getInternalState());
-
   }
 
   /**
@@ -595,10 +591,7 @@ public class TestTaskImpl {
     // Send kill for an attempt
     mockTask.handle(createTaskTAKilledEvent(mockTask.getLastAttempt().getTaskAttemptID()));
     assertEquals(TaskStateInternal.FAILED, mockTask.getInternalState());
-
   }
-
-
 
   @Test(timeout = 5000)
   public void testFetchedEventsModifyUnderlyingList() {
@@ -609,7 +602,7 @@ public class TestTaskImpl {
     scheduleTaskAttempt(taskId);
     sendTezEventsToTask(taskId, 2);
     TezTaskAttemptID attemptID = mockTask.getAttemptList().iterator().next()
-        .getTaskAttemptID();
+      .getTaskAttemptID();
     fetchedList = mockTask.getTaskAttemptTezEvents(attemptID, 0, 100);
     assertEquals(2, fetchedList.size());
 
@@ -668,7 +661,7 @@ public class TestTaskImpl {
     launchTaskAttempt(mockTask.getLastAttempt().getTaskAttemptID());
     updateAttemptState(mockTask.getLastAttempt(), TaskAttemptState.RUNNING);
     assertTrue("First attempt should commit",
-        mockTask.canCommit(mockTask.getLastAttempt().getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getLastAttempt().getTaskAttemptID()));
 
     // During the task attempt commit there is an exception which causes
     // the attempt to fail
@@ -683,17 +676,16 @@ public class TestTaskImpl {
     Assert.assertEquals(lastTAId, mockTask.getLastAttempt().getSchedulingCausalTA());
 
     assertFalse("First attempt should not commit",
-        mockTask.canCommit(mockTask.getAttemptList().get(0).getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getAttemptList().get(0).getTaskAttemptID()));
     updateAttemptState(mockTask.getLastAttempt(), TaskAttemptState.RUNNING);
     assertTrue("Second attempt should commit",
-        mockTask.canCommit(mockTask.getLastAttempt().getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getLastAttempt().getTaskAttemptID()));
 
     updateAttemptState(mockTask.getLastAttempt(), TaskAttemptState.SUCCEEDED);
     mockTask.handle(createTaskTASucceededEvent(mockTask.getLastAttempt().getTaskAttemptID()));
 
     assertTaskSucceededState();
   }
-  
 
   @Test(timeout = 5000)
   public void testEventBacklogDuringTaskAttemptCommit() {
@@ -703,18 +695,17 @@ public class TestTaskImpl {
     // simulate
     // task in scheduled state due to event backlog - real task done and calling canCommit
     assertFalse("Commit should return false to make running task wait",
-        mockTask.canCommit(mockTask.getLastAttempt().getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getLastAttempt().getTaskAttemptID()));
     launchTaskAttempt(mockTask.getLastAttempt().getTaskAttemptID());
     updateAttemptState(mockTask.getLastAttempt(), TaskAttemptState.RUNNING);
     assertTrue("Task state in AM is running now. Can commit.",
-        mockTask.canCommit(mockTask.getLastAttempt().getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getLastAttempt().getTaskAttemptID()));
 
     updateAttemptState(mockTask.getLastAttempt(), TaskAttemptState.SUCCEEDED);
     mockTask.handle(createTaskTASucceededEvent(mockTask.getLastAttempt().getTaskAttemptID()));
 
     assertTaskSucceededState();
   }
-
 
   @Test(timeout = 5000)
   public void testChangeCommitTaskAttempt() {
@@ -723,21 +714,21 @@ public class TestTaskImpl {
     launchTaskAttempt(mockTask.getLastAttempt().getTaskAttemptID());
     updateAttemptState(mockTask.getLastAttempt(), TaskAttemptState.RUNNING);
     TezTaskAttemptID lastTAId = mockTask.getLastAttempt().getTaskAttemptID();
-    
+
     // Add a speculative task attempt that succeeds
     mockTask.handle(createTaskTAAddSpecAttempt(mockTask.getLastAttempt().getTaskAttemptID()));
     launchTaskAttempt(mockTask.getLastAttempt().getTaskAttemptID());
     updateAttemptState(mockTask.getLastAttempt(), TaskAttemptState.RUNNING);
-    
+
     assertEquals(2, mockTask.getAttemptList().size());
-    
+
     // previous running attempt should be the casual TA of this speculative attempt
     Assert.assertEquals(lastTAId, mockTask.getLastAttempt().getSchedulingCausalTA());
-    
+
     assertTrue("Second attempt should commit",
-        mockTask.canCommit(mockTask.getAttemptList().get(1).getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getAttemptList().get(1).getTaskAttemptID()));
     assertFalse("First attempt should not commit",
-        mockTask.canCommit(mockTask.getAttemptList().get(0).getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getAttemptList().get(0).getTaskAttemptID()));
 
     // During the task attempt commit there is an exception which causes
     // the second attempt to fail
@@ -745,18 +736,18 @@ public class TestTaskImpl {
     failRunningTaskAttempt(mockTask.getLastAttempt().getTaskAttemptID());
 
     assertEquals(2, mockTask.getAttemptList().size());
-    
+
     assertFalse("Second attempt should not commit",
-        mockTask.canCommit(mockTask.getAttemptList().get(1).getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getAttemptList().get(1).getTaskAttemptID()));
     assertTrue("First attempt should commit",
-        mockTask.canCommit(mockTask.getAttemptList().get(0).getTaskAttemptID()));
+      mockTask.canCommit(mockTask.getAttemptList().get(0).getTaskAttemptID()));
 
     updateAttemptState(mockTask.getAttemptList().get(0), TaskAttemptState.SUCCEEDED);
     mockTask.handle(createTaskTASucceededEvent(mockTask.getAttemptList().get(0).getTaskAttemptID()));
 
     assertTaskSucceededState();
   }
-  
+
   @SuppressWarnings("rawtypes")
   @Test(timeout = 5000)
   public void testTaskSucceedAndRetroActiveFailure() {
@@ -770,14 +761,14 @@ public class TestTaskImpl {
     // The task should now have succeeded
     assertTaskSucceededState();
     verify(mockTask.stateChangeNotifier).taskSucceeded(any(String.class), eq(taskId),
-        eq(mockTask.getLastAttempt().getTaskAttemptID().getId()));
+      eq(mockTask.getLastAttempt().getTaskAttemptID().getId()));
 
     ArgumentCaptor<DAGHistoryEvent> argumentCaptor = ArgumentCaptor.forClass(DAGHistoryEvent.class);
     verify(mockHistoryHandler).handle(argumentCaptor.capture());
     DAGHistoryEvent dagHistoryEvent = argumentCaptor.getValue();
     HistoryEvent historyEvent = dagHistoryEvent.getHistoryEvent();
     assertTrue(historyEvent instanceof TaskFinishedEvent);
-    TaskFinishedEvent taskFinishedEvent = (TaskFinishedEvent)historyEvent;
+    TaskFinishedEvent taskFinishedEvent = (TaskFinishedEvent) historyEvent;
     assertEquals(taskFinishedEvent.getFinishTime(), mockTask.getFinishTime());
 
     eventHandler.events.clear();
@@ -786,19 +777,19 @@ public class TestTaskImpl {
     TezEvent mockTezEvent = mock(TezEvent.class);
     EventMetaData meta = new EventMetaData(EventProducerConsumerType.INPUT, "Vertex", "Edge", mockDestId);
     when(mockTezEvent.getSourceInfo()).thenReturn(meta);
-    TaskAttemptEventOutputFailed outputFailedEvent = 
-        new TaskAttemptEventOutputFailed(mockDestId, mockTezEvent, 1);
+    TaskAttemptEventOutputFailed outputFailedEvent =
+      new TaskAttemptEventOutputFailed(mockDestId, mockTezEvent, 1);
     mockTask.handle(
-        createTaskTAFailedEvent(mockTask.getLastAttempt().getTaskAttemptID(), TaskFailureType.NON_FATAL,
-            outputFailedEvent));
+      createTaskTAFailedEvent(mockTask.getLastAttempt().getTaskAttemptID(), TaskFailureType.NON_FATAL,
+        outputFailedEvent));
 
     // The task should still be in the scheduled state
     assertTaskScheduledState();
     Event event = eventHandler.events.get(0);
     Assert.assertEquals(AMNodeEventType.N_TA_ENDED, event.getType());
-    event = eventHandler.events.get(eventHandler.events.size()-1);
+    event = eventHandler.events.get(eventHandler.events.size() - 1);
     Assert.assertEquals(VertexEventType.V_TASK_RESCHEDULED, event.getType());
-    
+
     // report of output read error should be the causal TA
     List<MockTaskAttemptImpl> attempts = mockTask.getAttemptList();
     Assert.assertEquals(2, attempts.size());
@@ -819,7 +810,7 @@ public class TestTaskImpl {
     // The task should now have succeeded
     assertTaskSucceededState();
     verify(mockTask.stateChangeNotifier).taskSucceeded(any(String.class), eq(taskId),
-        eq(mockTask.getLastAttempt().getTaskAttemptID().getId()));
+      eq(mockTask.getLastAttempt().getTaskAttemptID().getId()));
 
     eventHandler.events.clear();
     // Now kill the attempt after it has succeeded
@@ -832,7 +823,7 @@ public class TestTaskImpl {
   }
 
   @Test(timeout = 5000)
-  public void testDiagnostics_KillNew(){
+  public void testDiagnostics_KillNew() {
     TezTaskID taskId = getNewTaskID();
     mockTask.handle(new TaskEventTermination(taskId, TaskAttemptTerminationCause.TERMINATED_BY_CLIENT, null));
     assertEquals(1, mockTask.getDiagnostics().size());
@@ -840,9 +831,9 @@ public class TestTaskImpl {
     assertEquals(0, mockTask.taskStartedEventLogged);
     assertEquals(1, mockTask.taskFinishedEventLogged);
   }
-  
+
   @Test(timeout = 5000)
-  public void testDiagnostics_Kill(){
+  public void testDiagnostics_Kill() {
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
     mockTask.handle(new TaskEventTermination(taskId, TaskAttemptTerminationCause.TERMINATED_AT_SHUTDOWN, null));
@@ -856,9 +847,9 @@ public class TestTaskImpl {
     Vertex vertex = mock(Vertex.class);
     doReturn(new VertexImpl.VertexConfigImpl(conf)).when(vertex).getVertexConfig();
     mockTask = new MockTaskImpl(vertexId, partition,
-        eventHandler, conf, taskCommunicatorManagerInterface, clock,
-        taskHeartbeatHandler, appContext, leafVertex,
-        taskResource, containerContext, vertex);
+      eventHandler, conf, taskCommunicatorManagerInterface, clock,
+      taskHeartbeatHandler, appContext, leafVertex,
+      taskResource, containerContext, vertex);
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
     MockTaskAttemptImpl firstAttempt = mockTask.getLastAttempt();
@@ -891,9 +882,9 @@ public class TestTaskImpl {
     Vertex vertex = mock(Vertex.class);
     doReturn(new VertexImpl.VertexConfigImpl(conf)).when(vertex).getVertexConfig();
     mockTask = new MockTaskImpl(vertexId, partition,
-        eventHandler, conf, taskCommunicatorManagerInterface, clock,
-        taskHeartbeatHandler, appContext, leafVertex,
-        taskResource, containerContext, vertex);
+      eventHandler, conf, taskCommunicatorManagerInterface, clock,
+      taskHeartbeatHandler, appContext, leafVertex,
+      taskResource, containerContext, vertex);
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
     MockTaskAttemptImpl firstAttempt = mockTask.getLastAttempt();
@@ -926,9 +917,9 @@ public class TestTaskImpl {
     Vertex vertex = mock(Vertex.class);
     doReturn(new VertexImpl.VertexConfigImpl(conf)).when(vertex).getVertexConfig();
     mockTask = new MockTaskImpl(vertexId, partition,
-        eventHandler, conf, taskCommunicatorManagerInterface, clock,
-        taskHeartbeatHandler, appContext, leafVertex,
-        taskResource, containerContext, vertex);
+      eventHandler, conf, taskCommunicatorManagerInterface, clock,
+      taskHeartbeatHandler, appContext, leafVertex,
+      taskResource, containerContext, vertex);
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
     MockTaskAttemptImpl firstAttempt = mockTask.getLastAttempt();
@@ -978,24 +969,24 @@ public class TestTaskImpl {
     eventHandler.events.clear();
     mockTask.handle(createTaskTASucceededEvent(firstAttempt.getTaskAttemptID()));
     verifyOutgoingEvents(eventHandler.events, DAGEventType.DAG_SCHEDULER_UPDATE,
-        VertexEventType.V_TASK_COMPLETED, VertexEventType.V_TASK_ATTEMPT_COMPLETED);
+      VertexEventType.V_TASK_COMPLETED, VertexEventType.V_TASK_ATTEMPT_COMPLETED);
 
     // The task should now have succeeded and sent kill to other attempt
     assertTaskSucceededState();
     verify(mockTask.stateChangeNotifier).taskSucceeded(any(String.class), eq(taskId),
-        eq(firstAttempt.getTaskAttemptID().getId()));
+      eq(firstAttempt.getTaskAttemptID().getId()));
     @SuppressWarnings("rawtypes")
-    Event event = eventHandler.events.get(eventHandler.events.size()-1);
+    Event event = eventHandler.events.get(eventHandler.events.size() - 1);
     assertEquals(TaskAttemptEventType.TA_KILL_REQUEST, event.getType());
     assertEquals(specAttempt.getTaskAttemptID(),
-        ((TaskAttemptEventKillRequest) event).getTaskAttemptID());
+      ((TaskAttemptEventKillRequest) event).getTaskAttemptID());
 
     eventHandler.events.clear();
     // Emulate the spec attempt being killed
     mockTask.handle(createTaskTAKilledEvent(specAttempt.getTaskAttemptID()));
     assertTaskSucceededState();
     verifyOutgoingEvents(eventHandler.events, DAGEventType.DAG_SCHEDULER_UPDATE,
-        VertexEventType.V_TASK_ATTEMPT_COMPLETED);
+      VertexEventType.V_TASK_ATTEMPT_COMPLETED);
   }
 
   @Test(timeout = 20000)
@@ -1020,12 +1011,12 @@ public class TestTaskImpl {
     // The task should now have succeeded and sent kill to other attempt
     assertTaskSucceededState();
     verify(mockTask.stateChangeNotifier).taskSucceeded(any(String.class), eq(taskId),
-        eq(firstAttempt.getTaskAttemptID().getId()));
+      eq(firstAttempt.getTaskAttemptID().getId()));
     @SuppressWarnings("rawtypes")
-    Event event = eventHandler.events.get(eventHandler.events.size()-1);
+    Event event = eventHandler.events.get(eventHandler.events.size() - 1);
     assertEquals(TaskAttemptEventType.TA_KILL_REQUEST, event.getType());
     assertEquals(specAttempt.getTaskAttemptID(),
-        ((TaskAttemptEventKillRequest) event).getTaskAttemptID());
+      ((TaskAttemptEventKillRequest) event).getTaskAttemptID());
 
     // Emulate the spec attempt being killed
     mockTask.handle(createTaskTAKilledEvent(specAttempt.getTaskAttemptID()));
@@ -1037,13 +1028,14 @@ public class TestTaskImpl {
     EventMetaData meta = new EventMetaData(EventProducerConsumerType.INPUT, "Vertex", "Edge", mockDestId);
     when(mockTezEvent.getSourceInfo()).thenReturn(meta);
     TaskAttemptEventOutputFailed outputFailedEvent =
-        new TaskAttemptEventOutputFailed(mockDestId, mockTezEvent, 1);
+      new TaskAttemptEventOutputFailed(mockDestId, mockTezEvent, 1);
     eventHandler.events.clear();
-    mockTask.handle(createTaskTAFailedEvent(firstAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL, outputFailedEvent));
+    mockTask.handle(
+      createTaskTAFailedEvent(firstAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL, outputFailedEvent));
 
     // The task should still be in the scheduled state
     assertTaskScheduledState();
-    event = eventHandler.events.get(eventHandler.events.size()-1);
+    event = eventHandler.events.get(eventHandler.events.size() - 1);
     Assert.assertEquals(VertexEventType.V_TASK_RESCHEDULED, event.getType());
 
     // There should be a new attempt, and report of output read error
@@ -1100,29 +1092,29 @@ public class TestTaskImpl {
     launchTaskAttempt(secondMockTaskAttempt.getTaskAttemptID());
 
     firstMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
     secondMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
     firstMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
     secondMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
 
     secondMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
     secondMockTaskAttempt.handle(
-        new TaskAttemptEvent(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),
+      new TaskAttemptEvent(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),
         TaskAttemptEventType.TA_DONE));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEvent(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),
+      new TaskAttemptEvent(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),
         TaskAttemptEventType.TA_DONE));
 
     mockTask.handle(new TaskEventTASucceeded(secondMockTaskAttempt.getTaskAttemptID()));
     mockTask.handle(new TaskEventTASucceeded(firstMockTaskAttempt.getTaskAttemptID()));
     assertTrue("Attempts should have succeeded!",
-        firstMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.SUCCEEDED
+      firstMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.SUCCEEDED
         && secondMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.SUCCEEDED);
     assertEquals("Task should have no uncompleted attempts!", 0, mockTask.getUncompletedAttemptsCount());
     assertTrue("Task should have Succeeded!", mockTask.getState() == TaskState.SUCCEEDED);
@@ -1154,53 +1146,53 @@ public class TestTaskImpl {
     launchTaskAttempt(secondMockTaskAttempt.getTaskAttemptID());
 
     firstMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
     secondMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
     firstMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
     secondMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
 
     secondMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
     secondMockTaskAttempt.handle(
-        new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),
-        TaskAttemptEventType.TA_FAILED,TaskFailureType.NON_FATAL, "test",
+      new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),
+        TaskAttemptEventType.TA_FAILED, TaskFailureType.NON_FATAL, "test",
         TaskAttemptTerminationCause.NO_PROGRESS));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),
+      new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),
         TaskAttemptEventType.TA_FAILED, TaskFailureType.NON_FATAL, "test",
         TaskAttemptTerminationCause.NO_PROGRESS));
 
     firstMockTaskAttempt.handle(new TaskAttemptEventContainerTerminated(mockContainerId,
-        firstMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
+      firstMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
     secondMockTaskAttempt.handle(new TaskAttemptEventContainerTerminated(mockContainerId,
-        secondMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
+      secondMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
     mockTask.handle(new TaskEventTAFailed(secondMockTaskAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL,
-        mock(TaskAttemptEvent.class)));
+      mock(TaskAttemptEvent.class)));
     mockTask.handle(new TaskEventTAFailed(firstMockTaskAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL,
-        mock(TaskAttemptEvent.class)));
+      mock(TaskAttemptEvent.class)));
     assertTrue("Attempts should have failed!",
-        firstMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.FAILED
+      firstMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.FAILED
         && secondMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.FAILED);
     assertEquals("Task should have no uncompleted attempts!", 0, mockTask.getUncompletedAttemptsCount());
     assertTrue("Task should have failed!", mockTask.getState() == TaskState.FAILED);
   }
 
   @SuppressWarnings("rawtypes")
-  @Test (timeout = 10000L)
+  @Test(timeout = 10000L)
   public void testSucceededLeafTaskWithRetroFailures() throws InterruptedException {
     Configuration newConf = new Configuration(conf);
     newConf.setInt(TezConfiguration.TEZ_AM_TASK_MAX_FAILED_ATTEMPTS, 1);
     Vertex vertex = mock(Vertex.class);
     doReturn(new VertexImpl.VertexConfigImpl(newConf)).when(vertex).getVertexConfig();
     mockTask = new MockTaskImpl(vertexId, partition,
-        eventHandler, conf, taskCommunicatorManagerInterface, clock,
-        taskHeartbeatHandler, appContext, true,
-        taskResource, containerContext, vertex);
+      eventHandler, conf, taskCommunicatorManagerInterface, clock,
+      taskHeartbeatHandler, appContext, true,
+      taskResource, containerContext, vertex);
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
     MockTaskAttemptImpl firstMockTaskAttempt = mockTask.getAttemptList().get(0);
@@ -1210,39 +1202,39 @@ public class TestTaskImpl {
     launchTaskAttempt(secondMockTaskAttempt.getTaskAttemptID());
 
     firstMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
     secondMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
     firstMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
     secondMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
 
     secondMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
     secondMockTaskAttempt.handle(
-        new TaskAttemptEvent(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),
-            TaskAttemptEventType.TA_DONE));
+      new TaskAttemptEvent(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),
+        TaskAttemptEventType.TA_DONE));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),
-            TaskAttemptEventType.TA_FAILED, TaskFailureType.NON_FATAL, "test",
-            TaskAttemptTerminationCause.CONTAINER_EXITED));
+      new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),
+        TaskAttemptEventType.TA_FAILED, TaskFailureType.NON_FATAL, "test",
+        TaskAttemptTerminationCause.CONTAINER_EXITED));
 
     mockTask.handle(new TaskEventTASucceeded(secondMockTaskAttempt.getTaskAttemptID()));
     firstMockTaskAttempt.handle(new TaskAttemptEventContainerTerminated(mockContainerId,
-        firstMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
+      firstMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
 
     InputReadErrorEvent mockReEvent = InputReadErrorEvent.create("", 0, 0);
     TezTaskAttemptID mockDestId = firstMockTaskAttempt.getTaskAttemptID();
     EventMetaData meta = new EventMetaData(EventProducerConsumerType.INPUT, "Vertex", "Edge", mockDestId);
     TezEvent tzEvent = new TezEvent(mockReEvent, meta);
     TaskAttemptEventOutputFailed outputFailedEvent =
-        new TaskAttemptEventOutputFailed(mockDestId, tzEvent, 1);
+      new TaskAttemptEventOutputFailed(mockDestId, tzEvent, 1);
     firstMockTaskAttempt.handle(outputFailedEvent);
     mockTask.handle(new TaskEventTAFailed(firstMockTaskAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL,
-        mock(TaskAttemptEvent.class)));
+      mock(TaskAttemptEvent.class)));
     Assert.assertEquals(mockTask.getInternalState(), TaskStateInternal.SUCCEEDED);
   }
 
@@ -1252,25 +1244,26 @@ public class TestTaskImpl {
     EventMetaData meta = new EventMetaData(EventProducerConsumerType.INPUT, "Vertex", "Edge", mockDestId);
     TezEvent tzEvent = new TezEvent(mockReEvent, meta);
     TaskAttemptEventOutputFailed outputFailedEvent =
-        new TaskAttemptEventOutputFailed(mockDestId, tzEvent, 1);
+      new TaskAttemptEventOutputFailed(mockDestId, tzEvent, 1);
     taskAttempt.handle(
-        outputFailedEvent);
-    TaskEvent tEventFail1 = new TaskEventTAFailed(taskAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL, outputFailedEvent);
+      outputFailedEvent);
+    TaskEvent tEventFail1 = new TaskEventTAFailed(taskAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL,
+      outputFailedEvent);
     mockTask.handle(tEventFail1);
     assertEquals("Unexpected number of incomplete attempts!",
-        expectedIncompleteAttempts, mockTask.getUncompletedAttemptsCount());
+      expectedIncompleteAttempts, mockTask.getUncompletedAttemptsCount());
   }
 
-  @Test (timeout = 30000)
+  @Test(timeout = 30000)
   public void testFailedTaskTransitionWithLaunchedAttempt() throws InterruptedException {
     Configuration newConf = new Configuration(conf);
     newConf.setInt(TezConfiguration.TEZ_AM_TASK_MAX_FAILED_ATTEMPTS, 1);
     Vertex vertex = mock(Vertex.class);
     doReturn(new VertexImpl.VertexConfigImpl(newConf)).when(vertex).getVertexConfig();
     mockTask = new MockTaskImpl(vertexId, partition,
-        eventHandler, conf, taskCommunicatorManagerInterface, clock,
-        taskHeartbeatHandler, appContext, leafVertex,
-        taskResource, containerContext, vertex);
+      eventHandler, conf, taskCommunicatorManagerInterface, clock,
+      taskHeartbeatHandler, appContext, leafVertex,
+      taskResource, containerContext, vertex);
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
     MockTaskAttemptImpl firstMockTaskAttempt = mockTask.getLastAttempt();
@@ -1280,38 +1273,38 @@ public class TestTaskImpl {
     launchTaskAttempt(secondMockTaskAttempt.getTaskAttemptID());
 
     firstMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
     secondMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
     firstMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
     secondMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
 
     secondMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
     secondMockTaskAttempt.handle(
-        new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),
-            TaskAttemptEventType.TA_FAILED,TaskFailureType.NON_FATAL, "test",
-            TaskAttemptTerminationCause.NO_PROGRESS));
+      new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),
+        TaskAttemptEventType.TA_FAILED, TaskFailureType.NON_FATAL, "test",
+        TaskAttemptTerminationCause.NO_PROGRESS));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),
-            TaskAttemptEventType.TA_FAILED, TaskFailureType.NON_FATAL, "test",
-            TaskAttemptTerminationCause.NO_PROGRESS));
+      new TaskAttemptEventAttemptFailed(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),
+        TaskAttemptEventType.TA_FAILED, TaskFailureType.NON_FATAL, "test",
+        TaskAttemptTerminationCause.NO_PROGRESS));
 
     firstMockTaskAttempt.handle(new TaskAttemptEventContainerTerminated(mockContainerId,
-        firstMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
+      firstMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
     secondMockTaskAttempt.handle(new TaskAttemptEventContainerTerminated(mockContainerId,
-        secondMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
+      secondMockTaskAttempt.getTaskAttemptID(), "test", TaskAttemptTerminationCause.NO_PROGRESS));
     mockTask.handle(new TaskEventTAFailed(secondMockTaskAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL,
-        mock(TaskAttemptEvent.class)));
+      mock(TaskAttemptEvent.class)));
     mockTask.handle(new TaskEventTAFailed(firstMockTaskAttempt.getTaskAttemptID(), TaskFailureType.NON_FATAL,
-        mock(TaskAttemptEvent.class)));
+      mock(TaskAttemptEvent.class)));
     assertTrue("Attempts should have failed!",
-        firstMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.FAILED
-            && secondMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.FAILED);
+      firstMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.FAILED
+        && secondMockTaskAttempt.getInternalState() == TaskAttemptStateInternal.FAILED);
     assertEquals("Task should have no uncompleted attempts!", 0, mockTask.getUncompletedAttemptsCount());
     assertTrue("Task should have failed!", mockTask.getState() == TaskState.FAILED);
     mockTask.handle(createTaskTAAddSpecAttempt(mockTask.getLastAttempt().getTaskAttemptID()));
@@ -1319,7 +1312,7 @@ public class TestTaskImpl {
     mockTask.handle(createTaskTALauncherEvent(thirdMockTaskAttempt.getTaskAttemptID()));
   }
 
-  @Test (timeout = 30000)
+  @Test(timeout = 30000)
   public void testKilledTaskTransitionWithLaunchedAttempt() throws InterruptedException {
     TezTaskID taskId = getNewTaskID();
     scheduleTaskAttempt(taskId);
@@ -1330,33 +1323,33 @@ public class TestTaskImpl {
     launchTaskAttempt(secondMockTaskAttempt.getTaskAttemptID());
 
     firstMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), 10, 10));
     secondMockTaskAttempt.handle(new TaskAttemptEventSchedule(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), 10, 10));
     firstMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), mockContainer.getId()));
     secondMockTaskAttempt.handle(new TaskAttemptEventSubmitted(
-        TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
+      TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), mockContainer.getId()));
 
     secondMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString())));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
+      new TaskAttemptEventStartedRemotely(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString())));
     mockTask.handle(new TaskEventTermination(mockTask.getTaskID(),
-        TaskAttemptTerminationCause.FRAMEWORK_ERROR, "test"));
+      TaskAttemptTerminationCause.FRAMEWORK_ERROR, "test"));
     secondMockTaskAttempt.handle(
-        new TaskAttemptEventAttemptKilled(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()),"test",
-            TaskAttemptTerminationCause.FRAMEWORK_ERROR));
+      new TaskAttemptEventAttemptKilled(TezTaskAttemptID.fromString(secondMockTaskAttempt.toString()), "test",
+        TaskAttemptTerminationCause.FRAMEWORK_ERROR));
     mockTask.handle(new TaskEventTAKilled(secondMockTaskAttempt.getTaskAttemptID(),
-        new TaskAttemptEvent(secondMockTaskAttempt.getTaskAttemptID(), TaskAttemptEventType.TA_KILLED)));
+      new TaskAttemptEvent(secondMockTaskAttempt.getTaskAttemptID(), TaskAttemptEventType.TA_KILLED)));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventAttemptKilled(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),"test",
-            TaskAttemptTerminationCause.FRAMEWORK_ERROR));
+      new TaskAttemptEventAttemptKilled(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), "test",
+        TaskAttemptTerminationCause.FRAMEWORK_ERROR));
     mockTask.handle(new TaskEventTAKilled(firstMockTaskAttempt.getTaskAttemptID(),
-        new TaskAttemptEvent(firstMockTaskAttempt.getTaskAttemptID(), TaskAttemptEventType.TA_KILLED)));
+      new TaskAttemptEvent(firstMockTaskAttempt.getTaskAttemptID(), TaskAttemptEventType.TA_KILLED)));
     firstMockTaskAttempt.handle(
-        new TaskAttemptEventAttemptKilled(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()),"test",
-            TaskAttemptTerminationCause.FRAMEWORK_ERROR));
+      new TaskAttemptEventAttemptKilled(TezTaskAttemptID.fromString(firstMockTaskAttempt.toString()), "test",
+        TaskAttemptTerminationCause.FRAMEWORK_ERROR));
     assertEquals("Task should have been killed!", mockTask.getInternalState(), TaskStateInternal.KILLED);
     mockTask.handle(createTaskTAAddSpecAttempt(mockTask.getLastAttempt().getTaskAttemptID()));
     MockTaskAttemptImpl thirdMockTaskAttempt = mockTask.getLastAttempt();
@@ -1367,9 +1360,6 @@ public class TestTaskImpl {
     MockTaskAttemptImpl fifthMockTaskAttempt = mockTask.getLastAttempt();
     mockTask.handle(createTaskTAFailedEvent(fifthMockTaskAttempt.getTaskAttemptID()));
   }
-
-  // TODO Add test to validate the correct commit attempt.
-
 
   /* Verifies that the specified event types, exist. Does not ensure they are the only ones, however */
   private void verifyOutgoingEvents(List<Event> events,
@@ -1391,7 +1381,19 @@ public class TestTaskImpl {
       }
     }
     assertTrue("Did not find types : " + expectedTypeList
-        + " in outgoing event list", expectedTypeList.isEmpty());
+      + " in outgoing event list", expectedTypeList.isEmpty());
+  }
+
+  // TODO Add test to validate the correct commit attempt.
+
+  @SuppressWarnings("rawtypes")
+  class TestEventHandler implements EventHandler<Event> {
+    List<Event> events = new ArrayList<Event>();
+
+    @Override
+    public void handle(Event event) {
+      events.add(event);
+    }
   }
 
   @SuppressWarnings("rawtypes")
@@ -1404,24 +1406,24 @@ public class TestTaskImpl {
     private Vertex vertex;
 
     public MockTaskImpl(TezVertexID vertexId, int partition,
-        EventHandler eventHandler, Configuration conf,
-        TaskCommunicatorManagerInterface taskCommunicatorManagerInterface, Clock clock,
-        TaskHeartbeatHandler thh, AppContext appContext, boolean leafVertex,
-        Resource resource,
-        ContainerContext containerContext, Vertex vertex) {
+                        EventHandler eventHandler, Configuration conf,
+                        TaskCommunicatorManagerInterface taskCommunicatorManagerInterface, Clock clock,
+                        TaskHeartbeatHandler thh, AppContext appContext, boolean leafVertex,
+                        Resource resource,
+                        ContainerContext containerContext, Vertex vertex) {
       super(vertexId, partition, eventHandler, conf, taskCommunicatorManagerInterface,
-          clock, thh, appContext, leafVertex, resource,
-          containerContext, mock(StateChangeNotifier.class), vertex);
+        clock, thh, appContext, leafVertex, resource,
+        containerContext, mock(StateChangeNotifier.class), vertex);
       this.vertex = vertex;
     }
 
     @Override
     protected TaskAttemptImpl createAttempt(int attemptNumber, TezTaskAttemptID schedCausalTA) {
       MockTaskAttemptImpl attempt = new MockTaskAttemptImpl(
-          TezBuilderUtils.newTaskAttemptId(getTaskID(), attemptNumber),
-          eventHandler, taskCommunicatorManagerInterface,
-          conf, clock, taskHeartbeatHandler, appContext,
-          true, taskResource, containerContext, schedCausalTA);
+        TezBuilderUtils.newTaskAttemptId(getTaskID(), attemptNumber),
+        eventHandler, taskCommunicatorManagerInterface,
+        conf, clock, taskHeartbeatHandler, appContext,
+        true, taskResource, containerContext, schedCausalTA);
       taskAttempts.add(attempt);
       return attempt;
     }
@@ -1439,7 +1441,7 @@ public class TestTaskImpl {
     List<MockTaskAttemptImpl> getAttemptList() {
       return taskAttempts;
     }
-    
+
     @Override
     public Vertex getVertex() {
       return vertex;
@@ -1466,13 +1468,13 @@ public class TestTaskImpl {
     private TaskAttemptState state = TaskAttemptState.NEW;
 
     public MockTaskAttemptImpl(TezTaskAttemptID attemptId,
-        EventHandler eventHandler, TaskCommunicatorManagerInterface tal, Configuration conf,
-        Clock clock, TaskHeartbeatHandler thh, AppContext appContext,
-        boolean isRescheduled,
-        Resource resource, ContainerContext containerContext, TezTaskAttemptID schedCausalTA) {
+                               EventHandler eventHandler, TaskCommunicatorManagerInterface tal, Configuration conf,
+                               Clock clock, TaskHeartbeatHandler thh, AppContext appContext,
+                               boolean isRescheduled,
+                               Resource resource, ContainerContext containerContext, TezTaskAttemptID schedCausalTA) {
       super(attemptId, eventHandler, tal, conf, clock, thh,
-          appContext, isRescheduled, resource, containerContext, false, mockTask,
-          locationHint, mockTaskSpec, schedCausalTA);
+        appContext, isRescheduled, resource, containerContext, false, mockTask,
+        locationHint, mockTaskSpec, schedCausalTA);
     }
 
     @Override
@@ -1489,20 +1491,20 @@ public class TestTaskImpl {
       this.progress = progress;
     }
 
+    @Override
+    public TaskAttemptState getState() {
+      return state;
+    }
+
     public void setState(TaskAttemptState state) {
       this.state = state;
     }
 
     @Override
-    public TaskAttemptState getState() {
-      return state;
-    }
-    
-    @Override
     public TaskAttemptState getStateNoLock() {
       return state;
     }
-    
+
     @Override
     public ContainerId getAssignedContainerID() {
       return mockContainerId;
@@ -1515,7 +1517,7 @@ public class TestTaskImpl {
   }
 
   public class ServiceBusyEvent extends TezAbstractEvent<TaskAttemptEventType>
-     implements TaskAttemptEventTerminationCauseEvent {
+    implements TaskAttemptEventTerminationCauseEvent {
     public ServiceBusyEvent() {
       super(TaskAttemptEventType.TA_KILLED);
     }
@@ -1526,4 +1528,3 @@ public class TestTaskImpl {
     }
   }
 }
-

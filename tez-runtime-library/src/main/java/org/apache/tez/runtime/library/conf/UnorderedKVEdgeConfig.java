@@ -20,10 +20,10 @@
 
 package org.apache.tez.runtime.library.conf;
 
-import javax.annotation.Nullable;
-
 import java.util.Map;
 import java.util.Objects;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
@@ -38,7 +38,7 @@ import org.apache.tez.runtime.library.output.UnorderedKVOutput;
 
 /**
  * Configure payloads for the UnorderedKVOutput and UnorderedKVInput pair </p>
- *
+ * <p>
  * Values will be picked up from tez-site if not specified, otherwise defaults from
  * {@link org.apache.tez.runtime.library.api.TezRuntimeConfiguration} will be used.
  */
@@ -49,16 +49,16 @@ public class UnorderedKVEdgeConfig extends HadoopKeyValuesBasedBaseEdgeConfig {
   private final UnorderedKVInputConfig inputConf;
 
   private UnorderedKVEdgeConfig(
-      UnorderedKVOutputConfig outputConfiguration,
-      UnorderedKVInputConfig inputConfiguration) {
+    UnorderedKVOutputConfig outputConfiguration,
+    UnorderedKVInputConfig inputConfiguration) {
     this.outputConf = outputConfiguration;
     this.inputConf = inputConfiguration;
-
   }
 
   /**
    * Create a builder to configure the relevant Input and Output
-   * @param keyClassName the key class name
+   *
+   * @param keyClassName   the key class name
    * @param valueClassName the value class name
    * @return a builder to configure the edge
    */
@@ -108,11 +108,11 @@ public class UnorderedKVEdgeConfig extends HadoopKeyValuesBasedBaseEdgeConfig {
    */
   public EdgeProperty createDefaultBroadcastEdgeProperty() {
     EdgeProperty edgeProperty = EdgeProperty.create(EdgeProperty.DataMovementType.BROADCAST,
-        EdgeProperty.DataSourceType.PERSISTED, EdgeProperty.SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create(
-            getOutputClassName()).setUserPayload(getOutputPayload()),
-        InputDescriptor.create(
-            getInputClassName()).setUserPayload(getInputPayload()));
+      EdgeProperty.DataSourceType.PERSISTED, EdgeProperty.SchedulingType.SEQUENTIAL,
+      OutputDescriptor.create(
+        getOutputClassName()).setUserPayload(getOutputPayload()),
+      InputDescriptor.create(
+        getInputClassName()).setUserPayload(getInputPayload()));
     Utils.setEdgePropertyHistoryText(this, edgeProperty);
     return edgeProperty;
   }
@@ -129,11 +129,11 @@ public class UnorderedKVEdgeConfig extends HadoopKeyValuesBasedBaseEdgeConfig {
    */
   public EdgeProperty createDefaultOneToOneEdgeProperty() {
     EdgeProperty edgeProperty = EdgeProperty.create(EdgeProperty.DataMovementType.ONE_TO_ONE,
-        EdgeProperty.DataSourceType.PERSISTED, EdgeProperty.SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create(
-            getOutputClassName()).setUserPayload(getOutputPayload()),
-        InputDescriptor.create(
-            getInputClassName()).setUserPayload(getInputPayload()));
+      EdgeProperty.DataSourceType.PERSISTED, EdgeProperty.SchedulingType.SEQUENTIAL,
+      OutputDescriptor.create(
+        getOutputClassName()).setUserPayload(getOutputPayload()),
+      InputDescriptor.create(
+        getInputClassName()).setUserPayload(getInputPayload()));
     Utils.setEdgePropertyHistoryText(this, edgeProperty);
     return edgeProperty;
   }
@@ -148,10 +148,10 @@ public class UnorderedKVEdgeConfig extends HadoopKeyValuesBasedBaseEdgeConfig {
   public EdgeProperty createDefaultCustomEdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor) {
     Objects.requireNonNull(edgeManagerDescriptor, "EdgeManagerDescriptor cannot be null");
     EdgeProperty edgeProperty =
-        EdgeProperty.create(edgeManagerDescriptor, EdgeProperty.DataSourceType.PERSISTED,
-            EdgeProperty.SchedulingType.SEQUENTIAL,
-            OutputDescriptor.create(getOutputClassName()).setUserPayload(getOutputPayload()),
-            InputDescriptor.create(getInputClassName()).setUserPayload(getInputPayload()));
+      EdgeProperty.create(edgeManagerDescriptor, EdgeProperty.DataSourceType.PERSISTED,
+        EdgeProperty.SchedulingType.SEQUENTIAL,
+        OutputDescriptor.create(getOutputClassName()).setUserPayload(getOutputPayload()),
+        InputDescriptor.create(getInputClassName()).setUserPayload(getInputPayload()));
     Utils.setEdgePropertyHistoryText(this, edgeProperty);
     return edgeProperty;
   }
@@ -161,18 +161,18 @@ public class UnorderedKVEdgeConfig extends HadoopKeyValuesBasedBaseEdgeConfig {
   public static class Builder extends HadoopKeyValuesBasedBaseEdgeConfig.Builder<Builder> {
 
     private final UnorderedKVOutputConfig.Builder outputBuilder =
-        new UnorderedKVOutputConfig.Builder();
+      new UnorderedKVOutputConfig.Builder();
     private final UnorderedKVOutputConfig.SpecificBuilder<UnorderedKVEdgeConfig.Builder>
-        specificOutputBuilder =
-        new UnorderedKVOutputConfig.SpecificBuilder<UnorderedKVEdgeConfig.Builder>(
-            this, outputBuilder);
+      specificOutputBuilder =
+      new UnorderedKVOutputConfig.SpecificBuilder<UnorderedKVEdgeConfig.Builder>(
+        this, outputBuilder);
 
     private final UnorderedKVInputConfig.Builder inputBuilder =
-        new UnorderedKVInputConfig.Builder();
+      new UnorderedKVInputConfig.Builder();
     private final UnorderedKVInputConfig.SpecificBuilder<UnorderedKVEdgeConfig.Builder>
-        specificInputBuilder =
-        new UnorderedKVInputConfig.SpecificBuilder<UnorderedKVEdgeConfig.Builder>(
-            this, inputBuilder);
+      specificInputBuilder =
+      new UnorderedKVInputConfig.SpecificBuilder<UnorderedKVEdgeConfig.Builder>(
+        this, inputBuilder);
 
     @InterfaceAudience.Private
     Builder(String keyClassName, String valueClassName) {
@@ -260,6 +260,7 @@ public class UnorderedKVEdgeConfig extends HadoopKeyValuesBasedBaseEdgeConfig {
 
     /**
      * Configure the specific output
+     *
      * @return a builder to configure the output
      */
     public UnorderedKVOutputConfig.SpecificBuilder<Builder> configureOutput() {
@@ -268,6 +269,7 @@ public class UnorderedKVEdgeConfig extends HadoopKeyValuesBasedBaseEdgeConfig {
 
     /**
      * Configure the specific input
+     *
      * @return a builder to configure the input
      */
     public UnorderedKVInputConfig.SpecificBuilder<Builder> configureInput() {
@@ -276,11 +278,11 @@ public class UnorderedKVEdgeConfig extends HadoopKeyValuesBasedBaseEdgeConfig {
 
     /**
      * Build and return an instance of the configuration
+     *
      * @return an instance of the acatual configuration
      */
     public UnorderedKVEdgeConfig build() {
       return new UnorderedKVEdgeConfig(outputBuilder.build(), inputBuilder.build());
     }
-
   }
 }

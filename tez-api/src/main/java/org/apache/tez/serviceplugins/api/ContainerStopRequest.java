@@ -41,10 +41,10 @@ public class ContainerStopRequest extends ContainerLauncherOperationBase {
   @Override
   public String toString() {
     return "ContainerStopRequest{" +
-        "nodeId=" + getNodeId() +
-        ", containerId=" + getContainerId() +
-        ", schedulerName='" + schedulerName + '\'' +
-        ", taskCommName='" + taskCommName + '\'' +
-        '}';
+      "nodeId=" + getNodeId() +
+      ", containerId=" + getContainerId() +
+      ", schedulerName='" + schedulerName + '\'' +
+      ", taskCommName='" + taskCommName + '\'' +
+      '}';
   }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -60,9 +60,9 @@ import org.apache.tez.dag.history.events.DAGStartedEvent;
 import org.apache.tez.dag.history.events.TaskAttemptStartedEvent;
 import org.apache.tez.dag.history.events.TaskFinishedEvent;
 import org.apache.tez.dag.history.events.TaskStartedEvent;
+import org.apache.tez.dag.history.events.VertexConfigurationDoneEvent;
 import org.apache.tez.dag.history.events.VertexFinishedEvent;
 import org.apache.tez.dag.history.events.VertexInitializedEvent;
-import org.apache.tez.dag.history.events.VertexConfigurationDoneEvent;
 import org.apache.tez.dag.history.events.VertexStartedEvent;
 import org.apache.tez.dag.history.recovery.RecoveryService;
 import org.apache.tez.dag.library.vertexmanager.ShuffleVertexManager;
@@ -72,20 +72,19 @@ import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.examples.HashJoinExample;
 import org.apache.tez.examples.OrderedWordCount;
-import org.apache.tez.examples.TezExampleBase;
 import org.apache.tez.runtime.api.events.InputDataInformationEvent;
 import org.apache.tez.runtime.api.impl.TezEvent;
 import org.apache.tez.test.RecoveryServiceWithEventHandlingHook.SimpleRecoveryEventHook;
 import org.apache.tez.test.RecoveryServiceWithEventHandlingHook.SimpleShutdownCondition;
 import org.apache.tez.test.RecoveryServiceWithEventHandlingHook.SimpleShutdownCondition.TIMING;
+
+import com.google.common.collect.Lists;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
 
 public class TestRecovery {
 
@@ -94,7 +93,7 @@ public class TestRecovery {
   private static Configuration conf = new Configuration();
   private static MiniTezCluster miniTezCluster = null;
   private static String TEST_ROOT_DIR = "target" + Path.SEPARATOR
-      + TestRecovery.class.getName() + "-tmpDir";
+    + TestRecovery.class.getName() + "-tmpDir";
   private static MiniDFSCluster dfsCluster = null;
   private static FileSystem remoteFs = null;
 
@@ -104,7 +103,7 @@ public class TestRecovery {
     try {
       conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, TEST_ROOT_DIR);
       dfsCluster = new MiniDFSCluster.Builder(conf).numDataNodes(3)
-          .format(true).racks(null).build();
+        .format(true).racks(null).build();
       remoteFs = dfsCluster.getFileSystem();
     } catch (IOException io) {
       throw new RuntimeException("problem starting mini dfs cluster", io);
@@ -140,103 +139,103 @@ public class TestRecovery {
     }
   }
 
-  @Test(timeout=1800000)
+  @Test(timeout = 1800000)
   public void testRecovery_OrderedWordCount() throws Exception {
     ApplicationId appId = ApplicationId.newInstance(System.currentTimeMillis(),
-        1);
+      1);
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
     TezVertexID vertexId0 = TezVertexID.getInstance(dagId, 0);
     TezVertexID vertexId1 = TezVertexID.getInstance(dagId, 1);
     TezVertexID vertexId2 = TezVertexID.getInstance(dagId, 2);
     ContainerId containerId = ContainerId.newInstance(
-        ApplicationAttemptId.newInstance(appId, 1), 1);
+      ApplicationAttemptId.newInstance(appId, 1), 1);
     NodeId nodeId = NodeId.newInstance("localhost", 10);
-    
+
     List<TezEvent> initGeneratedEvents = Lists.newArrayList(
-            new TezEvent(InputDataInformationEvent.createWithObjectPayload(0, new Object()), null));
+      new TezEvent(InputDataInformationEvent.createWithObjectPayload(0, new Object()), null));
 
     List<SimpleShutdownCondition> shutdownConditions = Lists
-        .newArrayList(
-            new SimpleShutdownCondition(TIMING.POST, new DAGInitializedEvent(
-                dagId, 0L, "username", "dagName", null)),
-            new SimpleShutdownCondition(TIMING.POST, new DAGStartedEvent(dagId,
-                0L, "username", "dagName")),
-            new SimpleShutdownCondition(TIMING.POST, new DAGFinishedEvent(
-                dagId, 0L, 0L, DAGState.SUCCEEDED, "", new TezCounters(),
-                "username", "dagName", new HashMap<String, Integer>(),
-                ApplicationAttemptId.newInstance(appId, 1), null)),
-            new SimpleShutdownCondition(TIMING.POST,
-                new VertexInitializedEvent(vertexId0, "Tokenizer", 0L, 0L, 0,
-                    "", null, initGeneratedEvents, null)),
-            new SimpleShutdownCondition(TIMING.POST,
-                new VertexInitializedEvent(vertexId1, "Summation", 0L, 0L, 0,
-                    "", null, null, null)),
-            new SimpleShutdownCondition(TIMING.POST,
-                new VertexInitializedEvent(vertexId2, "Sorter", 0L, 0L, 0, "",
-                    null, null, null)),
+      .newArrayList(
+        new SimpleShutdownCondition(TIMING.POST, new DAGInitializedEvent(
+          dagId, 0L, "username", "dagName", null)),
+        new SimpleShutdownCondition(TIMING.POST, new DAGStartedEvent(dagId,
+          0L, "username", "dagName")),
+        new SimpleShutdownCondition(TIMING.POST, new DAGFinishedEvent(
+          dagId, 0L, 0L, DAGState.SUCCEEDED, "", new TezCounters(),
+          "username", "dagName", new HashMap<String, Integer>(),
+          ApplicationAttemptId.newInstance(appId, 1), null)),
+        new SimpleShutdownCondition(TIMING.POST,
+          new VertexInitializedEvent(vertexId0, "Tokenizer", 0L, 0L, 0,
+            "", null, initGeneratedEvents, null)),
+        new SimpleShutdownCondition(TIMING.POST,
+          new VertexInitializedEvent(vertexId1, "Summation", 0L, 0L, 0,
+            "", null, null, null)),
+        new SimpleShutdownCondition(TIMING.POST,
+          new VertexInitializedEvent(vertexId2, "Sorter", 0L, 0L, 0, "",
+            null, null, null)),
 
-            new SimpleShutdownCondition(TIMING.POST,
-                new VertexConfigurationDoneEvent(vertexId0, 0L, 2, null, null,
-                    null, true)),
-                        
-            new SimpleShutdownCondition(TIMING.POST,
-                new VertexConfigurationDoneEvent(vertexId1, 0L, 2, null, null,
-                    null, true)),
+        new SimpleShutdownCondition(TIMING.POST,
+          new VertexConfigurationDoneEvent(vertexId0, 0L, 2, null, null,
+            null, true)),
 
-            new SimpleShutdownCondition(TIMING.POST,
-                new VertexConfigurationDoneEvent(vertexId2, 0L, 2, null, null,
-                    null, true)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
-                vertexId0, 0L, 0L)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
-                vertexId1, 0L, 0L)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
-                vertexId2, 0L, 0L)),
+        new SimpleShutdownCondition(TIMING.POST,
+          new VertexConfigurationDoneEvent(vertexId1, 0L, 2, null, null,
+            null, true)),
 
-            new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-                vertexId0, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-                VertexState.SUCCEEDED, "", new TezCounters(),
-                new VertexStats(), new HashMap<String, Integer>(), null)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-                vertexId1, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-                VertexState.SUCCEEDED, "", new TezCounters(),
-                new VertexStats(), new HashMap<String, Integer>(), null)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-                vertexId2, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-                VertexState.SUCCEEDED, "", new TezCounters(),
-                new VertexStats(), new HashMap<String, Integer>(), null)),
+        new SimpleShutdownCondition(TIMING.POST,
+          new VertexConfigurationDoneEvent(vertexId2, 0L, 2, null, null,
+            null, true)),
+        new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
+          vertexId0, 0L, 0L)),
+        new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
+          vertexId1, 0L, 0L)),
+        new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
+          vertexId2, 0L, 0L)),
 
-            new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(
-                TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L)),
-            new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(
-                TezTaskID.getInstance(vertexId1, 0), "vertexName", 0L, 0L)),
-            new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(
-                TezTaskID.getInstance(vertexId2, 0), "vertexName", 0L, 0L)),
+        new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+          vertexId0, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+          VertexState.SUCCEEDED, "", new TezCounters(),
+          new VertexStats(), new HashMap<String, Integer>(), null)),
+        new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+          vertexId1, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+          VertexState.SUCCEEDED, "", new TezCounters(),
+          new VertexStats(), new HashMap<String, Integer>(), null)),
+        new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+          vertexId2, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+          VertexState.SUCCEEDED, "", new TezCounters(),
+          new VertexStats(), new HashMap<String, Integer>(), null)),
 
-            new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
-                TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L,
-                null, TaskState.SUCCEEDED, "", new TezCounters(), 0)),
-            new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
-                TezTaskID.getInstance(vertexId1, 0), "vertexName", 0L, 0L,
-                null, TaskState.SUCCEEDED, "", new TezCounters(), 0)),
-            new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
-                TezTaskID.getInstance(vertexId2, 0), "vertexName", 0L, 0L,
-                null, TaskState.SUCCEEDED, "", new TezCounters(), 0)),
+        new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(
+          TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L)),
+        new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(
+          TezTaskID.getInstance(vertexId1, 0), "vertexName", 0L, 0L)),
+        new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(
+          TezTaskID.getInstance(vertexId2, 0), "vertexName", 0L, 0L)),
 
-            new SimpleShutdownCondition(TIMING.POST,
-                new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
-                    TezTaskID.getInstance(vertexId0, 0), 0), "vertexName", 0L,
-                    containerId, nodeId, "", "", "")),
-            new SimpleShutdownCondition(TIMING.POST,
-                new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
-                    TezTaskID.getInstance(vertexId1, 0), 0), "vertexName", 0L,
-                    containerId, nodeId, "", "", "")),
-            new SimpleShutdownCondition(TIMING.POST,
-                new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
-                    TezTaskID.getInstance(vertexId2, 0), 0), "vertexName", 0L,
-                    containerId, nodeId, "", "", ""))
+        new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
+          TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L,
+          null, TaskState.SUCCEEDED, "", new TezCounters(), 0)),
+        new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
+          TezTaskID.getInstance(vertexId1, 0), "vertexName", 0L, 0L,
+          null, TaskState.SUCCEEDED, "", new TezCounters(), 0)),
+        new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
+          TezTaskID.getInstance(vertexId2, 0), "vertexName", 0L, 0L,
+          null, TaskState.SUCCEEDED, "", new TezCounters(), 0)),
 
-        );
+        new SimpleShutdownCondition(TIMING.POST,
+          new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
+            TezTaskID.getInstance(vertexId0, 0), 0), "vertexName", 0L,
+            containerId, nodeId, "", "", "")),
+        new SimpleShutdownCondition(TIMING.POST,
+          new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
+            TezTaskID.getInstance(vertexId1, 0), 0), "vertexName", 0L,
+            containerId, nodeId, "", "", "")),
+        new SimpleShutdownCondition(TIMING.POST,
+          new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
+            TezTaskID.getInstance(vertexId2, 0), 0), "vertexName", 0L,
+            containerId, nodeId, "", "", ""))
+
+      );
 
     Random rand = new Random();
     for (int i = 0; i < shutdownConditions.size(); i++) {
@@ -245,15 +244,15 @@ public class TestRecovery {
       if (rand.nextDouble() < 0.5) {
         // generate split in client side when HistoryEvent type is VERTEX_STARTED (TEZ-2976)
         testOrderedWordCount(shutdownConditions.get(i), true,
-            shutdownConditions.get(i).getHistoryEvent().getEventType() == HistoryEventType.VERTEX_STARTED);
+          shutdownConditions.get(i).getHistoryEvent().getEventType() == HistoryEventType.VERTEX_STARTED);
       }
     }
   }
 
   private void testOrderedWordCount(SimpleShutdownCondition shutdownCondition,
-      boolean enableAutoParallelism, boolean generateSplitInClient) throws Exception {
+                                    boolean enableAutoParallelism, boolean generateSplitInClient) throws Exception {
     LOG.info("shutdownCondition:" + shutdownCondition.getEventType()
-        + ", event=" + shutdownCondition.getEvent());
+      + ", event=" + shutdownCondition.getEvent());
     String inputDirStr = "/tmp/owc-input/";
     Path inputDir = new Path(inputDirStr);
     Path stagingDirPath = new Path("/tmp/owc-staging-dir");
@@ -267,50 +266,49 @@ public class TestRecovery {
     TezConfiguration tezConf = new TezConfiguration(miniTezCluster.getConfig());
     tezConf.setInt(TezConfiguration.TEZ_AM_MAX_APP_ATTEMPTS, 4);
     tezConf.set(TezConfiguration.TEZ_AM_RECOVERY_SERVICE_CLASS,
-        RecoveryServiceWithEventHandlingHook.class.getName());
+      RecoveryServiceWithEventHandlingHook.class.getName());
     tezConf.set(
-        RecoveryServiceWithEventHandlingHook.AM_RECOVERY_SERVICE_HOOK_CLASS,
-        SimpleRecoveryEventHook.class.getName());
+      RecoveryServiceWithEventHandlingHook.AM_RECOVERY_SERVICE_HOOK_CLASS,
+      SimpleRecoveryEventHook.class.getName());
     tezConf.set(SimpleRecoveryEventHook.SIMPLE_SHUTDOWN_CONDITION,
-        shutdownCondition.serialize());
+      shutdownCondition.serialize());
     tezConf.setBoolean(
-        ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_ENABLE_AUTO_PARALLEL,
-        enableAutoParallelism);
+      ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_ENABLE_AUTO_PARALLEL,
+      enableAutoParallelism);
     tezConf.setBoolean(
-        RecoveryService.TEZ_TEST_RECOVERY_DRAIN_EVENTS_WHEN_STOPPED, false);
+      RecoveryService.TEZ_TEST_RECOVERY_DRAIN_EVENTS_WHEN_STOPPED, false);
     tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR, stagingDirPath.toString());
     tezConf.setBoolean(
-        TezConfiguration.TEZ_AM_STAGING_SCRATCH_DATA_AUTO_DELETE, false);
+      TezConfiguration.TEZ_AM_STAGING_SCRATCH_DATA_AUTO_DELETE, false);
     tezConf.set(TezConfiguration.TEZ_AM_LOG_LEVEL, "INFO;org.apache.tez=DEBUG");
     OrderedWordCount job = new OrderedWordCount();
     if (generateSplitInClient) {
       Assert
-          .assertTrue("OrderedWordCount failed", job.run(tezConf, new String[]{
-              "-generateSplitInClient", inputDirStr, outputDirStr, "5"}, null) == 0);
+        .assertTrue("OrderedWordCount failed", job.run(tezConf, new String[]{
+          "-generateSplitInClient", inputDirStr, outputDirStr, "5"}, null) == 0);
     } else {
       Assert
-          .assertTrue("OrderedWordCount failed", job.run(tezConf, new String[]{
-              inputDirStr, outputDirStr, "5"}, null) == 0);
+        .assertTrue("OrderedWordCount failed", job.run(tezConf, new String[]{
+          inputDirStr, outputDirStr, "5"}, null) == 0);
     }
     TestTezJobs.verifyOutput(outputDir, remoteFs);
     List<HistoryEvent> historyEventsOfAttempt1 = RecoveryParser
-        .readRecoveryEvents(tezConf, job.getAppId(), 1);
+      .readRecoveryEvents(tezConf, job.getAppId(), 1);
     HistoryEvent lastEvent = historyEventsOfAttempt1
-        .get(historyEventsOfAttempt1.size() - 1);
+      .get(historyEventsOfAttempt1.size() - 1);
     assertEquals(shutdownCondition.getEvent().getEventType(),
-        lastEvent.getEventType());
+      lastEvent.getEventType());
     assertTrue(shutdownCondition.match(lastEvent));
-
   }
 
   private void testOrderedWordCountMultipleRoundRecoverying(
-          RecoveryServiceWithEventHandlingHook.MultipleRoundShutdownCondition shutdownCondition,
-          boolean enableAutoParallelism, boolean generateSplitInClient) throws Exception {
+    RecoveryServiceWithEventHandlingHook.MultipleRoundShutdownCondition shutdownCondition,
+    boolean enableAutoParallelism, boolean generateSplitInClient) throws Exception {
 
-    for (int i=0; i<shutdownCondition.size(); i++) {
+    for (int i = 0; i < shutdownCondition.size(); i++) {
       SimpleShutdownCondition condition = shutdownCondition.getSimpleShutdownCondition(i);
       LOG.info("ShutdownCondition:" + condition.getEventType()
-              + ", event=" + condition.getEvent());
+        + ", event=" + condition.getEvent());
     }
 
     String inputDirStr = "/tmp/owc-input/";
@@ -326,29 +324,29 @@ public class TestRecovery {
     TezConfiguration tezConf = new TezConfiguration(miniTezCluster.getConfig());
     tezConf.setInt(TezConfiguration.TEZ_AM_MAX_APP_ATTEMPTS, 4);
     tezConf.set(TezConfiguration.TEZ_AM_RECOVERY_SERVICE_CLASS,
-            RecoveryServiceWithEventHandlingHook.class.getName());
+      RecoveryServiceWithEventHandlingHook.class.getName());
     tezConf.set(
-            RecoveryServiceWithEventHandlingHook.AM_RECOVERY_SERVICE_HOOK_CLASS,
-            RecoveryServiceWithEventHandlingHook.MultipleRoundRecoveryEventHook.class.getName());
+      RecoveryServiceWithEventHandlingHook.AM_RECOVERY_SERVICE_HOOK_CLASS,
+      RecoveryServiceWithEventHandlingHook.MultipleRoundRecoveryEventHook.class.getName());
     tezConf.set(RecoveryServiceWithEventHandlingHook.MultipleRoundRecoveryEventHook.MULTIPLE_ROUND_SHUTDOWN_CONDITION,
-            shutdownCondition.serialize());
+      shutdownCondition.serialize());
     tezConf.setBoolean(
-            ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_ENABLE_AUTO_PARALLEL,
-            enableAutoParallelism);
+      ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_ENABLE_AUTO_PARALLEL,
+      enableAutoParallelism);
     tezConf.setBoolean(
-            RecoveryService.TEZ_TEST_RECOVERY_DRAIN_EVENTS_WHEN_STOPPED, false);
+      RecoveryService.TEZ_TEST_RECOVERY_DRAIN_EVENTS_WHEN_STOPPED, false);
     tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR, stagingDirPath.toString());
     tezConf.setBoolean(
-            TezConfiguration.TEZ_AM_STAGING_SCRATCH_DATA_AUTO_DELETE, false);
+      TezConfiguration.TEZ_AM_STAGING_SCRATCH_DATA_AUTO_DELETE, false);
     OrderedWordCount job = new OrderedWordCount();
     if (generateSplitInClient) {
       Assert
-              .assertTrue("OrderedWordCount failed", job.run(tezConf, new String[]{
-                      "-generateSplitInClient", inputDirStr, outputDirStr, "5"}, null) == 0);
+        .assertTrue("OrderedWordCount failed", job.run(tezConf, new String[]{
+          "-generateSplitInClient", inputDirStr, outputDirStr, "5"}, null) == 0);
     } else {
       Assert
-              .assertTrue("OrderedWordCount failed", job.run(tezConf, new String[]{
-                      inputDirStr, outputDirStr, "5"}, null) == 0);
+        .assertTrue("OrderedWordCount failed", job.run(tezConf, new String[]{
+          inputDirStr, outputDirStr, "5"}, null) == 0);
     }
     TestTezJobs.verifyOutput(outputDir, remoteFs);
   }
@@ -356,95 +354,95 @@ public class TestRecovery {
   @Test(timeout = 1800000)
   public void testRecovery_HashJoin() throws Exception {
     ApplicationId appId = ApplicationId.newInstance(System.currentTimeMillis(),
-        1);
+      1);
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
     TezVertexID vertexId0 = TezVertexID.getInstance(dagId, 0);
     TezVertexID vertexId1 = TezVertexID.getInstance(dagId, 1);
     TezVertexID vertexId2 = TezVertexID.getInstance(dagId, 2);
     ContainerId containerId = ContainerId.newInstance(
-        ApplicationAttemptId.newInstance(appId, 1), 1);
+      ApplicationAttemptId.newInstance(appId, 1), 1);
     NodeId nodeId = NodeId.newInstance("localhost", 10);
     List<TezEvent> initGeneratedEvents = Lists.newArrayList(
-        new TezEvent(InputDataInformationEvent.createWithObjectPayload(0, new Object()), null));
+      new TezEvent(InputDataInformationEvent.createWithObjectPayload(0, new Object()), null));
 
     List<SimpleShutdownCondition> shutdownConditions = Lists.newArrayList(
 
-        new SimpleShutdownCondition(TIMING.POST, new DAGInitializedEvent(dagId,
-            0L, "username", "dagName", null)),
-        new SimpleShutdownCondition(TIMING.POST, new DAGStartedEvent(dagId, 0L,
-            "username", "dagName")),
-        new SimpleShutdownCondition(TIMING.POST, new DAGFinishedEvent(dagId,
-            0L, 0L, DAGState.SUCCEEDED, "", new TezCounters(), "username",
-            "dagName", new HashMap<String, Integer>(), ApplicationAttemptId
-                .newInstance(appId, 1), null)),
-        new SimpleShutdownCondition(TIMING.POST, new VertexInitializedEvent(
-            vertexId0, "hashSide", 0L, 0L, 0, "", null, initGeneratedEvents, null)),
-        new SimpleShutdownCondition(TIMING.POST, new VertexInitializedEvent(
-            vertexId1, "streamingSide", 0L, 0L, 0, "", null, null, null)),
-        new SimpleShutdownCondition(TIMING.POST, new VertexInitializedEvent(
-            vertexId2, "joiner", 0L, 0L, 0, "", null, null, null)),
+      new SimpleShutdownCondition(TIMING.POST, new DAGInitializedEvent(dagId,
+        0L, "username", "dagName", null)),
+      new SimpleShutdownCondition(TIMING.POST, new DAGStartedEvent(dagId, 0L,
+        "username", "dagName")),
+      new SimpleShutdownCondition(TIMING.POST, new DAGFinishedEvent(dagId,
+        0L, 0L, DAGState.SUCCEEDED, "", new TezCounters(), "username",
+        "dagName", new HashMap<String, Integer>(), ApplicationAttemptId
+        .newInstance(appId, 1), null)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexInitializedEvent(
+        vertexId0, "hashSide", 0L, 0L, 0, "", null, initGeneratedEvents, null)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexInitializedEvent(
+        vertexId1, "streamingSide", 0L, 0L, 0, "", null, null, null)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexInitializedEvent(
+        vertexId2, "joiner", 0L, 0L, 0, "", null, null, null)),
 
-        new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
-            vertexId0, 0L, 0L)),
-        new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
-            vertexId1, 0L, 0L)),
-        new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
-            vertexId2, 0L, 0L)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
+        vertexId0, 0L, 0L)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
+        vertexId1, 0L, 0L)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
+        vertexId2, 0L, 0L)),
 
-        new SimpleShutdownCondition(TIMING.POST,
-            new VertexConfigurationDoneEvent(vertexId0, 0L, 2, null, null,
-                null, true)),
-                    
-        new SimpleShutdownCondition(TIMING.POST,
-            new VertexConfigurationDoneEvent(vertexId1, 0L, 2, null, null,
-                null, true)),
+      new SimpleShutdownCondition(TIMING.POST,
+        new VertexConfigurationDoneEvent(vertexId0, 0L, 2, null, null,
+          null, true)),
 
-        new SimpleShutdownCondition(TIMING.POST,
-            new VertexConfigurationDoneEvent(vertexId2, 0L, 2, null, null,
-                null, true)),
-                    
-        new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-            vertexId0, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-            VertexState.SUCCEEDED, "", new TezCounters(), new VertexStats(),
-            new HashMap<String, Integer>(), null)),
-        new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-            vertexId1, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-            VertexState.SUCCEEDED, "", new TezCounters(), new VertexStats(),
-            new HashMap<String, Integer>(), null)),
-        new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-            vertexId2, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-            VertexState.SUCCEEDED, "", new TezCounters(), new VertexStats(),
-            new HashMap<String, Integer>(), null)),
+      new SimpleShutdownCondition(TIMING.POST,
+        new VertexConfigurationDoneEvent(vertexId1, 0L, 2, null, null,
+          null, true)),
 
-        new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(TezTaskID
-            .getInstance(vertexId0, 0), "vertexName", 0L, 0L)),
-        new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(TezTaskID
-            .getInstance(vertexId1, 0), "vertexName", 0L, 0L)),
-        new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(TezTaskID
-            .getInstance(vertexId2, 0), "vertexName", 0L, 0L)),
+      new SimpleShutdownCondition(TIMING.POST,
+        new VertexConfigurationDoneEvent(vertexId2, 0L, 2, null, null,
+          null, true)),
 
-        new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
-            TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L, null,
-            TaskState.SUCCEEDED, "", new TezCounters(), 0)),
-        new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
-            TezTaskID.getInstance(vertexId1, 0), "vertexName", 0L, 0L, null,
-            TaskState.SUCCEEDED, "", new TezCounters(), 0)),
-        new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
-            TezTaskID.getInstance(vertexId2, 0), "vertexName", 0L, 0L, null,
-            TaskState.SUCCEEDED, "", new TezCounters(), 0)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+        vertexId0, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+        VertexState.SUCCEEDED, "", new TezCounters(), new VertexStats(),
+        new HashMap<String, Integer>(), null)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+        vertexId1, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+        VertexState.SUCCEEDED, "", new TezCounters(), new VertexStats(),
+        new HashMap<String, Integer>(), null)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+        vertexId2, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+        VertexState.SUCCEEDED, "", new TezCounters(), new VertexStats(),
+        new HashMap<String, Integer>(), null)),
 
-        new SimpleShutdownCondition(TIMING.POST,
-            new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
-                TezTaskID.getInstance(vertexId0, 0), 0), "vertexName", 0L,
-                containerId, nodeId, "", "", "")),
-        new SimpleShutdownCondition(TIMING.POST,
-            new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
-                TezTaskID.getInstance(vertexId1, 0), 0), "vertexName", 0L,
-                containerId, nodeId, "", "", "")),
-        new SimpleShutdownCondition(TIMING.POST,
-            new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
-                TezTaskID.getInstance(vertexId2, 0), 0), "vertexName", 0L,
-                containerId, nodeId, "", "", ""))
+      new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(TezTaskID
+        .getInstance(vertexId0, 0), "vertexName", 0L, 0L)),
+      new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(TezTaskID
+        .getInstance(vertexId1, 0), "vertexName", 0L, 0L)),
+      new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(TezTaskID
+        .getInstance(vertexId2, 0), "vertexName", 0L, 0L)),
+
+      new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
+        TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L, null,
+        TaskState.SUCCEEDED, "", new TezCounters(), 0)),
+      new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
+        TezTaskID.getInstance(vertexId1, 0), "vertexName", 0L, 0L, null,
+        TaskState.SUCCEEDED, "", new TezCounters(), 0)),
+      new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
+        TezTaskID.getInstance(vertexId2, 0), "vertexName", 0L, 0L, null,
+        TaskState.SUCCEEDED, "", new TezCounters(), 0)),
+
+      new SimpleShutdownCondition(TIMING.POST,
+        new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
+          TezTaskID.getInstance(vertexId0, 0), 0), "vertexName", 0L,
+          containerId, nodeId, "", "", "")),
+      new SimpleShutdownCondition(TIMING.POST,
+        new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
+          TezTaskID.getInstance(vertexId1, 0), 0), "vertexName", 0L,
+          containerId, nodeId, "", "", "")),
+      new SimpleShutdownCondition(TIMING.POST,
+        new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
+          TezTaskID.getInstance(vertexId2, 0), 0), "vertexName", 0L,
+          containerId, nodeId, "", "", ""))
 
     );
 
@@ -455,33 +453,33 @@ public class TestRecovery {
       if (rand.nextDouble() < 0.5) {
         // generate split in client side when HistoryEvent type is VERTEX_STARTED (TEZ-2976)
         testHashJoinExample(shutdownConditions.get(i), true,
-            shutdownConditions.get(i).getHistoryEvent().getEventType() == HistoryEventType.VERTEX_STARTED);
+          shutdownConditions.get(i).getHistoryEvent().getEventType() == HistoryEventType.VERTEX_STARTED);
       }
     }
   }
 
   private void testHashJoinExample(SimpleShutdownCondition shutdownCondition,
-      boolean enableAutoParallelism, boolean generateSplitInClient) throws Exception {
+                                   boolean enableAutoParallelism, boolean generateSplitInClient) throws Exception {
     HashJoinExample hashJoinExample = new HashJoinExample();
     TezConfiguration tezConf = new TezConfiguration(miniTezCluster.getConfig());
     tezConf.setInt(TezConfiguration.TEZ_AM_MAX_APP_ATTEMPTS, 4);
     tezConf.set(TezConfiguration.TEZ_AM_RECOVERY_SERVICE_CLASS,
-        RecoveryServiceWithEventHandlingHook.class.getName());
+      RecoveryServiceWithEventHandlingHook.class.getName());
     tezConf.set(
-        RecoveryServiceWithEventHandlingHook.AM_RECOVERY_SERVICE_HOOK_CLASS,
-        SimpleRecoveryEventHook.class.getName());
+      RecoveryServiceWithEventHandlingHook.AM_RECOVERY_SERVICE_HOOK_CLASS,
+      SimpleRecoveryEventHook.class.getName());
     tezConf.set(SimpleRecoveryEventHook.SIMPLE_SHUTDOWN_CONDITION,
-        shutdownCondition.serialize());
+      shutdownCondition.serialize());
     tezConf.setBoolean(
-        ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_ENABLE_AUTO_PARALLEL,
-        enableAutoParallelism);
+      ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_ENABLE_AUTO_PARALLEL,
+      enableAutoParallelism);
     tezConf.setBoolean(
-        RecoveryService.TEZ_TEST_RECOVERY_DRAIN_EVENTS_WHEN_STOPPED, false);
+      RecoveryService.TEZ_TEST_RECOVERY_DRAIN_EVENTS_WHEN_STOPPED, false);
     tezConf.setBoolean(
-        TezConfiguration.TEZ_AM_STAGING_SCRATCH_DATA_AUTO_DELETE, false);
-    tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_MAX_RETRIES_KEY,0);
+      TezConfiguration.TEZ_AM_STAGING_SCRATCH_DATA_AUTO_DELETE, false);
+    tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_MAX_RETRIES_KEY, 0);
     tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_MAX_RETRIES_ON_SOCKET_TIMEOUTS_KEY, 0);
-    tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_TIMEOUT_KEY,1000);
+    tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_TIMEOUT_KEY, 1000);
     tezConf.set(TezConfiguration.TEZ_AM_LOG_LEVEL, "INFO;org.apache.tez=DEBUG");
 
     hashJoinExample.setConf(tezConf);
@@ -518,15 +516,15 @@ public class TestRecovery {
     String[] args = null;
     if (generateSplitInClient) {
       args = new String[]{
-          "-D" + TezConfiguration.TEZ_AM_STAGING_DIR + "="
-              + stagingDirPath.toString(),
-          "-generateSplitInClient",
-          inPath1.toString(), inPath2.toString(), "1", outPath.toString()};
+        "-D" + TezConfiguration.TEZ_AM_STAGING_DIR + "="
+          + stagingDirPath.toString(),
+        "-generateSplitInClient",
+        inPath1.toString(), inPath2.toString(), "1", outPath.toString()};
     } else {
       args = new String[]{
-          "-D" + TezConfiguration.TEZ_AM_STAGING_DIR + "="
-              + stagingDirPath.toString(),
-          inPath1.toString(), inPath2.toString(), "1", outPath.toString()};
+        "-D" + TezConfiguration.TEZ_AM_STAGING_DIR + "="
+          + stagingDirPath.toString(),
+        inPath1.toString(), inPath2.toString(), "1", outPath.toString()};
     }
     assertEquals(0, hashJoinExample.run(args));
 
@@ -548,68 +546,67 @@ public class TestRecovery {
     assertEquals(0, expectedResult.size());
 
     List<HistoryEvent> historyEventsOfAttempt1 = RecoveryParser
-        .readRecoveryEvents(tezConf, hashJoinExample.getAppId(), 1);
+      .readRecoveryEvents(tezConf, hashJoinExample.getAppId(), 1);
     HistoryEvent lastEvent = historyEventsOfAttempt1
-        .get(historyEventsOfAttempt1.size() - 1);
+      .get(historyEventsOfAttempt1.size() - 1);
     assertEquals(shutdownCondition.getEvent().getEventType(),
-        lastEvent.getEventType());
+      lastEvent.getEventType());
     assertTrue(shutdownCondition.match(lastEvent));
   }
 
   @Test(timeout = 1800000)
   public void testTwoRoundsRecoverying() throws Exception {
     ApplicationId appId = ApplicationId.newInstance(System.currentTimeMillis(),
-            1);
+      1);
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
     TezVertexID vertexId0 = TezVertexID.getInstance(dagId, 0);
     TezVertexID vertexId1 = TezVertexID.getInstance(dagId, 1);
     TezVertexID vertexId2 = TezVertexID.getInstance(dagId, 2);
     ContainerId containerId = ContainerId.newInstance(
-            ApplicationAttemptId.newInstance(appId, 1), 1);
+      ApplicationAttemptId.newInstance(appId, 1), 1);
     NodeId nodeId = NodeId.newInstance("localhost", 10);
     List<TezEvent> initGeneratedEvents = Lists.newArrayList(
-            new TezEvent(InputDataInformationEvent.createWithObjectPayload(0, new Object()), null));
-
+      new TezEvent(InputDataInformationEvent.createWithObjectPayload(0, new Object()), null));
 
     List<SimpleShutdownCondition> shutdownConditions = Lists.newArrayList(
 
-            new SimpleShutdownCondition(TIMING.POST, new DAGInitializedEvent(
-                    dagId, 0L, "username", "dagName", null)),
-            new SimpleShutdownCondition(TIMING.POST, new DAGStartedEvent(dagId,
-                    0L, "username", "dagName")),
-            new SimpleShutdownCondition(TIMING.POST,
-                    new VertexInitializedEvent(vertexId0, "Tokenizer", 0L, 0L, 0,
-                            "", null, initGeneratedEvents, null)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
-                    vertexId0, 0L, 0L)),
-            new SimpleShutdownCondition(TIMING.POST,
-                    new VertexConfigurationDoneEvent(vertexId0, 0L, 2, null, null,
-                            null, true)),
-            new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(
-                    TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L)),
-            new SimpleShutdownCondition(TIMING.POST,
-                    new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
-                            TezTaskID.getInstance(vertexId0, 0), 0), "vertexName", 0L,
-                            containerId, nodeId, "", "", "")),
-            new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
-                    TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L,
-                    null, TaskState.SUCCEEDED, "", new TezCounters(), 0)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-                    vertexId0, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-                    VertexState.SUCCEEDED, "", new TezCounters(),
-                    new VertexStats(), new HashMap<String, Integer>(), null)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-                    vertexId1, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-                    VertexState.SUCCEEDED, "", new TezCounters(),
-                    new VertexStats(), new HashMap<String, Integer>(), null)),
-            new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
-                    vertexId2, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
-                    VertexState.SUCCEEDED, "", new TezCounters(),
-                    new VertexStats(), new HashMap<String, Integer>(), null)),
-            new SimpleShutdownCondition(TIMING.POST, new DAGFinishedEvent(
-                    dagId, 0L, 0L, DAGState.SUCCEEDED, "", new TezCounters(),
-                    "username", "dagName", new HashMap<String, Integer>(),
-                    ApplicationAttemptId.newInstance(appId, 1), null))
+      new SimpleShutdownCondition(TIMING.POST, new DAGInitializedEvent(
+        dagId, 0L, "username", "dagName", null)),
+      new SimpleShutdownCondition(TIMING.POST, new DAGStartedEvent(dagId,
+        0L, "username", "dagName")),
+      new SimpleShutdownCondition(TIMING.POST,
+        new VertexInitializedEvent(vertexId0, "Tokenizer", 0L, 0L, 0,
+          "", null, initGeneratedEvents, null)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexStartedEvent(
+        vertexId0, 0L, 0L)),
+      new SimpleShutdownCondition(TIMING.POST,
+        new VertexConfigurationDoneEvent(vertexId0, 0L, 2, null, null,
+          null, true)),
+      new SimpleShutdownCondition(TIMING.POST, new TaskStartedEvent(
+        TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L)),
+      new SimpleShutdownCondition(TIMING.POST,
+        new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(
+          TezTaskID.getInstance(vertexId0, 0), 0), "vertexName", 0L,
+          containerId, nodeId, "", "", "")),
+      new SimpleShutdownCondition(TIMING.POST, new TaskFinishedEvent(
+        TezTaskID.getInstance(vertexId0, 0), "vertexName", 0L, 0L,
+        null, TaskState.SUCCEEDED, "", new TezCounters(), 0)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+        vertexId0, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+        VertexState.SUCCEEDED, "", new TezCounters(),
+        new VertexStats(), new HashMap<String, Integer>(), null)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+        vertexId1, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+        VertexState.SUCCEEDED, "", new TezCounters(),
+        new VertexStats(), new HashMap<String, Integer>(), null)),
+      new SimpleShutdownCondition(TIMING.POST, new VertexFinishedEvent(
+        vertexId2, "vertexName", 1, 0L, 0L, 0L, 0L, 0L,
+        VertexState.SUCCEEDED, "", new TezCounters(),
+        new VertexStats(), new HashMap<String, Integer>(), null)),
+      new SimpleShutdownCondition(TIMING.POST, new DAGFinishedEvent(
+        dagId, 0L, 0L, DAGState.SUCCEEDED, "", new TezCounters(),
+        "username", "dagName", new HashMap<String, Integer>(),
+        ApplicationAttemptId.newInstance(appId, 1), null))
 
     );
 
@@ -617,14 +614,14 @@ public class TestRecovery {
     for (int i = 0; i < shutdownConditions.size() - 1; i++) {
       // randomly choose half of the test scenario to avoid
       // timeout.
-      if (rand.nextDouble()<0.5) {
+      if (rand.nextDouble() < 0.5) {
         int nextSimpleConditionIndex = i + 1 + rand.nextInt(shutdownConditions.size() - i - 1);
         if (nextSimpleConditionIndex == shutdownConditions.size() - 1) {
           testOrderedWordCountMultipleRoundRecoverying(
-                  new RecoveryServiceWithEventHandlingHook.MultipleRoundShutdownCondition(
-                          Lists.newArrayList(shutdownConditions.get(i), shutdownConditions.get(nextSimpleConditionIndex)))
-                  , true,
-                  shutdownConditions.get(i).getHistoryEvent().getEventType() == HistoryEventType.VERTEX_STARTED);
+            new RecoveryServiceWithEventHandlingHook.MultipleRoundShutdownCondition(
+              Lists.newArrayList(shutdownConditions.get(i), shutdownConditions.get(nextSimpleConditionIndex)))
+            , true,
+            shutdownConditions.get(i).getHistoryEvent().getEventType() == HistoryEventType.VERTEX_STARTED);
         }
       }
     }

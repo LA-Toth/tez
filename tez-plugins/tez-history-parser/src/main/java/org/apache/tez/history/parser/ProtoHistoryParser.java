@@ -31,6 +31,7 @@ import org.apache.tez.dag.history.logging.proto.HistoryEventProtoJsonConversion;
 import org.apache.tez.dag.history.logging.proto.HistoryLoggerProtos.HistoryEventProto;
 import org.apache.tez.dag.history.logging.proto.ProtoMessageReader;
 import org.apache.tez.history.parser.datamodel.DagInfo;
+
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
@@ -71,7 +72,7 @@ public class ProtoHistoryParser extends SimpleHistoryParser {
   }
 
   private void parseContents(String dagId)
-      throws JSONException, FileNotFoundException, TezException, IOException {
+    throws JSONException, FileNotFoundException, TezException, IOException {
     JSONObjectSource source = getJsonSource();
     parse(dagId, source);
   }
@@ -84,7 +85,7 @@ public class ProtoHistoryParser extends SimpleHistoryParser {
     JSONObjectSource source = new JSONObjectSource() {
       private HistoryEventProto message = null;
       private ProtoMessageReader<HistoryEventProto> reader = new ProtoMessageReader<>(conf,
-          new Path(fileIt.next().getPath()), HistoryEventProto.PARSER);
+        new Path(fileIt.next().getPath()), HistoryEventProto.PARSER);
 
       @Override
       public JSONObject next() throws JSONException {
@@ -102,7 +103,7 @@ public class ProtoHistoryParser extends SimpleHistoryParser {
             return false;
           } else {
             reader = new ProtoMessageReader<>(conf, new Path(fileIt.next().getPath()),
-                HistoryEventProto.PARSER);
+              HistoryEventProto.PARSER);
             try {
               message = (HistoryEventProto) reader.readEvent();
               return message != null;

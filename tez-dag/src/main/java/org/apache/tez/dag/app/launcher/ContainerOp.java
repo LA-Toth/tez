@@ -14,21 +14,16 @@
 
 package org.apache.tez.dag.app.launcher;
 
-import org.apache.tez.common.Preconditions;
 import org.apache.hadoop.classification.InterfaceAudience;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.serviceplugins.api.ContainerLaunchRequest;
 import org.apache.tez.serviceplugins.api.ContainerLauncherOperationBase;
 import org.apache.tez.serviceplugins.api.ContainerStopRequest;
 
 @InterfaceAudience.Private
 public class ContainerOp {
-  enum OPType {
-    LAUNCH_REQUEST, STOP_REQUEST
-  }
-
   final ContainerLauncherOperationBase command;
   final OPType opType;
-
   public ContainerOp(OPType opType, ContainerLauncherOperationBase command) {
     this.opType = opType;
     this.command = command;
@@ -55,8 +50,12 @@ public class ContainerOp {
   @Override
   public String toString() {
     return "ContainerOp{" +
-        "opType=" + opType +
-        ", command=" + command +
-        '}';
+      "opType=" + opType +
+      ", command=" + command +
+      '}';
+  }
+
+  enum OPType {
+    LAUNCH_REQUEST, STOP_REQUEST
   }
 }

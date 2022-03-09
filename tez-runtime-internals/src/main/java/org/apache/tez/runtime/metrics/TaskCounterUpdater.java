@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,9 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tez.util.TezMxBeanResourceCalculator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileSystem.Statistics;
@@ -34,7 +31,10 @@ import org.apache.tez.common.GcTimeUpdater;
 import org.apache.tez.common.counters.TaskCounter;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.util.TezMxBeanResourceCalculator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Updates counters with various task specific statistics. Currently, this
@@ -44,30 +44,27 @@ import org.apache.tez.dag.api.TezConfiguration;
 public class TaskCounterUpdater {
 
   private static final Logger LOG = LoggerFactory.getLogger(TaskCounterUpdater.class);
-
+  protected final GcTimeUpdater gcUpdater;
   private final TezCounters tezCounters;
   private final Configuration conf;
-
+  private final String pid;
   /**
    * A Map where Key-> URIScheme and value->FileSystemStatisticUpdater
    */
   private Map<String, FileSystemStatisticUpdater> statisticUpdaters =
-     new HashMap<String, FileSystemStatisticUpdater>();
-  protected final GcTimeUpdater gcUpdater;
+    new HashMap<String, FileSystemStatisticUpdater>();
   private ResourceCalculatorProcessTree pTree;
   private long initCpuCumulativeTime = 0;
-  private final String pid;
-  
+
   public TaskCounterUpdater(TezCounters counters, Configuration conf, String pid) {
     this.tezCounters = counters;
-    this.conf = conf;   
+    this.conf = conf;
     this.gcUpdater = new GcTimeUpdater(tezCounters);
     this.pid = pid;
     initResourceCalculatorPlugin();
     recordInitialCpuStats();
   }
 
-  
   public void updateCounters() {
     // FileSystemStatistics are reset each time a new task is seen by the
     // container.
@@ -75,8 +72,8 @@ public class TaskCounterUpdater {
     // so there is a potential of an unused FileSystem showing up for a
     // Container, and strange values for READ_OPS etc.
     Map<String, List<FileSystem.Statistics>> map = new
-        HashMap<String, List<FileSystem.Statistics>>();
-    for(Statistics stat: FileSystem.getAllStatistics()) {
+      HashMap<String, List<FileSystem.Statistics>>();
+    for (Statistics stat : FileSystem.getAllStatistics()) {
       String uriScheme = stat.getScheme();
       if (map.containsKey(uriScheme)) {
         List<FileSystem.Statistics> list = map.get(uriScheme);
@@ -87,12 +84,12 @@ public class TaskCounterUpdater {
         map.put(uriScheme, list);
       }
     }
-    for (Map.Entry<String, List<FileSystem.Statistics>> entry: map.entrySet()) {
+    for (Map.Entry<String, List<FileSystem.Statistics>> entry : map.entrySet()) {
       FileSystemStatisticUpdater updater = statisticUpdaters.get(entry.getKey());
-      if(updater==null) {//new FileSystem has been found in the cache
+      if (updater == null) {//new FileSystem has been found in the cache
         updater =
-            new FileSystemStatisticUpdater(tezCounters, entry.getValue(),
-                entry.getKey());
+          new FileSystemStatisticUpdater(tezCounters, entry.getValue(),
+            entry.getKey());
         statisticUpdaters.put(entry.getKey(), updater);
       }
       updater.updateCounters();
@@ -101,14 +98,14 @@ public class TaskCounterUpdater {
     gcUpdater.incrementGcCounter();
     updateResourceCounters();
   }
-  
+
   private void recordInitialCpuStats() {
     if (pTree != null) {
       pTree.updateProcessTree();
       initCpuCumulativeTime = pTree.getCumulativeCpuTime();
     }
   }
-  
+
   /**
    * Update resource information counters
    */
@@ -130,7 +127,7 @@ public class TaskCounterUpdater {
     tezCounters.findCounter(TaskCounter.PHYSICAL_MEMORY_BYTES).setValue(pMem);
     tezCounters.findCounter(TaskCounter.VIRTUAL_MEMORY_BYTES).setValue(vMem);
   }
-  
+
   /**
    * Updates the {@link TaskCounter#COMMITTED_HEAP_BYTES} counter to reflect the
    * current total committed heap space usage of this JVM.
@@ -138,14 +135,14 @@ public class TaskCounterUpdater {
   private void updateHeapUsageCounter() {
     long currentHeapUsage = Runtime.getRuntime().totalMemory();
     tezCounters.findCounter(TaskCounter.COMMITTED_HEAP_BYTES)
-            .setValue(currentHeapUsage);
+      .setValue(currentHeapUsage);
   }
-  
+
   private void initResourceCalculatorPlugin() {
     Class<? extends ResourceCalculatorProcessTree> clazz = this.conf.getClass(
-        TezConfiguration.TEZ_TASK_RESOURCE_CALCULATOR_PROCESS_TREE_CLASS,
-        TezMxBeanResourceCalculator.class,
-        ResourceCalculatorProcessTree.class); 
+      TezConfiguration.TEZ_TASK_RESOURCE_CALCULATOR_PROCESS_TREE_CLASS,
+      TezMxBeanResourceCalculator.class,
+      ResourceCalculatorProcessTree.class);
 
     pTree = ResourceCalculatorProcessTree.getResourceCalculatorProcessTree(pid, clazz, conf);
 

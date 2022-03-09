@@ -30,6 +30,7 @@ import org.apache.hadoop.io.SequenceFile.Writer;
 
 import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
+
 import org.apache.tez.common.StreamHelper;
 
 public class ProtoMessageWriter<T extends MessageLite> implements Closeable {
@@ -40,11 +41,11 @@ public class ProtoMessageWriter<T extends MessageLite> implements Closeable {
   ProtoMessageWriter(Configuration conf, Path filePath, Parser<T> parser) throws IOException {
     this.filePath = filePath;
     this.writer = SequenceFile.createWriter(
-        conf,
-        Writer.file(filePath),
-        Writer.keyClass(NullWritable.class),
-        Writer.valueClass(ProtoMessageWritable.class),
-        Writer.compression(CompressionType.RECORD));
+      conf,
+      Writer.file(filePath),
+      Writer.keyClass(NullWritable.class),
+      Writer.valueClass(ProtoMessageWritable.class),
+      Writer.compression(CompressionType.RECORD));
     this.writable = new ProtoMessageWritable<>(parser);
   }
 

@@ -35,11 +35,12 @@ import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.tez.dag.api.EdgeManagerPluginDescriptor;
 import org.apache.tez.dag.api.EdgeProperty;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
+
 import org.junit.Test;
 
 public class TestUnorderedKVEdgeConfig {
 
-  @Test (timeout=2000)
+  @Test(timeout = 2000)
   public void testNullParams() {
     try {
       UnorderedKVEdgeConfig.newBuilder(null, "VALUE");
@@ -56,64 +57,63 @@ public class TestUnorderedKVEdgeConfig {
     }
   }
 
-  @Test (timeout=2000)
+  @Test(timeout = 2000)
   public void testDefaultConfigsUsed() {
     UnorderedKVEdgeConfig.Builder builder =
-        UnorderedKVEdgeConfig.newBuilder("KEY", "VALUE");
+      UnorderedKVEdgeConfig.newBuilder("KEY", "VALUE");
     builder.setKeySerializationClass("SerClass1", null).setValueSerializationClass("SerClass2", null);
 
     UnorderedKVEdgeConfig configuration = builder.build();
 
-
     UnorderedKVOutputConfig rebuiltOutput =
-        new UnorderedKVOutputConfig();
+      new UnorderedKVOutputConfig();
     rebuiltOutput.fromUserPayload(configuration.getOutputPayload());
     UnorderedKVInputConfig rebuiltInput =
-        new UnorderedKVInputConfig();
+      new UnorderedKVInputConfig();
     rebuiltInput.fromUserPayload(configuration.getInputPayload());
 
     Configuration outputConf = rebuiltOutput.conf;
     assertEquals(true, outputConf.getBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD,
-        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT));
+      TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT));
     assertEquals("TestCodec",
-        outputConf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
+      outputConf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
     assertTrue(outputConf.get(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY).startsWith
-        ("SerClass2,SerClass1"));
+      ("SerClass2,SerClass1"));
 
     Configuration inputConf = rebuiltInput.conf;
     assertEquals(true, inputConf.getBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD,
-        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT));
+      TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT));
     assertEquals("TestCodec",
-        inputConf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
+      inputConf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
     assertTrue(inputConf.get(CommonConfigurationKeys.IO_SERIALIZATIONS_KEY).startsWith
-        ("SerClass2,SerClass1"));
+      ("SerClass2,SerClass1"));
   }
 
-  @Test (timeout=2000)
+  @Test(timeout = 2000)
   public void testSpecificIOConfs() {
     // Ensures that Output and Input confs are not mixed.
     UnorderedKVEdgeConfig.Builder builder =
-        UnorderedKVEdgeConfig.newBuilder("KEY", "VALUE");
+      UnorderedKVEdgeConfig.newBuilder("KEY", "VALUE");
 
     UnorderedKVEdgeConfig configuration = builder.build();
 
     UnorderedKVOutputConfig rebuiltOutput =
-        new UnorderedKVOutputConfig();
+      new UnorderedKVOutputConfig();
     rebuiltOutput.fromUserPayload(configuration.getOutputPayload());
     UnorderedKVInputConfig rebuiltInput =
-        new UnorderedKVInputConfig();
+      new UnorderedKVInputConfig();
     rebuiltInput.fromUserPayload(configuration.getInputPayload());
 
     Configuration outputConf = rebuiltOutput.conf;
     assertEquals("TestCodec",
-        outputConf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, "DEFAULT"));
+      outputConf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, "DEFAULT"));
 
     Configuration inputConf = rebuiltInput.conf;
     assertEquals("TestCodec",
-        inputConf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, "DEFAULT"));
+      inputConf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, "DEFAULT"));
   }
 
-  @Test (timeout=2000)
+  @Test(timeout = 2000)
   public void tetCommonConf() {
 
     Configuration fromConf = new Configuration(false);
@@ -130,23 +130,23 @@ public class TestUnorderedKVEdgeConfig {
     additionalConfs.put("file.shouldExist", "file");
 
     UnorderedKVEdgeConfig.Builder builder = UnorderedKVEdgeConfig
-        .newBuilder("KEY",
-            "VALUE")
-        .setAdditionalConfiguration("fs.shouldExist", "fs")
-        .setAdditionalConfiguration("test.key.1", "key1")
-        .setAdditionalConfiguration(TezRuntimeConfiguration.TEZ_RUNTIME_IO_FILE_BUFFER_SIZE, "3333")
-        .setAdditionalConfiguration(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MERGE_PERCENT, "0.33f")
-        .setAdditionalConfiguration(additionalConfs)
-        .setFromConfiguration(fromConf)
-        .setFromConfigurationUnfiltered(fromConfUnfiltered);
+      .newBuilder("KEY",
+        "VALUE")
+      .setAdditionalConfiguration("fs.shouldExist", "fs")
+      .setAdditionalConfiguration("test.key.1", "key1")
+      .setAdditionalConfiguration(TezRuntimeConfiguration.TEZ_RUNTIME_IO_FILE_BUFFER_SIZE, "3333")
+      .setAdditionalConfiguration(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MERGE_PERCENT, "0.33f")
+      .setAdditionalConfiguration(additionalConfs)
+      .setFromConfiguration(fromConf)
+      .setFromConfigurationUnfiltered(fromConfUnfiltered);
 
     UnorderedKVEdgeConfig configuration = builder.build();
 
     UnorderedKVOutputConfig rebuiltOutput =
-        new UnorderedKVOutputConfig();
+      new UnorderedKVOutputConfig();
     rebuiltOutput.fromUserPayload(configuration.getOutputPayload());
     UnorderedKVInputConfig rebuiltInput =
-        new UnorderedKVInputConfig();
+      new UnorderedKVInputConfig();
     rebuiltInput.fromUserPayload(configuration.getInputPayload());
 
     Configuration outputConf = rebuiltOutput.conf;
@@ -168,11 +168,11 @@ public class TestUnorderedKVEdgeConfig {
     assertEquals(1111, inputConf.getInt(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES, 0));
     assertEquals(3333, inputConf.getInt(TezRuntimeConfiguration.TEZ_RUNTIME_IO_FILE_BUFFER_SIZE, 0));
     assertEquals(0.11f,
-        inputConf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT, 0.0f), 0.001f);
+      inputConf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT, 0.0f), 0.001f);
     assertEquals(0.22f,
-        inputConf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMORY_LIMIT_PERCENT, 0.0f), 0.001f);
+      inputConf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMORY_LIMIT_PERCENT, 0.0f), 0.001f);
     assertEquals(0.33f, inputConf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MERGE_PERCENT, 0.0f),
-        0.001f);
+      0.001f);
     assertEquals("io", inputConf.get("io.shouldExist"));
     assertEquals("file", inputConf.get("file.shouldExist"));
     assertEquals("fs", inputConf.get("fs.shouldExist"));
@@ -183,15 +183,15 @@ public class TestUnorderedKVEdgeConfig {
   private void checkHistoryText(String historyText) {
     assertNotNull(historyText);
     assertTrue(historyText.contains(
-        TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT));
+      TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT));
   }
 
-  @Test (timeout=2000)
+  @Test(timeout = 2000)
   public void testHistoryText() {
     UnorderedKVEdgeConfig.Builder builder = UnorderedKVEdgeConfig.newBuilder("KEY", "VALUE");
     Configuration fromConf = new Configuration(false);
     fromConf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT,
-        true);
+      true);
     builder.setFromConfiguration(fromConf);
 
     UnorderedKVEdgeConfig kvEdgeConfig = builder.build();
@@ -211,8 +211,5 @@ public class TestUnorderedKVEdgeConfig {
     EdgeProperty edgeProperty = builder.build().createDefaultCustomEdgeProperty(descriptor);
     checkHistoryText(edgeProperty.getEdgeDestination().getHistoryText());
     checkHistoryText(edgeProperty.getEdgeSource().getHistoryText());
-
   }
-
-
 }

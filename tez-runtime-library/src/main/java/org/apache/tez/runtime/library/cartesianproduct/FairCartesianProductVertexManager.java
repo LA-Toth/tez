@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,21 +17,8 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import com.google.common.math.LongMath;
-import com.google.common.primitives.Ints;
-import com.google.protobuf.ByteString;
-import org.apache.tez.dag.api.EdgeProperty;
-import org.apache.tez.dag.api.UserPayload;
-import org.apache.tez.dag.api.VertexManagerPluginContext;
-import org.apache.tez.dag.api.VertexManagerPluginContext.ScheduleTaskRequest;
-import org.apache.tez.dag.api.event.VertexState;
-import org.apache.tez.dag.api.event.VertexStateUpdate;
-import org.apache.tez.runtime.api.TaskAttemptIdentifier;
-import org.apache.tez.runtime.api.events.VertexManagerEvent;
-import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.VertexManagerEventPayloadProto;
-import org.apache.tez.runtime.library.utils.Grouper;
-import org.roaringbitmap.RoaringBitmap;
-import org.slf4j.Logger;
+import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.CUSTOM;
+import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -44,8 +31,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.CUSTOM;
-import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
+import org.apache.tez.dag.api.EdgeProperty;
+import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.dag.api.VertexManagerPluginContext;
+import org.apache.tez.dag.api.VertexManagerPluginContext.ScheduleTaskRequest;
+import org.apache.tez.dag.api.event.VertexState;
+import org.apache.tez.dag.api.event.VertexStateUpdate;
+import org.apache.tez.runtime.api.TaskAttemptIdentifier;
+import org.apache.tez.runtime.api.events.VertexManagerEvent;
+import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.VertexManagerEventPayloadProto;
+import org.apache.tez.runtime.library.utils.Grouper;
+
+import com.google.common.math.LongMath;
+import com.google.common.primitives.Ints;
+import com.google.protobuf.ByteString;
+import org.roaringbitmap.RoaringBitmap;
+import org.slf4j.Logger;
 
 /**
  * In fair cartesian product case, we have one destination task for each source chunk combination.
@@ -70,136 +71,8 @@ import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUs
  * group.
  */
 class FairCartesianProductVertexManager extends CartesianProductVertexManagerReal {
-  /**
-   * a cartesian product source.
-   * Chunk i of a source contains chunk i of every vertex in this source
-   */
-  static class Source {
-    // list of source vertices of this source
-    List<SrcVertex> srcVertices = new ArrayList<>();
-    // position of this source in all sources
-    int position;
-    // name of source vertex or vertex group
-    String name;
-
-    // total number of chunks in this source
-    // each vertex in this source has same numChunk
-    int numChunk;
-    // total number of acknowledged output record (before reconfiguration)
-    // or estimated total number of output record (after reconfiguration)
-    long numRecord;
-
-    @Override
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append("Source at position ");
-      sb.append(position);
-      if (name != null) {
-        sb.append(", ");
-        sb.append("name ");
-        sb.append(name);
-
-      }
-      sb.append(", num chunk ").append(numChunk);
-      sb.append(": {");
-      for (SrcVertex srcV : srcVertices) {
-        sb.append("[");
-        sb.append(srcV.toString());
-        sb.append("], ");
-      }
-      sb.deleteCharAt(sb.length() - 1);
-      sb.setCharAt(sb.length() - 1, '}');
-      return sb.toString();
-    }
-
-    // estimate total number of output record from all vertices in this group
-    public long estimateNumRecord() {
-      long estimation = 0;
-      for (SrcVertex srcV : srcVertices) {
-        estimation += srcV.estimateNumRecord();
-      }
-      return estimation;
-    }
-
-    private boolean isChunkCompleted(int chunkId) {
-      // a chunk is completed only if its corresponding chunk in each vertex is completed
-      for (SrcVertex srcV : srcVertices) {
-        if (!srcV.isChunkCompleted(chunkId)) {
-          return false;
-        }
-      }
-      return true;
-    }
-
-    public int getNumTask() {
-      int numTask = 0;
-      for (SrcVertex srcV : srcVertices) {
-        numTask += srcV.numTask;
-      }
-      return numTask;
-    }
-
-    public SrcVertex getSrcVertexWithMostOutput() {
-      SrcVertex srcVWithMaxOutput = null;
-      for (SrcVertex srcV : srcVertices) {
-        if (srcVWithMaxOutput == null || srcV.numRecord > srcVWithMaxOutput.numRecord) {
-          srcVWithMaxOutput = srcV;
-        }
-      }
-      return srcVWithMaxOutput;
-    }
-  }
-
-  /**
-   * a cartesian product source vertex
-   */
-  class SrcVertex {
-    // which source this vertex belongs to
-    Source source;
-    // vertex name
-    String name;
-    int numTask;
-
-    RoaringBitmap taskCompleted = new RoaringBitmap();
-    RoaringBitmap taskWithVMEvent = new RoaringBitmap();
-    // total number of acknowledged output record (before reconfiguration)
-    // or estimated total number of output record (after reconfiguration)
-    long numRecord;
-
-    public String toString() {
-      StringBuilder sb = new StringBuilder();
-      sb.append("vertex ").append(name).append(", ");
-      sb.append(numTask).append(" tasks, ");
-      sb.append(taskWithVMEvent.getCardinality()).append(" VMEvents, ");
-      sb.append("numRecord ").append(numRecord).append(", ");
-      sb.append("estimated # output records ").append(estimateNumRecord());
-      return sb.toString();
-    }
-
-    public long estimateNumRecord() {
-      if (taskWithVMEvent.isEmpty()) {
-        return 0;
-      } else {
-        return numRecord * numTask / taskWithVMEvent.getCardinality();
-      }
-    }
-
-    public boolean isChunkCompleted(int chunkId) {
-      grouper.init(numTask * numPartitions, source.numChunk);
-      int firstRelevantTask = grouper.getFirstItemInGroup(chunkId) / numPartitions;
-      int lastRelevantTask = grouper.getLastItemInGroup(chunkId) / numPartitions;
-      for (int relevantTask = firstRelevantTask; relevantTask <= lastRelevantTask; relevantTask++) {
-        if (!taskCompleted.contains(relevantTask)) {
-          return false;
-        }
-      }
-      return true;
-    }
-  }
-
   private static final Logger LOG =
     org.slf4j.LoggerFactory.getLogger(FairCartesianProductVertexManager.class);
-
   private CartesianProductConfigProto config;
   private List<String> sourceList;
   private Map<String, Source> sourcesByName = new HashMap<>();
@@ -208,7 +81,6 @@ class FairCartesianProductVertexManager extends CartesianProductVertexManagerRea
   private int maxParallelism;
   private int numPartitions;
   private long minOpsPerWorker;
-
   private long minNumRecordForEstimation;
   private boolean vertexReconfigured = false;
   private boolean vertexStarted = false;
@@ -217,9 +89,7 @@ class FairCartesianProductVertexManager extends CartesianProductVertexManagerRea
   private int numBroadcastSrcNotInRunningState = 0;
   private Queue<TaskAttemptIdentifier> completedSrcTaskToProcess = new LinkedList<>();
   private RoaringBitmap scheduledTasks = new RoaringBitmap();
-
   private int parallelism;
-
   /* auto reduce related */
   // num of chunks of source at the corresponding position in source list
   private int[] numChunksPerSrc;
@@ -233,9 +103,9 @@ class FairCartesianProductVertexManager extends CartesianProductVertexManagerRea
   public void initialize(CartesianProductConfigProto config) throws Exception {
     this.config = config;
     maxParallelism = config.hasMaxParallelism() ? config.getMaxParallelism()
-      :CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MAX_PARALLELISM_DEFAULT;
+      : CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MAX_PARALLELISM_DEFAULT;
     enableGrouping = config.hasEnableGrouping() ? config.getEnableGrouping()
-      :CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_ENABLE_GROUPING_DEFAULT;
+      : CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_ENABLE_GROUPING_DEFAULT;
     minOpsPerWorker = config.hasMinOpsPerWorker() ? config.getMinOpsPerWorker()
       : CartesianProductVertexManager.TEZ_CARTESIAN_PRODUCT_MIN_OPS_PER_WORKER_DEFAULT;
     sourceList = config.getSourcesList();
@@ -419,7 +289,7 @@ class FairCartesianProductVertexManager extends CartesianProductVertexManagerRea
       }
 
       try {
-        totalOps  = LongMath.checkedMultiply(totalOps, src.numRecord);
+        totalOps = LongMath.checkedMultiply(totalOps, src.numRecord);
       } catch (ArithmeticException e) {
         LOG.info("totalOps exceeds " + Long.MAX_VALUE + ", capping to " + Long.MAX_VALUE);
         totalOps = Long.MAX_VALUE;
@@ -565,7 +435,7 @@ class FairCartesianProductVertexManager extends CartesianProductVertexManagerRea
         // a task is ready for schedule only if all its src chunk has been completed
         boolean readyToSchedule = src.isChunkCompleted(list.get(src.position));
         for (int srcId = 0; readyToSchedule && srcId < list.size(); srcId++) {
-          if (srcId != src.position){
+          if (srcId != src.position) {
             readyToSchedule =
               sourcesByName.get(sourceList.get(srcId)).isChunkCompleted(list.get(srcId));
           }
@@ -580,6 +450,132 @@ class FairCartesianProductVertexManager extends CartesianProductVertexManagerRea
 
     if (!requests.isEmpty()) {
       getContext().scheduleTasks(requests);
+    }
+  }
+
+  /**
+   * a cartesian product source.
+   * Chunk i of a source contains chunk i of every vertex in this source
+   */
+  static class Source {
+    // list of source vertices of this source
+    List<SrcVertex> srcVertices = new ArrayList<>();
+    // position of this source in all sources
+    int position;
+    // name of source vertex or vertex group
+    String name;
+
+    // total number of chunks in this source
+    // each vertex in this source has same numChunk
+    int numChunk;
+    // total number of acknowledged output record (before reconfiguration)
+    // or estimated total number of output record (after reconfiguration)
+    long numRecord;
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("Source at position ");
+      sb.append(position);
+      if (name != null) {
+        sb.append(", ");
+        sb.append("name ");
+        sb.append(name);
+      }
+      sb.append(", num chunk ").append(numChunk);
+      sb.append(": {");
+      for (SrcVertex srcV : srcVertices) {
+        sb.append("[");
+        sb.append(srcV.toString());
+        sb.append("], ");
+      }
+      sb.deleteCharAt(sb.length() - 1);
+      sb.setCharAt(sb.length() - 1, '}');
+      return sb.toString();
+    }
+
+    // estimate total number of output record from all vertices in this group
+    public long estimateNumRecord() {
+      long estimation = 0;
+      for (SrcVertex srcV : srcVertices) {
+        estimation += srcV.estimateNumRecord();
+      }
+      return estimation;
+    }
+
+    private boolean isChunkCompleted(int chunkId) {
+      // a chunk is completed only if its corresponding chunk in each vertex is completed
+      for (SrcVertex srcV : srcVertices) {
+        if (!srcV.isChunkCompleted(chunkId)) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    public int getNumTask() {
+      int numTask = 0;
+      for (SrcVertex srcV : srcVertices) {
+        numTask += srcV.numTask;
+      }
+      return numTask;
+    }
+
+    public SrcVertex getSrcVertexWithMostOutput() {
+      SrcVertex srcVWithMaxOutput = null;
+      for (SrcVertex srcV : srcVertices) {
+        if (srcVWithMaxOutput == null || srcV.numRecord > srcVWithMaxOutput.numRecord) {
+          srcVWithMaxOutput = srcV;
+        }
+      }
+      return srcVWithMaxOutput;
+    }
+  }
+
+  /**
+   * a cartesian product source vertex
+   */
+  class SrcVertex {
+    // which source this vertex belongs to
+    Source source;
+    // vertex name
+    String name;
+    int numTask;
+
+    RoaringBitmap taskCompleted = new RoaringBitmap();
+    RoaringBitmap taskWithVMEvent = new RoaringBitmap();
+    // total number of acknowledged output record (before reconfiguration)
+    // or estimated total number of output record (after reconfiguration)
+    long numRecord;
+
+    public String toString() {
+      StringBuilder sb = new StringBuilder();
+      sb.append("vertex ").append(name).append(", ");
+      sb.append(numTask).append(" tasks, ");
+      sb.append(taskWithVMEvent.getCardinality()).append(" VMEvents, ");
+      sb.append("numRecord ").append(numRecord).append(", ");
+      sb.append("estimated # output records ").append(estimateNumRecord());
+      return sb.toString();
+    }
+
+    public long estimateNumRecord() {
+      if (taskWithVMEvent.isEmpty()) {
+        return 0;
+      } else {
+        return numRecord * numTask / taskWithVMEvent.getCardinality();
+      }
+    }
+
+    public boolean isChunkCompleted(int chunkId) {
+      grouper.init(numTask * numPartitions, source.numChunk);
+      int firstRelevantTask = grouper.getFirstItemInGroup(chunkId) / numPartitions;
+      int lastRelevantTask = grouper.getLastItemInGroup(chunkId) / numPartitions;
+      for (int relevantTask = firstRelevantTask; relevantTask <= lastRelevantTask; relevantTask++) {
+        if (!taskCompleted.contains(relevantTask)) {
+          return false;
+        }
+      }
+      return true;
     }
   }
 }

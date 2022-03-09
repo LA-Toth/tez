@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +18,6 @@
 
 package org.apache.tez.dag.app.web;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
@@ -34,40 +33,40 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 
+import javax.servlet.http.HttpServletResponse;
+
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.yarn.webapp.Controller;
+import org.apache.hadoop.yarn.webapp.MimeType;
+import org.apache.hadoop.yarn.webapp.View;
+import org.apache.hadoop.yarn.webapp.WebAppException;
+import org.apache.tez.common.counters.CounterGroup;
+import org.apache.tez.common.counters.LimitExceededException;
+import org.apache.tez.common.counters.TezCounter;
+import org.apache.tez.common.counters.TezCounters;
+import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.dag.api.client.ProgressBuilder;
+import org.apache.tez.dag.app.AppContext;
+import org.apache.tez.dag.app.dag.DAG;
+import org.apache.tez.dag.app.dag.Task;
+import org.apache.tez.dag.app.dag.TaskAttempt;
+import org.apache.tez.dag.app.dag.Vertex;
+import org.apache.tez.dag.records.TezDAGID;
+import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.dag.records.TezVertexID;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.tez.common.counters.CounterGroup;
-import org.apache.tez.common.counters.LimitExceededException;
-import org.apache.tez.common.counters.TezCounter;
-import org.apache.tez.common.counters.TezCounters;
-import org.apache.tez.dag.api.client.ProgressBuilder;
-import org.apache.tez.dag.app.dag.Task;
-import org.apache.tez.dag.app.dag.TaskAttempt;
-import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.yarn.webapp.Controller;
-import org.apache.hadoop.yarn.webapp.MimeType;
-import org.apache.hadoop.yarn.webapp.View;
-import org.apache.hadoop.yarn.webapp.WebAppException;
-import org.apache.tez.dag.api.TezConfiguration;
-import org.apache.tez.dag.app.AppContext;
-import org.apache.tez.dag.app.dag.DAG;
-import org.apache.tez.dag.app.dag.Vertex;
-import org.apache.tez.dag.records.TezDAGID;
-import org.apache.tez.dag.records.TezVertexID;
 
 public class AMWebController extends Controller {
 
-  private final static Logger LOG = LoggerFactory.getLogger(AMWebController.class);
-
+  public static final String VERSION = "2";
   // HTTP CORS Request Headers
   static final String ORIGIN = "Origin";
 
@@ -87,8 +86,7 @@ public class AMWebController extends Controller {
   static final String VERTEX_PROGRESSES = "vertexProgresses";
 
   static final int MAX_QUERIED = 100;
-  public static final String VERSION = "2";
-
+  private final static Logger LOG = LoggerFactory.getLogger(AMWebController.class);
   private AppContext appContext;
   private String historyUrl;
 
@@ -99,6 +97,26 @@ public class AMWebController extends Controller {
     super(requestContext);
     this.appContext = appContext;
     this.historyUrl = historyUrl;
+  }
+
+  static String encodeHeader(final String header) {
+    if (header == null) {
+      return null;
+    }
+    // Protect against HTTP response splitting vulnerability
+    // since value is written as part of the response header
+    // Ensure this header only has one header by removing
+    // CRs and LFs
+    return header.split("\n|\r")[0].trim();
+  }
+
+  @VisibleForTesting
+  static boolean _hasAccess(UserGroupInformation callerUGI, AppContext appContext) {
+    if (callerUGI == null) {
+      // Allow anonymous access iff acls disabled
+      return !appContext.getAMACLManager().isAclsEnabled();
+    }
+    return appContext.getAMACLManager().checkDAGViewAccess(callerUGI);
   }
 
   @Override
@@ -118,17 +136,6 @@ public class AMWebController extends Controller {
     renderJSON("Tez AM UI WebServices");
   }
 
-  static String encodeHeader(final String header) {
-    if (header == null) {
-      return null;
-    }
-    // Protect against HTTP response splitting vulnerability
-    // since value is written as part of the response header
-    // Ensure this header only has one header by removing
-    // CRs and LFs
-    return header.split("\n|\r")[0].trim();
-  }
-
   @VisibleForTesting
   public void setCorsHeaders() {
     final HttpServletResponse res = response();
@@ -139,7 +146,7 @@ public class AMWebController extends Controller {
      */
     String historyUrlBase = appContext.getAMConf().get(TezConfiguration.TEZ_HISTORY_URL_BASE, "");
     String origin = request().getHeader(ORIGIN);
-    if(origin == null) {
+    if (origin == null) {
       try {
         URL url = new URL(historyUrlBase);
         origin = url.getProtocol() + "://" + url.getAuthority();
@@ -168,15 +175,6 @@ public class AMWebController extends Controller {
     }
   }
 
-  @VisibleForTesting
-  static boolean _hasAccess(UserGroupInformation callerUGI, AppContext appContext) {
-    if (callerUGI == null) {
-      // Allow anonymous access iff acls disabled
-      return !appContext.getAMACLManager().isAclsEnabled();
-    }
-    return appContext.getAMACLManager().checkDAGViewAccess(callerUGI);
-  }
-
   public boolean hasAccess() {
     String remoteUser = request().getRemoteUser();
     UserGroupInformation callerUGI = null;
@@ -193,7 +191,7 @@ public class AMWebController extends Controller {
 
     if (!hasAccess()) {
       sendErrorResponse(HttpServletResponse.SC_UNAUTHORIZED, "Access denied for user: " +
-          request().getRemoteUser(), null);
+        request().getRemoteUser(), null);
       return;
     }
 
@@ -214,8 +212,8 @@ public class AMWebController extends Controller {
 
     Map<String, ProgressInfo> result = new HashMap<String, ProgressInfo>();
     result.put(DAG_PROGRESS,
-        new ProgressInfo(currentDAG.getID().toString(),
-            currentDAG.getCompletedTaskProgress()));
+      new ProgressInfo(currentDAG.getID().toString(),
+        currentDAG.getCompletedTaskProgress()));
     renderJSON(result);
   }
 
@@ -227,7 +225,7 @@ public class AMWebController extends Controller {
 
     if (!hasAccess()) {
       sendErrorResponse(HttpServletResponse.SC_UNAUTHORIZED, "Access denied for user: " +
-          request().getRemoteUser(), null);
+        request().getRemoteUser(), null);
       return;
     }
 
@@ -255,10 +253,9 @@ public class AMWebController extends Controller {
 
     Map<String, ProgressInfo> result = new HashMap<String, ProgressInfo>();
     result.put(VERTEX_PROGRESS, new ProgressInfo(tezVertexID.toString(),
-        vertex.getCompletedTaskProgress()));
+      vertex.getCompletedTaskProgress()));
     renderJSON(result);
   }
-
 
   Collection<Vertex> getVerticesByIdx(DAG dag, Collection<Integer> indexes) {
     Collection<Vertex> vertices = new ArrayList<Vertex>(indexes.size());
@@ -275,7 +272,7 @@ public class AMWebController extends Controller {
       }
     }
 
-    return  vertices;
+    return vertices;
   }
 
   int getQueryParamInt(String name) throws NumberFormatException {
@@ -290,7 +287,7 @@ public class AMWebController extends Controller {
     setCorsHeaders();
     if (!hasAccess()) {
       sendErrorResponse(HttpServletResponse.SC_UNAUTHORIZED, "Access denied for user: " +
-          request().getRemoteUser(), null);
+        request().getRemoteUser(), null);
       return;
     }
 
@@ -319,9 +316,9 @@ public class AMWebController extends Controller {
     }
 
     Collection<ProgressInfo> progresses = new ArrayList<ProgressInfo>(vertices.size());
-    for(Vertex vertex : vertices) {
+    for (Vertex vertex : vertices) {
       progresses.add(new ProgressInfo(vertex.getVertexId().toString(),
-          vertex.getCompletedTaskProgress()));
+        vertex.getCompletedTaskProgress()));
     }
 
     Map<String, Collection<ProgressInfo>> result = new HashMap<String, Collection<ProgressInfo>>();
@@ -336,7 +333,7 @@ public class AMWebController extends Controller {
 
     if (!hasAccess()) {
       sendErrorResponse(HttpServletResponse.SC_UNAUTHORIZED, "Access denied for user: " +
-          request().getRemoteUser(), null);
+        request().getRemoteUser(), null);
       return false;
     }
 
@@ -383,7 +380,7 @@ public class AMWebController extends Controller {
         }
       } catch (NumberFormatException nfe) {
         sendErrorResponse(HttpServletResponse.SC_BAD_REQUEST,
-            "invalid vertex ID passed in as parameter", nfe);
+          "invalid vertex ID passed in as parameter", nfe);
         vertexIDs = null;
       }
     }
@@ -418,22 +415,21 @@ public class AMWebController extends Controller {
       String counterGroup = token.substring(0, pos);
       Set<String> counters = Collections.<String>emptySet();
       if (pos < token.length() - 1) {
-        String counterNames = token.substring(pos+1, token.length());
+        String counterNames = token.substring(pos + 1, token.length());
         counters = Sets.newHashSet(
-            Splitter.on(counterDelimiter).omitEmptyStrings()
-                .trimResults().split(counterNames));
+          Splitter.on(counterDelimiter).omitEmptyStrings()
+            .trimResults().split(counterNames));
       }
       counterList.put(counterGroup, counters);
     }
     return counterList;
   }
 
-
   List<String> splitString(String str, String delimiter, Integer limit) {
     List<String> items = new ArrayList<String>();
 
     StringTokenizer tokenizer = new StringTokenizer(str, delimiter);
-    for(int count = 0; tokenizer.hasMoreElements() && count < limit; count ++) {
+    for (int count = 0; tokenizer.hasMoreElements() && count < limit; count++) {
       items.add(tokenizer.nextToken());
     }
 
@@ -462,7 +458,7 @@ public class AMWebController extends Controller {
         }
       } catch (NumberFormatException nfe) {
         sendErrorResponse(HttpServletResponse.SC_BAD_REQUEST,
-            String.format("invalid %s passed in as parameter", paramName), nfe);
+          String.format("invalid %s passed in as parameter", paramName), nfe);
         values = null;
       }
     }
@@ -491,7 +487,7 @@ public class AMWebController extends Controller {
         for (String valueStr : splitString(valuesStr, ",", limit)) {
           List<Integer> innerValues = new ArrayList<Integer>();
           String innerValueStrs[] = valueStr.split("_");
-          if(innerValueStrs.length == count) {
+          if (innerValueStrs.length == count) {
             for (String innerValueStr : innerValueStrs) {
               int value = Integer.parseInt(innerValueStr);
               innerValues.add(value);
@@ -501,7 +497,7 @@ public class AMWebController extends Controller {
         }
       } catch (NumberFormatException nfe) {
         sendErrorResponse(HttpServletResponse.SC_BAD_REQUEST,
-            String.format("invalid %s passed in as parameter", paramName), nfe);
+          String.format("invalid %s passed in as parameter", paramName), nfe);
         values = null;
       }
     }
@@ -539,12 +535,12 @@ public class AMWebController extends Controller {
       // TODO: add an error message instead for counter key
     }
     renderJSON(ImmutableMap.of(
-        "dag", dagInfo
+      "dag", dagInfo
     ));
   }
 
   Map<String, Map<String, Long>> constructCounterMapInfo(TezCounters counters,
-      Map<String, Set<String>> counterNames) {
+                                                         Map<String, Set<String>> counterNames) {
     if (counterNames == null || counterNames.isEmpty()) {
       return null;
     }
@@ -598,9 +594,9 @@ public class AMWebController extends Controller {
     vertexInfo.put("succeededTasks", Integer.toString(vertexProgress.getSucceededTaskCount()));
 
     vertexInfo.put("failedTaskAttempts",
-        Integer.toString(vertexProgress.getFailedTaskAttemptCount()));
+      Integer.toString(vertexProgress.getFailedTaskAttemptCount()));
     vertexInfo.put("killedTaskAttempts",
-        Integer.toString(vertexProgress.getKilledTaskAttemptCount()));
+      Integer.toString(vertexProgress.getKilledTaskAttemptCount()));
 
     try {
       if (counterNames != null && !counterNames.isEmpty()) {
@@ -645,12 +641,12 @@ public class AMWebController extends Controller {
     }
 
     ArrayList<Map<String, Object>> verticesInfo = new ArrayList<Map<String, Object>>();
-    for(Vertex v : vertexList) {
+    for (Vertex v : vertexList) {
       verticesInfo.add(getVertexInfoMap(v, counterNames));
     }
 
     renderJSON(ImmutableMap.of(
-        "vertices", verticesInfo
+      "vertices", verticesInfo
     ));
   }
 
@@ -672,54 +668,49 @@ public class AMWebController extends Controller {
     List<Task> tasks = new ArrayList<Task>();
 
     List<List<Integer>> taskIDs = getIDsFromRequest(WebUIService.TASK_ID, limit, 2);
-    if(taskIDs == null) {
+    if (taskIDs == null) {
       return null;
-    }
-    else if(!taskIDs.isEmpty()) {
+    } else if (!taskIDs.isEmpty()) {
       for (List<Integer> indexes : taskIDs) {
         Vertex vertex = getVertexFromIndex(dag, indexes.get(0));
-        if(vertex == null) {
+        if (vertex == null) {
           continue;
         }
         Task task = vertex.getTask(indexes.get(1));
-        if(task == null) {
+        if (task == null) {
           continue;
-        }
-        else {
+        } else {
           tasks.add(task);
         }
 
-        if(tasks.size() >= limit) {
+        if (tasks.size() >= limit) {
           break;
         }
       }
-    }
-    else {
+    } else {
       List<Integer> vertexIDs = getIntegersFromRequest(WebUIService.VERTEX_ID, limit);
-      if(vertexIDs == null) {
+      if (vertexIDs == null) {
         return null;
-      }
-      else if(!vertexIDs.isEmpty()) {
+      } else if (!vertexIDs.isEmpty()) {
         for (Integer vertexID : vertexIDs) {
           Vertex vertex = getVertexFromIndex(dag, vertexID);
-          if(vertex == null) {
+          if (vertex == null) {
             continue;
           }
           List<Task> vertexTasks = new ArrayList<Task>(vertex.getTasks().values());
           tasks.addAll(vertexTasks.subList(0, Math.min(vertexTasks.size(), limit - tasks.size())));
 
-          if(tasks.size() >= limit) {
+          if (tasks.size() >= limit) {
             break;
           }
         }
-      }
-      else {
+      } else {
         Collection<Vertex> vertices = dag.getVertices().values();
         for (Vertex vertex : vertices) {
           List<Task> vertexTasks = new ArrayList<Task>(vertex.getTasks().values());
           tasks.addAll(vertexTasks.subList(0, Math.min(vertexTasks.size(), limit - tasks.size())));
 
-          if(tasks.size() >= limit) {
+          if (tasks.size() >= limit) {
             break;
           }
         }
@@ -751,14 +742,14 @@ public class AMWebController extends Controller {
     }
 
     List<Task> tasks = getRequestedTasks(dag, limit);
-    if(tasks == null) {
+    if (tasks == null) {
       return;
     }
 
     Map<String, Set<String>> counterNames = getCounterListFromRequest();
 
     ArrayList<Map<String, Object>> tasksInfo = new ArrayList<Map<String, Object>>();
-    for(Task t : tasks) {
+    for (Task t : tasks) {
       Map<String, Object> taskInfo = new HashMap<String, Object>();
       taskInfo.put("id", t.getTaskID().toString());
       taskInfo.put("progress", Float.toString(t.getProgress()));
@@ -795,30 +786,28 @@ public class AMWebController extends Controller {
     List<TaskAttempt> attempts = new ArrayList<TaskAttempt>();
 
     List<List<Integer>> attemptIDs = getIDsFromRequest(WebUIService.ATTEMPT_ID, limit, 3);
-    if(attemptIDs == null) {
+    if (attemptIDs == null) {
       return null;
-    }
-    else if(!attemptIDs.isEmpty()) {
+    } else if (!attemptIDs.isEmpty()) {
       for (List<Integer> indexes : attemptIDs) {
         Vertex vertex = getVertexFromIndex(dag, indexes.get(0));
-        if(vertex == null) {
+        if (vertex == null) {
           continue;
         }
         Task task = vertex.getTask(indexes.get(1));
-        if(task == null) {
+        if (task == null) {
           continue;
         }
 
         TaskAttempt attempt = task.
-            getAttempt(TezTaskAttemptID.getInstance(task.getTaskID(), indexes.get(2)));
-        if(attempt == null) {
+          getAttempt(TezTaskAttemptID.getInstance(task.getTaskID(), indexes.get(2)));
+        if (attempt == null) {
           continue;
-        }
-        else {
+        } else {
           attempts.add(attempt);
         }
 
-        if(attempts.size() >= limit) {
+        if (attempts.size() >= limit) {
           break;
         }
       }
@@ -849,14 +838,14 @@ public class AMWebController extends Controller {
     }
 
     List<TaskAttempt> attempts = getRequestedAttempts(dag, limit);
-    if(attempts == null) {
+    if (attempts == null) {
       return;
     }
 
     Map<String, Set<String>> counterNames = getCounterListFromRequest();
 
     ArrayList<Map<String, Object>> attemptsInfo = new ArrayList<Map<String, Object>>();
-    for(TaskAttempt a : attempts) {
+    for (TaskAttempt a : attempts) {
       Map<String, Object> attemptInfo = new HashMap<String, Object>();
       attemptInfo.put("id", a.getTaskAttemptID().toString());
       attemptInfo.put("progress", Float.toString(a.getProgress()));
@@ -888,7 +877,8 @@ public class AMWebController extends Controller {
     @Inject
     AppContext appContext;
     @Inject
-    @Named("TezUIHistoryURL") String historyUrl;
+    @Named("TezUIHistoryURL")
+    String historyUrl;
 
     @Override
     public void render() {
@@ -902,11 +892,11 @@ public class AMWebController extends Controller {
       pw.write("<body>");
       if (historyUrl == null || historyUrl.isEmpty()) {
         pw.write("<h1>Tez UI Url is not defined.</h1>" +
-            "<p>To enable tracking url pointing to Tez UI, set the config <b>" +
-            TezConfiguration.TEZ_HISTORY_URL_BASE + "</b> in the tez-site.xml.</p>");
+          "<p>To enable tracking url pointing to Tez UI, set the config <b>" +
+          TezConfiguration.TEZ_HISTORY_URL_BASE + "</b> in the tez-site.xml.</p>");
       } else {
         pw.write("<h1>Redirecting to Tez UI</h1>. <p>If you are not redirected shortly, click " +
-            "<a href='" + historyUrl + "'><b>here</b></a></p>"
+          "<a href='" + historyUrl + "'><b>here</b></a></p>"
         );
         pw.write("<script type='text/javascript'>setTimeout(function() { " +
           "window.location.replace('" + historyUrl + "');" +
@@ -921,6 +911,12 @@ public class AMWebController extends Controller {
   @VisibleForTesting
   static class ProgressInfo {
     private String id;
+    private float progress;
+
+    public ProgressInfo(String id, float progress) {
+      this.id = id;
+      this.progress = progress;
+    }
 
     public float getProgress() {
       return progress;
@@ -928,13 +924,6 @@ public class AMWebController extends Controller {
 
     public String getId() {
       return id;
-    }
-
-    private float progress;
-
-    public ProgressInfo(String id, float progress) {
-      this.id = id;
-      this.progress = progress;
     }
   }
 }

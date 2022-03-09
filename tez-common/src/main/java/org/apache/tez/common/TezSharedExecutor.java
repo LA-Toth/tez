@@ -57,20 +57,20 @@ public class TezSharedExecutor implements TezExecutors {
   public TezSharedExecutor(Configuration conf) {
     // The default value is 0. We could start with a few threads so that thread pool is never empty.
     int minThreads = conf.getInt(TezConfiguration.TEZ_SHARED_EXECUTOR_MIN_THREADS,
-        TezConfiguration.TEZ_SHARED_EXECUTOR_MIN_THREADS_DEFAULT);
+      TezConfiguration.TEZ_SHARED_EXECUTOR_MIN_THREADS_DEFAULT);
     // The default value is Integer.MAX_VALUE, but ExecutorServiceInternal will do the rate limiting
     // of total numbers of tasks and hence the num threads will be bounded.
     int maxThreads = conf.getInt(TezConfiguration.TEZ_SHARED_EXECUTOR_MAX_THREADS,
-        TezConfiguration.TEZ_SHARED_EXECUTOR_MAX_THREADS_DEFAULT);
+      TezConfiguration.TEZ_SHARED_EXECUTOR_MAX_THREADS_DEFAULT);
     if (maxThreads < 0) {
       maxThreads = Integer.MAX_VALUE;
     }
     this.service = new ThreadPoolExecutor(
-        minThreads, maxThreads,
-        // The timeout is to give thread a chance to be re-used instead of being cleaned up.
-        60, TimeUnit.SECONDS,
-        new SynchronousQueue<Runnable>(),
-        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TezSharedExecutor: %d").build());
+      minThreads, maxThreads,
+      // The timeout is to give thread a chance to be re-used instead of being cleaned up.
+      60, TimeUnit.SECONDS,
+      new SynchronousQueue<Runnable>(),
+      new ThreadFactoryBuilder().setDaemon(true).setNameFormat("TezSharedExecutor: %d").build());
 
     // Setup polling thread to pick new tasks from the underlying executors.
     poller = new DelayedExecutionPoller(service);
@@ -108,7 +108,7 @@ public class TezSharedExecutor implements TezExecutors {
 
     // A queue which contains instances which have tasks to be executed.
     private final LinkedBlockingQueue<ExecutorServiceInternal> executeQueue =
-        new LinkedBlockingQueue<>();
+      new LinkedBlockingQueue<>();
 
     DelayedExecutionPoller(ThreadPoolExecutor service) {
       super("DelayedExecutionPoller");
@@ -145,14 +145,14 @@ public class TezSharedExecutor implements TezExecutors {
     // finished, we use this to implement shutdownNow and awaitForTermination.
     // Note: This should have been an Set, but we do not have a concurrent set.
     private final ConcurrentHashMap<ManagedFutureTask<?>, Boolean> futures =
-        new ConcurrentHashMap<>();
+      new ConcurrentHashMap<>();
 
     // Number of tasks currently submitted by this executor to the common executor service.
     private final AtomicInteger numTasksSubmitted = new AtomicInteger();
 
     // The list of pending tasks to be submitted on behalf of this service.
     private final LinkedBlockingQueue<ManagedFutureTask<?>> pendingTasks =
-        new LinkedBlockingQueue<>();
+      new LinkedBlockingQueue<>();
 
     // Set to 0 when shutdown is complete, a CountDownLatch is used to enable wait for shutdown in
     // awaitTermination.
@@ -168,61 +168,6 @@ public class TezSharedExecutor implements TezExecutors {
       Preconditions.checkArgument(poolSize > 0, "Expected poolSize > 0");
       this.threadName = threadName;
       this.poolSize = poolSize;
-    }
-
-    // A FutureTask which we will use to wrap all the runnable and callable. It adds and removes
-    // from the futures set above. And also notifies TezSharedExecutor to pick new tasks from the
-    // current ExecutorServiceInternal instance.
-    private class ManagedFutureTask<V> extends FutureTask<V> {
-      // Set to true if this task was submitted to the shared ExecutorService.
-      private boolean submitted = false;
-
-      ManagedFutureTask(Runnable runnable, V value) {
-        super(runnable, value);
-        addFuture(this);
-      }
-
-      ManagedFutureTask(Callable<V> callable) {
-        super(callable);
-        addFuture(this);
-      }
-
-      @Override
-      public void run() {
-        Thread thisThread = Thread.currentThread();
-        String savedThreadName = null;
-        if (threadName != null) {
-          savedThreadName = thisThread.getName();
-          thisThread.setName(String.format(threadName, thisThread.getId()));
-        }
-        try {
-          super.run();
-        } finally {
-          if (threadName != null) {
-            thisThread.setName(savedThreadName);
-          }
-        }
-      }
-
-      // There is a race b/w cancel and submit hence the synchronization.
-      synchronized void submit() {
-        submitted = true;
-        service.execute(this);
-      }
-
-      @Override
-      public void done() {
-        removeFuture(this);
-        synchronized (this) {
-          if (submitted) { // Decrement only if this task was submitted.
-            numTasksSubmitted.decrementAndGet();
-          }
-        }
-        // Add internal executor service to poller to schedule another task if available.
-        // We do this instead of invoking tryExecute here, to give a chance for this thread to be
-        // reused. But its still possible that a new thread is created.
-        poller.add(ExecutorServiceInternal.this);
-      }
     }
 
     private void addFuture(ManagedFutureTask<?> future) {
@@ -242,7 +187,7 @@ public class TezSharedExecutor implements TezExecutors {
     @Override
     protected <T> ManagedFutureTask<T> newTaskFor(Runnable runnable, T value) {
       if (runnable instanceof ManagedFutureTask) {
-        return (ManagedFutureTask<T>)runnable;
+        return (ManagedFutureTask<T>) runnable;
       }
       return new ManagedFutureTask<T>(runnable, value);
     }
@@ -342,6 +287,61 @@ public class TezSharedExecutor implements TezExecutors {
     @Override
     protected void finalize() {
       this.shutdown();
+    }
+
+    // A FutureTask which we will use to wrap all the runnable and callable. It adds and removes
+    // from the futures set above. And also notifies TezSharedExecutor to pick new tasks from the
+    // current ExecutorServiceInternal instance.
+    private class ManagedFutureTask<V> extends FutureTask<V> {
+      // Set to true if this task was submitted to the shared ExecutorService.
+      private boolean submitted = false;
+
+      ManagedFutureTask(Runnable runnable, V value) {
+        super(runnable, value);
+        addFuture(this);
+      }
+
+      ManagedFutureTask(Callable<V> callable) {
+        super(callable);
+        addFuture(this);
+      }
+
+      @Override
+      public void run() {
+        Thread thisThread = Thread.currentThread();
+        String savedThreadName = null;
+        if (threadName != null) {
+          savedThreadName = thisThread.getName();
+          thisThread.setName(String.format(threadName, thisThread.getId()));
+        }
+        try {
+          super.run();
+        } finally {
+          if (threadName != null) {
+            thisThread.setName(savedThreadName);
+          }
+        }
+      }
+
+      // There is a race b/w cancel and submit hence the synchronization.
+      synchronized void submit() {
+        submitted = true;
+        service.execute(this);
+      }
+
+      @Override
+      public void done() {
+        removeFuture(this);
+        synchronized (this) {
+          if (submitted) { // Decrement only if this task was submitted.
+            numTasksSubmitted.decrementAndGet();
+          }
+        }
+        // Add internal executor service to poller to schedule another task if available.
+        // We do this instead of invoking tryExecute here, to give a chance for this thread to be
+        // reused. But its still possible that a new thread is created.
+        poller.add(ExecutorServiceInternal.this);
+      }
     }
   }
 }

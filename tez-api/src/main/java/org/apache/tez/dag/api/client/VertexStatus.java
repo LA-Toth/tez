@@ -1,35 +1,35 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.api.client;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.DagTypeConverters;
+import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.api.Vertex;
 import org.apache.tez.dag.api.records.DAGProtos;
 import org.apache.tez.dag.api.records.DAGProtos.VertexStatusProtoOrBuilder;
-import org.apache.tez.dag.api.TezUncheckedException;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Describes the status of the {@link Vertex}
@@ -37,39 +37,17 @@ import org.apache.tez.dag.api.TezUncheckedException;
 @Public
 public class VertexStatus {
 
-  public enum State {
-    NEW,
-    INITIALIZING,
-    INITED,
-    RUNNING,
-    COMMITTING,
-    SUCCEEDED,
-    FAILED,
-    KILLED,
-    ERROR,
-    TERMINATING
-  }
-
   VertexStatusProtoOrBuilder proxy = null;
   Progress progress = null;
   TezCounters vertexCounters = null;
   private AtomicBoolean countersInitialized = new AtomicBoolean(false);
-
   public VertexStatus(VertexStatusProtoOrBuilder proxy) {
     this.proxy = proxy;
   }
 
-  public String getId() {
-    return proxy.getId();
-  }
-
-  public State getState() {
-    return getState(proxy.getState());
-  }
-
   @VisibleForTesting
   static State getState(DAGProtos.VertexStatusStateProto stateProto) {
-    switch(stateProto) {
+    switch (stateProto) {
       case VERTEX_NEW:
         return VertexStatus.State.NEW;
       case VERTEX_INITIALIZING:
@@ -92,8 +70,16 @@ public class VertexStatus {
         return VertexStatus.State.TERMINATING;
       default:
         throw new TezUncheckedException(
-            "Unsupported value for VertexStatus.State : " + stateProto);
+          "Unsupported value for VertexStatus.State : " + stateProto);
     }
+  }
+
+  public String getId() {
+    return proxy.getId();
+  }
+
+  public State getState() {
+    return getState(proxy.getState());
   }
 
   public List<String> getDiagnostics() {
@@ -101,7 +87,7 @@ public class VertexStatus {
   }
 
   public Progress getProgress() {
-    if(progress == null && proxy.hasProgress()) {
+    if (progress == null && proxy.hasProgress()) {
       progress = new Progress(proxy.getProgress());
     }
     return progress;
@@ -118,17 +104,17 @@ public class VertexStatus {
     countersInitialized.set(true);
     return vertexCounters;
   }
-  
+
   @Override
   public boolean equals(Object obj) {
-    if (obj instanceof VertexStatus){
-      VertexStatus other = (VertexStatus)obj;
+    if (obj instanceof VertexStatus) {
+      VertexStatus other = (VertexStatus) obj;
       return getState().equals(other.getState())
-          && getDiagnostics().equals(other.getDiagnostics())
-          && getProgress().equals(other.getProgress())
-          && 
-          ((getVertexCounters() == null && other.getVertexCounters() == null) 
-              || getVertexCounters().equals(other.getVertexCounters()));
+        && getDiagnostics().equals(other.getDiagnostics())
+        && getProgress().equals(other.getProgress())
+        &&
+        ((getVertexCounters() == null && other.getVertexCounters() == null)
+          || getVertexCounters().equals(other.getVertexCounters()));
     }
     return false;
   }
@@ -138,18 +124,18 @@ public class VertexStatus {
     final int prime = 46021;
     int result = 1;
     result = prime +
-        getState().hashCode();
+      getState().hashCode();
 
     List<String> diagnostics = getDiagnostics();
     Progress vProgress = getProgress();
     TezCounters counters = getVertexCounters();
 
     result = prime * result +
-        ((diagnostics == null)? 0 : diagnostics.hashCode());
+      ((diagnostics == null) ? 0 : diagnostics.hashCode());
     result = prime * result +
-        ((vProgress == null)? 0 : vProgress.hashCode());
+      ((vProgress == null) ? 0 : vProgress.hashCode());
     result = prime * result +
-        ((counters == null)? 0 : counters.hashCode());
+      ((counters == null) ? 0 : counters.hashCode());
 
     return result;
   }
@@ -164,4 +150,16 @@ public class VertexStatus {
     return sb.toString();
   }
 
+  public enum State {
+    NEW,
+    INITIALIZING,
+    INITED,
+    RUNNING,
+    COMMITTING,
+    SUCCEEDED,
+    FAILED,
+    KILLED,
+    ERROR,
+    TERMINATING
+  }
 }

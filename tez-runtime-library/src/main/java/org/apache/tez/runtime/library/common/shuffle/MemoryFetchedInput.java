@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,18 +22,17 @@ import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.apache.hadoop.io.BoundedByteArrayOutputStream;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.io.NonSyncByteArrayInputStream;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
-
-import org.apache.tez.common.Preconditions;
 
 public class MemoryFetchedInput extends FetchedInput {
 
   private byte[] byteArray;
 
   public MemoryFetchedInput(long actualSize,
-      InputAttemptIdentifier inputAttemptIdentifier,
-      FetchedInputCallback callbackHandler) {
+                            InputAttemptIdentifier inputAttemptIdentifier,
+                            FetchedInputCallback callbackHandler) {
     super(inputAttemptIdentifier, callbackHandler);
     this.byteArray = new byte[(int) actualSize];
   }
@@ -64,7 +63,7 @@ public class MemoryFetchedInput extends FetchedInput {
   public byte[] getBytes() {
     return byteArray;
   }
-  
+
   @Override
   public void commit() {
     if (isState(State.PENDING)) {
@@ -80,12 +79,12 @@ public class MemoryFetchedInput extends FetchedInput {
       notifyFetchFailure();
     }
   }
-  
+
   @Override
   public void free() {
     Preconditions.checkState(
-        isState(State.COMMITTED) || isState(State.ABORTED),
-        "FetchedInput can only be freed after it is committed or aborted");
+      isState(State.COMMITTED) || isState(State.ABORTED),
+      "FetchedInput can only be freed after it is committed or aborted");
     if (isState(State.COMMITTED)) { // ABORTED would have already called cleanup
       setState(State.FREED);
       notifyFreedResource();
@@ -98,9 +97,9 @@ public class MemoryFetchedInput extends FetchedInput {
   @Override
   public String toString() {
     return "MemoryFetchedInput [inputAttemptIdentifier="
-        + getInputAttemptIdentifier() + ", size=" + getSize()
-        + ", type=" + getType() + ", id="
-        + getId() + ", state=" + getState() + "]";
+      + getInputAttemptIdentifier() + ", size=" + getSize()
+      + ", type=" + getType() + ", id="
+      + getId() + ", state=" + getState() + "]";
   }
 
   private static class InMemoryBoundedByteArrayOutputStream extends BoundedByteArrayOutputStream {

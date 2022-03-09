@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,6 +26,7 @@ import org.apache.tez.common.TezUtilsInternal;
 import org.apache.tez.runtime.api.ObjectRegistry;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +47,7 @@ public class FetcherErrorTestingConfig {
 
   public FetcherErrorTestingConfig(Configuration conf, ObjectRegistry objectRegistry) {
     String errorConfig = conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_TESTING_ERRORS_CONFIG,
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_TESTING_ERRORS_CONFIG_DEFAULT);
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_TESTING_ERRORS_CONFIG_DEFAULT);
     String[] configParts = errorConfig.split("#");
 
     // e.g. host_1
@@ -85,7 +86,7 @@ public class FetcherErrorTestingConfig {
   public boolean shouldFail(String host, String srcNameTrimmed, InputAttemptIdentifier inputAttemptIdentifier) {
     if (matchHost(host) && matchSourceVertex(srcNameTrimmed)) {
       return (!failForFirstAttemptOnly || failForFirstAttemptOnly && inputAttemptIdentifier.getAttemptNumber() == 0)
-          && random.nextInt(100) < probabilityPercent;
+        && random.nextInt(100) < probabilityPercent;
     }
     return false;
   }
@@ -105,7 +106,7 @@ public class FetcherErrorTestingConfig {
   @Override
   public String toString() {
     return String.format(
-        "[FetcherErrorTestingConfig: host: %s, source vertex: %s, probability: %d%%, failForFirstAttemptOnly: %s]",
-        hostToFail, srcNameTrimmedToFail, probabilityPercent, failForFirstAttemptOnly);
+      "[FetcherErrorTestingConfig: host: %s, source vertex: %s, probability: %d%%, failForFirstAttemptOnly: %s]",
+      hostToFail, srcNameTrimmedToFail, probabilityPercent, failForFirstAttemptOnly);
   }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -81,6 +81,7 @@ import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.runtime.api.TaskFailureType;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -116,7 +117,7 @@ public class TestHistoryEventProtoConverter {
     callerContextProto.setCallerType("Caller_Type");
     callerContextProto.setBlob("Desc_1");
     dagPlan = DAGPlan.newBuilder().setName("DAGPlanMock")
-        .setCallerContext(callerContextProto).build();
+      .setCallerContext(callerContextProto).build();
     containerId = ContainerId.newContainerId(applicationAttemptId, 111);
     nodeId = NodeId.newInstance("node", 13435);
   }
@@ -128,18 +129,18 @@ public class TestHistoryEventProtoConverter {
       switch (eventType) {
         case APP_LAUNCHED:
           event = new AppLaunchedEvent(applicationId, random.nextInt(), random.nextInt(),
-              user, new Configuration(false), null);
+            user, new Configuration(false), null);
           break;
         case AM_LAUNCHED:
           event = new AMLaunchedEvent(applicationAttemptId, random.nextInt(), random.nextInt(),
-              user);
+            user);
           break;
         case AM_STARTED:
           event = new AMStartedEvent(applicationAttemptId, random.nextInt(), user);
           break;
         case DAG_SUBMITTED:
           event = new DAGSubmittedEvent(tezDAGID, random.nextInt(), dagPlan, applicationAttemptId,
-              null, user, null, containerLogs, null);
+            null, user, null, containerLogs, null);
           break;
         case DAG_INITIALIZED:
           event = new DAGInitializedEvent(tezDAGID, random.nextInt(), user, dagPlan.getName(), null);
@@ -149,11 +150,11 @@ public class TestHistoryEventProtoConverter {
           break;
         case DAG_FINISHED:
           event = new DAGFinishedEvent(tezDAGID, random.nextInt(), random.nextInt(), DAGState.ERROR,
-              null, null, user, dagPlan.getName(), null, applicationAttemptId, dagPlan);
+            null, null, user, dagPlan.getName(), null, applicationAttemptId, dagPlan);
           break;
         case VERTEX_INITIALIZED:
           event = new VertexInitializedEvent(tezVertexID, "v1", random.nextInt(), random.nextInt(),
-              random.nextInt(), "proc", null, null, null);
+            random.nextInt(), "proc", null, null, null);
           break;
         case VERTEX_STARTED:
           event = new VertexStartedEvent(tezVertexID, random.nextInt(), random.nextInt());
@@ -163,29 +164,30 @@ public class TestHistoryEventProtoConverter {
           break;
         case VERTEX_FINISHED:
           event = new VertexFinishedEvent(tezVertexID, "v1", 1, random.nextInt(), random.nextInt(),
-              random.nextInt(), random.nextInt(), random.nextInt(), VertexState.ERROR,
-              null, null, null, null, null);
+            random.nextInt(), random.nextInt(), random.nextInt(), VertexState.ERROR,
+            null, null, null, null, null);
           break;
         case TASK_STARTED:
           event = new TaskStartedEvent(tezTaskID, "v1", random.nextInt(), random.nextInt());
           break;
         case TASK_FINISHED:
           event = new TaskFinishedEvent(tezTaskID, "v1", random.nextInt(), random.nextInt(),
-              tezTaskAttemptID, TaskState.FAILED, null, null, 0);
+            tezTaskAttemptID, TaskState.FAILED, null, null, 0);
           break;
         case TASK_ATTEMPT_STARTED:
           event = new TaskAttemptStartedEvent(tezTaskAttemptID, "v1", random.nextInt(), containerId,
-              nodeId, null, null, "nodeHttpAddress");
+            nodeId, null, null, "nodeHttpAddress");
           break;
         case TASK_ATTEMPT_FINISHED:
           event = new TaskAttemptFinishedEvent(tezTaskAttemptID, "v1", random.nextInt(),
-              random.nextInt(), TaskAttemptState.FAILED, TaskFailureType.NON_FATAL, TaskAttemptTerminationCause.OUTPUT_LOST,
-              null, null, null, null, 0, null, 0,
-              containerId, nodeId, null, null, "nodeHttpAddress");
+            random.nextInt(), TaskAttemptState.FAILED, TaskFailureType.NON_FATAL,
+            TaskAttemptTerminationCause.OUTPUT_LOST,
+            null, null, null, null, 0, null, 0,
+            containerId, nodeId, null, null, "nodeHttpAddress");
           break;
         case CONTAINER_LAUNCHED:
           event = new ContainerLaunchedEvent(containerId, random.nextInt(),
-              applicationAttemptId);
+            applicationAttemptId);
           break;
         case CONTAINER_STOPPED:
           event = new ContainerStoppedEvent(containerId, random.nextInt(), -1, applicationAttemptId);
@@ -204,7 +206,7 @@ public class TestHistoryEventProtoConverter {
           break;
         case DAG_RECOVERED:
           event = new DAGRecoveredEvent(applicationAttemptId, tezDAGID, dagPlan.getName(),
-              user, random.nextLong(), containerLogs);
+            user, random.nextLong(), containerLogs);
           break;
         case DAG_KILL_REQUEST:
           event = new DAGKillRequestEvent();
@@ -216,12 +218,6 @@ public class TestHistoryEventProtoConverter {
         continue;
       }
       converter.convert(event);
-    }
-  }
-
-  static class MockVersionInfo extends VersionInfo {
-    MockVersionInfo() {
-      super("component", "1.1.0", "rev1", "20120101", "git.apache.org");
     }
   }
 
@@ -257,7 +253,7 @@ public class TestHistoryEventProtoConverter {
   }
 
   private void assertCommon(HistoryEventProto proto, HistoryEventType type, long eventTime,
-      EntityTypes entityType, ApplicationAttemptId appAttemptId, String user, int numData) {
+                            EntityTypes entityType, ApplicationAttemptId appAttemptId, String user, int numData) {
     Assert.assertEquals(type.name(), proto.getEventType());
     Assert.assertEquals(eventTime, proto.getEventTime());
     // Assert.assertEquals(safeToString(appId), proto.getAppId());
@@ -265,19 +261,19 @@ public class TestHistoryEventProtoConverter {
     Assert.assertEquals(safeToString(user), proto.getUser());
     if (entityType != null) {
       switch (entityType) { // Intentional fallthrough.
-      case TEZ_TASK_ATTEMPT_ID:
-        Assert.assertEquals(tezTaskAttemptID.toString(), proto.getTaskAttemptId());
-      case TEZ_TASK_ID:
-        Assert.assertEquals(tezTaskID.toString(), proto.getTaskId());
-      case TEZ_VERTEX_ID:
-        Assert.assertEquals(tezVertexID.toString(), proto.getVertexId());
-      case TEZ_DAG_ID:
-        Assert.assertEquals(tezDAGID.toString(), proto.getDagId());
-      case TEZ_APPLICATION:
-        Assert.assertEquals(applicationId.toString(), proto.getAppId());
-        break;
-      default:
-        Assert.fail("Invalid type: " + entityType.name());
+        case TEZ_TASK_ATTEMPT_ID:
+          Assert.assertEquals(tezTaskAttemptID.toString(), proto.getTaskAttemptId());
+        case TEZ_TASK_ID:
+          Assert.assertEquals(tezTaskID.toString(), proto.getTaskId());
+        case TEZ_VERTEX_ID:
+          Assert.assertEquals(tezVertexID.toString(), proto.getVertexId());
+        case TEZ_DAG_ID:
+          Assert.assertEquals(tezDAGID.toString(), proto.getDagId());
+        case TEZ_APPLICATION:
+          Assert.assertEquals(applicationId.toString(), proto.getAppId());
+          break;
+        default:
+          Assert.fail("Invalid type: " + entityType.name());
       }
     }
     Assert.assertEquals(numData, proto.getEventDataCount());
@@ -293,11 +289,11 @@ public class TestHistoryEventProtoConverter {
 
     MockVersionInfo mockVersionInfo = new MockVersionInfo();
     AppLaunchedEvent event = new AppLaunchedEvent(applicationId, launchTime, submitTime, user,
-        conf, mockVersionInfo);
+      conf, mockVersionInfo);
     HistoryEventProto proto = converter.convert(event);
 
     assertCommon(proto, HistoryEventType.APP_LAUNCHED, launchTime, EntityTypes.TEZ_APPLICATION,
-        null, user, 3);
+      null, user, 3);
     assertEventData(proto, ATSConstants.CONFIG, null);
     assertEventData(proto, ATSConstants.TEZ_VERSION, null);
     assertEventData(proto, ATSConstants.DAG_AM_WEB_SERVICE_VERSION, AMWebController.VERSION);
@@ -308,10 +304,10 @@ public class TestHistoryEventProtoConverter {
     long launchTime = random.nextLong();
     long submitTime = random.nextLong();
     AMLaunchedEvent event = new AMLaunchedEvent(applicationAttemptId, launchTime, submitTime,
-        user);
+      user);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.AM_LAUNCHED, launchTime, EntityTypes.TEZ_APPLICATION,
-        applicationAttemptId, user, 1);
+      applicationAttemptId, user, 1);
     assertEventData(proto, ATSConstants.APP_SUBMIT_TIME, String.valueOf(submitTime));
   }
 
@@ -321,17 +317,17 @@ public class TestHistoryEventProtoConverter {
     AMStartedEvent event = new AMStartedEvent(applicationAttemptId, startTime, user);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.AM_STARTED, startTime, EntityTypes.TEZ_APPLICATION,
-        applicationAttemptId, user, 0);
+      applicationAttemptId, user, 0);
   }
 
   @Test(timeout = 5000)
   public void testConvertContainerLaunchedEvent() {
     long launchTime = random.nextLong();
     ContainerLaunchedEvent event = new ContainerLaunchedEvent(containerId, launchTime,
-        applicationAttemptId);
+      applicationAttemptId);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.CONTAINER_LAUNCHED, launchTime, EntityTypes.TEZ_APPLICATION,
-        applicationAttemptId, null, 1);
+      applicationAttemptId, null, 1);
     assertEventData(proto, ATSConstants.CONTAINER_ID, containerId.toString());
   }
 
@@ -340,10 +336,10 @@ public class TestHistoryEventProtoConverter {
     long stopTime = random.nextLong();
     int exitStatus = random.nextInt();
     ContainerStoppedEvent event = new ContainerStoppedEvent(containerId, stopTime, exitStatus,
-        applicationAttemptId);
+      applicationAttemptId);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.CONTAINER_STOPPED, stopTime, EntityTypes.TEZ_APPLICATION,
-        applicationAttemptId, null, 3);
+      applicationAttemptId, null, 3);
     assertEventData(proto, ATSConstants.CONTAINER_ID, containerId.toString());
     assertEventData(proto, ATSConstants.EXIT_STATUS, String.valueOf(exitStatus));
     assertEventData(proto, ATSConstants.FINISH_TIME, String.valueOf(stopTime));
@@ -356,7 +352,7 @@ public class TestHistoryEventProtoConverter {
     DAGStartedEvent event = new DAGStartedEvent(tezDAGID, startTime, user, dagName);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.DAG_STARTED, startTime, EntityTypes.TEZ_DAG_ID, null,
-        user, 2);
+      user, 2);
     assertEventData(proto, ATSConstants.DAG_NAME, dagName);
     assertEventData(proto, ATSConstants.STATUS, DAGState.RUNNING.name());
   }
@@ -367,20 +363,20 @@ public class TestHistoryEventProtoConverter {
 
     final String queueName = "TEST_DAG_SUBMITTED";
     DAGSubmittedEvent event = new DAGSubmittedEvent(tezDAGID, submitTime, dagPlan,
-        applicationAttemptId, null, user, null, containerLogs, queueName);
+      applicationAttemptId, null, user, null, containerLogs, queueName);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.DAG_SUBMITTED, submitTime, EntityTypes.TEZ_DAG_ID,
-        applicationAttemptId, user, 8);
+      applicationAttemptId, user, 8);
 
     assertEventData(proto, ATSConstants.DAG_NAME, dagPlan.getName());
     assertEventData(proto, ATSConstants.DAG_QUEUE_NAME, event.getQueueName());
     assertEventData(proto, ATSConstants.DAG_AM_WEB_SERVICE_VERSION, AMWebController.VERSION);
     assertEventData(proto, ATSConstants.IN_PROGRESS_LOGS_URL + "_"
-        + applicationAttemptId.getAttemptId(), containerLogs);
+      + applicationAttemptId.getAttemptId(), containerLogs);
     assertEventData(proto, ATSConstants.CALLER_CONTEXT_ID,
-        dagPlan.getCallerContext().getCallerId());
+      dagPlan.getCallerContext().getCallerId());
     assertEventData(proto, ATSConstants.CALLER_CONTEXT_TYPE,
-        dagPlan.getCallerContext().getCallerType());
+      dagPlan.getCallerContext().getCallerType());
     assertEventData(proto, ATSConstants.CALLER_CONTEXT, dagPlan.getCallerContext().getContext());
     assertEventData(proto, ATSConstants.DAG_PLAN, null);
   }
@@ -393,9 +389,9 @@ public class TestHistoryEventProtoConverter {
     long allocationTime = creationTime + 1001;
     long finishTime = startTime + 1002;
     TaskAttemptState state = TaskAttemptState
-        .values()[random.nextInt(TaskAttemptState.values().length)];
+      .values()[random.nextInt(TaskAttemptState.values().length)];
     TaskAttemptTerminationCause error = TaskAttemptTerminationCause
-        .values()[random.nextInt(TaskAttemptTerminationCause.values().length)];
+      .values()[random.nextInt(TaskAttemptTerminationCause.values().length)];
     String diagnostics = "random diagnostics message";
     TezCounters counters = new TezCounters();
     long lastDataEventTime = finishTime - 1;
@@ -404,12 +400,12 @@ public class TestHistoryEventProtoConverter {
     events.add(new DataEventDependencyInfo(lastDataEventTime, tezTaskAttemptID));
 
     TaskAttemptFinishedEvent event = new TaskAttemptFinishedEvent(tezTaskAttemptID, vertexName,
-        startTime, finishTime, state, TaskFailureType.FATAL, error, diagnostics, counters, events,
-        null, creationTime, tezTaskAttemptID, allocationTime, containerId, nodeId, "inProgressURL",
-        "logsURL", "nodeHttpAddress");
+      startTime, finishTime, state, TaskFailureType.FATAL, error, diagnostics, counters, events,
+      null, creationTime, tezTaskAttemptID, allocationTime, containerId, nodeId, "inProgressURL",
+      "logsURL", "nodeHttpAddress");
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.TASK_ATTEMPT_FINISHED, finishTime,
-        EntityTypes.TEZ_DAG_ID, null, null, 17);
+      EntityTypes.TEZ_DAG_ID, null, null, 17);
 
     assertEventData(proto, ATSConstants.STATUS, state.name());
     assertEventData(proto, ATSConstants.CREATION_CAUSAL_ATTEMPT, tezTaskAttemptID.toString());
@@ -429,11 +425,11 @@ public class TestHistoryEventProtoConverter {
     assertEventData(proto, ATSConstants.NODE_HTTP_ADDRESS, "nodeHttpAddress");
 
     TaskAttemptFinishedEvent eventWithNullFailureType =
-        new TaskAttemptFinishedEvent(tezTaskAttemptID, vertexName,
-            startTime, finishTime, state, null, error, diagnostics, counters, events, null,
-            creationTime,
-            tezTaskAttemptID, allocationTime, containerId, nodeId, "inProgressURL", "logsURL",
-            "nodeHttpAddress");
+      new TaskAttemptFinishedEvent(tezTaskAttemptID, vertexName,
+        startTime, finishTime, state, null, error, diagnostics, counters, events, null,
+        creationTime,
+        tezTaskAttemptID, allocationTime, containerId, nodeId, "inProgressURL", "logsURL",
+        "nodeHttpAddress");
     proto = converter.convert(eventWithNullFailureType);
     assertNoEventData(proto, ATSConstants.TASK_FAILURE_TYPE);
   }
@@ -446,10 +442,10 @@ public class TestHistoryEventProtoConverter {
     nameIdMap.put("foo", tezVertexID);
 
     DAGInitializedEvent event = new DAGInitializedEvent(tezDAGID, initTime, "user", "dagName",
-        nameIdMap);
+      nameIdMap);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.DAG_INITIALIZED, initTime,
-        EntityTypes.TEZ_DAG_ID, null, user, 2);
+      EntityTypes.TEZ_DAG_ID, null, user, 2);
     assertEventData(proto, ATSConstants.DAG_NAME, "dagName");
     assertEventData(proto, ATSConstants.VERTEX_NAME_ID_MAPPING, null);
   }
@@ -463,22 +459,22 @@ public class TestHistoryEventProtoConverter {
     taskStats.put("BAR", 200);
 
     DAGFinishedEvent event = new DAGFinishedEvent(tezDAGID, startTime, finishTime, DAGState.ERROR,
-        "diagnostics", null, user, dagPlan.getName(), taskStats, applicationAttemptId, dagPlan);
+      "diagnostics", null, user, dagPlan.getName(), taskStats, applicationAttemptId, dagPlan);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.DAG_FINISHED, finishTime,
-        EntityTypes.TEZ_DAG_ID, applicationAttemptId, user, 11);
+      EntityTypes.TEZ_DAG_ID, applicationAttemptId, user, 11);
 
     assertEventData(proto, ATSConstants.DAG_NAME, dagPlan.getName());
     assertEventData(proto, ATSConstants.STATUS, DAGState.ERROR.name());
     assertEventData(proto, ATSConstants.CALLER_CONTEXT_ID,
-        dagPlan.getCallerContext().getCallerId());
+      dagPlan.getCallerContext().getCallerId());
     assertEventData(proto, ATSConstants.CALLER_CONTEXT_TYPE,
-        dagPlan.getCallerContext().getCallerType());
+      dagPlan.getCallerContext().getCallerType());
     assertEventData(proto, ATSConstants.START_TIME, String.valueOf(startTime));
     assertEventData(proto, ATSConstants.TIME_TAKEN, String.valueOf(finishTime - startTime));
     assertEventData(proto, ATSConstants.DIAGNOSTICS, "diagnostics");
     assertEventData(proto, ATSConstants.COMPLETION_APPLICATION_ATTEMPT_ID,
-        applicationAttemptId.toString());
+      applicationAttemptId.toString());
     assertEventData(proto, "FOO", String.valueOf(100));
     assertEventData(proto, "BAR", String.valueOf(200));
     assertEventData(proto, ATSConstants.COUNTERS, null);
@@ -490,16 +486,16 @@ public class TestHistoryEventProtoConverter {
     long initedTime = random.nextLong();
     int numTasks = random.nextInt();
     VertexInitializedEvent event = new VertexInitializedEvent(tezVertexID, "v1", initRequestedTime,
-        initedTime, numTasks, "proc", null, null,
-        new ServicePluginInfo().setContainerLauncherName("abc")
-            .setTaskSchedulerName("def").setTaskCommunicatorName("ghi")
-            .setContainerLauncherClassName("abc1")
-            .setTaskSchedulerClassName("def1")
-            .setTaskCommunicatorClassName("ghi1"));
+      initedTime, numTasks, "proc", null, null,
+      new ServicePluginInfo().setContainerLauncherName("abc")
+        .setTaskSchedulerName("def").setTaskCommunicatorName("ghi")
+        .setContainerLauncherClassName("abc1")
+        .setTaskSchedulerClassName("def1")
+        .setTaskCommunicatorClassName("ghi1"));
 
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.VERTEX_INITIALIZED, initedTime,
-        EntityTypes.TEZ_VERTEX_ID, null, null, 6);
+      EntityTypes.TEZ_VERTEX_ID, null, null, 6);
 
     assertEventData(proto, ATSConstants.VERTEX_NAME, "v1");
     assertEventData(proto, ATSConstants.PROCESSOR_CLASS_NAME, "proc");
@@ -538,7 +534,7 @@ public class TestHistoryEventProtoConverter {
     VertexStartedEvent event = new VertexStartedEvent(tezVertexID, startRequestedTime, startTime);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.VERTEX_STARTED, startTime,
-        EntityTypes.TEZ_VERTEX_ID, null, null, 2);
+      EntityTypes.TEZ_VERTEX_ID, null, null, 2);
     assertEventData(proto, ATSConstants.START_REQUESTED_TIME, String.valueOf(startRequestedTime));
     assertEventData(proto, ATSConstants.STATUS, VertexState.RUNNING.name());
   }
@@ -557,16 +553,16 @@ public class TestHistoryEventProtoConverter {
     VertexStats vertexStats = new VertexStats();
 
     VertexFinishedEvent event = new VertexFinishedEvent(tezVertexID, vertexName, 1,
-        initRequestedTime, initedTime, startRequestedTime, startTime, finishTime,
-        VertexState.ERROR, "diagnostics", null, vertexStats, taskStats,
-        new ServicePluginInfo().setContainerLauncherName("abc")
-            .setTaskSchedulerName("def").setTaskCommunicatorName("ghi")
-            .setContainerLauncherClassName("abc1")
-            .setTaskSchedulerClassName("def1")
-            .setTaskCommunicatorClassName("ghi1"));
+      initRequestedTime, initedTime, startRequestedTime, startTime, finishTime,
+      VertexState.ERROR, "diagnostics", null, vertexStats, taskStats,
+      new ServicePluginInfo().setContainerLauncherName("abc")
+        .setTaskSchedulerName("def").setTaskCommunicatorName("ghi")
+        .setContainerLauncherClassName("abc1")
+        .setTaskSchedulerClassName("def1")
+        .setTaskCommunicatorClassName("ghi1"));
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.VERTEX_FINISHED, finishTime,
-        EntityTypes.TEZ_VERTEX_ID, null, null, 9);
+      EntityTypes.TEZ_VERTEX_ID, null, null, 9);
 
     assertEventData(proto, ATSConstants.VERTEX_NAME, vertexName);
     assertEventData(proto, ATSConstants.STATUS, VertexState.ERROR.name());
@@ -608,7 +604,7 @@ public class TestHistoryEventProtoConverter {
     TaskStartedEvent event = new TaskStartedEvent(tezTaskID, "v1", scheduleTime, startTime);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.TASK_STARTED, startTime,
-        EntityTypes.TEZ_TASK_ID, null, null, 2);
+      EntityTypes.TEZ_TASK_ID, null, null, 2);
 
     assertEventData(proto, ATSConstants.SCHEDULED_TIME, String.valueOf(scheduleTime));
     assertEventData(proto, ATSConstants.STATUS, TaskState.SCHEDULED.name());
@@ -618,10 +614,10 @@ public class TestHistoryEventProtoConverter {
   public void testConvertTaskAttemptStartedEvent() {
     long startTime = random.nextLong();
     TaskAttemptStartedEvent event = new TaskAttemptStartedEvent(tezTaskAttemptID, "v1",
-        startTime, containerId, nodeId, "inProgressURL", "logsURL", "nodeHttpAddress");
+      startTime, containerId, nodeId, "inProgressURL", "logsURL", "nodeHttpAddress");
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.TASK_ATTEMPT_STARTED, startTime,
-        EntityTypes.TEZ_TASK_ATTEMPT_ID, null, null, 6);
+      EntityTypes.TEZ_TASK_ATTEMPT_ID, null, null, 6);
 
     assertEventData(proto, ATSConstants.STATUS, TaskAttemptState.RUNNING.name());
     assertEventData(proto, ATSConstants.IN_PROGRESS_LOGS_URL, "inProgressURL");
@@ -641,10 +637,10 @@ public class TestHistoryEventProtoConverter {
     TezCounters counters = new TezCounters();
 
     TaskFinishedEvent event = new TaskFinishedEvent(tezTaskID, vertexName, startTime, finishTime,
-        tezTaskAttemptID, state, diagnostics, counters, 3);
+      tezTaskAttemptID, state, diagnostics, counters, 3);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.TASK_FINISHED, finishTime,
-        EntityTypes.TEZ_TASK_ID, null, null, 6);
+      EntityTypes.TEZ_TASK_ID, null, null, 6);
 
     assertEventData(proto, ATSConstants.STATUS, state.name());
     assertEventData(proto, ATSConstants.TIME_TAKEN, String.valueOf(finishTime - startTime));
@@ -658,16 +654,16 @@ public class TestHistoryEventProtoConverter {
   public void testConvertVertexReconfigreDoneEvent() {
     TezVertexID vId = tezVertexID;
     Map<String, EdgeProperty> edgeMgrs =
-        new HashMap<String, EdgeProperty>();
+      new HashMap<String, EdgeProperty>();
 
     edgeMgrs.put("a", EdgeProperty.create(EdgeManagerPluginDescriptor.create("a.class")
         .setHistoryText("text"), DataSourceType.PERSISTED, SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create("Out"), InputDescriptor.create("In")));
+      OutputDescriptor.create("Out"), InputDescriptor.create("In")));
     VertexConfigurationDoneEvent event = new VertexConfigurationDoneEvent(vId, 0L, 1, null,
-        edgeMgrs, null, true);
+      edgeMgrs, null, true);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.VERTEX_CONFIGURE_DONE, 0L,
-        EntityTypes.TEZ_VERTEX_ID, null, null, 2);
+      EntityTypes.TEZ_VERTEX_ID, null, null, 2);
     assertEventData(proto, ATSConstants.NUM_TASKS, "1");
     assertEventData(proto, ATSConstants.UPDATED_EDGE_MANAGERS, null);
 
@@ -689,12 +685,12 @@ public class TestHistoryEventProtoConverter {
   public void testConvertDAGRecoveredEvent() {
     long recoverTime = random.nextLong();
     DAGRecoveredEvent event = new DAGRecoveredEvent(applicationAttemptId, tezDAGID,
-        dagPlan.getName(), user, recoverTime, containerLogs);
+      dagPlan.getName(), user, recoverTime, containerLogs);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.DAG_RECOVERED, recoverTime,
-        EntityTypes.TEZ_DAG_ID, applicationAttemptId, user, 2);
+      EntityTypes.TEZ_DAG_ID, applicationAttemptId, user, 2);
     assertEventData(proto, ATSConstants.IN_PROGRESS_LOGS_URL + "_"
-        + applicationAttemptId.getAttemptId(), containerLogs);
+      + applicationAttemptId.getAttemptId(), containerLogs);
     assertEventData(proto, ATSConstants.DAG_NAME, dagPlan.getName());
   }
 
@@ -703,14 +699,20 @@ public class TestHistoryEventProtoConverter {
     long recoverTime = random.nextLong();
 
     DAGRecoveredEvent event = new DAGRecoveredEvent(applicationAttemptId, tezDAGID,
-        dagPlan.getName(), user, recoverTime, DAGState.ERROR, "mock reason", containerLogs);
+      dagPlan.getName(), user, recoverTime, DAGState.ERROR, "mock reason", containerLogs);
     HistoryEventProto proto = converter.convert(event);
     assertCommon(proto, HistoryEventType.DAG_RECOVERED, recoverTime,
-        EntityTypes.TEZ_DAG_ID, applicationAttemptId, user, 4);
+      EntityTypes.TEZ_DAG_ID, applicationAttemptId, user, 4);
     assertEventData(proto, ATSConstants.DAG_STATE, DAGState.ERROR.name());
     assertEventData(proto, ATSConstants.RECOVERY_FAILURE_REASON, "mock reason");
     assertEventData(proto, ATSConstants.IN_PROGRESS_LOGS_URL + "_"
-        + applicationAttemptId.getAttemptId(), containerLogs);
+      + applicationAttemptId.getAttemptId(), containerLogs);
     assertEventData(proto, ATSConstants.DAG_NAME, dagPlan.getName());
+  }
+
+  static class MockVersionInfo extends VersionInfo {
+    MockVersionInfo() {
+      super("component", "1.1.0", "rev1", "20120101", "git.apache.org");
+    }
   }
 }

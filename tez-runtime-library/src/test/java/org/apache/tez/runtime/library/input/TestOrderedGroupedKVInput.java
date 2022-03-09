@@ -33,6 +33,7 @@ import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.library.api.IOInterruptedException;
 import org.apache.tez.runtime.library.common.MemoryUpdateCallbackHandler;
 import org.apache.tez.runtime.library.common.shuffle.orderedgrouped.Shuffle;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -55,7 +56,6 @@ public class TestOrderedGroupedKVInput {
     } catch (IOException e) {
       Assert.assertTrue(e instanceof IOInterruptedException);
     }
-
   }
 
   @Test
@@ -72,7 +72,6 @@ public class TestOrderedGroupedKVInput {
     String[] workingDirs = new String[]{"workDir1"};
     TezCounters counters = new TezCounters();
 
-
     doReturn(payLoad).when(inputContext).getUserPayload();
     doReturn(workingDirs).when(inputContext).getWorkDirs();
     doReturn(counters).when(inputContext).getCounters();
@@ -86,14 +85,12 @@ public class TestOrderedGroupedKVInput {
     assertEquals("local-value", mergedConf.get("local-key"));
   }
 
-
   private InputContext createMockInputContext() throws IOException {
     InputContext inputContext = mock(InputContext.class);
     Configuration conf = new TezConfiguration();
     UserPayload payLoad = TezUtils.createUserPayloadFromConf(conf);
     String[] workingDirs = new String[]{"workDir1"};
     TezCounters counters = new TezCounters();
-
 
     doReturn(payLoad).when(inputContext).getUserPayload();
     doReturn(workingDirs).when(inputContext).getWorkDirs();
@@ -108,7 +105,7 @@ public class TestOrderedGroupedKVInput {
 
         if (args[1] instanceof MemoryUpdateCallbackHandler) {
           MemoryUpdateCallbackHandler memUpdateCallbackHandler =
-              (MemoryUpdateCallbackHandler) args[1];
+            (MemoryUpdateCallbackHandler) args[1];
           memUpdateCallbackHandler.memoryAssigned(200 * 1024 * 1024);
         } else {
           Assert.fail();
@@ -116,7 +113,7 @@ public class TestOrderedGroupedKVInput {
         return null;
       }
     }).when(inputContext).requestInitialMemory(any(long.class),
-        any(MemoryUpdateCallbackHandler.class));
+      any(MemoryUpdateCallbackHandler.class));
 
     return inputContext;
   }
@@ -139,5 +136,4 @@ public class TestOrderedGroupedKVInput {
       return shuffle;
     }
   }
-
 }

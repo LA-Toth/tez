@@ -14,9 +14,10 @@
 
 package org.apache.tez.dag.app.launcher;
 
-import com.google.common.collect.Sets;
 import org.apache.tez.dag.app.PluginWrapperTestHelpers;
 import org.apache.tez.serviceplugins.api.ContainerLauncher;
+
+import com.google.common.collect.Sets;
 import org.junit.Test;
 
 public class TestContainerLauncherWrapper {
@@ -24,7 +25,6 @@ public class TestContainerLauncherWrapper {
   @Test(timeout = 5000)
   public void testDelegation() throws Exception {
     PluginWrapperTestHelpers.testDelegation(ContainerLauncherWrapper.class, ContainerLauncher.class,
-        Sets.newHashSet("getContainerLauncher", "dagComplete", "taskAttemptFailed"));
+      Sets.newHashSet("getContainerLauncher", "dagComplete", "taskAttemptFailed"));
   }
-
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.history.SummaryEvent;
@@ -35,6 +33,8 @@ import org.apache.tez.dag.recovery.records.RecoveryProtos.VertexGroupCommitStart
 
 import com.google.common.base.Function;
 import com.google.common.collect.Collections2;
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class VertexGroupCommitStartedEvent implements HistoryEvent, SummaryEvent {
 
@@ -47,7 +47,8 @@ public class VertexGroupCommitStartedEvent implements HistoryEvent, SummaryEvent
   }
 
   public VertexGroupCommitStartedEvent(TezDAGID dagID,
-      String vertexGroupName, Collection<TezVertexID> vertexIds, long commitStartTime) {
+                                       String vertexGroupName, Collection<TezVertexID> vertexIds,
+                                       long commitStartTime) {
     this.dagID = dagID;
     this.vertexGroupName = vertexGroupName;
     this.vertexIds = vertexIds;
@@ -70,17 +71,17 @@ public class VertexGroupCommitStartedEvent implements HistoryEvent, SummaryEvent
   }
 
   public VertexGroupCommitStartedProto toProto() {
-    Collection<String> vertexIdsStr = Collections2.transform(vertexIds, new Function<TezVertexID, String>(){
+    Collection<String> vertexIdsStr = Collections2.transform(vertexIds, new Function<TezVertexID, String>() {
       @Override
       public String apply(TezVertexID vertexId) {
         return vertexId.toString();
       }
     });
     return VertexGroupCommitStartedProto.newBuilder()
-        .setDagId(dagID.toString())
-        .setVertexGroupName(vertexGroupName)
-        .addAllVertexIds(vertexIdsStr)
-        .build();
+      .setDagId(dagID.toString())
+      .setVertexGroupName(vertexGroupName)
+      .addAllVertexIds(vertexIdsStr)
+      .build();
   }
 
   public void fromProto(VertexGroupCommitStartedProto proto) {
@@ -111,7 +112,7 @@ public class VertexGroupCommitStartedEvent implements HistoryEvent, SummaryEvent
   @Override
   public String toString() {
     return "dagId=" + dagID
-        + ", vertexGroup=" + vertexGroupName;
+      + ", vertexGroup=" + vertexGroupName;
   }
 
   public String getVertexGroupName() {
@@ -121,17 +122,17 @@ public class VertexGroupCommitStartedEvent implements HistoryEvent, SummaryEvent
   @Override
   public void toSummaryProtoStream(OutputStream outputStream) throws IOException {
     SummaryEventProto.Builder builder = RecoveryProtos.SummaryEventProto.newBuilder()
-        .setDagId(dagID.toString())
-        .setTimestamp(commitStartTime)
-        .setEventType(getEventType().ordinal())
-        .setEventPayload(toProto().toByteString());
+      .setDagId(dagID.toString())
+      .setTimestamp(commitStartTime)
+      .setEventType(getEventType().ordinal())
+      .setEventPayload(toProto().toByteString());
     builder.build().writeDelimitedTo(outputStream);
   }
 
   @Override
   public void fromSummaryProtoStream(SummaryEventProto proto) throws IOException {
     VertexGroupCommitStartedProto vertexGroupCommitStartedProto =
-        VertexGroupCommitStartedProto.parseFrom(proto.getEventPayload());
+      VertexGroupCommitStartedProto.parseFrom(proto.getEventPayload());
     fromProto(vertexGroupCommitStartedProto);
     this.commitStartTime = proto.getTimestamp();
   }

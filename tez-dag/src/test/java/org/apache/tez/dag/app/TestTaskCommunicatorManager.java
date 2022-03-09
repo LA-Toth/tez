@@ -29,7 +29,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -42,6 +41,8 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Nullable;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -52,13 +53,6 @@ import org.apache.hadoop.yarn.event.Event;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.NamedEntityDescriptor;
-import org.apache.tez.dag.app.dag.event.DAGEventTerminateDag;
-import org.apache.tez.dag.helpers.DagInfoImplForTest;
-import org.apache.tez.dag.records.TezDAGID;
-import org.apache.tez.serviceplugins.api.ServicePluginErrorDefaults;
-import org.apache.tez.serviceplugins.api.ServicePluginException;
-import org.apache.tez.serviceplugins.api.TaskCommunicator;
-import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
 import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.UserPayload;
@@ -66,11 +60,19 @@ import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.dag.app.dag.DAG;
 import org.apache.tez.dag.app.dag.event.DAGAppMasterEventType;
 import org.apache.tez.dag.app.dag.event.DAGAppMasterEventUserServiceFatalError;
+import org.apache.tez.dag.app.dag.event.DAGEventTerminateDag;
+import org.apache.tez.dag.helpers.DagInfoImplForTest;
+import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.serviceplugins.api.ContainerEndReason;
+import org.apache.tez.serviceplugins.api.ServicePluginErrorDefaults;
+import org.apache.tez.serviceplugins.api.ServicePluginException;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+import org.apache.tez.serviceplugins.api.TaskCommunicator;
+import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
 import org.apache.tez.serviceplugins.api.TaskCommunicatorDescriptor;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,6 +81,9 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 public class TestTaskCommunicatorManager {
+
+  private static final String DAG_NAME = "dagName";
+  private static final int DAG_INDEX = 1;
 
   @Before
   @After
@@ -99,8 +104,6 @@ public class TestTaskCommunicatorManager {
     } catch (IllegalArgumentException e) {
 
     }
-
-
   }
 
   @Test(timeout = 5000)
@@ -116,11 +119,11 @@ public class TestTaskCommunicatorManager {
     bb.putInt(0, 3);
     UserPayload customPayload = UserPayload.create(bb);
     taskCommDescriptors.add(
-        new NamedEntityDescriptor(customTaskCommName, FakeTaskComm.class.getName())
-            .setUserPayload(customPayload));
+      new NamedEntityDescriptor(customTaskCommName, FakeTaskComm.class.getName())
+        .setUserPayload(customPayload));
 
     TaskCommManagerForMultipleCommTest tcm =
-        new TaskCommManagerForMultipleCommTest(appContext, thh, chh, taskCommDescriptors);
+      new TaskCommManagerForMultipleCommTest(appContext, thh, chh, taskCommDescriptors);
 
     try {
       tcm.init(new Configuration(false));
@@ -132,7 +135,6 @@ public class TestTaskCommunicatorManager {
 
       assertEquals(customTaskCommName, tcm.getTaskCommName(0));
       assertEquals(bb, tcm.getTaskCommContext(0).getInitialUserPayload().getPayload());
-
     } finally {
       tcm.stop();
     }
@@ -154,13 +156,13 @@ public class TestTaskCommunicatorManager {
     bb.putInt(0, 3);
     UserPayload customPayload = UserPayload.create(bb);
     taskCommDescriptors.add(
-        new NamedEntityDescriptor(customTaskCommName, FakeTaskComm.class.getName())
-            .setUserPayload(customPayload));
+      new NamedEntityDescriptor(customTaskCommName, FakeTaskComm.class.getName())
+        .setUserPayload(customPayload));
     taskCommDescriptors
-        .add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null).setUserPayload(defaultPayload));
+      .add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null).setUserPayload(defaultPayload));
 
     TaskCommManagerForMultipleCommTest tcm =
-        new TaskCommManagerForMultipleCommTest(appContext, thh, chh, taskCommDescriptors);
+      new TaskCommManagerForMultipleCommTest(appContext, thh, chh, taskCommDescriptors);
 
     try {
       tcm.init(new Configuration(false));
@@ -175,7 +177,7 @@ public class TestTaskCommunicatorManager {
 
       assertEquals(TezConstants.getTezYarnServicePluginName(), tcm.getTaskCommName(1));
       Configuration confParsed = TezUtils
-          .createConfFromUserPayload(tcm.getTaskCommContext(1).getInitialUserPayload());
+        .createConfFromUserPayload(tcm.getTaskCommContext(1).getInitialUserPayload());
       assertEquals("testvalue", confParsed.get("testkey"));
     } finally {
       tcm.stop();
@@ -188,7 +190,7 @@ public class TestTaskCommunicatorManager {
     AppContext appContext = mock(AppContext.class, RETURNS_DEEP_STUBS);
     NodeId nodeId = NodeId.newInstance("host1", 3131);
     when(appContext.getAllContainers().get(any(ContainerId.class)).getContainer().getNodeId())
-        .thenReturn(nodeId);
+      .thenReturn(nodeId);
     TaskHeartbeatHandler thh = mock(TaskHeartbeatHandler.class);
     ContainerHeartbeatHandler chh = mock(ContainerHeartbeatHandler.class);
     Configuration conf = new Configuration(false);
@@ -201,13 +203,13 @@ public class TestTaskCommunicatorManager {
     bb.putInt(0, 3);
     UserPayload customPayload = UserPayload.create(bb);
     taskCommDescriptors.add(
-        new NamedEntityDescriptor(customTaskCommName, FakeTaskComm.class.getName())
-            .setUserPayload(customPayload));
+      new NamedEntityDescriptor(customTaskCommName, FakeTaskComm.class.getName())
+        .setUserPayload(customPayload));
     taskCommDescriptors
-        .add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null).setUserPayload(defaultPayload));
+      .add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null).setUserPayload(defaultPayload));
 
     TaskCommManagerForMultipleCommTest tcm =
-        new TaskCommManagerForMultipleCommTest(appContext, thh, chh, taskCommDescriptors);
+      new TaskCommManagerForMultipleCommTest(appContext, thh, chh, taskCommDescriptors);
 
     try {
       tcm.init(new Configuration(false));
@@ -222,17 +224,15 @@ public class TestTaskCommunicatorManager {
       verify(tcm.getTestTaskComm(1)).initialize();
       verify(tcm.getTestTaskComm(1)).start();
 
-
       ContainerId containerId1 = mock(ContainerId.class);
       tcm.registerRunningContainer(containerId1, 0);
       verify(tcm.getTestTaskComm(0)).registerRunningContainer(eq(containerId1), eq("host1"),
-          eq(3131));
+        eq(3131));
 
       ContainerId containerId2 = mock(ContainerId.class);
       tcm.registerRunningContainer(containerId2, 1);
       verify(tcm.getTestTaskComm(1)).registerRunningContainer(eq(containerId2), eq("host1"),
-          eq(3131));
-
+        eq(3131));
     } finally {
       tcm.stop();
       verify(tcm.getTaskCommunicator(0).getTaskCommunicator()).shutdown();
@@ -256,14 +256,13 @@ public class TestTaskCommunicatorManager {
     doReturn(dag).when(appContext).getCurrentDAG();
 
     NamedEntityDescriptor<TaskCommunicatorDescriptor> namedEntityDescriptor =
-        new NamedEntityDescriptor<>("testTaskCommunicator", TaskCommForFailureTest.class.getName());
+      new NamedEntityDescriptor<>("testTaskCommunicator", TaskCommForFailureTest.class.getName());
     List<NamedEntityDescriptor> list = new LinkedList<>();
     list.add(namedEntityDescriptor);
 
-
     TaskCommunicatorManager taskCommManager =
-        new TaskCommunicatorManager(appContext, mock(TaskHeartbeatHandler.class),
-            mock(ContainerHeartbeatHandler.class), list);
+      new TaskCommunicatorManager(appContext, mock(TaskHeartbeatHandler.class),
+        mock(ContainerHeartbeatHandler.class), list);
     try {
       taskCommManager.init(new Configuration());
       taskCommManager.start();
@@ -277,9 +276,8 @@ public class TestTaskCommunicatorManager {
       DAGEventTerminateDag killEvent = (DAGEventTerminateDag) rawEvent;
       assertTrue(killEvent.getDiagnosticInfo().contains("ReportError"));
       assertTrue(killEvent.getDiagnosticInfo()
-          .contains(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE.name()));
+        .contains(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE.name()));
       assertTrue(killEvent.getDiagnosticInfo().contains("[0:testTaskCommunicator]"));
-
 
       reset(eventHandler);
 
@@ -292,17 +290,15 @@ public class TestTaskCommunicatorManager {
 
       assertTrue(rawEvent instanceof DAGAppMasterEventUserServiceFatalError);
       DAGAppMasterEventUserServiceFatalError event =
-          (DAGAppMasterEventUserServiceFatalError) rawEvent;
+        (DAGAppMasterEventUserServiceFatalError) rawEvent;
       assertEquals(DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR, event.getType());
       assertTrue(event.getDiagnosticInfo().contains("ReportedFatalError"));
       assertTrue(
-          event.getDiagnosticInfo().contains(ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
+        event.getDiagnosticInfo().contains(ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
       assertTrue(event.getDiagnosticInfo().contains("[0:testTaskCommunicator]"));
-
     } finally {
       taskCommManager.stop();
     }
-
   }
 
   @SuppressWarnings("unchecked")
@@ -322,8 +318,8 @@ public class TestTaskCommunicatorManager {
     Configuration conf = new Configuration(false);
 
     TaskCommunicatorManager taskCommunicatorManager =
-        new TaskCommunicatorManager(taskCommunicator, appContext, mock(TaskHeartbeatHandler.class),
-            mock(ContainerHeartbeatHandler.class));
+      new TaskCommunicatorManager(taskCommunicator, appContext, mock(TaskHeartbeatHandler.class),
+        mock(ContainerHeartbeatHandler.class));
     try {
       taskCommunicatorManager.init(conf);
       taskCommunicatorManager.start();
@@ -340,16 +336,15 @@ public class TestTaskCommunicatorManager {
       Event rawEvent = argumentCaptor.getValue();
       assertTrue(rawEvent instanceof DAGAppMasterEventUserServiceFatalError);
       DAGAppMasterEventUserServiceFatalError event =
-          (DAGAppMasterEventUserServiceFatalError) rawEvent;
+        (DAGAppMasterEventUserServiceFatalError) rawEvent;
 
       assertEquals(DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR, event.getType());
       assertTrue(event.getError().getMessage().contains("TestException_" + "dagComplete"));
       assertTrue(event.getDiagnosticInfo().contains("DAG completion"));
       assertTrue(event.getDiagnosticInfo().contains(expectedId));
 
-
       when(appContext.getAllContainers().get(any(ContainerId.class)).getContainer().getNodeId())
-          .thenReturn(mock(NodeId.class));
+        .thenReturn(mock(NodeId.class));
 
       taskCommunicatorManager.registerRunningContainer(mock(ContainerId.class), 0);
       argumentCaptor = ArgumentCaptor.forClass(Event.class);
@@ -361,15 +356,12 @@ public class TestTaskCommunicatorManager {
 
       assertEquals(DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR, event.getType());
       assertTrue(
-          event.getError().getMessage().contains("TestException_" + "registerRunningContainer"));
+        event.getError().getMessage().contains("TestException_" + "registerRunningContainer"));
       assertTrue(event.getDiagnosticInfo().contains("registering running Container"));
       assertTrue(event.getDiagnosticInfo().contains(expectedId));
-
-
     } finally {
       taskCommunicatorManager.stop();
     }
-
   }
 
   private static class ExceptionAnswer implements Answer {
@@ -378,8 +370,8 @@ public class TestTaskCommunicatorManager {
     public Object answer(InvocationOnMock invocation) throws Throwable {
       Method method = invocation.getMethod();
       if (method.getDeclaringClass().equals(TaskCommunicator.class) &&
-          !method.getName().equals("getContext") && !method.getName().equals("initialize") &&
-          !method.getName().equals("start") && !method.getName().equals("shutdown")) {
+        !method.getName().equals("getContext") && !method.getName().equals("initialize") &&
+        !method.getName().equals("start") && !method.getName().equals("shutdown")) {
         throw new RuntimeException("TestException_" + method.getName());
       } else {
         return invocation.callRealMethod();
@@ -399,10 +391,16 @@ public class TestTaskCommunicatorManager {
     private static final AtomicBoolean uberTaskCommCreated = new AtomicBoolean(false);
 
     private static final List<TaskCommunicatorContext> taskCommContexts =
-        new LinkedList<>();
+      new LinkedList<>();
     private static final List<String> taskCommNames = new LinkedList<>();
     private static final List<TaskCommunicator> testTaskComms = new LinkedList<>();
 
+    public TaskCommManagerForMultipleCommTest(AppContext context,
+                                              TaskHeartbeatHandler thh,
+                                              ContainerHeartbeatHandler chh,
+                                              List<NamedEntityDescriptor> taskCommunicatorDescriptors) throws TezException {
+      super(context, thh, chh, taskCommunicatorDescriptors);
+    }
 
     public static void reset() {
       numTaskComms.set(0);
@@ -412,50 +410,6 @@ public class TestTaskCommunicatorManager {
       taskCommContexts.clear();
       taskCommNames.clear();
       testTaskComms.clear();
-    }
-
-    public TaskCommManagerForMultipleCommTest(AppContext context,
-                                              TaskHeartbeatHandler thh,
-                                              ContainerHeartbeatHandler chh,
-                                              List<NamedEntityDescriptor> taskCommunicatorDescriptors) throws TezException {
-      super(context, thh, chh, taskCommunicatorDescriptors);
-    }
-
-    @Override
-    TaskCommunicator createTaskCommunicator(NamedEntityDescriptor taskCommDescriptor,
-                                            int taskCommIndex) throws TezException {
-      numTaskComms.incrementAndGet();
-      boolean added = taskCommIndices.add(taskCommIndex);
-      assertTrue("Cannot add multiple taskComms with the same index", added);
-      taskCommNames.add(taskCommDescriptor.getEntityName());
-      return super.createTaskCommunicator(taskCommDescriptor, taskCommIndex);
-    }
-
-    @Override
-    TaskCommunicator createDefaultTaskCommunicator(
-        TaskCommunicatorContext taskCommunicatorContext) {
-      taskCommContexts.add(taskCommunicatorContext);
-      yarnTaskCommCreated.set(true);
-      testTaskComms.add(yarnTaskComm);
-      return yarnTaskComm;
-    }
-
-    @Override
-    TaskCommunicator createUberTaskCommunicator(TaskCommunicatorContext taskCommunicatorContext) {
-      taskCommContexts.add(taskCommunicatorContext);
-      uberTaskCommCreated.set(true);
-      testTaskComms.add(uberTaskComm);
-      return uberTaskComm;
-    }
-
-    @Override
-    TaskCommunicator createCustomTaskCommunicator(TaskCommunicatorContext taskCommunicatorContext,
-                                                  NamedEntityDescriptor taskCommDescriptor) throws TezException {
-      taskCommContexts.add(taskCommunicatorContext);
-      TaskCommunicator spyComm =
-          spy(super.createCustomTaskCommunicator(taskCommunicatorContext, taskCommDescriptor));
-      testTaskComms.add(spyComm);
-      return spyComm;
     }
 
     public static int getNumTaskComms() {
@@ -480,6 +434,43 @@ public class TestTaskCommunicatorManager {
 
     public static TaskCommunicator getTestTaskComm(int taskCommIndex) {
       return testTaskComms.get(taskCommIndex);
+    }
+
+    @Override
+    TaskCommunicator createTaskCommunicator(NamedEntityDescriptor taskCommDescriptor,
+                                            int taskCommIndex) throws TezException {
+      numTaskComms.incrementAndGet();
+      boolean added = taskCommIndices.add(taskCommIndex);
+      assertTrue("Cannot add multiple taskComms with the same index", added);
+      taskCommNames.add(taskCommDescriptor.getEntityName());
+      return super.createTaskCommunicator(taskCommDescriptor, taskCommIndex);
+    }
+
+    @Override
+    TaskCommunicator createDefaultTaskCommunicator(
+      TaskCommunicatorContext taskCommunicatorContext) {
+      taskCommContexts.add(taskCommunicatorContext);
+      yarnTaskCommCreated.set(true);
+      testTaskComms.add(yarnTaskComm);
+      return yarnTaskComm;
+    }
+
+    @Override
+    TaskCommunicator createUberTaskCommunicator(TaskCommunicatorContext taskCommunicatorContext) {
+      taskCommContexts.add(taskCommunicatorContext);
+      uberTaskCommCreated.set(true);
+      testTaskComms.add(uberTaskComm);
+      return uberTaskComm;
+    }
+
+    @Override
+    TaskCommunicator createCustomTaskCommunicator(TaskCommunicatorContext taskCommunicatorContext,
+                                                  NamedEntityDescriptor taskCommDescriptor) throws TezException {
+      taskCommContexts.add(taskCommunicatorContext);
+      TaskCommunicator spyComm =
+        spy(super.createCustomTaskCommunicator(taskCommunicatorContext, taskCommDescriptor));
+      testTaskComms.add(spyComm);
+      return spyComm;
     }
   }
 
@@ -534,20 +525,19 @@ public class TestTaskCommunicatorManager {
     }
   }
 
-  private static final String DAG_NAME = "dagName";
-  private static final int DAG_INDEX = 1;
   public static class TaskCommForFailureTest extends TaskCommunicator {
 
     public TaskCommForFailureTest(
-        TaskCommunicatorContext taskCommunicatorContext) {
+      TaskCommunicatorContext taskCommunicatorContext) {
       super(taskCommunicatorContext);
     }
 
     @Override
     public void registerRunningContainer(ContainerId containerId, String hostname, int port) throws
-        ServicePluginException {
+      ServicePluginException {
       getContext()
-          .reportError(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE, "ReportError", new DagInfoImplForTest(DAG_INDEX, DAG_NAME));
+        .reportError(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE, "ReportError",
+          new DagInfoImplForTest(DAG_INDEX, DAG_NAME));
     }
 
     @Override
@@ -568,7 +558,7 @@ public class TestTaskCommunicatorManager {
     public void unregisterRunningTaskAttempt(TezTaskAttemptID taskAttemptID,
                                              TaskAttemptEndReason endReason,
                                              @Nullable String diagnostics) throws
-        ServicePluginException {
+      ServicePluginException {
 
     }
 

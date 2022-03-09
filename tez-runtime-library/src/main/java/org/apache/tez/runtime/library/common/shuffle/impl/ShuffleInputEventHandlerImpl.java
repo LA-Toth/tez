@@ -6,16 +6,15 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 
 package org.apache.tez.runtime.library.common.shuffle.impl;
 
@@ -25,31 +24,30 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.zip.Inflater;
 
-import com.google.protobuf.ByteString;
-
-import org.apache.tez.runtime.api.events.CompositeRoutedDataMovementEvent;
-import org.apache.tez.runtime.library.common.CompositeInputAttemptIdentifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.tez.common.TezCommonUtils;
 import org.apache.tez.common.TezUtilsInternal;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.InputContext;
+import org.apache.tez.runtime.api.events.CompositeRoutedDataMovementEvent;
 import org.apache.tez.runtime.api.events.DataMovementEvent;
 import org.apache.tez.runtime.api.events.InputFailedEvent;
+import org.apache.tez.runtime.library.common.CompositeInputAttemptIdentifier;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
+import org.apache.tez.runtime.library.common.shuffle.DiskFetchedInput;
+import org.apache.tez.runtime.library.common.shuffle.FetchedInput;
 import org.apache.tez.runtime.library.common.shuffle.FetchedInputAllocator;
+import org.apache.tez.runtime.library.common.shuffle.MemoryFetchedInput;
 import org.apache.tez.runtime.library.common.shuffle.ShuffleEventHandler;
 import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
-import org.apache.tez.runtime.library.common.shuffle.FetchedInput;
-import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.DataProto;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.DataMovementEventPayloadProto;
-import org.apache.tez.runtime.library.common.shuffle.DiskFetchedInput;
-import org.apache.tez.runtime.library.common.shuffle.MemoryFetchedInput;
+import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.DataProto;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A base class for generic Event handling for Inputs which need to Shuffle data.
@@ -57,7 +55,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
 
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleInputEventHandlerImpl.class);
-  
+
   private final ShuffleManager shuffleManager;
   //TODO: unused. Consider removing later?
   private final FetchedInputAllocator inputAllocator;
@@ -97,11 +95,11 @@ public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
       handleEvent(event);
     }
   }
-  
+
   private void handleEvent(Event event) throws IOException {
     if (event instanceof DataMovementEvent) {
       numDmeEvents.incrementAndGet();
-      DataMovementEvent dmEvent = (DataMovementEvent)event;
+      DataMovementEvent dmEvent = (DataMovementEvent) event;
       DataMovementEventPayloadProto shufflePayload;
       try {
         shufflePayload = DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(dmEvent.getUserPayload()));
@@ -111,7 +109,8 @@ public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
       BitSet emptyPartitionsBitSet = null;
       if (shufflePayload.hasEmptyPartitions()) {
         try {
-          byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(shufflePayload.getEmptyPartitions(), inflater);
+          byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(shufflePayload.getEmptyPartitions(),
+            inflater);
           emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
         } catch (IOException e) {
           throw new TezUncheckedException("Unable to set the empty partition to succeeded", e);
@@ -120,7 +119,7 @@ public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
       processDataMovementEvent(dmEvent, shufflePayload, emptyPartitionsBitSet);
       shuffleManager.updateEventReceivedTime();
     } else if (event instanceof CompositeRoutedDataMovementEvent) {
-      CompositeRoutedDataMovementEvent crdme = (CompositeRoutedDataMovementEvent)event;
+      CompositeRoutedDataMovementEvent crdme = (CompositeRoutedDataMovementEvent) event;
       DataMovementEventPayloadProto shufflePayload;
       try {
         shufflePayload = DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(crdme.getUserPayload()));
@@ -130,7 +129,8 @@ public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
       BitSet emptyPartitionsBitSet = null;
       if (shufflePayload.hasEmptyPartitions()) {
         try {
-          byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(shufflePayload.getEmptyPartitions(), inflater);
+          byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(shufflePayload.getEmptyPartitions(),
+            inflater);
           emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
         } catch (IOException e) {
           throw new TezUncheckedException("Unable to set the empty partition to succeeded", e);
@@ -162,27 +162,28 @@ public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
   @Override
   public void logProgress(boolean updateOnClose) {
     LOG.info(inputContext.getInputOutputVertexNames() + ": "
-        + "numDmeEventsSeen=" + numDmeEvents.get()
-        + ", numDmeEventsSeenWithNoData=" + numDmeEventsNoData.get()
-        + ", numObsoletionEventsSeen=" + numObsoletionEvents.get()
-        + (updateOnClose == true ? ", updateOnClose" : ""));
+      + "numDmeEventsSeen=" + numDmeEvents.get()
+      + ", numDmeEventsSeenWithNoData=" + numDmeEventsNoData.get()
+      + ", numObsoletionEventsSeen=" + numObsoletionEvents.get()
+      + (updateOnClose == true ? ", updateOnClose" : ""));
   }
 
-  private void processDataMovementEvent(DataMovementEvent dme, DataMovementEventPayloadProto shufflePayload, BitSet emptyPartitionsBitSet) throws IOException {
+  private void processDataMovementEvent(DataMovementEvent dme, DataMovementEventPayloadProto shufflePayload,
+                                        BitSet emptyPartitionsBitSet) throws IOException {
     int srcIndex = dme.getSourceIndex();
 
     String hostIdentifier = shufflePayload.getHost() + ":" + shufflePayload.getPort();
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("DME srcIdx: " + srcIndex + ", targetIndex: " + dme.getTargetIndex()
-          + ", attemptNum: " + dme.getVersion() + ", payload: " + ShuffleUtils
-          .stringify(shufflePayload));
+        + ", attemptNum: " + dme.getVersion() + ", payload: " + ShuffleUtils
+        .stringify(shufflePayload));
     }
 
     if (shufflePayload.hasEmptyPartitions()) {
       if (emptyPartitionsBitSet.get(srcIndex)) {
         CompositeInputAttemptIdentifier srcAttemptIdentifier =
-            constructInputAttemptIdentifier(dme.getTargetIndex(), 1, dme.getVersion(), shufflePayload, false);
+          constructInputAttemptIdentifier(dme.getTargetIndex(), 1, dme.getVersion(), shufflePayload, false);
         LOG.debug("Source partition: {} did not generate any data. SrcAttempt: [{}]. Not fetching.",
           srcIndex, srcAttemptIdentifier);
         numDmeEventsNoData.getAndIncrement();
@@ -195,63 +196,68 @@ public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
       shuffleManager.updateApproximateInputRecords(shufflePayload.getNumRecord());
     }
 
-    CompositeInputAttemptIdentifier srcAttemptIdentifier = constructInputAttemptIdentifier(dme.getTargetIndex(), 1, dme.getVersion(),
-        shufflePayload, (useSharedInputs && srcIndex == 0));
+    CompositeInputAttemptIdentifier srcAttemptIdentifier = constructInputAttemptIdentifier(dme.getTargetIndex(), 1,
+      dme.getVersion(),
+      shufflePayload, (useSharedInputs && srcIndex == 0));
 
     if (shufflePayload.hasData()) {
       DataProto dataProto = shufflePayload.getData();
 
       FetchedInput fetchedInput =
-          inputAllocator.allocate(dataProto.getRawLength(),
-              dataProto.getCompressedLength(), srcAttemptIdentifier);
+        inputAllocator.allocate(dataProto.getRawLength(),
+          dataProto.getCompressedLength(), srcAttemptIdentifier);
       moveDataToFetchedInput(dataProto, fetchedInput, hostIdentifier);
       shuffleManager.addCompletedInputWithData(srcAttemptIdentifier, fetchedInput);
 
       LOG.debug("Payload via DME : " + srcAttemptIdentifier);
     } else {
       shuffleManager.addKnownInput(shufflePayload.getHost(), shufflePayload.getPort(),
-              srcAttemptIdentifier, srcIndex);
+        srcAttemptIdentifier, srcIndex);
     }
   }
 
   private void moveDataToFetchedInput(DataProto dataProto,
-      FetchedInput fetchedInput, String hostIdentifier) throws IOException {
+                                      FetchedInput fetchedInput, String hostIdentifier) throws IOException {
     switch (fetchedInput.getType()) {
-    case DISK:
-      ShuffleUtils
+      case DISK:
+        ShuffleUtils
           .shuffleToDisk(((DiskFetchedInput) fetchedInput).getOutputStream(),
-              hostIdentifier, dataProto.getData().newInput(),
-              dataProto.getCompressedLength(),
-              dataProto.getUncompressedLength(), LOG,
-              fetchedInput.getInputAttemptIdentifier(), ifileReadAhead,
-              ifileReadAheadLength, true);
-      break;
-    case MEMORY:
-      ShuffleUtils
+            hostIdentifier, dataProto.getData().newInput(),
+            dataProto.getCompressedLength(),
+            dataProto.getUncompressedLength(), LOG,
+            fetchedInput.getInputAttemptIdentifier(), ifileReadAhead,
+            ifileReadAheadLength, true);
+        break;
+      case MEMORY:
+        ShuffleUtils
           .shuffleToMemory(((MemoryFetchedInput) fetchedInput).getBytes(),
-              dataProto.getData().newInput(), dataProto.getRawLength(),
-              dataProto.getCompressedLength(),
-              codec, ifileReadAhead, ifileReadAheadLength, LOG,
-              fetchedInput.getInputAttemptIdentifier());
-      break;
-    case WAIT:
-    default:
-      throw new TezUncheckedException("Unexpected type: "
+            dataProto.getData().newInput(), dataProto.getRawLength(),
+            dataProto.getCompressedLength(),
+            codec, ifileReadAhead, ifileReadAheadLength, LOG,
+            fetchedInput.getInputAttemptIdentifier());
+        break;
+      case WAIT:
+      default:
+        throw new TezUncheckedException("Unexpected type: "
           + fetchedInput.getType());
     }
   }
 
-  private void processCompositeRoutedDataMovementEvent(CompositeRoutedDataMovementEvent crdme, DataMovementEventPayloadProto shufflePayload, BitSet emptyPartitionsBitSet) throws IOException {
+  private void processCompositeRoutedDataMovementEvent(CompositeRoutedDataMovementEvent crdme,
+                                                       DataMovementEventPayloadProto shufflePayload,
+                                                       BitSet emptyPartitionsBitSet) throws IOException {
     int partitionId = crdme.getSourceIndex();
     if (LOG.isDebugEnabled()) {
-      LOG.debug("DME srcIdx: " + partitionId + ", targetIndex: " + crdme.getTargetIndex() + ", count:" + crdme.getCount()
+      LOG.debug(
+        "DME srcIdx: " + partitionId + ", targetIndex: " + crdme.getTargetIndex() + ", count:" + crdme.getCount()
           + ", attemptNum: " + crdme.getVersion() + ", payload: " + ShuffleUtils
           .stringify(shufflePayload));
     }
 
     if (shufflePayload.hasEmptyPartitions()) {
       CompositeInputAttemptIdentifier compositeInputAttemptIdentifier =
-          constructInputAttemptIdentifier(crdme.getTargetIndex(), crdme.getCount(), crdme.getVersion(), shufflePayload, false);
+        constructInputAttemptIdentifier(crdme.getTargetIndex(), crdme.getCount(), crdme.getVersion(), shufflePayload,
+          false);
 
       boolean allPartitionsEmpty = true;
       for (int i = 0; i < crdme.getCount(); i++) {
@@ -271,8 +277,9 @@ public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
       }
     }
 
-    CompositeInputAttemptIdentifier srcAttemptIdentifier = constructInputAttemptIdentifier(crdme.getTargetIndex(), crdme.getCount(), crdme.getVersion(),
-        shufflePayload, (useSharedInputs && partitionId == 0));
+    CompositeInputAttemptIdentifier srcAttemptIdentifier = constructInputAttemptIdentifier(crdme.getTargetIndex(),
+      crdme.getCount(), crdme.getVersion(),
+      shufflePayload, (useSharedInputs && partitionId == 0));
 
     shuffleManager.addKnownInput(shufflePayload.getHost(), shufflePayload.getPort(), srcAttemptIdentifier, partitionId);
   }
@@ -292,23 +299,23 @@ public class ShuffleInputEventHandlerImpl implements ShuffleEventHandler {
    * @param isShared
    * @return CompositeInputAttemptIdentifier
    */
-  private CompositeInputAttemptIdentifier constructInputAttemptIdentifier(int targetIndex, int targetIndexCount, int version,
-      DataMovementEventPayloadProto shufflePayload, boolean isShared) {
+  private CompositeInputAttemptIdentifier constructInputAttemptIdentifier(int targetIndex, int targetIndexCount,
+                                                                          int version,
+                                                                          DataMovementEventPayloadProto shufflePayload, boolean isShared) {
     String pathComponent = (shufflePayload.hasPathComponent()) ? shufflePayload.getPathComponent() : null;
     CompositeInputAttemptIdentifier srcAttemptIdentifier = null;
     if (shufflePayload.hasSpillId()) {
       int spillEventId = shufflePayload.getSpillId();
       boolean lastEvent = shufflePayload.getLastEvent();
       InputAttemptIdentifier.SPILL_INFO spillInfo = (lastEvent) ? InputAttemptIdentifier.SPILL_INFO
-          .FINAL_UPDATE : InputAttemptIdentifier.SPILL_INFO.INCREMENTAL_UPDATE;
+        .FINAL_UPDATE : InputAttemptIdentifier.SPILL_INFO.INCREMENTAL_UPDATE;
       srcAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(targetIndex, version, pathComponent, isShared, spillInfo, spillEventId, targetIndexCount);
+        new CompositeInputAttemptIdentifier(targetIndex, version, pathComponent, isShared, spillInfo, spillEventId,
+          targetIndexCount);
     } else {
       srcAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(targetIndex, version, pathComponent, isShared, targetIndexCount);
+        new CompositeInputAttemptIdentifier(targetIndex, version, pathComponent, isShared, targetIndexCount);
     }
     return srcAttemptIdentifier;
   }
-
 }
-

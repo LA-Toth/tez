@@ -36,6 +36,7 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,16 +50,16 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
 
   static {
     knownEntityTypes = Sets.newHashSet(
-        EntityTypes.TEZ_DAG_ID.name(),
-        EntityTypes.TEZ_DAG_EXTRA_INFO.name(),
-        EntityTypes.TEZ_VERTEX_ID.name(),
-        EntityTypes.TEZ_TASK_ID.name(),
-        EntityTypes.TEZ_TASK_ATTEMPT_ID.name(),
-        EntityTypes.TEZ_CONTAINER_ID.name());
+      EntityTypes.TEZ_DAG_ID.name(),
+      EntityTypes.TEZ_DAG_EXTRA_INFO.name(),
+      EntityTypes.TEZ_VERTEX_ID.name(),
+      EntityTypes.TEZ_TASK_ID.name(),
+      EntityTypes.TEZ_TASK_ATTEMPT_ID.name(),
+      EntityTypes.TEZ_CONTAINER_ID.name());
     summaryEntityTypes = Sets.newHashSet(
-        EntityTypes.TEZ_DAG_ID.name(),
-        EntityTypes.TEZ_APPLICATION_ATTEMPT.name(),
-        EntityTypes.TEZ_APPLICATION.name());
+      EntityTypes.TEZ_DAG_ID.name(),
+      EntityTypes.TEZ_APPLICATION_ATTEMPT.name(),
+      EntityTypes.TEZ_APPLICATION.name());
   }
 
   private Configuration conf;
@@ -73,7 +74,7 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
   private Set<TimelineEntityGroupId> createTimelineEntityGroupIds(TezDAGID dagId) {
     ApplicationId appId = dagId.getApplicationId();
     HashSet<TimelineEntityGroupId> groupIds = Sets.newHashSet(
-        TimelineEntityGroupId.newInstance(appId, dagId.toString()));
+      TimelineEntityGroupId.newInstance(appId, dagId.toString()));
     for (int numGroupsPerDag : allNumGroupsPerDag) {
       groupIds.add(TimelineEntityGroupId.newInstance(appId, dagId.getGroupId(numGroupsPerDag)));
     }
@@ -82,11 +83,11 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
 
   private Set<TimelineEntityGroupId> convertToTimelineEntityGroupIds(String entityType, String entityId) {
     if (entityType == null || entityType.isEmpty()
-        || entityId == null || entityId.isEmpty()) {
+      || entityId == null || entityId.isEmpty()) {
       return null;
     }
     if (entityType.equals(EntityTypes.TEZ_DAG_ID.name()) ||
-        entityType.equals(EntityTypes.TEZ_DAG_EXTRA_INFO.name())) {
+      entityType.equals(EntityTypes.TEZ_DAG_EXTRA_INFO.name())) {
       TezDAGID dagId = TezDAGID.fromString(entityId);
       if (dagId != null) {
         return createTimelineEntityGroupIds(dagId);
@@ -96,7 +97,6 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
       if (vertexID != null) {
         return createTimelineEntityGroupIds(vertexID.getDAGID());
       }
-
     } else if (entityType.equals(EntityTypes.TEZ_TASK_ID.name())) {
       TezTaskID taskID = TezTaskID.fromString(entityId);
       if (taskID != null) {
@@ -115,8 +115,8 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
       ContainerId containerId = ContainerId.fromString(cId);
       if (containerId != null) {
         return Sets.newHashSet(TimelineEntityGroupId.newInstance(
-            containerId.getApplicationAttemptId().getApplicationId(),
-            containerId.getApplicationAttemptId().getApplicationId().toString()));
+          containerId.getApplicationAttemptId().getApplicationId(),
+          containerId.getApplicationAttemptId().getApplicationId().toString()));
       }
     }
     return null;
@@ -124,12 +124,12 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
 
   @Override
   public Set<TimelineEntityGroupId> getTimelineEntityGroupId(String entityType,
-      NameValuePair primaryFilter,
-      Collection<NameValuePair> secondaryFilters) {
+                                                             NameValuePair primaryFilter,
+                                                             Collection<NameValuePair> secondaryFilters) {
     if (!knownEntityTypes.contains(entityType)
-        || primaryFilter == null
-        || !knownEntityTypes.contains(primaryFilter.getName())
-        || summaryEntityTypes.contains(entityType)) {
+      || primaryFilter == null
+      || !knownEntityTypes.contains(primaryFilter.getName())
+      || summaryEntityTypes.contains(entityType)) {
       return null;
     }
     return convertToTimelineEntityGroupIds(primaryFilter.getName(), primaryFilter.getValue().toString());
@@ -145,10 +145,10 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
 
   @Override
   public Set<TimelineEntityGroupId> getTimelineEntityGroupId(String entityType,
-      SortedSet<String> entityIds, Set<String> eventTypes) {
+                                                             SortedSet<String> entityIds, Set<String> eventTypes) {
     if (!knownEntityTypes.contains(entityType)
-        || summaryEntityTypes.contains(entityType)
-        || entityIds == null || entityIds.isEmpty()) {
+      || summaryEntityTypes.contains(entityType)
+      || entityIds == null || entityIds.isEmpty()) {
       return null;
     }
 
@@ -162,25 +162,19 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
     return groupIds;
   }
 
-  @Override
-  public void setConf(Configuration conf) {
-    this.conf = conf instanceof TezConfiguration ? conf : new TezConfiguration(conf);
-
-    this.allNumGroupsPerDag = loadAllNumDagsPerGroup();
-  }
-
   private Set<Integer> loadAllNumDagsPerGroup() {
     Set<Integer> allNumDagsPerGroup = new HashSet<Integer>();
 
     int numDagsPerGroup = conf.getInt(TezConfiguration.TEZ_HISTORY_LOGGING_TIMELINE_NUM_DAGS_PER_GROUP,
-        TezConfiguration.TEZ_HISTORY_LOGGING_TIMELINE_NUM_DAGS_PER_GROUP_DEFAULT);
+      TezConfiguration.TEZ_HISTORY_LOGGING_TIMELINE_NUM_DAGS_PER_GROUP_DEFAULT);
     if (numDagsPerGroup > 1) {
       // Add current numDagsPerGroup from config.
       allNumDagsPerGroup.add(numDagsPerGroup);
     }
 
     // Add the older values from config.
-    int [] usedNumGroups = conf.getInts(TezConfiguration.TEZ_HISTORY_LOGGING_TIMELINE_CACHE_PLUGIN_OLD_NUM_DAGS_PER_GROUP);
+    int[] usedNumGroups = conf.getInts(
+      TezConfiguration.TEZ_HISTORY_LOGGING_TIMELINE_CACHE_PLUGIN_OLD_NUM_DAGS_PER_GROUP);
     if (usedNumGroups != null) {
       for (int i = 0; i < usedNumGroups.length; ++i) {
         allNumDagsPerGroup.add(usedNumGroups[i]);
@@ -189,7 +183,8 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
 
     // Warn for performance impact
     if (allNumDagsPerGroup.size() > 3) {
-      LOG.warn("Too many entries in " + TezConfiguration.TEZ_HISTORY_LOGGING_TIMELINE_CACHE_PLUGIN_OLD_NUM_DAGS_PER_GROUP +
+      LOG.warn(
+        "Too many entries in " + TezConfiguration.TEZ_HISTORY_LOGGING_TIMELINE_CACHE_PLUGIN_OLD_NUM_DAGS_PER_GROUP +
           ", this can result in slower lookup from Yarn Timeline server or slower load times in TezUI.");
     }
     return allNumDagsPerGroup;
@@ -200,4 +195,10 @@ public class TimelineCachePluginImpl extends TimelineEntityGroupPlugin implement
     return conf;
   }
 
+  @Override
+  public void setConf(Configuration conf) {
+    this.conf = conf instanceof TezConfiguration ? conf : new TezConfiguration(conf);
+
+    this.allNumGroupsPerDag = loadAllNumDagsPerGroup();
+  }
 }

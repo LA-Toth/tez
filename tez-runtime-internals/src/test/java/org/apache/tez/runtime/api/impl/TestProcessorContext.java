@@ -16,7 +16,11 @@ package org.apache.tez.runtime.api.impl;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -24,7 +28,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 
-import com.google.common.collect.Maps;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.tez.common.TezSharedExecutor;
@@ -40,13 +43,15 @@ import org.apache.tez.runtime.api.ExecutionContext;
 import org.apache.tez.runtime.api.ObjectRegistry;
 import org.apache.tez.runtime.common.objectregistry.ObjectRegistryImpl;
 import org.apache.tez.runtime.common.resources.MemoryDistributor;
+
+import com.google.common.collect.Maps;
 import org.junit.Test;
 
 public class TestProcessorContext {
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testDagNumber() throws IOException {
-    String[] localDirs = new String[] {"dummyLocalDir"};
+    String[] localDirs = new String[]{"dummyLocalDir"};
     int appAttemptNumber = 1;
     TezUmbilical tezUmbilical = mock(TezUmbilical.class);
     String dagName = "DAG_NAME";
@@ -65,8 +70,8 @@ public class TestProcessorContext {
     Configuration conf = new Configuration();
     TezSharedExecutor sharedExecutor = new TezSharedExecutor(conf);
     LogicalIOProcessorRuntimeTask runtimeTask = new LogicalIOProcessorRuntimeTask(mockSpec, 1, conf,
-        new String[]{"/"}, tezUmbilical, null, null, null, null, "", null, 1024, false,
-        new DefaultHadoopShim(), sharedExecutor);
+      new String[]{"/"}, tezUmbilical, null, null, null, null, "", null, 1024, false,
+      new DefaultHadoopShim(), sharedExecutor);
     LogicalIOProcessorRuntimeTask mockTask = spy(runtimeTask);
     Map<String, ByteBuffer> serviceConsumerMetadata = Maps.newHashMap();
     Map<String, String> auxServiceEnv = Maps.newHashMap();
@@ -78,26 +83,26 @@ public class TestProcessorContext {
     long memAvailable = 10000l;
 
     TezProcessorContextImpl procContext =
-        new TezProcessorContextImpl(
-            new Configuration(),
-            localDirs,
-            appAttemptNumber,
-            tezUmbilical,
-            dagName,
-            vertexName,
-            vertexParallelism,
-            taskAttemptId,
-            null,
-            runtimeTask,
-            serviceConsumerMetadata,
-            auxServiceEnv,
-            memDist,
-            processorDesc,
-            inputReadyTracker,
-            objectRegistry,
-            execContext,
-            memAvailable,
-            sharedExecutor);
+      new TezProcessorContextImpl(
+        new Configuration(),
+        localDirs,
+        appAttemptNumber,
+        tezUmbilical,
+        dagName,
+        vertexName,
+        vertexParallelism,
+        taskAttemptId,
+        null,
+        runtimeTask,
+        serviceConsumerMetadata,
+        auxServiceEnv,
+        memDist,
+        processorDesc,
+        inputReadyTracker,
+        objectRegistry,
+        execContext,
+        memAvailable,
+        sharedExecutor);
 
     assertEquals(dagNumber, procContext.getDagIdentifier());
     assertEquals(appAttemptNumber, procContext.getDAGAttemptNumber());
@@ -107,9 +112,9 @@ public class TestProcessorContext {
     assertEquals(vertexId.getId(), procContext.getTaskVertexIndex());
     assertTrue(Arrays.equals(localDirs, procContext.getWorkDirs()));
 
-     // test auto call of notifyProgress
-     procContext.setProgress(0.1f);
-     verify(mockTask, times(1)).notifyProgressInvocation();
-     sharedExecutor.shutdown();
+    // test auto call of notifyProgress
+    procContext.setProgress(0.1f);
+    verify(mockTask, times(1)).notifyProgressInvocation();
+    sharedExecutor.shutdown();
   }
 }

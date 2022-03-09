@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,20 +20,21 @@ package org.apache.tez.dag.history.events;
 
 import java.io.IOException;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.tez.common.counters.CounterGroup;
 import org.apache.tez.common.counters.TezCounter;
-import org.apache.tez.dag.records.TaskIDAware;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.oldrecords.TaskState;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
+import org.apache.tez.dag.records.TaskIDAware;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.TaskFinishedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TaskFinishedEvent implements HistoryEvent, TaskIDAware {
 
@@ -50,9 +51,9 @@ public class TaskFinishedEvent implements HistoryEvent, TaskIDAware {
   private int numFailedAttempts;
 
   public TaskFinishedEvent(TezTaskID taskID,
-      String vertexName, long startTime, long finishTime,
-      TezTaskAttemptID successfulAttemptID,
-      TaskState state, String diagnostics, TezCounters counters, int failedAttempts) {
+                           String vertexName, long startTime, long finishTime,
+                           TezTaskAttemptID successfulAttemptID,
+                           TaskState state, String diagnostics, TezCounters counters, int failedAttempts) {
     this.vertexName = vertexName;
     this.taskID = taskID;
     this.startTime = startTime;
@@ -85,8 +86,8 @@ public class TaskFinishedEvent implements HistoryEvent, TaskIDAware {
   public TaskFinishedProto toProto() {
     TaskFinishedProto.Builder builder = TaskFinishedProto.newBuilder();
     builder.setTaskId(taskID.toString())
-        .setState(state.ordinal())
-        .setFinishTime(finishTime);
+      .setState(state.ordinal())
+      .setFinishTime(finishTime);
     if (diagnostics != null) {
       builder.setDiagnostics(diagnostics);
     }
@@ -105,7 +106,7 @@ public class TaskFinishedEvent implements HistoryEvent, TaskIDAware {
     }
     if (proto.hasSuccessfulTaskAttemptId()) {
       this.successfulAttemptID =
-          TezTaskAttemptID.fromString(proto.getSuccessfulTaskAttemptId());
+        TezTaskAttemptID.fromString(proto.getSuccessfulTaskAttemptId());
     }
   }
 
@@ -154,7 +155,7 @@ public class TaskFinishedEvent implements HistoryEvent, TaskIDAware {
         for (TezCounter counter : group) {
           sb.append(", ");
           sb.append(counter.getDisplayName()).append("=")
-              .append(counter.getValue());
+            .append(counter.getValue());
         }
       }
     }

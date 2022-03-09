@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,37 +31,34 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
-import java.util.Objects;
 
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualLinkedHashBidiMap;
-import org.apache.hadoop.classification.InterfaceStability;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.util.ConverterUtils;
-import org.apache.tez.client.CallerContext;
-import org.apache.tez.common.JavaOptsChecker;
-import org.apache.tez.common.TezUtils;
-import org.apache.tez.dag.api.Vertex.VertexExecutionContext;
-import org.apache.tez.dag.api.records.DAGProtos;
-import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
+import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.util.ConverterUtils;
+import org.apache.tez.client.CallerContext;
 import org.apache.tez.client.TezClientUtils;
-import org.apache.tez.common.security.DAGAccessControls;
+import org.apache.tez.common.JavaOptsChecker;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezCommonUtils;
+import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.TezYARNUtils;
+import org.apache.tez.common.security.DAGAccessControls;
 import org.apache.tez.dag.api.EdgeProperty.DataMovementType;
 import org.apache.tez.dag.api.EdgeProperty.DataSourceType;
-import org.apache.tez.dag.api.EdgeProperty.SchedulingType;
+import org.apache.tez.dag.api.Vertex.VertexExecutionContext;
 import org.apache.tez.dag.api.VertexGroup.GroupInfo;
+import org.apache.tez.dag.api.records.DAGProtos;
 import org.apache.tez.dag.api.records.DAGProtos.ConfigurationProto;
 import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
 import org.apache.tez.dag.api.records.DAGProtos.EdgePlan;
@@ -72,12 +69,14 @@ import org.apache.tez.dag.api.records.DAGProtos.PlanTaskLocationHint;
 import org.apache.tez.dag.api.records.DAGProtos.PlanVertexGroupInfo;
 import org.apache.tez.dag.api.records.DAGProtos.PlanVertexType;
 import org.apache.tez.dag.api.records.DAGProtos.VertexPlan;
+import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Top level entity that defines the DAG (Directed Acyclic Graph) representing
@@ -91,7 +90,7 @@ public class DAG {
   private static final Logger LOG = LoggerFactory.getLogger(DAG.class);
 
   final BidiMap<String, Vertex> vertices =
-      new DualLinkedHashBidiMap<String, Vertex>();
+    new DualLinkedHashBidiMap<String, Vertex>();
   final Set<Edge> edges = Sets.newHashSet();
   final String name;
   final Collection<URI> urisForCredentials = new HashSet<URI>();
@@ -99,12 +98,11 @@ public class DAG {
   Set<VertexGroup> vertexGroups = Sets.newHashSet();
 
   Set<GroupInputEdge> groupInputEdges = Sets.newHashSet();
-
-  private DAGAccessControls dagAccessControls;
   Map<String, LocalResource> commonTaskLocalFiles = Maps.newHashMap();
   String dagInfo;
   CallerContext callerContext;
-  private Map<String,String> dagConf = new HashMap<String, String>();
+  private DAGAccessControls dagAccessControls;
+  private Map<String, String> dagConf = new HashMap<String, String>();
   private VertexExecutionContext defaultExecutionContext;
 
   private DAG(String name) {
@@ -148,25 +146,6 @@ public class DAG {
   }
 
   /**
-   * One of the methods that can be used to provide information about required
-   * Credentials when running on a secure cluster. A combination of this and
-   * addURIsForCredentials should be used to specify information about all
-   * credentials required by a DAG. AM specific credentials are not used when
-   * executing a DAG.
-   *
-   * Set credentials which will be required to run this dag. This method can be
-   * used if the client has already obtained some or all of the required
-   * credentials.
-   *
-   * @param credentials Credentials for the DAG
-   * @return {@link DAG}
-   */
-  public synchronized DAG setCredentials(Credentials credentials) {
-    this.credentials = credentials;
-    return this;
-  }
-
-  /**
    * Set description info for this DAG that can be used for visualization purposes.
    * @param dagInfo JSON blob as a serialized string.
    *                Recognized keys by the UI are:
@@ -184,18 +163,6 @@ public class DAG {
     return this;
   }
 
-
-  /**
-   * Set the Context in which Tez is being called.
-   * @param callerContext Caller Context
-   * @return {@link DAG}
-   */
-  public synchronized DAG setCallerContext(CallerContext callerContext) {
-    Objects.requireNonNull(callerContext);
-    this.callerContext = callerContext;
-    return this;
-  }
-
   /**
    * Create a group of vertices that share a common output. This can be used to implement
    * unions efficiently.
@@ -208,7 +175,7 @@ public class DAG {
     VertexGroup uv = new VertexGroup(name, members);
     if (!vertexGroups.add(uv)) {
       throw new IllegalStateException(
-          "VertexGroup " + name + " already defined!");
+        "VertexGroup " + name + " already defined!");
     }
 
     return uv;
@@ -219,6 +186,24 @@ public class DAG {
     return this.credentials;
   }
 
+  /**
+   * One of the methods that can be used to provide information about required
+   * Credentials when running on a secure cluster. A combination of this and
+   * addURIsForCredentials should be used to specify information about all
+   * credentials required by a DAG. AM specific credentials are not used when
+   * executing a DAG.
+   *
+   * Set credentials which will be required to run this dag. This method can be
+   * used if the client has already obtained some or all of the required
+   * credentials.
+   *
+   * @param credentials Credentials for the DAG
+   * @return {@link DAG}
+   */
+  public synchronized DAG setCredentials(Credentials credentials) {
+    this.credentials = credentials;
+    return this;
+  }
 
   /**
    * Set Access controls for the DAG. Which user/groups can view the DAG progess/history and
@@ -414,7 +399,7 @@ public class DAG {
 
   @Private
   @VisibleForTesting
-  public Map<String,String> getDagConf() {
+  public Map<String, String> getDagConf() {
     return dagConf;
   }
 
@@ -439,7 +424,7 @@ public class DAG {
     // add newly inferred vertices for consideration as known sources
     // the outer loop will run for every new level of inferring the parallelism
     // however, the entire logic will process each vertex only once
-    while(!newKnownTasksVertices.isEmpty()) {
+    while (!newKnownTasksVertices.isEmpty()) {
       Set<Vertex> knownTasksVertices = Sets.newHashSet(newKnownTasksVertices);
       newKnownTasksVertices.clear();
       for (Vertex v : knownTasksVertices) {
@@ -448,8 +433,8 @@ public class DAG {
             Vertex outVertex = e.getOutputVertex();
             if (outVertex.getParallelism() == -1) {
               LOG.info("Inferring parallelism for vertex: "
-                  + outVertex.getName() + " to be " + v.getParallelism()
-                  + " from 1-1 connection with vertex " + v.getName());
+                + outVertex.getName() + " to be " + v.getParallelism()
+                + " from 1-1 connection with vertex " + v.getName());
               outVertex.setParallelism(v.getParallelism());
               newKnownTasksVertices.add(outVertex);
             }
@@ -468,7 +453,7 @@ public class DAG {
           // both should be equal or equal to -1.
           if (outputVertex.getParallelism() != -1) {
             throw new TezUncheckedException(
-                "1-1 Edge. Destination vertex parallelism must match source vertex. "
+              "1-1 Edge. Destination vertex parallelism must match source vertex. "
                 + "Vertex: " + inputVertex.getName() + " does not match vertex: "
                 + outputVertex.getName());
           }
@@ -500,14 +485,14 @@ public class DAG {
           // In this case, vertex parallelism is setup later using the data source's numShards
           // and as a result, an initializer is not needed.
           if (vertex.getDataSources() != null
-              && vertex.getDataSources().size() == 1
-              &&  vertex.getDataSources().get(0).getNumberOfShards() > -1) {
+            && vertex.getDataSources().size() == 1
+            && vertex.getDataSources().get(0).getNumberOfShards() > -1) {
             continue;
           }
         }
 
         boolean has1to1UninitedSources = false;
-        if (vertex.getInputVertices()!= null && !vertex.getInputVertices().isEmpty()) {
+        if (vertex.getInputVertices() != null && !vertex.getInputVertices().isEmpty()) {
           for (Vertex srcVertex : vertex.getInputVertices()) {
             if (srcVertex.getParallelism() == -1) {
               has1to1UninitedSources = true;
@@ -523,25 +508,9 @@ public class DAG {
           continue;
         }
         throw new IllegalStateException(vertex.getName() +
-            " has -1 tasks but does not have input initializers, " +
-            "1-1 uninited sources or custom vertex manager to set it at runtime");
+          " has -1 tasks but does not have input initializers, " +
+          "1-1 uninited sources or custom vertex manager to set it at runtime");
       }
-    }
-  }
-
-  // AnnotatedVertex is used by verify()
-  private static class AnnotatedVertex {
-    Vertex v;
-
-    int index; //for Tarjan's algorithm
-    int lowlink; //for Tarjan's algorithm
-    boolean onstack; //for Tarjan's algorithm
-
-
-    private AnnotatedVertex(Vertex v) {
-      this.v = v;
-      index = -1;
-      lowlink = -1;
     }
   }
 
@@ -620,21 +589,21 @@ public class DAG {
     // check input and output names don't collide with vertex names
     for (Vertex vertex : vertices.values()) {
       for (RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>
-           input : vertex.getInputs()) {
+        input : vertex.getInputs()) {
         if (vertexMap.containsKey(input.getName())) {
           throw new IllegalStateException("Vertex: "
-              + vertex.getName()
-              + " contains an Input with the same name as vertex: "
-              + input.getName());
+            + vertex.getName()
+            + " contains an Input with the same name as vertex: "
+            + input.getName());
         }
       }
       for (RootInputLeafOutput<OutputDescriptor, OutputCommitterDescriptor>
-            output : vertex.getOutputs()) {
+        output : vertex.getOutputs()) {
         if (vertexMap.containsKey(output.getName())) {
           throw new IllegalStateException("Vertex: "
-              + vertex.getName()
-              + " contains an Output with the same name as vertex: "
-              + output.getName());
+            + vertex.getName()
+            + " contains an Output with the same name as vertex: "
+            + output.getName());
         }
       }
     }
@@ -643,12 +612,12 @@ public class DAG {
     for (Entry<Vertex, Set<String>> entry : inboundVertexMap.entrySet()) {
       Vertex vertex = entry.getKey();
       for (RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>
-           input : vertex.getInputs()) {
+        input : vertex.getInputs()) {
         if (entry.getValue().contains(input.getName())) {
           throw new IllegalStateException("Vertex: "
-              + vertex.getName()
-              + " contains an incoming vertex and Input with the same name: "
-              + input.getName());
+            + vertex.getName()
+            + " contains an incoming vertex and Input with the same name: "
+            + input.getName());
         }
       }
     }
@@ -657,16 +626,15 @@ public class DAG {
     for (Entry<Vertex, Set<String>> entry : outboundVertexMap.entrySet()) {
       Vertex vertex = entry.getKey();
       for (RootInputLeafOutput<OutputDescriptor, OutputCommitterDescriptor>
-            output : vertex.getOutputs()) {
+        output : vertex.getOutputs()) {
         if (entry.getValue().contains(output.getName())) {
           throw new IllegalStateException("Vertex: "
-              + vertex.getName()
-              + " contains an outgoing vertex and Output with the same name: "
-              + output.getName());
+            + vertex.getName()
+            + " contains an outgoing vertex and Output with the same name: "
+            + output.getName());
         }
       }
     }
-
 
     // Not checking for repeated input names / output names vertex names on the same vertex,
     // since we only allow 1 at the moment.
@@ -681,7 +649,7 @@ public class DAG {
       for (Edge e : edges) {
         DataSourceType dataSourceType = e.getEdgeProperty().getDataSourceType();
         if (dataSourceType != DataSourceType.PERSISTED &&
-            dataSourceType != DataSourceType.EPHEMERAL) {
+          dataSourceType != DataSourceType.EPHEMERAL) {
           throw new IllegalStateException(
             "Unsupported source type on edge. " + e);
         }
@@ -690,7 +658,6 @@ public class DAG {
 
     // check for conflicts between dag level local resource and vertex level local resource
 
-
     return topologicalVertexStack;
   }
 
@@ -698,56 +665,55 @@ public class DAG {
   void verifyLocalResources(Configuration tezConf) {
     for (Vertex v : vertices.values()) {
       for (Map.Entry<String, LocalResource> localResource : v
-          .getTaskLocalFiles().entrySet()) {
+        .getTaskLocalFiles().entrySet()) {
         String resourceName = localResource.getKey();
         LocalResource resource = localResource.getValue();
         if (commonTaskLocalFiles.containsKey(resourceName)
-            && !commonTaskLocalFiles.get(resourceName).equals(resource)) {
+          && !commonTaskLocalFiles.get(resourceName).equals(resource)) {
           // Different for some reason. Compare size, and then eventually hash
           try {
 
             LocalResource commonLr = commonTaskLocalFiles.get(resourceName);
             if (resource.getSize() != commonLr.getSize()) {
               throw new IllegalStateException(
-                  "There is conflicting local resource (size mismatch) (" +
-                      resourceName
-                      + ") between dag local resource and vertex " +
-                      v.getName() + " local resource. "
-                      + "\nResource of dag : " +
-                      commonTaskLocalFiles.get(resourceName)
-                      + "\nResource of vertex: " + resource);
+                "There is conflicting local resource (size mismatch) (" +
+                  resourceName
+                  + ") between dag local resource and vertex " +
+                  v.getName() + " local resource. "
+                  + "\nResource of dag : " +
+                  commonTaskLocalFiles.get(resourceName)
+                  + "\nResource of vertex: " + resource);
             }
 
             Path vertexResourcePath =
-                ConverterUtils.getPathFromYarnURL(resource.getResource());
+              ConverterUtils.getPathFromYarnURL(resource.getResource());
             Path commonResourcePath = ConverterUtils.getPathFromYarnURL(
-                commonLr.getResource());
+              commonLr.getResource());
 
             byte[] vertexResourceSha = TezClientUtils
-                .getResourceSha(vertexResourcePath.toUri(), tezConf);
+              .getResourceSha(vertexResourcePath.toUri(), tezConf);
             byte[] commonResourceSha = TezClientUtils
-                .getResourceSha(commonResourcePath.toUri(), tezConf);
+              .getResourceSha(commonResourcePath.toUri(), tezConf);
 
             if (!Arrays.equals(vertexResourceSha, commonResourceSha)) {
               throw new IllegalStateException(
-                  "There is conflicting local resource (sha mismatch) (" +
-                      resourceName
-                      + ") between dag local resource and vertex " +
-                      v.getName() + " local resource. "
-                      + "\nResource of dag : " +
-                      commonTaskLocalFiles.get(resourceName)
-                      + "\nResource of vertex: " + resource);
+                "There is conflicting local resource (sha mismatch) (" +
+                  resourceName
+                  + ") between dag local resource and vertex " +
+                  v.getName() + " local resource. "
+                  + "\nResource of dag : " +
+                  commonTaskLocalFiles.get(resourceName)
+                  + "\nResource of vertex: " + resource);
             }
-
           } catch (URISyntaxException | IOException e) {
             throw new RuntimeException(
-                "Failed while attempting to validate sha for conflicting resources (" +
-                    resourceName
-                    + ") between dag local resource and vertex " + v.getName() +
-                    " local resource. "
-                    + "\nResource of dag : " +
-                    commonTaskLocalFiles.get(resourceName)
-                    + "\nResource of vertex: " + resource);
+              "Failed while attempting to validate sha for conflicting resources (" +
+                resourceName
+                + ") between dag local resource and vertex " + v.getName() +
+                " local resource. "
+                + "\nResource of dag : " +
+                commonTaskLocalFiles.get(resourceName)
+                + "\nResource of vertex: " + resource);
           }
         }
       }
@@ -757,7 +723,7 @@ public class DAG {
   // Adaptation of Tarjan's algorithm for connected components.
   // http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
   private Deque<String> detectCycles(Map<Vertex, List<Edge>> edgeMap,
-      Map<String, AnnotatedVertex> vertexMap)
+                                     Map<String, AnnotatedVertex> vertexMap)
     throws IllegalStateException {
     Deque<String> topologicalVertexStack = new LinkedList<String>();
     Integer nextIndex = 0; // boxed integer so it is passed by reference.
@@ -774,12 +740,12 @@ public class DAG {
   // part of Tarjan's algorithm for connected components.
   // http://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
   private void strongConnect(
-      AnnotatedVertex av,
-      Map<String, AnnotatedVertex> vertexMap,
-      Map<Vertex, List<Edge>> edgeMap,
-      Stack<AnnotatedVertex> stack,
-      Integer nextIndex,
-      Deque<String> topologicalVertexStack) throws IllegalStateException {
+    AnnotatedVertex av,
+    Map<String, AnnotatedVertex> vertexMap,
+    Map<Vertex, List<Edge>> edgeMap,
+    Stack<AnnotatedVertex> stack,
+    Integer nextIndex,
+    Deque<String> topologicalVertexStack) throws IllegalStateException {
     av.index = nextIndex;
     av.lowlink = nextIndex;
     nextIndex++;
@@ -835,15 +801,15 @@ public class DAG {
                            Map<String, LocalResource> tezJarResources, LocalResource binaryConfig,
                            boolean tezLrsAsArchive) {
     return createDag(tezConf, extraCredentials, tezJarResources, binaryConfig, tezLrsAsArchive,
-        null, null);
+      null, null);
   }
 
   // create protobuf message describing DAG
   @Private
   public synchronized DAGPlan createDag(Configuration tezConf, Credentials extraCredentials,
-      Map<String, LocalResource> tezJarResources, LocalResource binaryConfig,
-      boolean tezLrsAsArchive, ServicePluginsDescriptor servicePluginsDescriptor,
-      JavaOptsChecker javaOptsChecker) {
+                                        Map<String, LocalResource> tezJarResources, LocalResource binaryConfig,
+                                        boolean tezLrsAsArchive, ServicePluginsDescriptor servicePluginsDescriptor,
+                                        JavaOptsChecker javaOptsChecker) {
     Deque<String> topologicalVertexStack = verify(true);
     verifyLocalResources(tezConf);
 
@@ -862,7 +828,7 @@ public class DAG {
     verifyExecutionContext(defaultContext, servicePluginsDescriptor, "DAGDefault");
     if (defaultContext != null) {
       DAGProtos.VertexExecutionContextProto contextProto = DagTypeConverters.convertToProto(
-          defaultContext);
+        defaultContext);
       dagBuilder.setDefaultExecutionContext(contextProto);
     }
 
@@ -876,9 +842,9 @@ public class DAG {
         }
         groupBuilder.addAllOutputs(groupInfo.outputs);
         for (Map.Entry<String, InputDescriptor> entry :
-             groupInfo.edgeMergedInputs.entrySet()) {
+          groupInfo.edgeMergedInputs.entrySet()) {
           groupBuilder.addEdgeMergedInputs(
-              PlanGroupInputEdgeInfo.newBuilder().setDestVertexName(entry.getKey()).
+            PlanGroupInputEdgeInfo.newBuilder().setDestVertexName(entry.getKey()).
               setMergedInput(DagTypeConverters.convertToDAGPlan(entry.getValue())));
         }
         dagBuilder.addVertexGroups(groupBuilder);
@@ -895,19 +861,19 @@ public class DAG {
     }
 
     Preconditions.checkArgument(topologicalVertexStack.size() == vertices.size(),
-        "size of topologicalVertexStack is:" + topologicalVertexStack.size() +
+      "size of topologicalVertexStack is:" + topologicalVertexStack.size() +
         " while size of vertices is:" + vertices.size() +
         ", make sure they are the same in order to sort the vertices");
-    while(!topologicalVertexStack.isEmpty()) {
+    while (!topologicalVertexStack.isEmpty()) {
       Vertex vertex = vertices.get(topologicalVertexStack.pop());
       // infer credentials, resources and parallelism from data source
       Resource vertexTaskResource = vertex.getTaskResource();
       if (vertexTaskResource == null) {
         vertexTaskResource = Resource.newInstance(tezConf.getInt(
-            TezConfiguration.TEZ_TASK_RESOURCE_MEMORY_MB,
-            TezConfiguration.TEZ_TASK_RESOURCE_MEMORY_MB_DEFAULT), tezConf.getInt(
-            TezConfiguration.TEZ_TASK_RESOURCE_CPU_VCORES,
-            TezConfiguration.TEZ_TASK_RESOURCE_CPU_VCORES_DEFAULT));
+          TezConfiguration.TEZ_TASK_RESOURCE_MEMORY_MB,
+          TezConfiguration.TEZ_TASK_RESOURCE_MEMORY_MB_DEFAULT), tezConf.getInt(
+          TezConfiguration.TEZ_TASK_RESOURCE_CPU_VCORES,
+          TezConfiguration.TEZ_TASK_RESOURCE_CPU_VCORES_DEFAULT));
       }
       Map<String, LocalResource> vertexLRs = Maps.newHashMap();
       vertexLRs.putAll(vertex.getTaskLocalFiles());
@@ -918,13 +884,13 @@ public class DAG {
         }
         if (dataSource.getAdditionalLocalFiles() != null) {
           TezCommonUtils
-              .addAdditionalLocalResources(dataSource.getAdditionalLocalFiles(), vertexLRs,
-                  "Vertex " + vertex.getName());
+            .addAdditionalLocalResources(dataSource.getAdditionalLocalFiles(), vertexLRs,
+              "Vertex " + vertex.getName());
         }
       }
       if (tezJarResources != null) {
         TezCommonUtils
-            .addAdditionalLocalResources(tezJarResources, vertexLRs, "Vertex " + vertex.getName());
+          .addAdditionalLocalResources(tezJarResources, vertexLRs, "Vertex " + vertex.getName());
       }
       if (binaryConfig != null) {
         vertexLRs.put(TezConstants.TEZ_PB_BINARY_CONF_NAME, binaryConfig);
@@ -942,11 +908,11 @@ public class DAG {
       }
       if (vertexParallelism == -1) {
         Preconditions.checkState(vertexLocationHint == null,
-            "Cannot specify vertex location hint without specifying vertex parallelism. Vertex: "
-                + vertex.getName());
+          "Cannot specify vertex location hint without specifying vertex parallelism. Vertex: "
+            + vertex.getName());
       } else if (vertexLocationHint != null) {
         Preconditions.checkState(vertexParallelism == vertexLocationHint.getTaskLocationHints().size(),
-            "vertex task location hint must equal vertex parallelism. Vertex: " + vertex.getName());
+          "vertex task location hint must equal vertex parallelism. Vertex: " + vertex.getName());
       }
       for (DataSinkDescriptor dataSink : vertex.getDataSinks()) {
         if (dataSink.getCredentials() != null) {
@@ -958,14 +924,14 @@ public class DAG {
       vertexBuilder.setName(vertex.getName());
       vertexBuilder.setType(PlanVertexType.NORMAL); // vertex type is implicitly NORMAL until  TEZ-46.
       vertexBuilder.setProcessorDescriptor(DagTypeConverters
-          .convertToDAGPlan(vertex.getProcessorDescriptor()));
+        .convertToDAGPlan(vertex.getProcessorDescriptor()));
 
       // Vertex ExecutionContext setup
       VertexExecutionContext execContext = vertex.getVertexExecutionContext();
       verifyExecutionContext(execContext, servicePluginsDescriptor, vertex.getName());
       if (execContext != null) {
         DAGProtos.VertexExecutionContextProto contextProto =
-            DagTypeConverters.convertToProto(execContext);
+          DagTypeConverters.convertToProto(execContext);
         vertexBuilder.setExecutionContext(contextProto);
       }
       // End of VertexExecutionContext setup.
@@ -981,7 +947,7 @@ public class DAG {
         }
       }
 
-      if (vertex.getConf()!= null && vertex.getConf().size() > 0) {
+      if (vertex.getConf() != null && vertex.getConf().size() > 0) {
         ConfigurationProto.Builder confBuilder = ConfigurationProto.newBuilder();
         TezUtils.populateConfProtoFromEntries(vertex.getConf().entrySet(), confBuilder);
         vertexBuilder.setVertexConf(confBuilder);
@@ -995,11 +961,11 @@ public class DAG {
 
       try {
         taskConfigBuilder.setJavaOpts(
-            TezClientUtils.addDefaultsToTaskLaunchCmdOpts(vertex.getTaskLaunchCmdOpts(), tezConf,
-                javaOptsChecker));
+          TezClientUtils.addDefaultsToTaskLaunchCmdOpts(vertex.getTaskLaunchCmdOpts(), tezConf,
+            javaOptsChecker));
       } catch (TezException e) {
         throw new TezUncheckedException("Invalid TaskLaunchCmdOpts defined for Vertex "
-            + vertex.getName() + " : " + e.getMessage(), e);
+          + vertex.getName() + " : " + e.getMessage(), e);
       }
 
       taskConfigBuilder.setTaskModule(vertex.getName());
@@ -1009,11 +975,11 @@ public class DAG {
 
       Map<String, String> taskEnv = Maps.newHashMap(vertex.getTaskEnvironment());
       TezYARNUtils.setupDefaultEnv(taskEnv, tezConf,
-          TezConfiguration.TEZ_TASK_LAUNCH_ENV,
-          TezConfiguration.TEZ_TASK_LAUNCH_ENV_DEFAULT,
-          TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_ENV,
-          TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_ENV_DEFAULT,
-          tezLrsAsArchive);
+        TezConfiguration.TEZ_TASK_LAUNCH_ENV,
+        TezConfiguration.TEZ_TASK_LAUNCH_ENV_DEFAULT,
+        TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_ENV,
+        TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_ENV_DEFAULT,
+        tezLrsAsArchive);
       for (Map.Entry<String, String> entry : taskEnv.entrySet()) {
         PlanKeyValuePair.Builder envSettingBuilder = PlanKeyValuePair.newBuilder();
         envSettingBuilder.setKey(entry.getKey());
@@ -1028,7 +994,7 @@ public class DAG {
             // we can allow this later on if needed
             if (hint.getAffinitizedTask() != null) {
               throw new TezUncheckedException(
-                  "Task based affinity may not be specified via the DAG API");
+                "Task based affinity may not be specified via the DAG API");
             }
 
             if (hint.getHosts() != null) {
@@ -1045,7 +1011,7 @@ public class DAG {
 
       if (vertex.getVertexManagerPlugin() != null) {
         vertexBuilder.setVertexManagerPlugin(DagTypeConverters
-            .convertToDAGPlan(vertex.getVertexManagerPlugin()));
+          .convertToDAGPlan(vertex.getVertexManagerPlugin()));
       }
 
       for (Edge inEdge : vertex.getInputEdges()) {
@@ -1072,7 +1038,8 @@ public class DAG {
       edgeBuilder.setEdgeDestination(DagTypeConverters.convertToDAGPlan(edge.getEdgeProperty().getEdgeDestination()));
       if (edge.getEdgeProperty().getDataMovementType() == DataMovementType.CUSTOM) {
         if (edge.getEdgeProperty().getEdgeManagerDescriptor() != null) {
-          edgeBuilder.setEdgeManager(DagTypeConverters.convertToDAGPlan(edge.getEdgeProperty().getEdgeManagerDescriptor()));
+          edgeBuilder.setEdgeManager(
+            DagTypeConverters.convertToDAGPlan(edge.getEdgeProperty().getEdgeManagerDescriptor()));
         } // else the AM will deal with this.
       }
       dagBuilder.addEdge(edgeBuilder);
@@ -1093,7 +1060,7 @@ public class DAG {
       // the value is valid.
       if (!HistoryLogLevel.validateLogLevel(logLevel)) {
         throw new IllegalArgumentException(
-            "Config: " + TezConfiguration.TEZ_HISTORY_LOGGING_LOGLEVEL +
+          "Config: " + TezConfiguration.TEZ_HISTORY_LOGGING_LOGLEVEL +
             " is set to invalid value: " + logLevel);
       }
     } else {
@@ -1102,7 +1069,7 @@ public class DAG {
       if (logLevel != null) {
         if (!HistoryLogLevel.validateLogLevel(logLevel)) {
           throw new IllegalArgumentException(
-              "Config: " + TezConfiguration.TEZ_HISTORY_LOGGING_LOGLEVEL +
+            "Config: " + TezConfiguration.TEZ_HISTORY_LOGGING_LOGLEVEL +
               " is set to invalid value: " + logLevel);
         }
         PlanKeyValuePair.Builder kvp = PlanKeyValuePair.newBuilder();
@@ -1128,49 +1095,49 @@ public class DAG {
       if (executionContext.shouldExecuteInContainers()) {
         if (servicePluginsDescriptor == null || !servicePluginsDescriptor.areContainersEnabled()) {
           throw new IllegalStateException("Invalid configuration. ExecutionContext for " + context +
-              " specifies container execution but this is disabled in the ServicePluginDescriptor");
+            " specifies container execution but this is disabled in the ServicePluginDescriptor");
         }
       }
       if (executionContext.shouldExecuteInAm()) {
         if (servicePluginsDescriptor == null || !servicePluginsDescriptor.isUberEnabled()) {
           throw new IllegalStateException("Invalid configuration. ExecutionContext for " + context +
-              " specifies AM execution but this is disabled in the ServicePluginDescriptor");
+            " specifies AM execution but this is disabled in the ServicePluginDescriptor");
         }
       }
       if (executionContext.getTaskSchedulerName() != null) {
         boolean found = false;
         if (servicePluginsDescriptor != null) {
           found = checkNamedEntityExists(executionContext.getTaskSchedulerName(),
-              servicePluginsDescriptor.getTaskSchedulerDescriptors());
+            servicePluginsDescriptor.getTaskSchedulerDescriptors());
         }
         if (!found) {
           throw new IllegalStateException("Invalid configuration. ExecutionContext for " + context +
-              " specifies task scheduler as " + executionContext.getTaskSchedulerName() +
-              " which is not part of the ServicePluginDescriptor");
+            " specifies task scheduler as " + executionContext.getTaskSchedulerName() +
+            " which is not part of the ServicePluginDescriptor");
         }
       }
       if (executionContext.getContainerLauncherName() != null) {
         boolean found = false;
         if (servicePluginsDescriptor != null) {
           found = checkNamedEntityExists(executionContext.getContainerLauncherName(),
-              servicePluginsDescriptor.getContainerLauncherDescriptors());
+            servicePluginsDescriptor.getContainerLauncherDescriptors());
         }
         if (!found) {
           throw new IllegalStateException("Invalid configuration. ExecutionContext for " + context +
-              " specifies container launcher as " + executionContext.getContainerLauncherName() +
-              " which is not part of the ServicePluginDescriptor");
+            " specifies container launcher as " + executionContext.getContainerLauncherName() +
+            " which is not part of the ServicePluginDescriptor");
         }
       }
       if (executionContext.getTaskCommName() != null) {
         boolean found = false;
         if (servicePluginsDescriptor != null) {
           found = checkNamedEntityExists(executionContext.getTaskCommName(),
-              servicePluginsDescriptor.getTaskCommunicatorDescriptors());
+            servicePluginsDescriptor.getTaskCommunicatorDescriptors());
         }
         if (!found) {
           throw new IllegalStateException("Invalid configuration. ExecutionContext for " + context +
-              " specifies task communicator as " + executionContext.getTaskCommName() +
-              " which is not part of the ServicePluginDescriptor");
+            " specifies task communicator as " + executionContext.getTaskCommName() +
+            " which is not part of the ServicePluginDescriptor");
         }
       }
     }
@@ -1192,4 +1159,29 @@ public class DAG {
     return this.callerContext;
   }
 
+  /**
+   * Set the Context in which Tez is being called.
+   * @param callerContext Caller Context
+   * @return {@link DAG}
+   */
+  public synchronized DAG setCallerContext(CallerContext callerContext) {
+    Objects.requireNonNull(callerContext);
+    this.callerContext = callerContext;
+    return this;
+  }
+
+  // AnnotatedVertex is used by verify()
+  private static class AnnotatedVertex {
+    Vertex v;
+
+    int index; //for Tarjan's algorithm
+    int lowlink; //for Tarjan's algorithm
+    boolean onstack; //for Tarjan's algorithm
+
+    private AnnotatedVertex(Vertex v) {
+      this.v = v;
+      index = -1;
+      lowlink = -1;
+    }
+  }
 }

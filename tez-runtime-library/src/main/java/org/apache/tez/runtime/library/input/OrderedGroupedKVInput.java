@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,18 +27,13 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.TezUtils;
-import org.apache.tez.runtime.api.ProgressFailedException;
-import org.apache.tez.runtime.library.api.IOInterruptedException;
-import org.apache.tez.runtime.library.common.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.RawComparator;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezRuntimeFrameworkConfigs;
+import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.counters.TaskCounter;
 import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.dag.api.TezConfiguration;
@@ -46,16 +41,20 @@ import org.apache.tez.dag.api.TezException;
 import org.apache.tez.runtime.api.AbstractLogicalInput;
 import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.InputContext;
+import org.apache.tez.runtime.api.ProgressFailedException;
+import org.apache.tez.runtime.library.api.IOInterruptedException;
 import org.apache.tez.runtime.library.api.KeyValuesReader;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.common.ConfigUtils;
+import org.apache.tez.runtime.library.common.Constants;
 import org.apache.tez.runtime.library.common.MemoryUpdateCallbackHandler;
 import org.apache.tez.runtime.library.common.ValuesIterator;
 import org.apache.tez.runtime.library.common.shuffle.orderedgrouped.Shuffle;
 import org.apache.tez.runtime.library.common.sort.impl.TezRawKeyValueIterator;
 
-import org.apache.tez.common.Preconditions;
-
+import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * {@link OrderedGroupedKVInput} in a {@link AbstractLogicalInput} which shuffles
@@ -75,24 +74,86 @@ import org.apache.tez.common.Preconditions;
 public class OrderedGroupedKVInput extends AbstractLogicalInput {
 
   static final Logger LOG = LoggerFactory.getLogger(OrderedGroupedKVInput.class);
+  private static final Set<String> confKeys = new HashSet<String>();
 
+  static {
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_IO_FILE_BUFFER_SIZE);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_FACTOR);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_COMBINE_MIN_SPILLS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_COMBINER_CLASS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_USE_ASYNC_HTTP);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_PARALLEL_COPIES);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_FAILURES_LIMIT);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_MAX_TASK_OUTPUT_AT_ONCE);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_NOTIFY_READERROR);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_CONNECT_TIMEOUT);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_KEEP_ALIVE_ENABLED);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_KEEP_ALIVE_MAX_CONNECTIONS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_READ_TIMEOUT);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_BUFFER_SIZE);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_SSL);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_VERIFY_DISK_CHECKSUM);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMORY_LIMIT_PERCENT);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MERGE_PERCENT);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMTOMEM_SEGMENTS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_MEMTOMEM);
+    confKeys.add(TezRuntimeConfiguration
+      .TEZ_RUNTIME_SHUFFLE_SOURCE_ATTEMPT_ABORT_LIMIT);
+    confKeys.add(TezRuntimeConfiguration
+      .TEZ_RUNTIME_SHUFFLE_ACCEPTABLE_HOST_FETCH_FAILURE_FRACTION);
+    confKeys.add(TezRuntimeConfiguration
+      .TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST);
+    confKeys.add(TezRuntimeConfiguration
+      .TEZ_RUNTIME_SHUFFLE_MAX_STALL_TIME_FRACTION);
+    confKeys.add(TezRuntimeConfiguration
+      .TEZ_RUNTIME_SHUFFLE_MAX_ALLOWED_FAILED_FETCH_ATTEMPT_FRACTION);
+    confKeys.add(TezRuntimeConfiguration
+      .TEZ_RUNTIME_SHUFFLE_MIN_REQUIRED_PROGRESS_FRACTION);
+    confKeys.add(TezRuntimeConfiguration
+      .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCHER_USE_SHARED_POOL);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_INPUT_POST_MERGE_BUFFER_PERCENT);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_GROUP_COMPARATOR_CLASS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_COMPARATOR_CLASS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_CLASS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_VALUE_CLASS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_SECONDARY_COMPARATOR_CLASS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_OPTIMIZE_LOCAL_FETCH);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT);
+    confKeys.add(TezConfiguration.TEZ_COUNTERS_MAX);
+    confKeys.add(TezConfiguration.TEZ_COUNTERS_GROUP_NAME_MAX_LENGTH);
+    confKeys.add(TezConfiguration.TEZ_COUNTERS_COUNTER_NAME_MAX_LENGTH);
+    confKeys.add(TezConfiguration.TEZ_COUNTERS_MAX_GROUPS);
+    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_CLEANUP_FILES_ON_INTERRUPT);
+    confKeys.add(Constants.TEZ_RUNTIME_TASK_MEMORY);
+    confKeys.add(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID);
+  }
+
+  private final BlockingQueue<Event> pendingEvents = new LinkedBlockingQueue<Event>();
+  private final AtomicBoolean isStarted = new AtomicBoolean(false);
   protected TezRawKeyValueIterator rawIter = null;
   protected Configuration conf;
   protected Shuffle shuffle;
   protected MemoryUpdateCallbackHandler memoryUpdateCallbackHandler;
-  private final BlockingQueue<Event> pendingEvents = new LinkedBlockingQueue<Event>();
-  private long firstEventReceivedTime = -1;
   @SuppressWarnings("rawtypes")
   protected ValuesIterator vIter;
-
+  private long firstEventReceivedTime = -1;
   private TezCounter inputKeyCounter;
   private TezCounter inputValueCounter;
   private TezCounter shuffledInputs;
 
-  private final AtomicBoolean isStarted = new AtomicBoolean(false);
-
   public OrderedGroupedKVInput(InputContext inputContext, int numPhysicalInputs) {
     super(inputContext, numPhysicalInputs);
+  }
+
+  @InterfaceAudience.Private
+  public static Set<String> getConfigurationKeySet() {
+    return Collections.unmodifiableSet(confKeys);
   }
 
   @Override
@@ -104,20 +165,20 @@ public class OrderedGroupedKVInput extends AbstractLogicalInput {
       isStarted.set(true);
       getContext().inputIsReady();
       LOG.info("input fetch not required since there are 0 physical inputs for input vertex: "
-          + getContext().getInputOutputVertexNames());
+        + getContext().getInputOutputVertexNames());
       return Collections.emptyList();
     }
 
     long initialMemoryRequest = Shuffle.getInitialMemoryRequirement(conf,
-        getContext().getTotalMemoryAvailableToTask());
+      getContext().getTotalMemoryAvailableToTask());
     this.memoryUpdateCallbackHandler = new MemoryUpdateCallbackHandler();
     getContext().requestInitialMemory(initialMemoryRequest, memoryUpdateCallbackHandler);
 
     this.inputKeyCounter = getContext().getCounters().findCounter(TaskCounter.REDUCE_INPUT_GROUPS);
     this.inputValueCounter = getContext().getCounters().findCounter(
-        TaskCounter.REDUCE_INPUT_RECORDS);
-     this.shuffledInputs = getContext().getCounters().findCounter(
-        TaskCounter.NUM_SHUFFLED_INPUTS);
+      TaskCounter.REDUCE_INPUT_RECORDS);
+    this.shuffledInputs = getContext().getCounters().findCounter(
+      TaskCounter.NUM_SHUFFLED_INPUTS);
     this.conf.setStrings(TezRuntimeFrameworkConfigs.LOCAL_DIRS, getContext().getWorkDirs());
 
     return Collections.emptyList();
@@ -136,7 +197,7 @@ public class OrderedGroupedKVInput extends AbstractLogicalInput {
       if (pending.size() > 0) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("NoAutoStart delay in processing first event: "
-              + (System.currentTimeMillis() - firstEventReceivedTime));
+            + (System.currentTimeMillis() - firstEventReceivedTime));
         }
         shuffle.handleEvents(pending);
       }
@@ -183,7 +244,7 @@ public class OrderedGroupedKVInput extends AbstractLogicalInput {
     }
 
     TezRawKeyValueIterator localRawIter = localShuffleCopy.waitForInput();
-    synchronized(this) {
+    synchronized (this) {
       rawIter = localRawIter;
       createValuesIterator();
     }
@@ -197,14 +258,14 @@ public class OrderedGroupedKVInput extends AbstractLogicalInput {
     if (shuffle != null) {
       shuffle.shutdown();
     }
-    
+
     long dataSize = getContext().getCounters()
-        .findCounter(TaskCounter.SHUFFLE_BYTES_DECOMPRESSED).getValue();
+      .findCounter(TaskCounter.SHUFFLE_BYTES_DECOMPRESSED).getValue();
     getContext().getStatisticsReporter().reportDataSize(dataSize);
     long inputRecords = getContext().getCounters()
-        .findCounter(TaskCounter.REDUCE_INPUT_RECORDS).getValue();
+      .findCounter(TaskCounter.REDUCE_INPUT_RECORDS).getValue();
     getContext().getStatisticsReporter().reportItemsProcessed(inputRecords);
-    
+
     return Collections.emptyList();
   }
 
@@ -259,7 +320,7 @@ public class OrderedGroupedKVInput extends AbstractLogicalInput {
     }
     @SuppressWarnings("rawtypes")
     ValuesIterator valuesIter = null;
-    synchronized(this) {
+    synchronized (this) {
       valuesIter = vIter;
     }
     return new OrderedGroupedKeyValuesReader(valuesIter, getContext());
@@ -271,8 +332,8 @@ public class OrderedGroupedKVInput extends AbstractLogicalInput {
     if (totalInputs != 0) {
       synchronized (this) {
         return ((0.5f) * this.shuffledInputs.getValue() / totalInputs) +
-            ((rawIter != null) ?
-             ((0.5f) * rawIter.getProgress().getProgress()) : 0.0f);
+          ((rawIter != null) ?
+            ((0.5f) * rawIter.getProgress().getProgress()) : 0.0f);
       }
     } else {
       return 0.0f;
@@ -298,27 +359,31 @@ public class OrderedGroupedKVInput extends AbstractLogicalInput {
     shuffleLocalRef.handleEvents(inputEvents);
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
+  ;
+
+  @SuppressWarnings({"rawtypes", "unchecked"})
   protected synchronized void createValuesIterator()
-      throws IOException {
+    throws IOException {
     // Not used by ReduceProcessor
     RawComparator rawComparator = ConfigUtils.getIntermediateInputKeyComparator(conf);
     Class<?> keyClass = ConfigUtils.getIntermediateInputKeyClass(conf);
     Class<?> valClass = ConfigUtils.getIntermediateInputValueClass(conf);
     LOG.info(getContext().getInputOutputVertexNames() + ": " + "creating ValuesIterator with "
-        + "comparator=" + rawComparator.getClass().getName()
-        + ", keyClass=" + keyClass.getName()
-        + ", valClass=" + valClass.getName());
+      + "comparator=" + rawComparator.getClass().getName()
+      + ", keyClass=" + keyClass.getName()
+      + ", valClass=" + valClass.getName());
 
     vIter = new ValuesIterator(rawIter, rawComparator, keyClass, valClass,
-        conf, inputKeyCounter, inputValueCounter);
-
+      conf, inputKeyCounter, inputValueCounter);
   }
 
   @SuppressWarnings("rawtypes")
   public RawComparator getInputKeyComparator() {
     return (RawComparator) ConfigUtils.getIntermediateInputKeyComparator(conf);
   }
+
+  // TODO Maybe add helper methods to extract keys
+  // TODO Maybe add constants or an Enum to access the keys
 
   @SuppressWarnings("rawtypes")
   private static class OrderedGroupedKeyValuesReader extends KeyValuesReader {
@@ -347,75 +412,5 @@ public class OrderedGroupedKVInput extends AbstractLogicalInput {
     public Iterable<Object> getCurrentValues() throws IOException {
       return valuesIter.getValues();
     }
-  };
-
-
-  private static final Set<String> confKeys = new HashSet<String>();
-
-  static {
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_IO_FILE_BUFFER_SIZE);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_FACTOR);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_COMBINE_MIN_SPILLS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_COMBINER_CLASS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_USE_ASYNC_HTTP);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_PARALLEL_COPIES);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_FAILURES_LIMIT);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_MAX_TASK_OUTPUT_AT_ONCE);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_NOTIFY_READERROR);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_CONNECT_TIMEOUT);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_KEEP_ALIVE_ENABLED);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_KEEP_ALIVE_MAX_CONNECTIONS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_READ_TIMEOUT);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_BUFFER_SIZE);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_SSL);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_VERIFY_DISK_CHECKSUM);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMORY_LIMIT_PERCENT);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MERGE_PERCENT);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMTOMEM_SEGMENTS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_MEMTOMEM);
-    confKeys.add(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_SOURCE_ATTEMPT_ABORT_LIMIT);
-    confKeys.add(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_ACCEPTABLE_HOST_FETCH_FAILURE_FRACTION);
-    confKeys.add(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST);
-    confKeys.add(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MAX_STALL_TIME_FRACTION);
-    confKeys.add(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MAX_ALLOWED_FAILED_FETCH_ATTEMPT_FRACTION);
-    confKeys.add(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MIN_REQUIRED_PROGRESS_FRACTION);
-    confKeys.add(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCHER_USE_SHARED_POOL);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_INPUT_POST_MERGE_BUFFER_PERCENT);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_GROUP_COMPARATOR_CLASS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_COMPARATOR_CLASS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_CLASS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_VALUE_CLASS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_SECONDARY_COMPARATOR_CLASS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_OPTIMIZE_LOCAL_FETCH);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_CONVERT_USER_PAYLOAD_TO_HISTORY_TEXT);
-    confKeys.add(TezConfiguration.TEZ_COUNTERS_MAX);
-    confKeys.add(TezConfiguration.TEZ_COUNTERS_GROUP_NAME_MAX_LENGTH);
-    confKeys.add(TezConfiguration.TEZ_COUNTERS_COUNTER_NAME_MAX_LENGTH);
-    confKeys.add(TezConfiguration.TEZ_COUNTERS_MAX_GROUPS);
-    confKeys.add(TezRuntimeConfiguration.TEZ_RUNTIME_CLEANUP_FILES_ON_INTERRUPT);
-    confKeys.add(Constants.TEZ_RUNTIME_TASK_MEMORY);
-    confKeys.add(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID);
   }
-
-  // TODO Maybe add helper methods to extract keys
-  // TODO Maybe add constants or an Enum to access the keys
-
-  @InterfaceAudience.Private
-  public static Set<String> getConfigurationKeySet() {
-    return Collections.unmodifiableSet(confKeys);
-  }
-
 }

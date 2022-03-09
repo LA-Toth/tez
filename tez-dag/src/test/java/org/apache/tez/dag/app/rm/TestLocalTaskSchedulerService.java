@@ -1,22 +1,30 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.app.rm;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.BitSet;
 import java.util.HashMap;
@@ -33,26 +41,24 @@ import org.apache.tez.dag.app.dag.Task;
 import org.apache.tez.dag.app.rm.TestLocalTaskSchedulerService.MockLocalTaskSchedulerSerivce.MockAsyncDelegateRequestHandler;
 import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
-
 public class TestLocalTaskSchedulerService {
 
-  LocalTaskSchedulerService ltss ;
-  int core =10;
+  LocalTaskSchedulerService ltss;
+  int core = 10;
 
   @Test(timeout = 5000)
   public void testCreateResource() {
     Resource resource;
     //value in integer
-    long value = 4*1024*1024;
-    resource = ltss.createResource(value,core);
-    Assert.assertEquals((int)(value/(1024*1024)),resource.getMemory());
+    long value = 4 * 1024 * 1024;
+    resource = ltss.createResource(value, core);
+    Assert.assertEquals((int) (value / (1024 * 1024)), resource.getMemory());
   }
 
   @Test(timeout = 5000)
@@ -73,7 +79,7 @@ public class TestLocalTaskSchedulerService {
     // it will be negative after it is passed to createResource
 
     try {
-      ltss.createResource((Long.MAX_VALUE*1024*1024), core);
+      ltss.createResource((Long.MAX_VALUE * 1024 * 1024), core);
       fail("No exception thrown.");
     } catch (Exception ex) {
       assertTrue(ex instanceof IllegalArgumentException);
@@ -87,10 +93,10 @@ public class TestLocalTaskSchedulerService {
   @Test(timeout = 5000)
   public void testDeallocationBeforeAllocation() throws InterruptedException {
     ApplicationAttemptId appAttemptId =
-        ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000l, 1), 1);
+      ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000l, 1), 1);
 
     TaskSchedulerContext mockContext = TestTaskSchedulerHelpers
-        .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000l, null, new Configuration());
+      .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000l, null, new Configuration());
 
     MockLocalTaskSchedulerSerivce taskSchedulerService = new MockLocalTaskSchedulerSerivce(mockContext);
     taskSchedulerService.initialize();
@@ -98,9 +104,11 @@ public class TestLocalTaskSchedulerService {
 
     // create a task that fills the task allocation queue
     Task dummy_task = mock(Task.class);
-    taskSchedulerService.allocateTask(dummy_task, Resource.newInstance(1024, 1), null, null, Priority.newInstance(1), null, null);
+    taskSchedulerService.allocateTask(dummy_task, Resource.newInstance(1024, 1), null, null, Priority.newInstance(1),
+      null, null);
     Task task = mock(Task.class);
-    taskSchedulerService.allocateTask(task, Resource.newInstance(1024, 1), null, null, Priority.newInstance(1), null, null);
+    taskSchedulerService.allocateTask(task, Resource.newInstance(1024, 1), null, null, Priority.newInstance(1), null,
+      null);
     taskSchedulerService.deallocateTask(task, false, null, null);
     // start the RequestHandler, DeallocateTaskRequest has higher priority, so will be processed first
     taskSchedulerService.startRequestHandlerThread();
@@ -119,19 +127,20 @@ public class TestLocalTaskSchedulerService {
   @Test(timeout = 5000)
   public void testDeallocationAfterAllocation() throws InterruptedException {
     ApplicationAttemptId appAttemptId =
-        ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000l, 1), 1);
+      ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000l, 1), 1);
 
     TaskSchedulerContext mockContext = TestTaskSchedulerHelpers
-        .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000l, null, new Configuration());
+      .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000l, null, new Configuration());
 
     MockLocalTaskSchedulerSerivce taskSchedulerService =
-        new MockLocalTaskSchedulerSerivce(mockContext);
+      new MockLocalTaskSchedulerSerivce(mockContext);
 
     taskSchedulerService.initialize();
     taskSchedulerService.start();
 
     Task task = mock(Task.class);
-    taskSchedulerService.allocateTask(task, Resource.newInstance(1024, 1), null, null, Priority.newInstance(1), null, null);
+    taskSchedulerService.allocateTask(task, Resource.newInstance(1024, 1), null, null, Priority.newInstance(1), null,
+      null);
     taskSchedulerService.startRequestHandlerThread();
 
     MockAsyncDelegateRequestHandler requestHandler = taskSchedulerService.getRequestHandler();
@@ -158,8 +167,8 @@ public class TestLocalTaskSchedulerService {
     Long grandchildTask1 = new Long(4);
 
     TaskSchedulerContext
-        mockContext = TestTaskSchedulerHelpers.setupMockTaskSchedulerContext("", 0, "", true,
-        appAttemptId, 1000l, null, tezConf);
+      mockContext = TestTaskSchedulerHelpers.setupMockTaskSchedulerContext("", 0, "", true,
+      appAttemptId, 1000l, null, tezConf);
     when(mockContext.getVertexIndexForTask(parentTask1)).thenReturn(0);
     when(mockContext.getVertexIndexForTask(parentTask2)).thenReturn(0);
     when(mockContext.getVertexIndexForTask(childTask1)).thenReturn(1);
@@ -230,10 +239,10 @@ public class TestLocalTaskSchedulerService {
     @Override
     public AsyncDelegateRequestHandler createRequestHandler(Configuration conf) {
       requestHandler = new MockAsyncDelegateRequestHandler(taskRequestQueue,
-          new LocalContainerFactory(getContext().getApplicationAttemptId(), customContainerAppId),
-          taskAllocations,
-          getContext(),
-          conf);
+        new LocalContainerFactory(getContext().getApplicationAttemptId(), customContainerAppId),
+        taskAllocations,
+        getContext(),
+        conf);
       return requestHandler;
     }
 
@@ -258,12 +267,12 @@ public class TestLocalTaskSchedulerService {
       public int dispatchCount = 0;
 
       MockAsyncDelegateRequestHandler(
-          LinkedBlockingQueue<SchedulerRequest> taskRequestQueue,
-          LocalContainerFactory localContainerFactory,
-          HashMap<Object, AllocatedTask> taskAllocations,
-          TaskSchedulerContext appClientDelegate, Configuration conf) {
+        LinkedBlockingQueue<SchedulerRequest> taskRequestQueue,
+        LocalContainerFactory localContainerFactory,
+        HashMap<Object, AllocatedTask> taskAllocations,
+        TaskSchedulerContext appClientDelegate, Configuration conf) {
         super(taskRequestQueue, localContainerFactory, taskAllocations,
-            appClientDelegate, conf);
+          appClientDelegate, conf);
       }
 
       @Override
@@ -279,7 +288,7 @@ public class TestLocalTaskSchedulerService {
       }
 
       public void drainRequest(int count) {
-        while(dispatchCount != count || !clientRequestQueue.isEmpty()) {
+        while (dispatchCount != count || !clientRequestQueue.isEmpty()) {
           try {
             Thread.sleep(100);
           } catch (InterruptedException e) {

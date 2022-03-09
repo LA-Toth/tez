@@ -21,8 +21,6 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.List;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptReport;
@@ -56,6 +54,9 @@ import org.apache.tez.serviceplugins.api.ServicePluginErrorDefaults;
 import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
 import org.apache.tez.serviceplugins.api.TaskCommunicatorDescriptor;
 import org.apache.tez.serviceplugins.api.TaskSchedulerDescriptor;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -74,115 +75,111 @@ public class TestExternalTezServicesErrors {
   private static final String SUFFIX_LAUNCHER = "ContainerLauncher";
   private static final String SUFFIX_TASKCOMM = "TaskCommunicator";
   private static final String SUFFIX_SCHEDULER = "TaskScheduler";
-
-  private static ExternalTezServiceTestHelper extServiceTestHelper;
-
-  private static ServicePluginsDescriptor servicePluginsDescriptor;
-
   private static final Path SRC_DATA_DIR = new Path("/tmp/" + TestExternalTezServicesErrors.class.getSimpleName());
   private static final Path HASH_JOIN_EXPECTED_RESULT_PATH = new Path(SRC_DATA_DIR, "expectedOutputPath");
   private static final Path HASH_JOIN_OUTPUT_PATH = new Path(SRC_DATA_DIR, "outPath");
-
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_EXT_SERVICE_PUSH =
-      Vertex.VertexExecutionContext.create(
-          EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
+    Vertex.VertexExecutionContext.create(
+      EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
+  private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_DEFAULT = EXECUTION_CONTEXT_EXT_SERVICE_PUSH;
   // Throw error contexts
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_LAUNCHER_THROW =
-      Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_THROW_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
+    Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_THROW_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_TASKCOMM_THROW =
-      Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME,
-          EXT_THROW_ERROR_ENTITY_NAME);
+    Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME,
+      EXT_THROW_ERROR_ENTITY_NAME);
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_SCHEDULER_THROW =
-      Vertex.VertexExecutionContext.create(EXT_THROW_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
-
+    Vertex.VertexExecutionContext.create(EXT_THROW_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
   // Report-non-fatal contexts
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_LAUNCHER_REPORT_NON_FATAL =
-      Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
+    Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME,
+      EXT_PUSH_ENTITY_NAME);
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_TASKCOMM_REPORT_NON_FATAL =
-      Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME,
-          EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME);
+    Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME,
+      EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME);
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_SCHEDULER_REPORT_NON_FATAL =
-      Vertex.VertexExecutionContext.create(EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
-
+    Vertex.VertexExecutionContext.create(EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME,
+      EXT_PUSH_ENTITY_NAME);
   // Report fatal contexts
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_LAUNCHER_REPORT_FATAL =
-      Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_REPORT_FATAL_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
+    Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_REPORT_FATAL_ERROR_ENTITY_NAME,
+      EXT_PUSH_ENTITY_NAME);
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_TASKCOMM_REPORT_FATAL =
-      Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME,
-          EXT_REPORT_FATAL_ERROR_ENTITY_NAME);
+    Vertex.VertexExecutionContext.create(EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME,
+      EXT_REPORT_FATAL_ERROR_ENTITY_NAME);
   private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_SCHEDULER_REPORT_FATAL =
-      Vertex.VertexExecutionContext.create(EXT_REPORT_FATAL_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME, EXT_PUSH_ENTITY_NAME);
-
-
-  private static final Vertex.VertexExecutionContext EXECUTION_CONTEXT_DEFAULT = EXECUTION_CONTEXT_EXT_SERVICE_PUSH;
-
+    Vertex.VertexExecutionContext.create(EXT_REPORT_FATAL_ERROR_ENTITY_NAME, EXT_PUSH_ENTITY_NAME,
+      EXT_PUSH_ENTITY_NAME);
+  private static ExternalTezServiceTestHelper extServiceTestHelper;
+  private static ServicePluginsDescriptor servicePluginsDescriptor;
   private static String TEST_ROOT_DIR = "target" + Path.SEPARATOR + TestExternalTezServicesErrors.class.getName()
-      + "-tmpDir";
+    + "-tmpDir";
 
   @BeforeClass
   public static void setup() throws Exception {
 
     extServiceTestHelper = new ExternalTezServiceTestHelper(TEST_ROOT_DIR);
     UserPayload userPayload =
-        TezUtils.createUserPayloadFromConf(extServiceTestHelper.getConfForJobs());
+      TezUtils.createUserPayloadFromConf(extServiceTestHelper.getConfForJobs());
     UserPayload userPayloadThrowError =
-        ErrorPluginConfiguration.toUserPayload(ErrorPluginConfiguration.createThrowErrorConf());
+      ErrorPluginConfiguration.toUserPayload(ErrorPluginConfiguration.createThrowErrorConf());
 
     UserPayload userPayloadReportFatalErrorLauncher = ErrorPluginConfiguration
-        .toUserPayload(ErrorPluginConfiguration.createReportFatalErrorConf(SUFFIX_LAUNCHER));
+      .toUserPayload(ErrorPluginConfiguration.createReportFatalErrorConf(SUFFIX_LAUNCHER));
     UserPayload userPayloadReportFatalErrorTaskComm = ErrorPluginConfiguration
-        .toUserPayload(ErrorPluginConfiguration.createReportFatalErrorConf(SUFFIX_TASKCOMM));
+      .toUserPayload(ErrorPluginConfiguration.createReportFatalErrorConf(SUFFIX_TASKCOMM));
     UserPayload userPayloadReportFatalErrorScheduler = ErrorPluginConfiguration
-        .toUserPayload(ErrorPluginConfiguration.createReportFatalErrorConf(SUFFIX_SCHEDULER));
+      .toUserPayload(ErrorPluginConfiguration.createReportFatalErrorConf(SUFFIX_SCHEDULER));
 
     UserPayload userPayloadReportNonFatalErrorLauncher = ErrorPluginConfiguration
-        .toUserPayload(ErrorPluginConfiguration.createReportNonFatalErrorConf(SUFFIX_LAUNCHER));
+      .toUserPayload(ErrorPluginConfiguration.createReportNonFatalErrorConf(SUFFIX_LAUNCHER));
     UserPayload userPayloadReportNonFatalErrorTaskComm = ErrorPluginConfiguration
-        .toUserPayload(ErrorPluginConfiguration.createReportNonFatalErrorConf(SUFFIX_TASKCOMM));
+      .toUserPayload(ErrorPluginConfiguration.createReportNonFatalErrorConf(SUFFIX_TASKCOMM));
     UserPayload userPayloadReportNonFatalErrorScheduler = ErrorPluginConfiguration
-        .toUserPayload(ErrorPluginConfiguration.createReportNonFatalErrorConf(SUFFIX_SCHEDULER));
+      .toUserPayload(ErrorPluginConfiguration.createReportNonFatalErrorConf(SUFFIX_SCHEDULER));
 
     TaskSchedulerDescriptor[] taskSchedulerDescriptors = new TaskSchedulerDescriptor[]{
-        TaskSchedulerDescriptor
-            .create(EXT_PUSH_ENTITY_NAME, TezTestServiceTaskSchedulerService.class.getName())
-            .setUserPayload(userPayload),
-        TaskSchedulerDescriptor.create(EXT_THROW_ERROR_ENTITY_NAME,
-            TezTestServiceTaskSchedulerServiceWithErrors.class.getName()).setUserPayload(
-            userPayloadThrowError),
-        TaskSchedulerDescriptor.create(EXT_REPORT_FATAL_ERROR_ENTITY_NAME,
-            TezTestServiceTaskSchedulerServiceWithErrors.class.getName()).setUserPayload(
-            userPayloadReportFatalErrorScheduler),
-        TaskSchedulerDescriptor.create(EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME,
-            TezTestServiceTaskSchedulerServiceWithErrors.class.getName()).setUserPayload(
-            userPayloadReportNonFatalErrorScheduler),
+      TaskSchedulerDescriptor
+        .create(EXT_PUSH_ENTITY_NAME, TezTestServiceTaskSchedulerService.class.getName())
+        .setUserPayload(userPayload),
+      TaskSchedulerDescriptor.create(EXT_THROW_ERROR_ENTITY_NAME,
+        TezTestServiceTaskSchedulerServiceWithErrors.class.getName()).setUserPayload(
+        userPayloadThrowError),
+      TaskSchedulerDescriptor.create(EXT_REPORT_FATAL_ERROR_ENTITY_NAME,
+        TezTestServiceTaskSchedulerServiceWithErrors.class.getName()).setUserPayload(
+        userPayloadReportFatalErrorScheduler),
+      TaskSchedulerDescriptor.create(EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME,
+        TezTestServiceTaskSchedulerServiceWithErrors.class.getName()).setUserPayload(
+        userPayloadReportNonFatalErrorScheduler),
     };
 
     ContainerLauncherDescriptor[] containerLauncherDescriptors = new ContainerLauncherDescriptor[]{
-        ContainerLauncherDescriptor
-            .create(EXT_PUSH_ENTITY_NAME, TezTestServiceNoOpContainerLauncher.class.getName())
-            .setUserPayload(userPayload),
-        ContainerLauncherDescriptor.create(EXT_THROW_ERROR_ENTITY_NAME,
-            TezTestServiceContainerLauncherWithErrors.class.getName()).setUserPayload(userPayloadThrowError),
-        ContainerLauncherDescriptor.create(EXT_REPORT_FATAL_ERROR_ENTITY_NAME,
-            TezTestServiceContainerLauncherWithErrors.class.getName()).setUserPayload(userPayloadReportFatalErrorLauncher),
-        ContainerLauncherDescriptor.create(EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME,
-            TezTestServiceContainerLauncherWithErrors.class.getName()).setUserPayload(userPayloadReportNonFatalErrorLauncher)
+      ContainerLauncherDescriptor
+        .create(EXT_PUSH_ENTITY_NAME, TezTestServiceNoOpContainerLauncher.class.getName())
+        .setUserPayload(userPayload),
+      ContainerLauncherDescriptor.create(EXT_THROW_ERROR_ENTITY_NAME,
+        TezTestServiceContainerLauncherWithErrors.class.getName()).setUserPayload(userPayloadThrowError),
+      ContainerLauncherDescriptor.create(EXT_REPORT_FATAL_ERROR_ENTITY_NAME,
+        TezTestServiceContainerLauncherWithErrors.class.getName()).setUserPayload(userPayloadReportFatalErrorLauncher),
+      ContainerLauncherDescriptor.create(EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME,
+        TezTestServiceContainerLauncherWithErrors.class.getName()).setUserPayload(
+        userPayloadReportNonFatalErrorLauncher)
     };
 
     TaskCommunicatorDescriptor[] taskCommunicatorDescriptors = new TaskCommunicatorDescriptor[]{
-        TaskCommunicatorDescriptor
-            .create(EXT_PUSH_ENTITY_NAME, TezTestServiceTaskCommunicatorImpl.class.getName())
-            .setUserPayload(userPayload),
-        TaskCommunicatorDescriptor.create(EXT_THROW_ERROR_ENTITY_NAME,
-            TezTestServiceTaskCommunicatorWithErrors.class.getName()).setUserPayload(userPayloadThrowError),
-        TaskCommunicatorDescriptor.create(EXT_REPORT_FATAL_ERROR_ENTITY_NAME,
-            TezTestServiceTaskCommunicatorWithErrors.class.getName()).setUserPayload(userPayloadReportFatalErrorTaskComm),
-        TaskCommunicatorDescriptor.create(EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME,
-            TezTestServiceTaskCommunicatorWithErrors.class.getName()).setUserPayload(userPayloadReportNonFatalErrorTaskComm)
+      TaskCommunicatorDescriptor
+        .create(EXT_PUSH_ENTITY_NAME, TezTestServiceTaskCommunicatorImpl.class.getName())
+        .setUserPayload(userPayload),
+      TaskCommunicatorDescriptor.create(EXT_THROW_ERROR_ENTITY_NAME,
+        TezTestServiceTaskCommunicatorWithErrors.class.getName()).setUserPayload(userPayloadThrowError),
+      TaskCommunicatorDescriptor.create(EXT_REPORT_FATAL_ERROR_ENTITY_NAME,
+        TezTestServiceTaskCommunicatorWithErrors.class.getName()).setUserPayload(userPayloadReportFatalErrorTaskComm),
+      TaskCommunicatorDescriptor.create(EXT_REPORT_NON_FATAL_ERROR_ENTITY_NAME,
+        TezTestServiceTaskCommunicatorWithErrors.class.getName()).setUserPayload(userPayloadReportNonFatalErrorTaskComm)
     };
 
     servicePluginsDescriptor = ServicePluginsDescriptor.create(true, true,
-        taskSchedulerDescriptors, containerLauncherDescriptors, taskCommunicatorDescriptors);
+      taskSchedulerDescriptors, containerLauncherDescriptors, taskCommunicatorDescriptors);
 
     extServiceTestHelper.setupSharedTezClient(servicePluginsDescriptor);
 
@@ -191,7 +188,7 @@ public class TestExternalTezServicesErrors {
     Path dataPath1 = new Path(SRC_DATA_DIR, "inPath1");
     Path dataPath2 = new Path(SRC_DATA_DIR, "inPath2");
     extServiceTestHelper
-        .setupHashJoinData(SRC_DATA_DIR, dataPath1, dataPath2, HASH_JOIN_EXPECTED_RESULT_PATH, HASH_JOIN_OUTPUT_PATH);
+      .setupHashJoinData(SRC_DATA_DIR, dataPath1, dataPath2, HASH_JOIN_EXPECTED_RESULT_PATH, HASH_JOIN_OUTPUT_PATH);
 
     extServiceTestHelper.shutdownSharedTezClient();
   }
@@ -204,43 +201,41 @@ public class TestExternalTezServicesErrors {
   @Test(timeout = 90000)
   public void testContainerLauncherThrowError() throws Exception {
     testFatalError("_testContainerLauncherError_", EXECUTION_CONTEXT_LAUNCHER_THROW,
-        SUFFIX_LAUNCHER, Lists.newArrayList("Service Error",
-            DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR.name()));
+      SUFFIX_LAUNCHER, Lists.newArrayList("Service Error",
+        DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR.name()));
   }
 
   @Test(timeout = 90000)
   public void testTaskCommunicatorThrowError() throws Exception {
     testFatalError("_testContainerLauncherError_", EXECUTION_CONTEXT_TASKCOMM_THROW,
-        SUFFIX_TASKCOMM, Lists.newArrayList("Service Error",
-            DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR.name()));
+      SUFFIX_TASKCOMM, Lists.newArrayList("Service Error",
+        DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR.name()));
   }
 
   @Test(timeout = 90000)
   public void testTaskSchedulerThrowError() throws Exception {
     testFatalError("_testContainerLauncherError_", EXECUTION_CONTEXT_SCHEDULER_THROW,
-        SUFFIX_SCHEDULER, Lists.newArrayList("Service Error",
-            DAGAppMasterEventType.TASK_SCHEDULER_SERVICE_FATAL_ERROR.name()));
+      SUFFIX_SCHEDULER, Lists.newArrayList("Service Error",
+        DAGAppMasterEventType.TASK_SCHEDULER_SERVICE_FATAL_ERROR.name()));
   }
 
-  @Test (timeout = 150000)
+  @Test(timeout = 150000)
   public void testNonFatalErrors() throws IOException, TezException, InterruptedException {
     String methodName = "testNonFatalErrors";
     TezConfiguration tezClientConf = new TezConfiguration(extServiceTestHelper.getConfForJobs());
     TezClient tezClient = TezClient
-        .newBuilder(TestExternalTezServicesErrors.class.getSimpleName() + methodName + "_session",
-            tezClientConf)
-        .setIsSession(true).setServicePluginDescriptor(servicePluginsDescriptor).build();
+      .newBuilder(TestExternalTezServicesErrors.class.getSimpleName() + methodName + "_session",
+        tezClientConf)
+      .setIsSession(true).setServicePluginDescriptor(servicePluginsDescriptor).build();
     try {
       tezClient.start();
       LOG.info("TezSessionStarted for " + methodName);
       tezClient.waitTillReady();
       LOG.info("TezSession ready for submission for " + methodName);
 
-
       runAndVerifyForNonFatalErrors(tezClient, SUFFIX_LAUNCHER, EXECUTION_CONTEXT_LAUNCHER_REPORT_NON_FATAL);
       runAndVerifyForNonFatalErrors(tezClient, SUFFIX_TASKCOMM, EXECUTION_CONTEXT_TASKCOMM_REPORT_NON_FATAL);
       runAndVerifyForNonFatalErrors(tezClient, SUFFIX_SCHEDULER, EXECUTION_CONTEXT_SCHEDULER_REPORT_NON_FATAL);
-
     } finally {
       tezClient.stop();
     }
@@ -249,38 +244,37 @@ public class TestExternalTezServicesErrors {
   @Test(timeout = 90000)
   public void testContainerLauncherReportFatalError() throws Exception {
     testFatalError("_testContainerLauncherReportFatalError_",
-        EXECUTION_CONTEXT_LAUNCHER_REPORT_FATAL, SUFFIX_LAUNCHER, Lists
-            .newArrayList(ErrorPluginConfiguration.REPORT_FATAL_ERROR_MESSAGE,
-                ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
+      EXECUTION_CONTEXT_LAUNCHER_REPORT_FATAL, SUFFIX_LAUNCHER, Lists
+        .newArrayList(ErrorPluginConfiguration.REPORT_FATAL_ERROR_MESSAGE,
+          ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
   }
 
   @Test(timeout = 90000)
   public void testTaskCommReportFatalError() throws Exception {
     testFatalError("_testTaskCommReportFatalError_", EXECUTION_CONTEXT_TASKCOMM_REPORT_FATAL,
-        SUFFIX_TASKCOMM, Lists.newArrayList(ErrorPluginConfiguration.REPORT_FATAL_ERROR_MESSAGE,
-            ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
+      SUFFIX_TASKCOMM, Lists.newArrayList(ErrorPluginConfiguration.REPORT_FATAL_ERROR_MESSAGE,
+        ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
   }
 
   @Test(timeout = 90000)
   public void testTaskSchedulerReportFatalError() throws Exception {
     testFatalError("_testTaskSchedulerReportFatalError_",
-        EXECUTION_CONTEXT_SCHEDULER_REPORT_FATAL, SUFFIX_SCHEDULER,
-        Lists.newArrayList(ErrorPluginConfiguration.REPORT_FATAL_ERROR_MESSAGE,
-            ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
+      EXECUTION_CONTEXT_SCHEDULER_REPORT_FATAL, SUFFIX_SCHEDULER,
+      Lists.newArrayList(ErrorPluginConfiguration.REPORT_FATAL_ERROR_MESSAGE,
+        ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
   }
-
 
   private void testFatalError(String methodName,
                               Vertex.VertexExecutionContext lhsExecutionContext,
                               String dagNameSuffix, List<String> expectedDiagMessages) throws
-      IOException, TezException, YarnException, InterruptedException {
+    IOException, TezException, YarnException, InterruptedException {
     TezConfiguration tezClientConf = new TezConfiguration(extServiceTestHelper.getConfForJobs());
     TezClient tezClient = TezClient
-        .newBuilder(TestExternalTezServicesErrors.class.getSimpleName() + methodName + "_session",
-            tezClientConf)
-        .setIsSession(true).setServicePluginDescriptor(servicePluginsDescriptor).build();
+      .newBuilder(TestExternalTezServicesErrors.class.getSimpleName() + methodName + "_session",
+        tezClientConf)
+      .setIsSession(true).setServicePluginDescriptor(servicePluginsDescriptor).build();
 
-    ApplicationId appId= null;
+    ApplicationId appId = null;
     try {
       tezClient.start();
       LOG.info("TezSessionStarted for " + methodName);
@@ -288,19 +282,19 @@ public class TestExternalTezServicesErrors {
       LOG.info("TezSession ready for submission for " + methodName);
 
       JoinValidateConfigured joinValidate =
-          new JoinValidateConfigured(EXECUTION_CONTEXT_DEFAULT, lhsExecutionContext,
-              EXECUTION_CONTEXT_EXT_SERVICE_PUSH,
-              EXECUTION_CONTEXT_EXT_SERVICE_PUSH, dagNameSuffix);
+        new JoinValidateConfigured(EXECUTION_CONTEXT_DEFAULT, lhsExecutionContext,
+          EXECUTION_CONTEXT_EXT_SERVICE_PUSH,
+          EXECUTION_CONTEXT_EXT_SERVICE_PUSH, dagNameSuffix);
 
       DAG dag = joinValidate
-          .createDag(new TezConfiguration(extServiceTestHelper.getConfForJobs()),
-              HASH_JOIN_EXPECTED_RESULT_PATH,
-              HASH_JOIN_OUTPUT_PATH, 3);
+        .createDag(new TezConfiguration(extServiceTestHelper.getConfForJobs()),
+          HASH_JOIN_EXPECTED_RESULT_PATH,
+          HASH_JOIN_OUTPUT_PATH, 3);
 
       DAGClient dagClient = tezClient.submitDAG(dag);
 
       DAGStatus dagStatus =
-          dagClient.waitForCompletionWithStatusUpdates(Sets.newHashSet(StatusGetOpts.GET_COUNTERS));
+        dagClient.waitForCompletionWithStatusUpdates(Sets.newHashSet(StatusGetOpts.GET_COUNTERS));
       assertEquals(DAGStatus.State.ERROR, dagStatus.getState());
       boolean foundDiag = false;
       for (String diag : dagStatus.getDiagnostics()) {
@@ -326,16 +320,17 @@ public class TestExternalTezServicesErrors {
         ApplicationReport appReport = yarnClient.getApplicationReport(appId);
         YarnApplicationState appState = appReport.getYarnApplicationState();
         while (!EnumSet.of(YarnApplicationState.FINISHED, YarnApplicationState.FAILED,
-            YarnApplicationState.KILLED).contains(appState)) {
+          YarnApplicationState.KILLED).contains(appState)) {
           Thread.sleep(200L);
           appReport = yarnClient.getApplicationReport(appId);
           appState = appReport.getYarnApplicationState();
         }
 
-        // TODO Workaround for YARN-4554. AppReport does not provide diagnostics - need to fetch them from ApplicationAttemptReport
+        // TODO Workaround for YARN-4554. AppReport does not provide diagnostics - need to fetch them from
+        //  ApplicationAttemptReport
         ApplicationAttemptId appAttemptId = appReport.getCurrentApplicationAttemptId();
         ApplicationAttemptReport appAttemptReport =
-            yarnClient.getApplicationAttemptReport(appAttemptId);
+          yarnClient.getApplicationAttemptReport(appAttemptId);
         String diag = appAttemptReport.getDiagnostics();
         assertEquals(FinalApplicationStatus.FAILED, appReport.getFinalApplicationStatus());
         assertEquals(YarnApplicationState.FINISHED, appReport.getYarnApplicationState());
@@ -360,37 +355,35 @@ public class TestExternalTezServicesErrors {
     return found;
   }
 
-
   private void runAndVerifyForNonFatalErrors(TezClient tezClient, String componentName,
                                              Vertex.VertexExecutionContext lhsContext) throws
-      TezException,
-      InterruptedException, IOException {
+    TezException,
+    InterruptedException, IOException {
     LOG.info("Running JoinValidate with componentName reportNonFatalException");
     JoinValidateConfigured joinValidate =
-        new JoinValidateConfigured(EXECUTION_CONTEXT_DEFAULT, lhsContext,
-            EXECUTION_CONTEXT_EXT_SERVICE_PUSH,
-            EXECUTION_CONTEXT_EXT_SERVICE_PUSH, componentName);
+      new JoinValidateConfigured(EXECUTION_CONTEXT_DEFAULT, lhsContext,
+        EXECUTION_CONTEXT_EXT_SERVICE_PUSH,
+        EXECUTION_CONTEXT_EXT_SERVICE_PUSH, componentName);
 
     DAG dag = joinValidate
-        .createDag(new TezConfiguration(extServiceTestHelper.getConfForJobs()),
-            HASH_JOIN_EXPECTED_RESULT_PATH,
-            HASH_JOIN_OUTPUT_PATH, 3);
+      .createDag(new TezConfiguration(extServiceTestHelper.getConfForJobs()),
+        HASH_JOIN_EXPECTED_RESULT_PATH,
+        HASH_JOIN_OUTPUT_PATH, 3);
 
     DAGClient dagClient = tezClient.submitDAG(dag);
 
     DAGStatus dagStatus =
-        dagClient.waitForCompletionWithStatusUpdates(Sets.newHashSet(StatusGetOpts.GET_COUNTERS));
+      dagClient.waitForCompletionWithStatusUpdates(Sets.newHashSet(StatusGetOpts.GET_COUNTERS));
     assertEquals(DAGStatus.State.FAILED, dagStatus.getState());
 
     boolean foundDiag = false;
     for (String diag : dagStatus.getDiagnostics()) {
       if (diag.contains(ErrorPluginConfiguration.REPORT_NONFATAL_ERROR_MESSAGE) &&
-          diag.contains(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE.name())) {
+        diag.contains(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE.name())) {
         foundDiag = true;
         break;
       }
     }
     assertTrue(foundDiag);
   }
-
 }

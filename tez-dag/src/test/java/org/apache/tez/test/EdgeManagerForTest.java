@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -61,7 +61,8 @@ public class EdgeManagerForTest extends EdgeManagerPluginOnDemand {
 
   @Override
   public void routeDataMovementEventToDestination(DataMovementEvent event, int sourceTaskIndex,
-      int sourceOutputIndex, Map<Integer, List<Integer>> destinationTaskAndInputIndices) {
+                                                  int sourceOutputIndex,
+                                                  Map<Integer, List<Integer>> destinationTaskAndInputIndices) {
   }
 
   @Override
@@ -70,31 +71,32 @@ public class EdgeManagerForTest extends EdgeManagerPluginOnDemand {
   }
 
   @Override
-  public int routeInputErrorEventToSource(InputReadErrorEvent event, int destinationTaskIndex, int destinationFailedInputIndex) {
+  public int routeInputErrorEventToSource(InputReadErrorEvent event, int destinationTaskIndex,
+                                          int destinationFailedInputIndex) {
     return 0;
   }
 
   @Override
   public void routeInputSourceTaskFailedEventToDestination(int sourceTaskIndex,
-      Map<Integer, List<Integer>> destinationTaskAndInputIndices) { 
+                                                           Map<Integer, List<Integer>> destinationTaskAndInputIndices) {
   }
 
   @Override
   public EventRouteMetadata routeDataMovementEventToDestination(int sourceTaskIndex,
-      int sourceOutputIndex, int destinationTaskIndex) throws Exception {
+                                                                int sourceOutputIndex, int destinationTaskIndex) throws Exception {
     return null;
   }
 
   @Override
   public CompositeEventRouteMetadata routeCompositeDataMovementEventToDestination(
-      int sourceTaskIndex, int destinationTaskIndex)
-      throws Exception {
+    int sourceTaskIndex, int destinationTaskIndex)
+    throws Exception {
     return null;
   }
 
   @Override
   public EventRouteMetadata routeInputSourceTaskFailedEventToDestination(
-      int sourceTaskIndex, int destinationTaskIndex) throws Exception {
+    int sourceTaskIndex, int destinationTaskIndex) throws Exception {
     return null;
   }
 
@@ -104,10 +106,9 @@ public class EdgeManagerForTest extends EdgeManagerPluginOnDemand {
 
   @Override
   public int routeInputErrorEventToSource(int destinationTaskIndex, int destinationFailedInputIndex)
-      throws Exception {
+    throws Exception {
     return 0;
   }
-  
-  // End of overridden methods
 
+  // End of overridden methods
 }

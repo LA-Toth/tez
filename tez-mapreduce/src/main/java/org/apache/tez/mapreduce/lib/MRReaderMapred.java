@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,8 +21,6 @@ package org.apache.tez.mapreduce.lib;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.FileSplit;
 import org.apache.hadoop.mapred.InputFormat;
@@ -30,41 +28,41 @@ import org.apache.hadoop.mapred.InputSplit;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.JobContext;
 import org.apache.hadoop.mapred.RecordReader;
-import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.common.counters.TezCounters;
+import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.mapreduce.hadoop.mapred.MRReporter;
 import org.apache.tez.mapreduce.input.MRInput;
 import org.apache.tez.runtime.api.InputContext;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class MRReaderMapred extends MRReader {
 
   private static final Logger LOG = LoggerFactory.getLogger(MRReaderMapred.class);
-
-  Object key;
-  Object value;
-
   private final JobConf jobConf;
   private final TezCounters tezCounters;
   private final TezCounter inputRecordCounter;
-
   @SuppressWarnings("rawtypes")
   private final InputFormat inputFormat;
   protected InputSplit inputSplit;
   @SuppressWarnings("rawtypes")
   protected RecordReader recordReader;
+  Object key;
+  Object value;
   private Configuration incrementalConf;
 
   private boolean setupComplete = false;
 
-  public MRReaderMapred(JobConf jobConf, TezCounters tezCounters, TezCounter inputRecordCounter, 
-      InputContext context)
-      throws IOException {
+  public MRReaderMapred(JobConf jobConf, TezCounters tezCounters, TezCounter inputRecordCounter,
+                        InputContext context)
+    throws IOException {
     this(jobConf, null, tezCounters, inputRecordCounter, context);
   }
 
   public MRReaderMapred(JobConf jobConf, InputSplit inputSplit, TezCounters tezCounters,
-      TezCounter inputRecordCounter, InputContext context) throws IOException {
+                        TezCounter inputRecordCounter, InputContext context) throws IOException {
     super(context);
     this.jobConf = jobConf;
     this.tezCounters = tezCounters;
@@ -75,12 +73,6 @@ public class MRReaderMapred extends MRReader {
       this.inputSplit = inputSplit;
       setupOldRecordReader();
     }
-  }
-
-  @Override
-  public void setSplit(Object inputSplit) throws IOException {
-    this.inputSplit = (InputSplit) inputSplit;
-    setupOldRecordReader();
   }
 
   @Override
@@ -103,6 +95,12 @@ public class MRReaderMapred extends MRReader {
   @Override
   public Object getSplit() {
     return inputSplit;
+  }
+
+  @Override
+  public void setSplit(Object inputSplit) throws IOException {
+    this.inputSplit = (InputSplit) inputSplit;
+    setupOldRecordReader();
   }
 
   @Override
@@ -142,7 +140,7 @@ public class MRReaderMapred extends MRReader {
    * {@link MRInput} sets some additional parameters like split location when using the new API.
    * This methods returns the list of additional updates, and should be used by Processors using the
    * old MapReduce API with {@link MRInput}.
-   * 
+   *
    * @return the additional fields set by {@link MRInput}
    */
   public Configuration getConfigUpdates() {
@@ -162,7 +160,7 @@ public class MRReaderMapred extends MRReader {
   private void setupOldRecordReader() throws IOException {
     Objects.requireNonNull(inputSplit, "Input split hasn't yet been setup");
     recordReader = inputFormat.getRecordReader(inputSplit, this.jobConf, new MRReporter(
-        tezCounters, inputSplit));
+      tezCounters, inputSplit));
     setIncrementalConfigParams(inputSplit);
     key = recordReader.createKey();
     value = recordReader.createValue();

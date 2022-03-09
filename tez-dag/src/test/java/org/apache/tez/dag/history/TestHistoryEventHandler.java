@@ -54,6 +54,7 @@ import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.hadoop.shim.HadoopShim;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -84,12 +85,12 @@ public class TestHistoryEventHandler {
   @Test
   public void testTaskAttemptFilters() {
     baseConfig.set(TezConfiguration.TEZ_HISTORY_LOGGING_TASKATTEMPT_FILTERS,
-        "EXTERNAL_PREEMPTION,INTERRUPTED_BY_USER");
+      "EXTERNAL_PREEMPTION,INTERRUPTED_BY_USER");
     testLogLevel(HistoryLogLevel.TASK_ATTEMPT, 5);
     testLogLevelWithRecovery(HistoryLogLevel.TASK_ATTEMPT, 5);
 
     baseConfig.set(TezConfiguration.TEZ_HISTORY_LOGGING_TASKATTEMPT_FILTERS,
-        "EXTERNAL_PREEMPTION");
+      "EXTERNAL_PREEMPTION");
     testLogLevel(HistoryLogLevel.TASK_ATTEMPT, 7);
     testLogLevelWithRecovery(HistoryLogLevel.TASK_ATTEMPT, 7);
 
@@ -134,12 +135,12 @@ public class TestHistoryEventHandler {
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
     List<DAGHistoryEvent> events = makeHistoryEvents(dagId, handler.getConfig());
     events.set(1, new DAGHistoryEvent(dagId,
-        new DAGRecoveredEvent(attemptId, dagId, "test", user, 0, null)));
+      new DAGRecoveredEvent(attemptId, dagId, "test", user, 0, null)));
     for (DAGHistoryEvent event : events) {
       handler.handle(event);
     }
     assertEquals("Failed for level: " + level,
-        expectedCount, InMemoryHistoryLoggingService.events.size());
+      expectedCount, InMemoryHistoryLoggingService.events.size());
     handler.stop();
   }
 
@@ -151,12 +152,12 @@ public class TestHistoryEventHandler {
       handler.handle(event);
     }
     assertEquals("Failed for level: " + level,
-        expectedCount, InMemoryHistoryLoggingService.events.size());
+      expectedCount, InMemoryHistoryLoggingService.events.size());
     handler.stop();
   }
 
   private void testLogLevel(HistoryLogLevel defaultLogLevel, HistoryLogLevel dagLogLevel,
-      int expectedCount) {
+                            int expectedCount) {
     HistoryEventHandler handler = createHandler(defaultLogLevel);
     InMemoryHistoryLoggingService.events.clear();
     TezDAGID dagId1 = TezDAGID.getInstance(appId, 1);
@@ -174,22 +175,11 @@ public class TestHistoryEventHandler {
     handler.stop();
   }
 
-  public static class InMemoryHistoryLoggingService extends HistoryLoggingService {
-    public InMemoryHistoryLoggingService() {
-      super("InMemoryHistoryLoggingService");
-    }
-    static List<DAGHistoryEvent> events = new ArrayList<>();
-    @Override
-    public void handle(DAGHistoryEvent event) {
-      events.add(event);
-    }
-  }
-
   private HistoryEventHandler createHandler(HistoryLogLevel logLevel) {
     Configuration conf = new Configuration(baseConfig);
     conf.setBoolean(TezConfiguration.DAG_RECOVERY_ENABLED, false);
     conf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-        InMemoryHistoryLoggingService.class.getName());
+      InMemoryHistoryLoggingService.class.getName());
     if (logLevel != null) {
       conf.setEnum(TezConfiguration.TEZ_HISTORY_LOGGING_LOGLEVEL, logLevel);
     }
@@ -199,11 +189,12 @@ public class TestHistoryEventHandler {
 
     AppContext appContext = mock(AppContext.class);
     when(appContext.getApplicationID()).thenReturn(appId);
-    when(appContext.getHadoopShim()).thenReturn(new HadoopShim() {});
+    when(appContext.getHadoopShim()).thenReturn(new HadoopShim() {
+    });
     when(appContext.getAMConf()).thenReturn(conf);
     when(appContext.getCurrentDAG()).thenReturn(dag);
 
-    HistoryEventHandler handler =  new HistoryEventHandler(appContext);
+    HistoryEventHandler handler = new HistoryEventHandler(appContext);
     handler.init(conf);
 
     return handler;
@@ -216,40 +207,53 @@ public class TestHistoryEventHandler {
     Configuration conf = new Configuration(inConf);
 
     historyEvents.add(new DAGHistoryEvent(null,
-        new AMStartedEvent(attemptId, time, user)));
+      new AMStartedEvent(attemptId, time, user)));
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new DAGSubmittedEvent(dagId, time, DAGPlan.getDefaultInstance(), attemptId, null, user,
-            conf, null, "default")));
+      new DAGSubmittedEvent(dagId, time, DAGPlan.getDefaultInstance(), attemptId, null, user,
+        conf, null, "default")));
     TezVertexID vertexID = TezVertexID.getInstance(dagId, 1);
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new VertexStartedEvent(vertexID, time, time)));
+      new VertexStartedEvent(vertexID, time, time)));
     ContainerId containerId = ContainerId.newContainerId(attemptId, dagId.getId());
     TezTaskID tezTaskID = TezTaskID.getInstance(vertexID, 1);
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new TaskStartedEvent(tezTaskID, "test", time, time)));
+      new TaskStartedEvent(tezTaskID, "test", time, time)));
     historyEvents.add(
-        new DAGHistoryEvent(new ContainerLaunchedEvent(containerId, time, attemptId)));
+      new DAGHistoryEvent(new ContainerLaunchedEvent(containerId, time, attemptId)));
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(tezTaskID, 1), "test", time,
-            containerId, NodeId.newInstance("localhost", 8765), null, null, null)));
+      new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(tezTaskID, 1), "test", time,
+        containerId, NodeId.newInstance("localhost", 8765), null, null, null)));
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new TaskAttemptFinishedEvent(TezTaskAttemptID.getInstance(tezTaskID, 1), "test", time,
-            time + 1, TaskAttemptState.KILLED, null,
-            TaskAttemptTerminationCause.EXTERNAL_PREEMPTION, "", null, null, null, time, null, time,
-            containerId, NodeId.newInstance("localhost", 8765), null, null, null)));
+      new TaskAttemptFinishedEvent(TezTaskAttemptID.getInstance(tezTaskID, 1), "test", time,
+        time + 1, TaskAttemptState.KILLED, null,
+        TaskAttemptTerminationCause.EXTERNAL_PREEMPTION, "", null, null, null, time, null, time,
+        containerId, NodeId.newInstance("localhost", 8765), null, null, null)));
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(tezTaskID, 2), "test", time,
-            containerId, NodeId.newInstance("localhost", 8765), null, null, null)));
+      new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(tezTaskID, 2), "test", time,
+        containerId, NodeId.newInstance("localhost", 8765), null, null, null)));
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new TaskAttemptFinishedEvent(TezTaskAttemptID.getInstance(tezTaskID, 2), "test", time + 2,
-            time + 3, TaskAttemptState.KILLED, null,
-            TaskAttemptTerminationCause.INTERRUPTED_BY_USER, "", null, null, null, time, null,
-            time + 2, containerId, NodeId.newInstance("localhost", 8765), null, null, null)));
+      new TaskAttemptFinishedEvent(TezTaskAttemptID.getInstance(tezTaskID, 2), "test", time + 2,
+        time + 3, TaskAttemptState.KILLED, null,
+        TaskAttemptTerminationCause.INTERRUPTED_BY_USER, "", null, null, null, time, null,
+        time + 2, containerId, NodeId.newInstance("localhost", 8765), null, null, null)));
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new DAGFinishedEvent(dagId, time, time, DAGState.SUCCEEDED, null, null, user, "test", null,
-            attemptId, DAGPlan.getDefaultInstance())));
+      new DAGFinishedEvent(dagId, time, time, DAGState.SUCCEEDED, null, null, user, "test", null,
+        attemptId, DAGPlan.getDefaultInstance())));
     historyEvents.add(
-        new DAGHistoryEvent(new ContainerStoppedEvent(containerId, time + 4, 0, attemptId)));
+      new DAGHistoryEvent(new ContainerStoppedEvent(containerId, time + 4, 0, attemptId)));
     return historyEvents;
+  }
+
+  public static class InMemoryHistoryLoggingService extends HistoryLoggingService {
+    static List<DAGHistoryEvent> events = new ArrayList<>();
+
+    public InMemoryHistoryLoggingService() {
+      super("InMemoryHistoryLoggingService");
+    }
+
+    @Override
+    public void handle(DAGHistoryEvent event) {
+      events.add(event);
+    }
   }
 }

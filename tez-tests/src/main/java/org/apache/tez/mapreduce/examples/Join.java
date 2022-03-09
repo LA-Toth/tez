@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -61,16 +61,22 @@ import org.apache.hadoop.util.ToolRunner;
  */
 public class Join extends Configured implements Tool {
   public static final String REDUCES_PER_HOST = "mapreduce.join.reduces_per_host";
+
   static int printUsage() {
     System.out.println("join [-r <reduces>] " +
-                       "[-inFormat <input format class>] " +
-                       "[-outFormat <output format class>] " + 
-                       "[-outKey <output key class>] " +
-                       "[-outValue <output value class>] " +
-                       "[-joinOp <inner|outer|override>] " +
-                       "[input]* <input> <output>");
+      "[-inFormat <input format class>] " +
+      "[-outFormat <output format class>] " +
+      "[-outKey <output key class>] " +
+      "[-outValue <output value class>] " +
+      "[-joinOp <inner|outer|override>] " +
+      "[input]* <input> <output>");
     ToolRunner.printGenericCommandUsage(System.out);
     return 2;
+  }
+
+  public static void main(String[] args) throws Exception {
+    int res = ToolRunner.run(getTezDecoratedConfiguration(), new Join(), args);
+    System.exit(res);
   }
 
   /**
@@ -87,39 +93,39 @@ public class Join extends Configured implements Tool {
     int num_reduces = (int) (cluster.getMaxReduceTasks() * 0.9);
     String join_reduces = conf.get(REDUCES_PER_HOST);
     if (join_reduces != null) {
-       num_reduces = cluster.getTaskTrackers() * 
-                       Integer.parseInt(join_reduces);
+      num_reduces = cluster.getTaskTrackers() *
+        Integer.parseInt(join_reduces);
     }
     Job job = new Job(conf);
     job.setJobName("join");
     job.setJarByClass(Sort.class);
 
-    job.setMapperClass(Mapper.class);        
+    job.setMapperClass(Mapper.class);
     job.setReducerClass(Reducer.class);
 
-    Class<? extends InputFormat> inputFormatClass = 
+    Class<? extends InputFormat> inputFormatClass =
       SequenceFileInputFormat.class;
-    Class<? extends OutputFormat> outputFormatClass = 
+    Class<? extends OutputFormat> outputFormatClass =
       SequenceFileOutputFormat.class;
     Class<? extends WritableComparable> outputKeyClass = BytesWritable.class;
     Class<? extends Writable> outputValueClass = TupleWritable.class;
     String op = "inner";
     List<String> otherArgs = new ArrayList<String>();
-    for(int i=0; i < args.length; ++i) {
+    for (int i = 0; i < args.length; ++i) {
       try {
         if ("-r".equals(args[i])) {
           num_reduces = Integer.parseInt(args[++i]);
         } else if ("-inFormat".equals(args[i])) {
-          inputFormatClass = 
+          inputFormatClass =
             Class.forName(args[++i]).asSubclass(InputFormat.class);
         } else if ("-outFormat".equals(args[i])) {
-          outputFormatClass = 
+          outputFormatClass =
             Class.forName(args[++i]).asSubclass(OutputFormat.class);
         } else if ("-outKey".equals(args[i])) {
-          outputKeyClass = 
+          outputKeyClass =
             Class.forName(args[++i]).asSubclass(WritableComparable.class);
         } else if ("-outValue".equals(args[i])) {
-          outputValueClass = 
+          outputValueClass =
             Class.forName(args[++i]).asSubclass(Writable.class);
         } else if ("-joinOp".equals(args[i])) {
           op = args[++i];
@@ -131,7 +137,7 @@ public class Join extends Configured implements Tool {
         return printUsage();
       } catch (ArrayIndexOutOfBoundsException except) {
         System.out.println("ERROR: Required parameter missing from " +
-            args[i-1]);
+          args[i - 1]);
         return printUsage(); // exits
       }
     }
@@ -144,7 +150,7 @@ public class Join extends Configured implements Tool {
       return printUsage();
     }
 
-    FileOutputFormat.setOutputPath(job, 
+    FileOutputFormat.setOutputPath(job,
       new Path(otherArgs.remove(otherArgs.size() - 1)));
     List<Path> plist = new ArrayList<Path>(otherArgs.size());
     for (String s : otherArgs) {
@@ -152,9 +158,9 @@ public class Join extends Configured implements Tool {
     }
 
     job.setInputFormatClass(CompositeInputFormat.class);
-    job.getConfiguration().set(CompositeInputFormat.JOIN_EXPR, 
+    job.getConfiguration().set(CompositeInputFormat.JOIN_EXPR,
       CompositeInputFormat.compose(op, inputFormatClass,
-      plist.toArray(new Path[0])));
+        plist.toArray(new Path[0])));
     job.setOutputFormatClass(outputFormatClass);
 
     job.setOutputKeyClass(outputKeyClass);
@@ -162,17 +168,11 @@ public class Join extends Configured implements Tool {
 
     Date startTime = new Date();
     System.out.println("Job started: " + startTime);
-    int ret = job.waitForCompletion(true) ? 0 : 1 ;
+    int ret = job.waitForCompletion(true) ? 0 : 1;
     Date end_time = new Date();
     System.out.println("Job ended: " + end_time);
-    System.out.println("The job took " + 
-        (end_time.getTime() - startTime.getTime()) /1000 + " seconds.");
+    System.out.println("The job took " +
+      (end_time.getTime() - startTime.getTime()) / 1000 + " seconds.");
     return ret;
   }
-
-  public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(getTezDecoratedConfiguration(), new Join(), args);
-    System.exit(res);
-  }
-
 }

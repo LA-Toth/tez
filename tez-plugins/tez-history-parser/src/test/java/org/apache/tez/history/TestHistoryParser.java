@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@
 package org.apache.tez.history;
 
 import com.google.common.collect.Sets;
+
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.RandomStringUtils;
@@ -80,6 +81,7 @@ import org.apache.tez.runtime.library.input.OrderedGroupedKVInput;
 import org.apache.tez.runtime.library.output.OrderedPartitionedKVOutput;
 import org.apache.tez.runtime.library.partitioner.HashPartitioner;
 import org.apache.tez.tests.MiniTezClusterWithTimeline;
+
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -98,25 +100,22 @@ import static org.junit.Assert.*;
 
 public class TestHistoryParser {
 
-  private static MiniDFSCluster miniDFSCluster;
-  private static MiniTezClusterWithTimeline miniTezCluster;
-
-  //location within miniHDFS cluster's hdfs
-  private static Path inputLoc = new Path("/tmp/sample.txt");
-
   private final static String INPUT = "Input";
   private final static String OUTPUT = "Output";
   private final static String TOKENIZER = "Tokenizer";
   private final static String SUMMATION = "Summation";
   private final static String SIMPLE_HISTORY_DIR = "/tmp/simplehistory/";
   private final static String HISTORY_TXT = "history.txt";
-
+  private static MiniDFSCluster miniDFSCluster;
+  private static MiniTezClusterWithTimeline miniTezCluster;
+  //location within miniHDFS cluster's hdfs
+  private static Path inputLoc = new Path("/tmp/sample.txt");
   private static Configuration conf = new Configuration();
   private static FileSystem fs;
   private static String TEST_ROOT_DIR =
-      "target" + Path.SEPARATOR + TestHistoryParser.class.getName() + "-tmpDir";
+    "target" + Path.SEPARATOR + TestHistoryParser.class.getName() + "-tmpDir";
   private static String TEZ_BASE_DIR =
-      "target" + Path.SEPARATOR + TestHistoryParser.class.getName() + "-tez";
+    "target" + Path.SEPARATOR + TestHistoryParser.class.getName() + "-tez";
   private static String DOWNLOAD_DIR = TEST_ROOT_DIR + Path.SEPARATOR + "download";
   private static String yarnTimelineAddress;
 
@@ -127,7 +126,7 @@ public class TestHistoryParser {
     EditLogFileOutputStream.setShouldSkipFsyncForTesting(true);
     conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, TEST_ROOT_DIR);
     miniDFSCluster =
-        new MiniDFSCluster.Builder(conf).numDataNodes(1).format(true).build();
+      new MiniDFSCluster.Builder(conf).numDataNodes(1).format(true).build();
     fs = miniDFSCluster.getFileSystem();
     conf.set("fs.defaultFS", fs.getUri().toString());
 
@@ -164,12 +163,12 @@ public class TestHistoryParser {
     conf.setBoolean(TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS, true);
     conf.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, true);
     conf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS, ATSHistoryLoggingService
-        .class.getName());
+      .class.getName());
 
     conf.set(TezConfiguration.TEZ_SIMPLE_HISTORY_LOGGING_DIR, SIMPLE_HISTORY_DIR);
 
     miniTezCluster =
-        new MiniTezClusterWithTimeline(TEZ_BASE_DIR, 1, 1, 1, true);
+      new MiniTezClusterWithTimeline(TEZ_BASE_DIR, 1, 1, 1, true);
 
     miniTezCluster.init(conf);
     miniTezCluster.start();
@@ -179,14 +178,29 @@ public class TestHistoryParser {
     TezConfiguration tezConf = new TezConfiguration(miniTezCluster.getConfig());
     tezConf.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, true);
     tezConf.set(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS,
-        miniTezCluster.getConfig().get(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS));
+      miniTezCluster.getConfig().get(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS));
     tezConf.setBoolean(TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS, true);
     tezConf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-        ATSHistoryLoggingService.class.getName());
+      ATSHistoryLoggingService.class.getName());
     yarnTimelineAddress = miniTezCluster.getConfig().get(YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS);
-
   }
 
+  /**
+   * Create sample file for wordcount program
+   *
+   * @param inputLoc
+   * @throws IOException
+   */
+  private static void createSampleFile(Path inputLoc) throws IOException {
+    fs.deleteOnExit(inputLoc);
+    FSDataOutputStream out = fs.create(inputLoc);
+    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
+    for (int i = 0; i < 10; i++) {
+      writer.write("Sample " + RandomStringUtils.randomAlphanumeric(5));
+      writer.newLine();
+    }
+    writer.close();
+  }
 
   /**
    * Run a word count example in mini cluster and check if it is possible to download
@@ -199,10 +213,11 @@ public class TestHistoryParser {
   public void testParserWithSuccessfulJob() throws Exception {
     //Run basic word count example.
     String dagId = runWordCount(WordCount.TokenProcessor.class.getName(),
-        WordCount.SumProcessor.class.getName(), "WordCount", true);
+      WordCount.SumProcessor.class.getName(), "WordCount", true);
 
     //Export the data from ATS
-    String[] args = { "--dagId=" + dagId, "--downloadDir=" + DOWNLOAD_DIR, "--yarnTimelineAddress=" + yarnTimelineAddress };
+    String[] args = {
+      "--dagId=" + dagId, "--downloadDir=" + DOWNLOAD_DIR, "--yarnTimelineAddress=" + yarnTimelineAddress};
 
     int result = ATSImportTool.process(args);
     assertTrue(result == 0);
@@ -215,7 +230,7 @@ public class TestHistoryParser {
 
     //Now run with SimpleHistoryLogging
     dagId = runWordCount(WordCount.TokenProcessor.class.getName(),
-        WordCount.SumProcessor.class.getName(), "WordCount", false);
+      WordCount.SumProcessor.class.getName(), "WordCount", false);
     Thread.sleep(10000); //For all flushes to happen and to avoid half-cooked download.
 
     DagInfo shDagInfo = getDagInfoFromSimpleHistory(dagId);
@@ -229,10 +244,10 @@ public class TestHistoryParser {
   private DagInfo getDagInfoFromSimpleHistory(String dagId) throws TezException, IOException {
     TezDAGID tezDAGID = TezDAGID.fromString(dagId);
     ApplicationAttemptId applicationAttemptId = ApplicationAttemptId.newInstance(tezDAGID
-        .getApplicationId(), 1);
+      .getApplicationId(), 1);
     Path historyPath = new Path(conf.get("fs.defaultFS")
-        + SIMPLE_HISTORY_DIR + HISTORY_TXT + "."
-        + applicationAttemptId);
+      + SIMPLE_HISTORY_DIR + HISTORY_TXT + "."
+      + applicationAttemptId);
     FileSystem fs = historyPath.getFileSystem(conf);
 
     Path localPath = new Path(DOWNLOAD_DIR, HISTORY_TXT);
@@ -250,10 +265,10 @@ public class TestHistoryParser {
     assertTrue("DagInfo is " + dagInfo, dagInfo != null);
     //Check configs
     assertTrue("DagInfo config size=" + dagInfo.getAppConfig().size(),
-        dagInfo.getAppConfig().size() > 0);
+      dagInfo.getAppConfig().size() > 0);
     //Sample config element
     assertTrue("DagInfo config=" + dagInfo.getAppConfig(),
-        Integer.parseInt(dagInfo.getAppConfig().get("dfs.replication")) > 0);
+      Integer.parseInt(dagInfo.getAppConfig().get("dfs.replication")) > 0);
   }
 
   private void verifyJobSpecificInfo(DagInfo dagInfo) {
@@ -261,14 +276,14 @@ public class TestHistoryParser {
     assertTrue(dagInfo.getNumVertices() == 2);
     assertTrue(dagInfo.getName().equals("WordCount"));
     assertTrue(dagInfo.getVertex(TOKENIZER).getProcessorClassName().equals(
-        WordCount.TokenProcessor.class.getName()));
+      WordCount.TokenProcessor.class.getName()));
     assertTrue(dagInfo.getVertex(SUMMATION).getProcessorClassName()
-        .equals(WordCount.SumProcessor.class.getName()));
+      .equals(WordCount.SumProcessor.class.getName()));
     assertTrue(dagInfo.getFinishTime() > dagInfo.getStartTime());
     assertTrue(dagInfo.getEdges().size() == 1);
     EdgeInfo edgeInfo = dagInfo.getEdges().iterator().next();
     assertTrue(edgeInfo.getDataMovementType().
-        equals(EdgeProperty.DataMovementType.SCATTER_GATHER.toString()));
+      equals(EdgeProperty.DataMovementType.SCATTER_GATHER.toString()));
     assertTrue(edgeInfo.getSourceVertex().getVertexName().equals(TOKENIZER));
     assertTrue(edgeInfo.getDestinationVertex().getVertexName().equals(SUMMATION));
     assertTrue(edgeInfo.getInputVertexName().equals(TOKENIZER));
@@ -309,7 +324,7 @@ public class TestHistoryParser {
           for (TaskAttemptInfo attempt : attempts) {
             DataDependencyEvent item = attempt.getLastDataEvents().get(0);
             assertTrue(item.getTimestamp() > 0);
-            
+
             if (lastDataEventSourceTA == null) {
               lastDataEventSourceTA = item.getTaskAttemptId();
             } else {
@@ -350,20 +365,20 @@ public class TestHistoryParser {
   @Test
   public void testParserWithSuccessfulJob_InvalidATS() throws Exception {
     //Run basic word count example.
-    String dagId =  runWordCount(WordCount.TokenProcessor.class.getName(),
-        WordCount.SumProcessor.class.getName(), "WordCount-With-WrongATS-URL", true);
+    String dagId = runWordCount(WordCount.TokenProcessor.class.getName(),
+      WordCount.SumProcessor.class.getName(), "WordCount-With-WrongATS-URL", true);
 
     //Export the data from ATS
     String atsAddress = "--atsAddress=http://atsHost:8188";
-    String[] args = { "--dagId=" + dagId,
-        "--downloadDir=" + DOWNLOAD_DIR,
-        atsAddress
-      };
+    String[] args = {"--dagId=" + dagId,
+      "--downloadDir=" + DOWNLOAD_DIR,
+      atsAddress
+    };
 
     try {
       int result = ATSImportTool.process(args);
       fail("Should have failed with processException");
-    } catch(ParseException e) {
+    } catch (ParseException e) {
       //expects exception
     }
   }
@@ -375,10 +390,11 @@ public class TestHistoryParser {
   public void testParserWithFailedJob() throws Exception {
     //Run a job which would fail
     String dagId = runWordCount(WordCount.TokenProcessor.class.getName(), FailProcessor.class
-        .getName(), "WordCount-With-Exception", true);
+      .getName(), "WordCount-With-Exception", true);
 
     //Export the data from ATS
-    String[] args = { "--dagId=" + dagId, "--downloadDir=" + DOWNLOAD_DIR, "--yarnTimelineAddress=" + yarnTimelineAddress };
+    String[] args = {
+      "--dagId=" + dagId, "--downloadDir=" + DOWNLOAD_DIR, "--yarnTimelineAddress=" + yarnTimelineAddress};
 
     int result = ATSImportTool.process(args);
     assertTrue(result == 0);
@@ -409,14 +425,14 @@ public class TestHistoryParser {
     verifyCounter(dagInfo.getCounter(DAGCounter.TOTAL_LAUNCHED_TASKS.toString()), null, 5);
 
     verifyCounter(dagInfo.getCounter(TaskCounter.INPUT_RECORDS_PROCESSED.toString()),
-        "TaskCounter_Tokenizer_INPUT_Input", 10);
+      "TaskCounter_Tokenizer_INPUT_Input", 10);
     verifyCounter(dagInfo.getCounter(TaskCounter.ADDITIONAL_SPILLS_BYTES_READ.toString()),
-        "TaskCounter_Tokenizer_OUTPUT_Summation", 0);
+      "TaskCounter_Tokenizer_OUTPUT_Summation", 0);
     verifyCounter(dagInfo.getCounter(TaskCounter.OUTPUT_RECORDS.toString()),
-        "TaskCounter_Tokenizer_OUTPUT_Summation",
-        20); //Every line has 2 words. 10 lines x 2 words = 20
+      "TaskCounter_Tokenizer_OUTPUT_Summation",
+      20); //Every line has 2 words. 10 lines x 2 words = 20
     verifyCounter(dagInfo.getCounter(TaskCounter.SPILLED_RECORDS.toString()),
-        "TaskCounter_Tokenizer_OUTPUT_Summation", 20); //Same as above
+      "TaskCounter_Tokenizer_OUTPUT_Summation", 20); //Same as above
 
     for (TaskInfo taskInfo : summationVertex.getTasks()) {
       TaskAttemptInfo lastAttempt = null;
@@ -430,12 +446,12 @@ public class TestHistoryParser {
       }
     }
 
-    //TODO: Need to check for SUMMATION vertex counters. Since all attempts are failed, counters are not getting populated.
+    //TODO: Need to check for SUMMATION vertex counters. Since all attempts are failed, counters are not getting
+    // populated.
     //TaskCounter.REDUCE_INPUT_RECORDS
 
     //Verify if the processor exception is given in diagnostics
     assertTrue(dagInfo.getDiagnostics().contains("Failing this processor for some reason"));
-
   }
 
   /**
@@ -516,8 +532,8 @@ public class TestHistoryParser {
     assertTrue(taskInfo2.getVertexInfo() != null);
     assertTrue(taskInfo1.getStatus().equals(taskInfo2.getStatus()));
     assertTrue(
-        taskInfo1.getVertexInfo().getVertexName()
-            .equals(taskInfo2.getVertexInfo().getVertexName()));
+      taskInfo1.getVertexInfo().getVertexName()
+        .equals(taskInfo2.getVertexInfo().getVertexName()));
     isTaskAttemptEqual(taskInfo1.getTaskAttempts(), taskInfo2.getTaskAttempts());
 
     //Verify counters
@@ -526,25 +542,25 @@ public class TestHistoryParser {
 
   private void isCountersSame(BaseInfo info1, BaseInfo info2) {
     isCounterSame(info1.getCounter(TaskCounter.ADDITIONAL_SPILL_COUNT.name()),
-        info2.getCounter(TaskCounter.ADDITIONAL_SPILL_COUNT.name()));
+      info2.getCounter(TaskCounter.ADDITIONAL_SPILL_COUNT.name()));
 
     isCounterSame(info1.getCounter(TaskCounter.SPILLED_RECORDS.name()),
-        info2.getCounter(TaskCounter.SPILLED_RECORDS.name()));
+      info2.getCounter(TaskCounter.SPILLED_RECORDS.name()));
 
     isCounterSame(info1.getCounter(TaskCounter.OUTPUT_RECORDS.name()),
-        info2.getCounter(TaskCounter.OUTPUT_RECORDS.name()));
+      info2.getCounter(TaskCounter.OUTPUT_RECORDS.name()));
 
     isCounterSame(info1.getCounter(TaskCounter.OUTPUT_BYTES.name()),
-        info2.getCounter(TaskCounter.OUTPUT_BYTES.name()));
+      info2.getCounter(TaskCounter.OUTPUT_BYTES.name()));
 
     isCounterSame(info1.getCounter(TaskCounter.OUTPUT_RECORDS.name()),
-        info2.getCounter(TaskCounter.OUTPUT_RECORDS.name()));
+      info2.getCounter(TaskCounter.OUTPUT_RECORDS.name()));
 
     isCounterSame(info1.getCounter(TaskCounter.REDUCE_INPUT_GROUPS.name()),
-        info2.getCounter(TaskCounter.REDUCE_INPUT_GROUPS.name()));
+      info2.getCounter(TaskCounter.REDUCE_INPUT_GROUPS.name()));
 
     isCounterSame(info1.getCounter(TaskCounter.REDUCE_INPUT_RECORDS.name()),
-        info2.getCounter(TaskCounter.REDUCE_INPUT_RECORDS.name()));
+      info2.getCounter(TaskCounter.REDUCE_INPUT_RECORDS.name()));
   }
 
   private void isCounterSame(Map<String, TezCounter> counter1, Map<String, TezCounter> counter2) {
@@ -559,7 +575,7 @@ public class TestHistoryParser {
   }
 
   private void isTaskAttemptEqual(Collection<TaskAttemptInfo> info1,
-      Collection<TaskAttemptInfo> info2) {
+                                  Collection<TaskAttemptInfo> info2) {
     assertTrue("sizes should be the same", info1.size() == info1.size());
     Iterator<TaskAttemptInfo> it1 = info1.iterator();
     Iterator<TaskAttemptInfo> it2 = info2.iterator();
@@ -576,34 +592,16 @@ public class TestHistoryParser {
     assertTrue(info2.getTaskInfo() != null);
     assertTrue(info1.getStatus().equals(info2.getStatus()));
     assertTrue(info1.getTaskInfo().getVertexInfo().getVertexName().equals(info2.getTaskInfo()
-        .getVertexInfo().getVertexName()));
+      .getVertexInfo().getVertexName()));
 
     //Verify counters
     isCountersSame(info1, info2);
   }
 
-
-  /**
-   * Create sample file for wordcount program
-   *
-   * @param inputLoc
-   * @throws IOException
-   */
-  private static void createSampleFile(Path inputLoc) throws IOException {
-    fs.deleteOnExit(inputLoc);
-    FSDataOutputStream out = fs.create(inputLoc);
-    BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(out));
-    for (int i = 0; i < 10; i++) {
-      writer.write("Sample " + RandomStringUtils.randomAlphanumeric(5));
-      writer.newLine();
-    }
-    writer.close();
-  }
-
   private DagInfo getDagInfo(String dagId) throws TezException {
     //Parse downloaded contents
     File downloadedFile = new File(DOWNLOAD_DIR
-        + Path.SEPARATOR + dagId + ".zip");
+      + Path.SEPARATOR + dagId + ".zip");
     ATSFileParser parser = new ATSFileParser(Arrays.asList(downloadedFile));
     DagInfo dagInfo = parser.getDAGData(dagId);
     assertTrue(dagInfo.getDagId().equals(dagId));
@@ -611,7 +609,7 @@ public class TestHistoryParser {
   }
 
   private void verifyCounter(Map<String, TezCounter> counterMap,
-      String counterGroupName, long expectedVal) {
+                             String counterGroupName, long expectedVal) {
     //Iterate through group-->tezCounter
     for (Map.Entry<String, TezCounter> entry : counterMap.entrySet()) {
       if (counterGroupName != null) {
@@ -629,10 +627,10 @@ public class TestHistoryParser {
     if (withTimeline) {
       tezConf.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, withTimeline);
       tezConf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-          ATSHistoryLoggingService.class.getName());
+        ATSHistoryLoggingService.class.getName());
     } else {
       tezConf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-          SimpleHistoryLoggingService.class.getName());
+        SimpleHistoryLoggingService.class.getName());
     }
     tezConf.setBoolean(TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS, true);
 
@@ -643,31 +641,31 @@ public class TestHistoryParser {
   }
 
   private String runWordCount(String tokenizerProcessor, String summationProcessor,
-      String dagName, boolean withTimeline)
-      throws Exception {
+                              String dagName, boolean withTimeline)
+    throws Exception {
     //HDFS path
     Path outputLoc = new Path("/tmp/outPath_" + System.currentTimeMillis());
 
     DataSourceDescriptor dataSource = MRInput.createConfigBuilder(conf,
-        TextInputFormat.class, inputLoc.toString()).build();
+      TextInputFormat.class, inputLoc.toString()).build();
 
     DataSinkDescriptor dataSink =
-        MROutput.createConfigBuilder(conf, TextOutputFormat.class, outputLoc.toString()).build();
+      MROutput.createConfigBuilder(conf, TextOutputFormat.class, outputLoc.toString()).build();
 
     Vertex tokenizerVertex = Vertex.create(TOKENIZER, ProcessorDescriptor.create(
-        tokenizerProcessor)).addDataSource(INPUT, dataSource);
+      tokenizerProcessor)).addDataSource(INPUT, dataSource);
 
     OrderedPartitionedKVEdgeConfig edgeConf = OrderedPartitionedKVEdgeConfig
-        .newBuilder(Text.class.getName(), IntWritable.class.getName(),
-            HashPartitioner.class.getName()).build();
+      .newBuilder(Text.class.getName(), IntWritable.class.getName(),
+        HashPartitioner.class.getName()).build();
 
     Vertex summationVertex = Vertex.create(SUMMATION,
-        ProcessorDescriptor.create(summationProcessor), 1).addDataSink(OUTPUT, dataSink);
+      ProcessorDescriptor.create(summationProcessor), 1).addDataSink(OUTPUT, dataSink);
 
     // Create DAG and add the vertices. Connect the producer and consumer vertices via the edge
     DAG dag = DAG.create(dagName);
     dag.addVertex(tokenizerVertex).addVertex(summationVertex).addEdge(
-        Edge.create(tokenizerVertex, summationVertex, edgeConf.createDefaultEdgeProperty()));
+      Edge.create(tokenizerVertex, summationVertex, edgeConf.createDefaultEdgeProperty()));
 
     TezClient tezClient = getTezClient(withTimeline);
 
@@ -688,20 +686,6 @@ public class TestHistoryParser {
       tezClient.stop();
     }
     return tezDAGID.toString();
-  }
-
-  /**
-   * Processor which would just throw exception.
-   */
-  public static class FailProcessor extends SimpleMRProcessor {
-    public FailProcessor(ProcessorContext context) {
-      super(context);
-    }
-
-    @Override
-    public void run() throws Exception {
-      throw new Exception("Failing this processor for some reason");
-    }
   }
 
   private void verifyDagInfo(DagInfo dagInfo, boolean ats) {
@@ -799,9 +783,9 @@ public class TestHistoryParser {
     if (!hasFailedAttempts) {
       assertTrue(taskInfo.getStatus().equals(TaskState.SUCCEEDED.toString()));
       assertTrue(taskInfo.getFinishTimeInterval() > 0 && taskInfo.getFinishTime() > taskInfo
-          .getFinishTimeInterval());
+        .getFinishTimeInterval());
       assertTrue(
-          taskInfo.getStartTimeInterval() > 0 && taskInfo.getStartTime() > taskInfo.getStartTimeInterval());
+        taskInfo.getStartTimeInterval() > 0 && taskInfo.getStartTime() > taskInfo.getStartTimeInterval());
       assertTrue(taskInfo.getSuccessfulAttemptId() != null);
       assertTrue(taskInfo.getSuccessfulTaskAttempt() != null);
       assertTrue(taskInfo.getFinishTime() > taskInfo.getStartTime());
@@ -815,7 +799,7 @@ public class TestHistoryParser {
 
   private void verifyTaskAttemptInfo(TaskAttemptInfo attemptInfo) {
     if (attemptInfo.getStatus() != null && attemptInfo.getStatus()
-        .equals(TaskAttemptState.SUCCEEDED)) {
+      .equals(TaskAttemptState.SUCCEEDED)) {
       assertTrue(attemptInfo.getStartTimeInterval() > 0);
       assertTrue(attemptInfo.getFinishTimeInterval() > 0);
       assertTrue(attemptInfo.getCreationTime() > 0);
@@ -832,5 +816,19 @@ public class TestHistoryParser {
       assertTrue(attemptInfo.getContainer() != null);
     }
     assertTrue(attemptInfo.getTaskInfo() != null);
+  }
+
+  /**
+   * Processor which would just throw exception.
+   */
+  public static class FailProcessor extends SimpleMRProcessor {
+    public FailProcessor(ProcessorContext context) {
+      super(context);
+    }
+
+    @Override
+    public void run() throws Exception {
+      throw new Exception("Failing this processor for some reason");
+    }
   }
 }

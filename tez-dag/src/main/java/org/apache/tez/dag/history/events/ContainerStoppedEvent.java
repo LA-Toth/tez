@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,14 +20,15 @@ package org.apache.tez.dag.history.events;
 
 import java.io.IOException;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.ContainerStoppedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class ContainerStoppedEvent implements HistoryEvent {
 
@@ -38,17 +39,17 @@ public class ContainerStoppedEvent implements HistoryEvent {
 
   public ContainerStoppedEvent() {
   }
-  
+
   public ContainerStoppedEvent(ContainerId containerId,
-      long stopTime,
-      int exitStatus,
-      ApplicationAttemptId applicationAttemptId) {
+                               long stopTime,
+                               int exitStatus,
+                               ApplicationAttemptId applicationAttemptId) {
     this.containerId = containerId;
     this.stopTime = stopTime;
     this.exitStatus = exitStatus;
     this.applicationAttemptId = applicationAttemptId;
   }
-  
+
   @Override
   public HistoryEventType getEventType() {
     return HistoryEventType.CONTAINER_STOPPED;
@@ -66,11 +67,11 @@ public class ContainerStoppedEvent implements HistoryEvent {
 
   public ContainerStoppedProto toProto() {
     return ContainerStoppedProto.newBuilder()
-        .setApplicationAttemptId(applicationAttemptId.toString())
-        .setContainerId(containerId.toString())
-        .setStopTime(stopTime)
-        .setExitStatus(exitStatus)
-        .build();
+      .setApplicationAttemptId(applicationAttemptId.toString())
+      .setContainerId(containerId.toString())
+      .setStopTime(stopTime)
+      .setExitStatus(exitStatus)
+      .build();
   }
 
   public void fromProto(ContainerStoppedProto proto) {
@@ -78,7 +79,7 @@ public class ContainerStoppedEvent implements HistoryEvent {
     stopTime = proto.getStopTime();
     exitStatus = proto.getExitStatus();
     this.applicationAttemptId = ConverterUtils.toApplicationAttemptId(
-        proto.getApplicationAttemptId());
+      proto.getApplicationAttemptId());
   }
 
   @Override
@@ -98,8 +99,8 @@ public class ContainerStoppedEvent implements HistoryEvent {
   @Override
   public String toString() {
     return "containerId=" + containerId
-        + ", stoppedTime=" + stopTime 
-        + ", exitStatus=" + exitStatus;
+      + ", stoppedTime=" + stopTime
+      + ", exitStatus=" + exitStatus;
   }
 
   public ContainerId getContainerId() {
@@ -109,7 +110,7 @@ public class ContainerStoppedEvent implements HistoryEvent {
   public long getStoppedTime() {
     return stopTime;
   }
-  
+
   public int getExitStatus() {
     return exitStatus;
   }
@@ -117,5 +118,4 @@ public class ContainerStoppedEvent implements HistoryEvent {
   public ApplicationAttemptId getApplicationAttemptId() {
     return applicationAttemptId;
   }
-
 }

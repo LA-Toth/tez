@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.app.dag;
 
@@ -22,21 +22,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.common.counters.TezCounters;
+import org.apache.tez.common.security.ACLManager;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.client.DAGStatusBuilder;
 import org.apache.tez.dag.api.client.StatusGetOpts;
 import org.apache.tez.dag.api.client.VertexStatusBuilder;
 import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
-import org.apache.tez.common.security.ACLManager;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.serviceplugins.api.DagInfo;
-
-import javax.annotation.Nullable;
 
 /**
  * Main interface to interact with the job.
@@ -44,9 +44,13 @@ import javax.annotation.Nullable;
 public interface DAG extends DagInfo {
 
   TezDAGID getID();
+
   Map<String, LocalResource> getLocalResources();
+
   String getName();
+
   DAGState getState();
+
   DAGReport getReport();
 
   /**
@@ -56,6 +60,7 @@ public interface DAG extends DagInfo {
    * @return job-counters and aggregate task-counters
    */
   TezCounters getAllCounters();
+
   TezCounters getCachedCounters();
 
   @SuppressWarnings("rawtypes")
@@ -65,19 +70,30 @@ public interface DAG extends DagInfo {
    * Get Vertex by vertex name
    */
   Vertex getVertex(String vertexName);
-  Map<TezVertexID,Vertex> getVertices();
+
+  Map<TezVertexID, Vertex> getVertices();
+
   Vertex getVertex(TezVertexID vertexId);
+
   List<String> getDiagnostics();
+
   int getSuccessfulVertices();
+
   float getProgress();
+
   float getCompletedTaskProgress();
+
   boolean isUber();
+
   String getUserName();
 
   DAGPlan getJobPlan();
+
   DAGStatusBuilder getDAGStatus(Set<StatusGetOpts> statusOptions);
+
   DAGStatusBuilder getDAGStatus(Set<StatusGetOpts> statusOptions, long timeout)
-      throws TezException;
+    throws TezException;
+
   VertexStatusBuilder getVertexStatus(String vertexName,
                                       Set<StatusGetOpts> statusOptions);
 
@@ -100,6 +116,6 @@ public interface DAG extends DagInfo {
    * @return the DAGScheduler that will schedule
    * this DAG, null if it doesn't exist
    */
-  @Nullable DAGScheduler getDAGScheduler();
-
+  @Nullable
+  DAGScheduler getDAGScheduler();
 }

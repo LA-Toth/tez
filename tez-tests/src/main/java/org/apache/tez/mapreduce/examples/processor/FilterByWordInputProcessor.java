@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,13 +21,10 @@ package org.apache.tez.mapreduce.examples.processor;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tez.common.ProgressHelper;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.tez.common.ProgressHelper;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.mapreduce.examples.FilterLinesByWord;
 import org.apache.tez.mapreduce.examples.FilterLinesByWord.TextLongPair;
@@ -39,23 +36,25 @@ import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.LogicalInput;
 import org.apache.tez.runtime.api.LogicalOutput;
 import org.apache.tez.runtime.api.ProcessorContext;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.library.api.KeyValueReader;
 import org.apache.tez.runtime.library.api.KeyValueWriter;
 import org.apache.tez.runtime.library.output.UnorderedKVOutput;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class FilterByWordInputProcessor extends AbstractLogicalIOProcessor {
 
   private static final Logger LOG = LoggerFactory.getLogger(FilterByWordInputProcessor.class);
-
-  private String filterWord;
   protected Map<String, LogicalInput> inputs;
   protected Map<String, LogicalOutput> outputs;
+  private String filterWord;
   private ProgressHelper progressHelper;
 
   public FilterByWordInputProcessor(ProcessorContext context) {
     super(context);
   }
-
 
   @Override
   public void initialize() throws Exception {
@@ -69,7 +68,6 @@ public class FilterByWordInputProcessor extends AbstractLogicalIOProcessor {
   @Override
   public void handleEvents(List<Event> processorEvents) {
     throw new UnsupportedOperationException("Not expecting any events to the broadcast processor");
-
   }
 
   @Override
@@ -81,10 +79,10 @@ public class FilterByWordInputProcessor extends AbstractLogicalIOProcessor {
 
   @Override
   public void run(Map<String, LogicalInput> _inputs,
-      Map<String, LogicalOutput> _outputs) throws Exception {
+                  Map<String, LogicalOutput> _outputs) throws Exception {
     this.inputs = _inputs;
     this.outputs = _outputs;
-    this.progressHelper = new ProgressHelper(this.inputs, getContext(),this.getClass().getSimpleName());
+    this.progressHelper = new ProgressHelper(this.inputs, getContext(), this.getClass().getSimpleName());
     if (_inputs.size() != 1) {
       throw new IllegalStateException("FilterByWordInputProcessor processor can only work with a single input");
     }
@@ -92,7 +90,7 @@ public class FilterByWordInputProcessor extends AbstractLogicalIOProcessor {
     if (_outputs.size() != 1) {
       throw new IllegalStateException("FilterByWordInputProcessor processor can only work with a single output");
     }
-    
+
     for (LogicalInput input : _inputs.values()) {
       input.start();
     }
@@ -101,13 +99,14 @@ public class FilterByWordInputProcessor extends AbstractLogicalIOProcessor {
     }
 
     LogicalInput li = _inputs.values().iterator().next();
-    if (! (li instanceof MRInput)) {
+    if (!(li instanceof MRInput)) {
       throw new IllegalStateException("FilterByWordInputProcessor processor can only work with MRInput");
     }
 
     LogicalOutput lo = _outputs.values().iterator().next();
-    if (! (lo instanceof UnorderedKVOutput)) {
-      throw new IllegalStateException("FilterByWordInputProcessor processor can only work with OnFileUnorderedKVOutput");
+    if (!(lo instanceof UnorderedKVOutput)) {
+      throw new IllegalStateException(
+        "FilterByWordInputProcessor processor can only work with OnFileUnorderedKVOutput");
     }
     progressHelper.scheduleProgressTaskService(0, 100);
     MRInputLegacy mrInput = (MRInputLegacy) li;

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-
 import org.apache.tez.common.Preconditions;
 
 public class SplitsInClientOptionParser {
@@ -41,32 +40,31 @@ public class SplitsInClientOptionParser {
 
   public String[] getRemainingArgs() {
     Preconditions.checkState(parsed,
-        "Cannot get remaining args without parsing");
+      "Cannot get remaining args without parsing");
     return otherArgs.clone();
   }
 
   @SuppressWarnings("static-access")
   public boolean parse(String[] args, boolean defaultVal) throws ParseException {
     Preconditions.checkState(parsed == false,
-        "Craete a new instance for different option sets");
+      "Craete a new instance for different option sets");
     parsed = true;
     Options opts = new Options();
     Option opt = OptionBuilder
-        .withArgName("splits_in_client")
-        .hasArg()
-        .withDescription(
-            "specify whether splits should be generated in the client")
-        .create("generateSplitsInClient");
+      .withArgName("splits_in_client")
+      .hasArg()
+      .withDescription(
+        "specify whether splits should be generated in the client")
+      .create("generateSplitsInClient");
     opts.addOption(opt);
     CommandLineParser parser = new GnuParser();
 
     cmdLine = parser.parse(opts, args, false);
     if (cmdLine.hasOption("generateSplitsInClient")) {
       defaultVal = Boolean.parseBoolean(cmdLine
-          .getOptionValue("generateSplitsInClient"));
+        .getOptionValue("generateSplitsInClient"));
     }
     otherArgs = cmdLine.getArgs();
     return defaultVal;
   }
-
 }

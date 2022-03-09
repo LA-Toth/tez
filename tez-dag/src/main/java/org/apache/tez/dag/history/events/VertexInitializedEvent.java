@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,8 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.tez.dag.api.DagTypeConverters;
 import org.apache.tez.dag.api.InputDescriptor;
 import org.apache.tez.dag.api.InputInitializerDescriptor;
@@ -42,6 +40,8 @@ import org.apache.tez.dag.recovery.records.RecoveryProtos.VertexInitializedProto
 import org.apache.tez.runtime.api.impl.TezEvent;
 
 import com.google.common.collect.Lists;
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
 
@@ -59,10 +59,10 @@ public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
   }
 
   public VertexInitializedEvent(TezVertexID vertexId,
-      String vertexName, long initRequestedTime, long initedTime,
-      int numTasks, String processorName,
-      Map<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>> additionalInputs,
-      List<TezEvent> initGeneratedEvents, ServicePluginInfo servicePluginInfo) {
+                                String vertexName, long initRequestedTime, long initedTime,
+                                int numTasks, String processorName,
+                                Map<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>> additionalInputs,
+                                List<TezEvent> initGeneratedEvents, ServicePluginInfo servicePluginInfo) {
     this.vertexName = vertexName;
     this.vertexID = vertexId;
     this.initRequestedTime = initRequestedTime;
@@ -96,14 +96,14 @@ public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
       for (RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor> input :
         additionalInputs.values()) {
         RootInputLeafOutputProto.Builder inputBuilder
-            = RootInputLeafOutputProto.newBuilder();
+          = RootInputLeafOutputProto.newBuilder();
         inputBuilder.setName(input.getName());
         if (input.getControllerDescriptor() != null) {
           inputBuilder.setControllerDescriptor(DagTypeConverters
-              .convertToDAGPlan(input.getControllerDescriptor()));
+            .convertToDAGPlan(input.getControllerDescriptor()));
         }
         inputBuilder.setIODescriptor(
-            DagTypeConverters.convertToDAGPlan(input.getIODescriptor()));
+          DagTypeConverters.convertToDAGPlan(input.getIODescriptor()));
         builder.addInputs(inputBuilder.build());
       }
     }
@@ -113,11 +113,11 @@ public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
       }
     }
     return builder.setVertexId(vertexID.toString())
-        .setVertexName(vertexName)
-        .setInitRequestedTime(initRequestedTime)
-        .setInitTime(initedTime)
-        .setNumTasks(numTasks)
-        .build();
+      .setVertexName(vertexName)
+      .setInitRequestedTime(initRequestedTime)
+      .setInitTime(initedTime)
+      .setNumTasks(numTasks)
+      .build();
   }
 
   public void fromProto(RecoveryProtos.VertexInitializedProto proto) throws IOException {
@@ -128,16 +128,16 @@ public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
     this.numTasks = proto.getNumTasks();
     if (proto.getInputsCount() > 0) {
       this.additionalInputs =
-          new LinkedHashMap<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>>();
+        new LinkedHashMap<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>>();
       for (RootInputLeafOutputProto inputProto : proto.getInputsList()) {
         RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor> input =
-            new RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>(
-                inputProto.getName(),
-                DagTypeConverters.convertInputDescriptorFromDAGPlan(
-                    inputProto.getIODescriptor()),
-                inputProto.hasControllerDescriptor() ? DagTypeConverters
-                    .convertInputInitializerDescriptorFromDAGPlan(inputProto
-                        .getControllerDescriptor()) : null);
+          new RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>(
+            inputProto.getName(),
+            DagTypeConverters.convertInputDescriptorFromDAGPlan(
+              inputProto.getIODescriptor()),
+            inputProto.hasControllerDescriptor() ? DagTypeConverters
+              .convertInputInitializerDescriptorFromDAGPlan(inputProto
+                .getControllerDescriptor()) : null);
         additionalInputs.put(input.getName(), input);
       }
     }
@@ -146,7 +146,7 @@ public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
       this.initGeneratedEvents = Lists.newArrayListWithCapacity(eventCount);
     }
     for (TezEventProto eventProto :
-        proto.getInitGeneratedEventsList()) {
+      proto.getInitGeneratedEventsList()) {
       this.initGeneratedEvents.add(TezEventUtils.fromProto(eventProto));
     }
   }
@@ -168,17 +168,17 @@ public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
   @Override
   public String toString() {
     return "vertexName=" + vertexName
-        + ", vertexId=" + vertexID
-        + ", initRequestedTime=" + initRequestedTime
-        + ", initedTime=" + initedTime
-        + ", numTasks=" + numTasks
-        + ", processorName=" + processorName
-        + ", additionalInputsCount="
-        + (additionalInputs != null ? additionalInputs.size() : 0)
-        + ", initGeneratedEventsCount="
-        + (initGeneratedEvents != null ? initGeneratedEvents.size() : 0)
-        + ", servicePluginInfo="
-        + (servicePluginInfo != null ? servicePluginInfo : "null");
+      + ", vertexId=" + vertexID
+      + ", initRequestedTime=" + initRequestedTime
+      + ", initedTime=" + initedTime
+      + ", numTasks=" + numTasks
+      + ", processorName=" + processorName
+      + ", additionalInputsCount="
+      + (additionalInputs != null ? additionalInputs.size() : 0)
+      + ", initGeneratedEventsCount="
+      + (initGeneratedEvents != null ? initGeneratedEvents.size() : 0)
+      + ", servicePluginInfo="
+      + (servicePluginInfo != null ? servicePluginInfo : "null");
   }
 
   @Override
@@ -198,8 +198,8 @@ public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
     return numTasks;
   }
 
-  public Map<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>> 
-    getAdditionalInputs() {
+  public Map<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>>
+  getAdditionalInputs() {
     return additionalInputs;
   }
 
@@ -218,5 +218,4 @@ public class VertexInitializedEvent implements HistoryEvent, VertexIDAware {
   public ServicePluginInfo getServicePluginInfo() {
     return servicePluginInfo;
   }
-
 }

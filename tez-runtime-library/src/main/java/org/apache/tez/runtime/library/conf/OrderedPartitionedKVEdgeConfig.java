@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,10 +18,10 @@
 
 package org.apache.tez.runtime.library.conf;
 
-import javax.annotation.Nullable;
-
 import java.util.Map;
 import java.util.Objects;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
@@ -42,14 +42,14 @@ import org.apache.tez.runtime.library.output.OrderedPartitionedKVOutput;
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
 public class OrderedPartitionedKVEdgeConfig
-    extends HadoopKeyValuesBasedBaseEdgeConfig {
+  extends HadoopKeyValuesBasedBaseEdgeConfig {
 
   private final OrderedPartitionedKVOutputConfig outputConf;
   private final OrderedGroupedKVInputConfig inputConf;
 
   private OrderedPartitionedKVEdgeConfig(
-      OrderedPartitionedKVOutputConfig outputConfiguration,
-      OrderedGroupedKVInputConfig inputConfiguration) {
+    OrderedPartitionedKVOutputConfig outputConfiguration,
+    OrderedGroupedKVInputConfig inputConfiguration) {
     this.outputConf = outputConfiguration;
     this.inputConf = inputConfiguration;
   }
@@ -127,11 +127,11 @@ public class OrderedPartitionedKVEdgeConfig
    */
   public EdgeProperty createDefaultEdgeProperty() {
     EdgeProperty edgeProperty = EdgeProperty.create(EdgeProperty.DataMovementType.SCATTER_GATHER,
-        EdgeProperty.DataSourceType.PERSISTED, EdgeProperty.SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create(
-            getOutputClassName()).setUserPayload(getOutputPayload()),
-        InputDescriptor.create(
-            getInputClassName()).setUserPayload(getInputPayload()));
+      EdgeProperty.DataSourceType.PERSISTED, EdgeProperty.SchedulingType.SEQUENTIAL,
+      OutputDescriptor.create(
+        getOutputClassName()).setUserPayload(getOutputPayload()),
+      InputDescriptor.create(
+        getInputClassName()).setUserPayload(getInputPayload()));
     Utils.setEdgePropertyHistoryText(this, edgeProperty);
     return edgeProperty;
   }
@@ -146,10 +146,10 @@ public class OrderedPartitionedKVEdgeConfig
   public EdgeProperty createDefaultCustomEdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor) {
     Objects.requireNonNull(edgeManagerDescriptor, "EdgeManagerDescriptor cannot be null");
     EdgeProperty edgeProperty =
-        EdgeProperty.create(edgeManagerDescriptor, EdgeProperty.DataSourceType.PERSISTED,
-            EdgeProperty.SchedulingType.SEQUENTIAL,
-            OutputDescriptor.create(getOutputClassName()).setUserPayload(getOutputPayload()),
-            InputDescriptor.create(getInputClassName()).setUserPayload(getInputPayload()));
+      EdgeProperty.create(edgeManagerDescriptor, EdgeProperty.DataSourceType.PERSISTED,
+        EdgeProperty.SchedulingType.SEQUENTIAL,
+        OutputDescriptor.create(getOutputClassName()).setUserPayload(getOutputPayload()),
+        InputDescriptor.create(getInputClassName()).setUserPayload(getInputPayload()));
     Utils.setEdgePropertyHistoryText(this, edgeProperty);
     return edgeProperty;
   }
@@ -159,18 +159,18 @@ public class OrderedPartitionedKVEdgeConfig
   public static class Builder extends HadoopKeyValuesBasedBaseEdgeConfig.Builder<Builder> {
 
     private final OrderedPartitionedKVOutputConfig.Builder outputBuilder =
-        new OrderedPartitionedKVOutputConfig.Builder();
+      new OrderedPartitionedKVOutputConfig.Builder();
     private final OrderedPartitionedKVOutputConfig.SpecificBuilder<OrderedPartitionedKVEdgeConfig.Builder>
-        specificOutputBuilder =
-        new OrderedPartitionedKVOutputConfig.SpecificBuilder<OrderedPartitionedKVEdgeConfig.Builder>(
-            this, outputBuilder);
+      specificOutputBuilder =
+      new OrderedPartitionedKVOutputConfig.SpecificBuilder<OrderedPartitionedKVEdgeConfig.Builder>(
+        this, outputBuilder);
 
     private final OrderedGroupedKVInputConfig.Builder inputBuilder =
-        new OrderedGroupedKVInputConfig.Builder();
+      new OrderedGroupedKVInputConfig.Builder();
     private final OrderedGroupedKVInputConfig.SpecificBuilder<OrderedPartitionedKVEdgeConfig.Builder>
-        specificInputBuilder =
-        new OrderedGroupedKVInputConfig.SpecificBuilder<OrderedPartitionedKVEdgeConfig.Builder>(this,
-            inputBuilder);
+      specificInputBuilder =
+      new OrderedGroupedKVInputConfig.SpecificBuilder<OrderedPartitionedKVEdgeConfig.Builder>(this,
+        inputBuilder);
 
     @InterfaceAudience.Private
     Builder(String keyClassName, String valueClassName, String partitionerClassName,
@@ -224,7 +224,7 @@ public class OrderedPartitionedKVEdgeConfig
      * @return this object for further chained method calls
      */
     public Builder setKeySerializationClass(String serializationClassName,
-        String comparatorClassName, @Nullable Map<String, String> serializerConf) {
+                                            String comparatorClassName, @Nullable Map<String, String> serializerConf) {
       outputBuilder.setKeySerializationClass(serializationClassName, comparatorClassName, serializerConf);
       inputBuilder.setKeySerializationClass(serializationClassName, comparatorClassName, serializerConf);
       return this;
@@ -245,7 +245,6 @@ public class OrderedPartitionedKVEdgeConfig
       inputBuilder.setValueSerializationClass(serializationClassName, serializerConf);
       return this;
     }
-
 
     @Override
     public Builder setCompression(boolean enabled, @Nullable String compressionCodec,
@@ -313,6 +312,5 @@ public class OrderedPartitionedKVEdgeConfig
     public OrderedPartitionedKVEdgeConfig build() {
       return new OrderedPartitionedKVEdgeConfig(outputBuilder.build(), inputBuilder.build());
     }
-
   }
 }

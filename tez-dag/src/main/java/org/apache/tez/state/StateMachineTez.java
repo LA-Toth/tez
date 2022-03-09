@@ -23,13 +23,12 @@ import java.util.Map;
 
 import org.apache.hadoop.yarn.state.InvalidStateTransitonException;
 import org.apache.hadoop.yarn.state.StateMachine;
-import org.apache.tez.dag.records.TezID;
 
 public class StateMachineTez<STATE extends Enum<STATE>, EVENTTYPE extends Enum<EVENTTYPE>, EVENT, OPERAND>
-    implements StateMachine<STATE, EVENTTYPE, EVENT> {
+  implements StateMachine<STATE, EVENTTYPE, EVENT> {
 
   private final Map<STATE, OnStateChangedCallback> callbackMap =
-      new HashMap<STATE, OnStateChangedCallback>();
+    new HashMap<STATE, OnStateChangedCallback>();
   private final OPERAND operand;
 
   private final StateMachine<STATE, EVENTTYPE, EVENT> realStatemachine;
@@ -54,7 +53,7 @@ public class StateMachineTez<STATE extends Enum<STATE>, EVENTTYPE extends Enum<E
   @SuppressWarnings("unchecked")
   @Override
   public STATE doTransition(EVENTTYPE eventType, EVENT event) throws
-      InvalidStateTransitonException {
+    InvalidStateTransitonException {
     STATE oldState = realStatemachine.getCurrentState();
     STATE newState = realStatemachine.doTransition(eventType, event);
     if (newState != oldState) {

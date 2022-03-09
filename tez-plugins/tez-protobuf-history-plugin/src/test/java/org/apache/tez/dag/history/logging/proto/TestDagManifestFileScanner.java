@@ -27,6 +27,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.util.Clock;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.history.logging.proto.HistoryLoggerProtos.ManifestEntryProto;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -34,11 +35,11 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 public class TestDagManifestFileScanner {
-  private MockClock clock;
-  private DatePartitionedLogger<ManifestEntryProto> manifestLogger;
-
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
+  private MockClock clock;
+  private DatePartitionedLogger<ManifestEntryProto> manifestLogger;
+  private Path deleteFilePath = null;
 
   @Before
   public void setupTest() throws Exception {
@@ -53,7 +54,7 @@ public class TestDagManifestFileScanner {
     manifestLogger = loggers.getManifestEventsLogger();
   }
 
-  @Test(timeout=5000)
+  @Test(timeout = 5000)
   public void testNormal() throws Exception {
     clock.setTime(0); // 0th day.
     createManifestEvents(0, 8);
@@ -90,8 +91,7 @@ public class TestDagManifestFileScanner {
     // Not able to test append since the LocalFileSystem does not implement append.
   }
 
-  private Path deleteFilePath = null;
-  @Test(timeout=5000)
+  @Test(timeout = 5000)
   public void testError() throws Exception {
     clock.setTime(0); // 0th day.
     createManifestEvents(0, 4);
@@ -125,14 +125,14 @@ public class TestDagManifestFileScanner {
     for (int i = 0; i < numEvents; ++i) {
       ApplicationId appId = ApplicationId.newInstance(1000l, i);
       ManifestEntryProto proto = ManifestEntryProto.newBuilder()
-          .setAppId(appId.toString())
-          .setDagFilePath("dummy_dag_path_" + i)
-          .setDagSubmittedEventOffset(0)
-          .setDagFinishedEventOffset(1)
-          .setAppFilePath("dummp_app_path_" + i)
-          .setAppLaunchedEventOffset(2)
-          .setWriteTime(clock.getTime())
-          .build();
+        .setAppId(appId.toString())
+        .setDagFilePath("dummy_dag_path_" + i)
+        .setDagSubmittedEventOffset(0)
+        .setDagFinishedEventOffset(1)
+        .setAppFilePath("dummp_app_path_" + i)
+        .setAppLaunchedEventOffset(2)
+        .setWriteTime(clock.getTime())
+        .build();
       ProtoMessageWriter<ManifestEntryProto> writer = manifestLogger.getWriter(appId.toString());
       writer.writeProto(proto);
       writer.close();
@@ -143,7 +143,7 @@ public class TestDagManifestFileScanner {
     int op = 0;
     Configuration conf = manifestLogger.getConfig();
     Path base = new Path(
-        conf.get(TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_BASE_DIR) + "/dag_meta");
+      conf.get(TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_BASE_DIR) + "/dag_meta");
     FileSystem fs = base.getFileSystem(conf);
     for (FileStatus status : fs.listStatus(base)) {
       if (status.isDirectory()) {
@@ -169,13 +169,13 @@ public class TestDagManifestFileScanner {
   private static class MockClock implements Clock {
     private long time = 0;
 
-    void setTime(long time) {
-      this.time = time;
-    }
-
     @Override
     public long getTime() {
       return time;
+    }
+
+    void setTime(long time) {
+      this.time = time;
     }
   }
 }

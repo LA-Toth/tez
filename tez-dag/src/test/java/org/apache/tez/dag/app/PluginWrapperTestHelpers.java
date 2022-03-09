@@ -29,7 +29,6 @@ import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class PluginWrapperTestHelpers {
 
   private static final Logger LOG = LoggerFactory.getLogger(PluginWrapperTestHelpers.class);
@@ -46,12 +45,13 @@ public class PluginWrapperTestHelpers {
     Method[] methods = delegateClass.getMethods();
     for (Method method : methods) {
       if (method.getDeclaringClass().equals(delegateClass) &&
-          !skipMethods.contains(method.getName())) {
+        !skipMethods.contains(method.getName())) {
 
         assertTrue(method.getExceptionTypes().length == 1);
         assertEquals(Exception.class, method.getExceptionTypes()[0]);
 
-        LOG.info("Checking method [{}] with parameterTypes [{}]", method.getName(), Arrays.toString(method.getParameterTypes()));
+        LOG.info("Checking method [{}] with parameterTypes [{}]", method.getName(),
+          Arrays.toString(method.getParameterTypes()));
 
         Object[] params = constructMethodArgs(method);
         Object result = method.invoke(wrapper, params);
@@ -66,16 +66,14 @@ public class PluginWrapperTestHelpers {
           assertEquals(answer.lastRetValue, result);
         } else {
           assertTrue("Expected: " + System.identityHashCode(answer.lastRetValue) + ", actual=" +
-              System.identityHashCode(result), answer.lastRetValue == result);
+            System.identityHashCode(result), answer.lastRetValue == result);
         }
       }
     }
-
-
   }
 
   public static Object[] constructMethodArgs(Method method) throws IllegalAccessException,
-      InstantiationException {
+    InstantiationException {
     Class<?>[] paramTypes = method.getParameterTypes();
     Object[] params = new Object[paramTypes.length];
     for (int i = 0; i < paramTypes.length; i++) {
@@ -94,7 +92,7 @@ public class PluginWrapperTestHelpers {
         return clazz.getEnumConstants()[0];
       }
     } else if (clazz.isArray() &&
-        (clazz.getComponentType().isPrimitive() || clazz.getComponentType().equals(String.class))) {
+      (clazz.getComponentType().isPrimitive() || clazz.getComponentType().equals(String.class))) {
       // Cannot mock. For now using null. Also does not handle deeply nested arrays.
       return null;
     } else {

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,8 +17,6 @@
  */
 
 package org.apache.tez.dag.api.client;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -29,21 +27,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.tez.common.CachedEntity;
-import org.apache.tez.common.Preconditions;
+import javax.annotation.Nullable;
 
-import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
+import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
 import org.apache.tez.client.FrameworkClient;
+import org.apache.tez.common.CachedEntity;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.DAGNotRunningException;
 import org.apache.tez.dag.api.TezConfiguration;
@@ -52,10 +48,15 @@ import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.api.client.rpc.DAGClientRPCImpl;
 import org.apache.tez.dag.api.records.DAGProtos;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Private
 public class DAGClientImpl extends DAGClient {
   private static final Logger LOG = LoggerFactory.getLogger(DAGClientImpl.class);
-
+  private static final long SLEEP_FOR_COMPLETION = 500;
+  private static final long PRINT_STATUS_INTERVAL_MILLIS = 5000;
   private final ApplicationId appId;
   private final String dagId;
   private final TezConfiguration conf;
@@ -64,26 +65,23 @@ public class DAGClientImpl extends DAGClient {
    * Container to cache the last {@link DAGStatus}.
    */
   private final CachedEntity<DAGStatus> cachedDAGStatusRef;
+  private final DecimalFormat formatter = new DecimalFormat("###.##%");
   @VisibleForTesting
   protected DAGClientInternal realClient;
-  private volatile boolean dagCompleted = false;
   @VisibleForTesting
   protected boolean isATSEnabled = false;
   Map<String, VertexStatus> cachedVertexStatus = new HashMap<String, VertexStatus>();
-
-  private static final long SLEEP_FOR_COMPLETION = 500;
-  private static final long PRINT_STATUS_INTERVAL_MILLIS = 5000;
-  private final DecimalFormat formatter = new DecimalFormat("###.##%");
+  private volatile boolean dagCompleted = false;
   private long lastPrintStatusTimeMillis;
   private EnumSet<VertexStatus.State> vertexCompletionStates = EnumSet.of(
-      VertexStatus.State.SUCCEEDED, VertexStatus.State.FAILED, VertexStatus.State.KILLED,
-      VertexStatus.State.ERROR);
+    VertexStatus.State.SUCCEEDED, VertexStatus.State.FAILED, VertexStatus.State.KILLED,
+    VertexStatus.State.ERROR);
   private long statusPollInterval;
   private long diagnoticsWaitTimeout;
   private boolean cleanupFrameworkClient;
 
   public DAGClientImpl(ApplicationId appId, String dagId, TezConfiguration conf,
-      @Nullable FrameworkClient frameworkClient, UserGroupInformation ugi) {
+                       @Nullable FrameworkClient frameworkClient, UserGroupInformation ugi) {
     this.appId = appId;
     this.dagId = dagId;
     this.conf = conf;
@@ -96,24 +94,24 @@ public class DAGClientImpl extends DAGClient {
       cleanupFrameworkClient = true;
     }
     isATSEnabled = conf.get(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS, "")
-        .equals("org.apache.tez.dag.history.logging.ats.ATSHistoryLoggingService") &&
-        conf.getBoolean(TezConfiguration.TEZ_DAG_HISTORY_LOGGING_ENABLED,
-            TezConfiguration.TEZ_DAG_HISTORY_LOGGING_ENABLED_DEFAULT) &&
-        conf.getBoolean(TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED,
-            TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED_DEFAULT) &&
-        DAGClientTimelineImpl.isSupported();
+      .equals("org.apache.tez.dag.history.logging.ats.ATSHistoryLoggingService") &&
+      conf.getBoolean(TezConfiguration.TEZ_DAG_HISTORY_LOGGING_ENABLED,
+        TezConfiguration.TEZ_DAG_HISTORY_LOGGING_ENABLED_DEFAULT) &&
+      conf.getBoolean(TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED,
+        TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED_DEFAULT) &&
+      DAGClientTimelineImpl.isSupported();
 
     realClient = new DAGClientRPCImpl(appId, dagId, conf, this.frameworkClient, ugi);
     statusPollInterval = conf.getLong(
-        TezConfiguration.TEZ_DAG_STATUS_POLLINTERVAL_MS,
-        TezConfiguration.TEZ_DAG_STATUS_POLLINTERVAL_MS_DEFAULT);
-    if(statusPollInterval < 0) {
+      TezConfiguration.TEZ_DAG_STATUS_POLLINTERVAL_MS,
+      TezConfiguration.TEZ_DAG_STATUS_POLLINTERVAL_MS_DEFAULT);
+    if (statusPollInterval < 0) {
       LOG.error("DAG Status poll interval cannot be negative and setting to default value.");
       statusPollInterval = TezConfiguration.TEZ_DAG_STATUS_POLLINTERVAL_MS_DEFAULT;
     }
     this.diagnoticsWaitTimeout = conf.getLong(
-        TezConfiguration.TEZ_CLIENT_DIAGNOSTICS_WAIT_TIMEOUT_MS,
-        TezConfiguration.TEZ_CLIENT_DIAGNOSTICS_WAIT_TIMEOUT_MS_DEFAULT);
+      TezConfiguration.TEZ_CLIENT_DIAGNOSTICS_WAIT_TIMEOUT_MS,
+      TezConfiguration.TEZ_CLIENT_DIAGNOSTICS_WAIT_TIMEOUT_MS_DEFAULT);
     cachedDAGStatusRef = initCacheDAGRefFromConf(conf);
   }
 
@@ -124,12 +122,12 @@ public class DAGClientImpl extends DAGClient {
    */
   protected CachedEntity<DAGStatus> initCacheDAGRefFromConf(TezConfiguration tezConf) {
     long clientDAGStatusCacheTimeOut = tezConf.getLong(
-        TezConfiguration.TEZ_CLIENT_DAG_STATUS_CACHE_TIMEOUT_SECS,
-        TezConfiguration.TEZ_CLIENT_DAG_STATUS_CACHE_TIMEOUT_SECS_DEFAULT);
+      TezConfiguration.TEZ_CLIENT_DAG_STATUS_CACHE_TIMEOUT_SECS,
+      TezConfiguration.TEZ_CLIENT_DAG_STATUS_CACHE_TIMEOUT_SECS_DEFAULT);
     if (clientDAGStatusCacheTimeOut <= 0) {
       LOG.error("DAG Status cache timeout interval should be positive. Enforcing default value.");
       clientDAGStatusCacheTimeOut =
-          TezConfiguration.TEZ_CLIENT_DAG_STATUS_CACHE_TIMEOUT_SECS_DEFAULT;
+        TezConfiguration.TEZ_CLIENT_DAG_STATUS_CACHE_TIMEOUT_SECS_DEFAULT;
     }
     return new CachedEntity<>(TimeUnit.SECONDS, clientDAGStatusCacheTimeOut);
   }
@@ -150,7 +148,7 @@ public class DAGClientImpl extends DAGClient {
 
   @Override
   public DAGStatus getDAGStatus(@Nullable Set<StatusGetOpts> statusOptions,
-      final long timeout) throws TezException, IOException {
+                                final long timeout) throws TezException, IOException {
 
     Preconditions.checkArgument(timeout >= -1, "Timeout must be >= -1");
     // Short circuit a timeout of 0.
@@ -171,10 +169,10 @@ public class DAGClientImpl extends DAGClient {
     // Handling when client dag status init or submitted. This really implies that the RM was
     // contacted to get status. INITING is never used. DAG_INITING implies a DagState of RUNNING.
     if (dagStatus.getState() == DAGStatus.State.INITING
-        || dagStatus.getState() == DAGStatus.State.SUBMITTED) {
+      || dagStatus.getState() == DAGStatus.State.SUBMITTED) {
       long timeoutAbsolute = startTime + timeout;
       while (timeout < 0
-          || (timeout > 0 && timeoutAbsolute > System.currentTimeMillis())) {
+        || (timeout > 0 && timeoutAbsolute > System.currentTimeMillis())) {
         if (refreshStatus) {
           // Try fetching the state with a timeout, in case the AM is already up.
           dagStatus = getDAGStatusInternal(statusOptions, timeout);
@@ -192,10 +190,10 @@ public class DAGClientImpl extends DAGClient {
           } else {
             // From the RM. Fall through to the Sleep.
           }
-        } else if(dagStatus.getState() == DAGStatus.State.SUCCEEDED
-            || dagStatus.getState() == DAGStatus.State.FAILED
-            || dagStatus.getState() == DAGStatus.State.KILLED
-            || dagStatus.getState() == DAGStatus.State.ERROR) {
+        } else if (dagStatus.getState() == DAGStatus.State.SUCCEEDED
+          || dagStatus.getState() == DAGStatus.State.FAILED
+          || dagStatus.getState() == DAGStatus.State.KILLED
+          || dagStatus.getState() == DAGStatus.State.ERROR) {
           // Again, check if this was from the RM. If it was, try getting it from a more informative source.
           if (dagStatus.getSource() == DagStatusSource.RM) {
             return getDAGStatusInternal(statusOptions, 0);
@@ -234,7 +232,7 @@ public class DAGClientImpl extends DAGClient {
   }
 
   protected DAGStatus getDAGStatusInternal(@Nullable Set<StatusGetOpts> statusOptions,
-      long timeout) throws TezException, IOException {
+                                           long timeout) throws TezException, IOException {
 
     if (!dagCompleted) {
       // fetch from AM. on Error and while DAG is still not completed (could not reach AM, AM got
@@ -270,7 +268,7 @@ public class DAGClientImpl extends DAGClient {
         }
       } catch (ApplicationNotFoundException e) {
         LOG.info("Failed to fetch DAG data for completed DAG from YARN Timeline"
-            + " - Application not found by YARN", e);
+          + " - Application not found by YARN", e);
       } catch (TezException e) {
         LOG.debug("DAGStatus fetch failed", e);
       }
@@ -291,13 +289,13 @@ public class DAGClientImpl extends DAGClient {
 
   @Override
   public DAGStatus getDAGStatus(@Nullable Set<StatusGetOpts> statusOptions) throws
-      TezException, IOException {
+    TezException, IOException {
     return getDAGStatusInternal(statusOptions, 0);
   }
 
   @Override
   public VertexStatus getVertexStatus(String vertexName, Set<StatusGetOpts> statusOptions) throws
-      IOException, TezException {
+    IOException, TezException {
 
     if (!dagCompleted) {
       VertexStatus vertexStatus = getVertexStatusViaAM(vertexName, statusOptions);
@@ -325,7 +323,7 @@ public class DAGClientImpl extends DAGClient {
         }
       } catch (ApplicationNotFoundException e) {
         LOG.info("Failed to fetch Vertex data for completed DAG from YARN Timeline"
-            + " - Application not found by YARN", e);
+          + " - Application not found by YARN", e);
         return null;
       } catch (TezException e) {
         LOG.debug("ERROR fetching vertex data from Yarn Timeline", e);
@@ -373,8 +371,8 @@ public class DAGClientImpl extends DAGClient {
 
   @Override
   public DAGStatus waitForCompletionWithStatusUpdates(
-      @Nullable Set<StatusGetOpts> statusGetOpts) throws IOException, TezException,
-      InterruptedException {
+    @Nullable Set<StatusGetOpts> statusGetOpts) throws IOException, TezException,
+    InterruptedException {
     return _waitForCompletionWithStatusUpdates(-1, true, statusGetOpts);
   }
 
@@ -394,7 +392,7 @@ public class DAGClientImpl extends DAGClient {
    * @throws IOException
    */
   private DAGStatus getDAGStatusViaAM(@Nullable Set<StatusGetOpts> statusOptions,
-      long timeout) throws IOException {
+                                      long timeout) throws IOException {
     DAGStatus dagStatus = null;
     try {
       dagStatus = realClient.getDAGStatus(statusOptions, timeout);
@@ -420,7 +418,7 @@ public class DAGClientImpl extends DAGClient {
   }
 
   private VertexStatus getVertexStatusViaAM(String vertexName, Set<StatusGetOpts> statusOptions) throws
-      IOException {
+    IOException {
     VertexStatus vertexStatus = null;
     try {
       vertexStatus = realClient.getVertexStatus(vertexName, statusOptions);
@@ -462,7 +460,7 @@ public class DAGClientImpl extends DAGClient {
       throw new TezException(e);
     }
 
-    if(appReport == null) {
+    if (appReport == null) {
       throw new TezException("Unknown/Invalid appId: " + appId);
     }
 
@@ -486,7 +484,7 @@ public class DAGClientImpl extends DAGClient {
         dagState = DAGProtos.DAGStatusStateProto.DAG_KILLED;
         break;
       case FINISHED:
-        switch(appReport.getFinalApplicationStatus()) {
+        switch (appReport.getFinalApplicationStatus()) {
           case UNDEFINED:
           case FAILED:
             dagState = DAGProtos.DAGStatusStateProto.DAG_FAILED;
@@ -499,24 +497,24 @@ public class DAGClientImpl extends DAGClient {
             break;
           default:
             throw new TezUncheckedException("Encountered unknown final application"
-                + " status from YARN"
-                + ", appState=" + appReport.getYarnApplicationState()
-                + ", finalStatus=" + appReport.getFinalApplicationStatus());
+              + " status from YARN"
+              + ", appState=" + appReport.getYarnApplicationState()
+              + ", finalStatus=" + appReport.getFinalApplicationStatus());
         }
         break;
       default:
         throw new TezUncheckedException("Encountered unknown application state"
-            + " from YARN, appState=" + appReport.getYarnApplicationState());
+          + " from YARN, appState=" + appReport.getYarnApplicationState());
     }
 
     builder.setState(dagState);
     // workaround before YARN-2560 is fixed
     if (appReport.getFinalApplicationStatus() == FinalApplicationStatus.FAILED
-        || appReport.getFinalApplicationStatus() == FinalApplicationStatus.KILLED) {
+      || appReport.getFinalApplicationStatus() == FinalApplicationStatus.KILLED) {
       long startTime = System.currentTimeMillis();
-      while((appReport.getDiagnostics() == null
-          || appReport.getDiagnostics().isEmpty())
-          && (System.currentTimeMillis() - startTime) < diagnoticsWaitTimeout) {
+      while ((appReport.getDiagnostics() == null
+        || appReport.getDiagnostics().isEmpty())
+        && (System.currentTimeMillis() - startTime) < diagnoticsWaitTimeout) {
         try {
           Thread.sleep(100);
           appReport = frameworkClient.getApplicationReport(appId);
@@ -549,15 +547,15 @@ public class DAGClientImpl extends DAGClient {
         return null;
       }
       if (!initPrinted
-          && (dagStatus.getState() == DAGStatus.State.INITING || dagStatus.getState() == DAGStatus.State.SUBMITTED)) {
+        && (dagStatus.getState() == DAGStatus.State.INITING || dagStatus.getState() == DAGStatus.State.SUBMITTED)) {
         initPrinted = true; // Print once
         log("Waiting for DAG to start running");
       }
       if (dagStatus.getState() == DAGStatus.State.RUNNING
-          || dagStatus.getState() == DAGStatus.State.SUCCEEDED
-          || dagStatus.getState() == DAGStatus.State.FAILED
-          || dagStatus.getState() == DAGStatus.State.KILLED
-          || dagStatus.getState() == DAGStatus.State.ERROR) {
+        || dagStatus.getState() == DAGStatus.State.SUCCEEDED
+        || dagStatus.getState() == DAGStatus.State.FAILED
+        || dagStatus.getState() == DAGStatus.State.KILLED
+        || dagStatus.getState() == DAGStatus.State.ERROR) {
         break;
       }
       if (maxNs != null && System.nanoTime() > maxNs) {
@@ -598,7 +596,7 @@ public class DAGClientImpl extends DAGClient {
       dagProgress = getProgress(progress);
       boolean progressChanged = dagProgress > prevDagProgress;
       long currentTimeMillis = System.currentTimeMillis();
-      long timeSinceLastPrintStatus =  currentTimeMillis - lastPrintStatusTimeMillis;
+      long timeSinceLastPrintStatus = currentTimeMillis - lastPrintStatusTimeMillis;
       boolean printIntervalExpired = timeSinceLastPrintStatus > PRINT_STATUS_INTERVAL_MILLIS;
       if (progressChanged || printIntervalExpired) {
         lastPrintStatusTimeMillis = currentTimeMillis;
@@ -613,7 +611,7 @@ public class DAGClientImpl extends DAGClient {
                               DAGStatus dagStatus, Progress dagProgress) throws IOException, TezException {
     double vProgressFloat = 0.0f;
     log("DAG: State: " + dagStatus.getState() + " Progress: "
-        + formatter.format(getProgress(dagProgress)) + " " + dagProgress);
+      + formatter.format(getProgress(dagProgress)) + " " + dagProgress);
     boolean displayCounter = opts != null && opts.contains(StatusGetOpts.GET_COUNTERS);
     if (displayCounter) {
       TezCounters counters = dagStatus.getDAGCounters();
@@ -636,7 +634,7 @@ public class DAGClientImpl extends DAGClient {
           vProgressFloat = getProgress(vProgress);
         }
         log("\tVertexStatus:" + " VertexName: " + vertex + " Progress: "
-            + formatter.format(vProgressFloat) + " " + vProgress);
+          + formatter.format(vProgressFloat) + " " + vProgress);
       }
       if (displayCounter) {
         TezCounters counters = vStatus.getVertexCounters();
@@ -652,7 +650,7 @@ public class DAGClientImpl extends DAGClient {
     if (appReport != null) {
       final YarnApplicationState appState = appReport.getYarnApplicationState();
       if (appState == YarnApplicationState.FINISHED || appState == YarnApplicationState.FAILED ||
-          appState == YarnApplicationState.KILLED) {
+        appState == YarnApplicationState.KILLED) {
         dagCompleted = true;
       }
     }
@@ -661,7 +659,7 @@ public class DAGClientImpl extends DAGClient {
   private void switchToTimelineClient() throws IOException, TezException {
     realClient.close();
     realClient = new DAGClientTimelineImpl(appId, dagId, conf, frameworkClient,
-        (int) (2 * PRINT_STATUS_INTERVAL_MILLIS));
+      (int) (2 * PRINT_STATUS_INTERVAL_MILLIS));
     LOG.debug("dag completed switching to DAGClientTimelineImpl");
   }
 
@@ -672,7 +670,7 @@ public class DAGClientImpl extends DAGClient {
 
   private double getProgress(Progress progress) {
     return (progress.getTotalTaskCount() == 0 ? 0.0 : (double) (progress.getSucceededTaskCount())
-        / progress.getTotalTaskCount());
+      / progress.getTotalTaskCount());
   }
 
   private void log(String message) {

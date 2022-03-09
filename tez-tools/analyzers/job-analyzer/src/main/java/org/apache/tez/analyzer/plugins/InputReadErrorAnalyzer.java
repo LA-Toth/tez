@@ -34,12 +34,20 @@ import org.apache.tez.history.parser.datamodel.VertexInfo;
  * Helps finding the root cause of shuffle errors, e.g. which node(s) can be blamed for them.
  */
 public class InputReadErrorAnalyzer extends TezAnalyzerBase implements Analyzer {
-  private final String[] headers = { "vertex:attempt", "status", "time", "node", "diagnostics" };
+  private final String[] headers = {"vertex:attempt", "status", "time", "node", "diagnostics"};
   private final CSVResult csvResult;
 
   public InputReadErrorAnalyzer(Configuration config) {
     super(config);
     csvResult = new CSVResult(headers);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    InputReadErrorAnalyzer analyzer = new InputReadErrorAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -48,14 +56,14 @@ public class InputReadErrorAnalyzer extends TezAnalyzerBase implements Analyzer 
       for (TaskAttemptInfo attempt : vertex.getTaskAttempts()) {
         String terminationCause = attempt.getTerminationCause();
         if ("INPUT_READ_ERROR".equalsIgnoreCase(terminationCause)
-            || "OUTPUT_LOST".equalsIgnoreCase(terminationCause)
-            || "NODE_FAILED".equalsIgnoreCase(terminationCause)) {
+          || "OUTPUT_LOST".equalsIgnoreCase(terminationCause)
+          || "NODE_FAILED".equalsIgnoreCase(terminationCause)) {
           for (Event event : attempt.getEvents()) {
             if (event.getType().equalsIgnoreCase("TASK_ATTEMPT_FINISHED")) {
-              csvResult.addRecord(new String[] {
-                  vertex.getVertexName() + ":" + attempt.getTaskAttemptId(),
-                  attempt.getDetailedStatus(), String.valueOf(event.getTime()), attempt.getNodeId(),
-                  attempt.getDiagnostics().replaceAll(",", " ").replaceAll("\n", " ") });
+              csvResult.addRecord(new String[]{
+                vertex.getVertexName() + ":" + attempt.getTaskAttemptId(),
+                attempt.getDetailedStatus(), String.valueOf(event.getTime()), attempt.getNodeId(),
+                attempt.getDiagnostics().replaceAll(",", " ").replaceAll("\n", " ")});
             }
           }
         }
@@ -82,13 +90,5 @@ public class InputReadErrorAnalyzer extends TezAnalyzerBase implements Analyzer 
   @Override
   public String getDescription() {
     return "Prints every task attempt (with node) which are related to input read errors";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    InputReadErrorAnalyzer analyzer = new InputReadErrorAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

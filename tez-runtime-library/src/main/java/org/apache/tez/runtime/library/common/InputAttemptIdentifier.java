@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,19 +27,11 @@ import org.apache.tez.dag.api.TezUncheckedException;
 @Private
 public class InputAttemptIdentifier {
 
+  public static final String PATH_PREFIX = "attempt";
   private final int inputIdentifier;
   private final int attemptNumber;
   private final String pathComponent;
   private final boolean shared;
-
-  public static final String PATH_PREFIX = "attempt";
-
-  public enum SPILL_INFO {
-    FINAL_MERGE_ENABLED, //Final merge is enabled at source
-    INCREMENTAL_UPDATE, //Final merge is disabled and qualifies for incremental spill updates.(i.e spill 0, 1 etc)
-    FINAL_UPDATE //Indicates final piece of data in the pipelined shuffle.
-  }
-
   /**
    * For pipelined shuffles. These fields need not be part of equals() or hashCode() computation.
    * These fields are added for additional information about the source and are not meant to
@@ -47,7 +39,6 @@ public class InputAttemptIdentifier {
    */
   private final byte fetchTypeInfo;
   private final int spillEventId;
-
   public InputAttemptIdentifier(int inputIndex, int attemptNumber) {
     this(inputIndex, attemptNumber, null);
   }
@@ -61,16 +52,16 @@ public class InputAttemptIdentifier {
   }
 
   public InputAttemptIdentifier(int inputIdentifier, int attemptNumber, String pathComponent,
-      boolean shared, SPILL_INFO fetchTypeInfo, int spillEventId) {
+                                boolean shared, SPILL_INFO fetchTypeInfo, int spillEventId) {
     this.inputIdentifier = inputIdentifier;
     this.attemptNumber = attemptNumber;
     this.pathComponent = pathComponent;
     this.shared = shared;
-    this.fetchTypeInfo = (byte)fetchTypeInfo.ordinal();
+    this.fetchTypeInfo = (byte) fetchTypeInfo.ordinal();
     this.spillEventId = spillEventId;
     if (pathComponent != null && !pathComponent.startsWith(PATH_PREFIX)) {
       throw new TezUncheckedException(
-          "Path component must start with: " + PATH_PREFIX + " " + this);
+        "Path component must start with: " + PATH_PREFIX + " " + this);
     }
   }
 
@@ -81,7 +72,7 @@ public class InputAttemptIdentifier {
   public int getAttemptNumber() {
     return attemptNumber;
   }
-  
+
   public String getPathComponent() {
     return pathComponent;
   }
@@ -105,7 +96,7 @@ public class InputAttemptIdentifier {
 
   public boolean canRetrieveInputInChunks() {
     return (fetchTypeInfo == SPILL_INFO.INCREMENTAL_UPDATE.ordinal()) ||
-        (fetchTypeInfo == SPILL_INFO.FINAL_UPDATE.ordinal());
+      (fetchTypeInfo == SPILL_INFO.FINAL_UPDATE.ordinal());
   }
 
   // PathComponent & shared does not need to be part of the hashCode and equals computation.
@@ -138,7 +129,13 @@ public class InputAttemptIdentifier {
   @Override
   public String toString() {
     return "InputAttemptIdentifier [inputIdentifier=" + inputIdentifier
-        + ", attemptNumber=" + attemptNumber + ", pathComponent="
-        + pathComponent + ", spillType=" + fetchTypeInfo + ", spillId=" + spillEventId  +"]";
+      + ", attemptNumber=" + attemptNumber + ", pathComponent="
+      + pathComponent + ", spillType=" + fetchTypeInfo + ", spillId=" + spillEventId + "]";
+  }
+
+  public enum SPILL_INFO {
+    FINAL_MERGE_ENABLED, //Final merge is enabled at source
+    INCREMENTAL_UPDATE, //Final merge is disabled and qualifies for incremental spill updates.(i.e spill 0, 1 etc)
+    FINAL_UPDATE //Indicates final piece of data in the pipelined shuffle.
   }
 }

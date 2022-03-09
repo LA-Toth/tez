@@ -18,24 +18,13 @@
 
 package org.apache.tez.examples;
 
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Set;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Sets;
+import javax.annotation.Nullable;
 
 import org.apache.commons.cli.Options;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.tez.client.CallerContext;
-import org.apache.tez.common.TezUtilsInternal;
-import org.apache.tez.hadoop.shim.DefaultHadoopShim;
-import org.apache.tez.hadoop.shim.HadoopShim;
-import org.apache.tez.hadoop.shim.HadoopShimsLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
@@ -44,29 +33,36 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.util.GenericOptionsParser;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
+import org.apache.tez.client.CallerContext;
 import org.apache.tez.client.TezClient;
+import org.apache.tez.common.TezUtilsInternal;
 import org.apache.tez.dag.api.DAG;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.client.DAGClient;
 import org.apache.tez.dag.api.client.DAGStatus;
 import org.apache.tez.dag.api.client.StatusGetOpts;
+import org.apache.tez.hadoop.shim.HadoopShim;
+import org.apache.tez.hadoop.shim.HadoopShimsLoader;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @InterfaceAudience.Private
 public abstract class TezExampleBase extends Configured implements Tool {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TezExampleBase.class);
-
-  private TezClient tezClientInternal;
   protected static final String DISABLE_SPLIT_GROUPING = "disableSplitGrouping";
   protected static final String LOCAL_MODE = "local";
   protected static final String COUNTER_LOG = "counter";
   protected static final String GENERATE_SPLIT_IN_CLIENT = "generateSplitInClient";
   protected static final String LEAVE_AM_RUNNING = "leaveAmRunning";
   protected static final String RECONNECT_APP_ID = "reconnectAppId";
-
-
+  private static final Logger LOG = LoggerFactory.getLogger(TezExampleBase.class);
+  private TezClient tezClientInternal;
   private boolean disableSplitGrouping = false;
   private boolean isLocalMode = false;
   private boolean isCountersLog = false;
@@ -76,7 +72,7 @@ public abstract class TezExampleBase extends Configured implements Tool {
   private HadoopShim hadoopShim;
 
   protected boolean isCountersLog() {
-	  return isCountersLog;
+    return isCountersLog;
   }
 
   protected boolean isDisableSplitGrouping() {
@@ -90,8 +86,8 @@ public abstract class TezExampleBase extends Configured implements Tool {
   private Options getExtraOptions() {
     Options options = new Options();
     options.addOption(LOCAL_MODE, false, "run it as local mode");
-    options.addOption(DISABLE_SPLIT_GROUPING, false , "disable split grouping");
-    options.addOption(COUNTER_LOG, false , "print counter log");
+    options.addOption(DISABLE_SPLIT_GROUPING, false, "disable split grouping");
+    options.addOption(COUNTER_LOG, false, "print counter log");
     options.addOption(GENERATE_SPLIT_IN_CLIENT, false, "whether generate split in client");
     options.addOption(LEAVE_AM_RUNNING, false, "whether client should stop session");
     options.addOption(RECONNECT_APP_ID, true, "appId for client reconnect");
@@ -119,7 +115,7 @@ public abstract class TezExampleBase extends Configured implements Tool {
       leaveAmRunning = true;
     }
     if (optionParser.getCommandLine().hasOption(RECONNECT_APP_ID)) {
-        reconnectAppId = optionParser.getCommandLine().getOptionValue(RECONNECT_APP_ID);
+      reconnectAppId = optionParser.getCommandLine().getOptionValue(RECONNECT_APP_ID);
     }
     hadoopShim = new HadoopShimsLoader(conf).getHadoopShim();
 
@@ -137,10 +133,10 @@ public abstract class TezExampleBase extends Configured implements Tool {
    *                  provided configuration. If TezClient is specified, local mode option can not been
    *                  specified in arguments, it takes no effect.
    * @return Zero indicates success, non-zero indicates failure
-   * @throws Exception 
+   * @throws Exception
    */
   public int run(TezConfiguration conf, String[] args, @Nullable TezClient tezClient) throws
-      Exception {
+    Exception {
     setConf(conf);
     hadoopShim = new HadoopShimsLoader(conf).getHadoopShim();
     GenericOptionsParser optionParser = new GenericOptionsParser(conf, getExtraOptions(), args);
@@ -173,11 +169,11 @@ public abstract class TezExampleBase extends Configured implements Tool {
    * @throws IOException
    */
   public int runDag(DAG dag, boolean printCounters, Logger logger) throws TezException,
-      InterruptedException, IOException {
+    InterruptedException, IOException {
     tezClientInternal.waitTillReady();
 
     CallerContext callerContext = CallerContext.create("TezExamples",
-        "Tez Example DAG: " + dag.getName());
+      "Tez Example DAG: " + dag.getName());
     ApplicationId appId = tezClientInternal.getAppMasterApplicationId();
     if (hadoopShim == null) {
       Configuration conf = (getConf() == null ? new Configuration(false) : getConf());
@@ -216,7 +212,7 @@ public abstract class TezExampleBase extends Configured implements Tool {
   }
 
   private int _execute(String[] otherArgs, TezConfiguration tezConf, TezClient tezClient) throws
-      Exception {
+    Exception {
 
     int result = _validateArgs(otherArgs);
     if (result != 0) {
@@ -231,7 +227,7 @@ public abstract class TezExampleBase extends Configured implements Tool {
       tezConf.setBoolean(TezConfiguration.TEZ_LOCAL_MODE, true);
       tezConf.set("fs.defaultFS", "file:///");
       tezConf.setBoolean(
-          TezRuntimeConfiguration.TEZ_RUNTIME_OPTIMIZE_LOCAL_FETCH, true);
+        TezRuntimeConfiguration.TEZ_RUNTIME_OPTIMIZE_LOCAL_FETCH, true);
     }
     UserGroupInformation.setConfiguration(tezConf);
     boolean ownTezClient = false;
@@ -252,7 +248,7 @@ public abstract class TezExampleBase extends Configured implements Tool {
 
   private TezClient createTezClient(TezConfiguration tezConf) throws IOException, TezException {
     TezClient tezClient = TezClient.create("TezExampleApplication", tezConf);
-    if(reconnectAppId != null) {
+    if (reconnectAppId != null) {
       ApplicationId appId = TezClient.appIdfromString(reconnectAppId);
       tezClient.getClient(appId);
     } else {
@@ -277,9 +273,9 @@ public abstract class TezExampleBase extends Configured implements Tool {
   protected void printExtraOptionsUsage(PrintStream ps) {
     ps.println("Tez example extra options supported are");
     ps.println("-" + LOCAL_MODE + "\t\trun it in tez local mode, "
-        + " run it in distributed mode without this option");
+      + " run it in distributed mode without this option");
     ps.println("-" + DISABLE_SPLIT_GROUPING + "\t\t disable split grouping for MRInput,"
-        + " enable split grouping without this option.");
+      + " enable split grouping without this option.");
     ps.println("-" + COUNTER_LOG + "\t\t to print counters information");
     ps.println("-" + GENERATE_SPLIT_IN_CLIENT + "\t\tgenerate input split in client");
     ps.println("-" + LEAVE_AM_RUNNING + "\t\twhether client should stop session");
@@ -311,7 +307,7 @@ public abstract class TezExampleBase extends Configured implements Tool {
    */
   protected abstract int runJob(String[] args, TezConfiguration tezConf,
                                 TezClient tezClient) throws Exception;
-  
+
   @Private
   @VisibleForTesting
   public ApplicationId getAppId() {

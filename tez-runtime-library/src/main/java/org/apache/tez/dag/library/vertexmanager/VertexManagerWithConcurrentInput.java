@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,8 +18,16 @@
 
 package org.apache.tez.dag.library.vertexmanager;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import static org.apache.tez.dag.api.EdgeProperty.SchedulingType.CONCURRENT;
+
+import java.io.IOException;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.annotation.Nullable;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.EdgeProperty;
@@ -36,23 +44,18 @@ import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.TaskAttemptIdentifier;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import static org.apache.tez.dag.api.EdgeProperty.SchedulingType.CONCURRENT;
 
 public class VertexManagerWithConcurrentInput extends VertexManagerPlugin {
 
   private static final Logger LOG = LoggerFactory.getLogger(VertexManagerWithConcurrentInput.class);
 
   private final Map<String, Boolean> srcVerticesConfigured = Maps.newConcurrentMap();
+  int completedUpstreamTasks;
   private int managedTasks;
   private AtomicBoolean tasksScheduled = new AtomicBoolean(false);
   private AtomicBoolean onVertexStartedDone = new AtomicBoolean(false);
@@ -61,26 +64,42 @@ public class VertexManagerWithConcurrentInput extends VertexManagerPlugin {
   private ConcurrentEdgeTriggerType edgeTriggerType;
   private volatile boolean allSrcVerticesConfigured;
 
-  int completedUpstreamTasks;
-
   public VertexManagerWithConcurrentInput(VertexManagerPluginContext context) {
     super(context);
+  }
+
+  /**
+   * Create a {@link VertexManagerPluginDescriptor} builder that can be used to
+   * configure the plugin.
+   *
+   * @param conf
+   *          {@link Configuration} May be modified in place. May be null if the
+   *          configuration parameters are to be set only via code. If
+   *          configuration values may be changed at runtime via a config file
+   *          then pass in a {@link Configuration} that is initialized from a
+   *          config file. The parameters that are not overridden in code will
+   *          be derived from the Configuration object.
+   * @return {@link ConcurrentInputVertexManagerConfigBuilder}
+   */
+  public static ConcurrentInputVertexManagerConfigBuilder createConfigBuilder(
+    @Nullable Configuration conf) {
+    return new ConcurrentInputVertexManagerConfigBuilder(conf);
   }
 
   @Override
   public void initialize() {
     UserPayload userPayload = getContext().getUserPayload();
     if (userPayload == null || userPayload.getPayload() == null ||
-        userPayload.getPayload().limit() == 0) {
+      userPayload.getPayload().limit() == 0) {
       throw new TezUncheckedException("Could not initialize VertexManagerWithConcurrentInput"
-          + " from provided user payload");
+        + " from provided user payload");
     }
     managedTasks = getContext().getVertexNumTasks(getContext().getVertexName());
     Map<String, EdgeProperty> edges = getContext().getInputVertexEdgeProperties();
     for (Map.Entry<String, EdgeProperty> entry : edges.entrySet()) {
       if (!CONCURRENT.equals(entry.getValue().getSchedulingType())) {
         throw new TezUncheckedException("All input edges to vertex " + vertexName +
-            "  must be CONCURRENT.");
+          "  must be CONCURRENT.");
       }
       String srcVertex = entry.getKey();
       srcVerticesConfigured.put(srcVertex, false);
@@ -93,8 +112,8 @@ public class VertexManagerWithConcurrentInput extends VertexManagerPlugin {
       throw new TezUncheckedException(e);
     }
     edgeTriggerType = ConcurrentEdgeTriggerType.valueOf(
-        vertexConfig.get(TezConfiguration.TEZ_CONCURRENT_EDGE_TRIGGER_TYPE,
-            TezConfiguration.TEZ_CONCURRENT_EDGE_TRIGGER_TYPE_DEFAULT));
+      vertexConfig.get(TezConfiguration.TEZ_CONCURRENT_EDGE_TRIGGER_TYPE,
+        TezConfiguration.TEZ_CONCURRENT_EDGE_TRIGGER_TYPE_DEFAULT));
     if (!ConcurrentEdgeTriggerType.SOURCE_VERTEX_CONFIGURED.equals(edgeTriggerType)) {
       // pending TEZ-3999
       throw new TezUncheckedException("Only support SOURCE_VERTEX_CONFIGURED triggering type for now.");
@@ -117,16 +136,16 @@ public class VertexManagerWithConcurrentInput extends VertexManagerPlugin {
     String fromVertex = stateUpdate.getVertexName();
     if (!srcVerticesConfigured.containsKey(fromVertex)) {
       throw new IllegalArgumentException("Not expecting state update from vertex:" +
-          fromVertex + " in vertex: " + this.vertexName);
+        fromVertex + " in vertex: " + this.vertexName);
     }
 
     if (!VertexState.CONFIGURED.equals(state)) {
       throw new IllegalArgumentException("Received incorrect state notification : " +
-          state + " from vertex: " + fromVertex + " in vertex: " + this.vertexName);
+        state + " from vertex: " + fromVertex + " in vertex: " + this.vertexName);
     }
 
     LOG.info("Received configured notification: " + state + " for vertex: "
-        + fromVertex + " in vertex: " + this.vertexName);
+      + fromVertex + " in vertex: " + this.vertexName);
     srcVerticesConfigured.put(fromVertex, true);
 
     // check for source vertices completely configured
@@ -146,7 +165,7 @@ public class VertexManagerWithConcurrentInput extends VertexManagerPlugin {
 
   @Override
   public synchronized void onSourceTaskCompleted(TaskAttemptIdentifier attempt) {
-    completedUpstreamTasks ++;
+    completedUpstreamTasks++;
     LOG.info("Source task attempt {} completion received at vertex {}", attempt, this.vertexName);
   }
 
@@ -195,25 +214,6 @@ public class VertexManagerWithConcurrentInput extends VertexManagerPlugin {
     }
   }
 
-
-  /**
-   * Create a {@link VertexManagerPluginDescriptor} builder that can be used to
-   * configure the plugin.
-   *
-   * @param conf
-   *          {@link Configuration} May be modified in place. May be null if the
-   *          configuration parameters are to be set only via code. If
-   *          configuration values may be changed at runtime via a config file
-   *          then pass in a {@link Configuration} that is initialized from a
-   *          config file. The parameters that are not overridden in code will
-   *          be derived from the Configuration object.
-   * @return {@link ConcurrentInputVertexManagerConfigBuilder}
-   */
-  public static ConcurrentInputVertexManagerConfigBuilder createConfigBuilder(
-      @Nullable Configuration conf) {
-    return new ConcurrentInputVertexManagerConfigBuilder(conf);
-  }
-
   /**
    * Helper class to configure VertexManagerWithConcurrentInput
    */
@@ -230,16 +230,15 @@ public class VertexManagerWithConcurrentInput extends VertexManagerPlugin {
 
     public VertexManagerPluginDescriptor build() {
       VertexManagerPluginDescriptor desc =
-          VertexManagerPluginDescriptor.create(
-              VertexManagerWithConcurrentInput.class.getName());
+        VertexManagerPluginDescriptor.create(
+          VertexManagerWithConcurrentInput.class.getName());
 
       try {
         return desc.setUserPayload(TezUtils
-            .createUserPayloadFromConf(this.conf));
+          .createUserPayloadFromConf(this.conf));
       } catch (IOException e) {
         throw new TezUncheckedException(e);
       }
     }
   }
-
 }

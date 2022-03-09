@@ -20,10 +20,10 @@
 
 package org.apache.tez.dag.api.client;
 
-import javax.annotation.Nullable;
-
 import java.io.IOException;
 import java.util.Set;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -54,14 +54,14 @@ public class MRDAGClient extends DAGClient {
 
   @Override
   public DAGStatus getDAGStatus(
-      Set<StatusGetOpts> statusOptions) throws IOException, TezException {
+    Set<StatusGetOpts> statusOptions) throws IOException, TezException {
     return realClient.getDAGStatus(statusOptions);
   }
 
   @Override
   public VertexStatus getVertexStatus(String vertexName,
                                       Set<StatusGetOpts> statusOptions) throws IOException,
-      TezException {
+    TezException {
     return realClient.getVertexStatus(vertexName, statusOptions);
   }
 
@@ -92,7 +92,7 @@ public class MRDAGClient extends DAGClient {
 
   @Override
   public DAGStatus waitForCompletionWithStatusUpdates(
-      @Nullable Set<StatusGetOpts> statusGetOpts) throws IOException, TezException, InterruptedException {
+    @Nullable Set<StatusGetOpts> statusGetOpts) throws IOException, TezException, InterruptedException {
     return realClient.waitForCompletionWithStatusUpdates(statusGetOpts);
   }
 
@@ -103,7 +103,7 @@ public class MRDAGClient extends DAGClient {
 
   @Override
   public DAGStatus getDAGStatus(@Nullable Set<StatusGetOpts> statusOptions,
-      long timeout) throws IOException, TezException {
+                                long timeout) throws IOException, TezException {
     return getDAGStatus(statusOptions);
   }
 }

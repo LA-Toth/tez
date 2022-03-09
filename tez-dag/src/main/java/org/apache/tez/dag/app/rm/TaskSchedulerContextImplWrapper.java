@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,8 +18,6 @@
 
 package org.apache.tez.dag.app.rm;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +25,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
-import com.google.common.annotations.VisibleForTesting;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.yarn.api.records.ApplicationAccessType;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -43,6 +43,8 @@ import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.ServicePluginError;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Makes use of an ExecutionService to invoke application callbacks. Methods
  * which return values wait for execution to complete - effectively waiting for
@@ -53,7 +55,7 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   private TaskSchedulerContext real;
 
   private ExecutorService executorService;
-  
+
   /**
    * @param real the actual TaskSchedulerAppCallback
    * @param executorService the ExecutorService to be used to send these events.
@@ -67,20 +69,20 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   @Override
   public void taskAllocated(Object task, Object appCookie, Container container) {
     executorService.submit(new TaskAllocatedCallable(real, task, appCookie,
-        container));
+      container));
   }
 
   @Override
   public void containerCompleted(Object taskLastAllocated,
-      ContainerStatus containerStatus) {
+                                 ContainerStatus containerStatus) {
     executorService.submit(new ContainerCompletedCallable(real,
-        taskLastAllocated, containerStatus));
+      taskLastAllocated, containerStatus));
   }
 
   @Override
   public void containerBeingReleased(ContainerId containerId) {
     executorService
-        .submit(new ContainerBeingReleasedCallable(real, containerId));
+      .submit(new ContainerBeingReleasedCallable(real, containerId));
   }
 
   @Override
@@ -95,9 +97,10 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
 
   @Override
   public void setApplicationRegistrationData(Resource maxContainerCapability,
-      Map<ApplicationAccessType, String> appAcls, ByteBuffer key, String queueName) {
+                                             Map<ApplicationAccessType, String> appAcls, ByteBuffer key,
+                                             String queueName) {
     executorService.submit(new SetApplicationRegistrationDataCallable(real,
-        maxContainerCapability, appAcls, key, queueName));
+      maxContainerCapability, appAcls, key, queueName));
   }
 
   @Override
@@ -109,14 +112,14 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   @Override
   public float getProgress() {
     Future<Float> progressFuture = executorService
-        .submit(new GetProgressCallable(real));
+      .submit(new GetProgressCallable(real));
     try {
       return progressFuture.get();
     } catch (Exception e) {
       throw new TezUncheckedException(e);
     }
   }
-  
+
   @Override
   public void preemptContainer(ContainerId containerId) {
     executorService.submit(new PreemptContainerCallable(real, containerId));
@@ -125,7 +128,7 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   @Override
   public AppFinalStatus getFinalAppStatus() {
     Future<AppFinalStatus> appFinalStatusFuture = executorService
-        .submit(new GetFinalAppStatusCallable(real));
+      .submit(new GetFinalAppStatusCallable(real));
     try {
       return appFinalStatusFuture.get();
     } catch (Exception e) {
@@ -195,6 +198,11 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   // End of getters which do not need to go through a thread. Underlying implementation
   // does not use locks.
 
+  @VisibleForTesting
+  @InterfaceAudience.Private
+  ExecutorService getExecutorService() {
+    return executorService;
+  }
 
   static abstract class TaskSchedulerContextCallbackBase {
 
@@ -206,13 +214,13 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   }
 
   static class TaskAllocatedCallable extends TaskSchedulerContextCallbackBase
-      implements Callable<Void> {
+    implements Callable<Void> {
     private final Object task;
     private final Object appCookie;
     private final Container container;
 
     public TaskAllocatedCallable(TaskSchedulerContext app, Object task,
-        Object appCookie, Container container) {
+                                 Object appCookie, Container container) {
       super(app);
       this.task = task;
       this.appCookie = appCookie;
@@ -227,13 +235,13 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   }
 
   static class ContainerCompletedCallable extends TaskSchedulerContextCallbackBase
-      implements Callable<Void> {
+    implements Callable<Void> {
 
     private final Object taskLastAllocated;
     private final ContainerStatus containerStatus;
 
     public ContainerCompletedCallable(TaskSchedulerContext app,
-        Object taskLastAllocated, ContainerStatus containerStatus) {
+                                      Object taskLastAllocated, ContainerStatus containerStatus) {
       super(app);
       this.taskLastAllocated = taskLastAllocated;
       this.containerStatus = containerStatus;
@@ -247,11 +255,11 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   }
 
   static class ContainerBeingReleasedCallable extends
-      TaskSchedulerContextCallbackBase implements Callable<Void> {
+    TaskSchedulerContextCallbackBase implements Callable<Void> {
     private final ContainerId containerId;
 
     public ContainerBeingReleasedCallable(TaskSchedulerContext app,
-        ContainerId containerId) {
+                                          ContainerId containerId) {
       super(app);
       this.containerId = containerId;
     }
@@ -264,11 +272,11 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   }
 
   static class NodesUpdatedCallable extends TaskSchedulerContextCallbackBase
-      implements Callable<Void> {
+    implements Callable<Void> {
     private final List<NodeReport> updatedNodes;
 
     public NodesUpdatedCallable(TaskSchedulerContext app,
-        List<NodeReport> updatedNodes) {
+                                List<NodeReport> updatedNodes) {
       super(app);
       this.updatedNodes = updatedNodes;
     }
@@ -281,7 +289,7 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   }
 
   static class AppShudownRequestedCallable extends TaskSchedulerContextCallbackBase
-      implements Callable<Void> {
+    implements Callable<Void> {
 
     public AppShudownRequestedCallable(TaskSchedulerContext app) {
       super(app);
@@ -295,7 +303,7 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   }
 
   static class SetApplicationRegistrationDataCallable extends
-      TaskSchedulerContextCallbackBase implements Callable<Void> {
+    TaskSchedulerContextCallbackBase implements Callable<Void> {
 
     private final Resource maxContainerCapability;
     private final Map<ApplicationAccessType, String> appAcls;
@@ -303,10 +311,10 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
     private final String queueName;
 
     public SetApplicationRegistrationDataCallable(TaskSchedulerContext app,
-        Resource maxContainerCapability,
-        Map<ApplicationAccessType, String> appAcls,
-        ByteBuffer key,
-        String queueName) {
+                                                  Resource maxContainerCapability,
+                                                  Map<ApplicationAccessType, String> appAcls,
+                                                  ByteBuffer key,
+                                                  String queueName) {
       super(app);
       this.maxContainerCapability = maxContainerCapability;
       this.appAcls = appAcls;
@@ -344,23 +352,23 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   }
 
   static class PreemptContainerCallable extends TaskSchedulerContextCallbackBase
-      implements Callable<Void> {
+    implements Callable<Void> {
     private final ContainerId containerId;
-    
+
     public PreemptContainerCallable(TaskSchedulerContext app, ContainerId id) {
       super(app);
       this.containerId = id;
     }
-    
+
     @Override
     public Void call() throws Exception {
       app.preemptContainer(containerId);
       return null;
     }
   }
-  
+
   static class GetProgressCallable extends TaskSchedulerContextCallbackBase
-      implements Callable<Float> {
+    implements Callable<Float> {
 
     public GetProgressCallable(TaskSchedulerContext app) {
       super(app);
@@ -373,7 +381,7 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
   }
 
   static class GetFinalAppStatusCallable extends TaskSchedulerContextCallbackBase
-      implements Callable<AppFinalStatus> {
+    implements Callable<AppFinalStatus> {
 
     public GetFinalAppStatusCallable(TaskSchedulerContext app) {
       super(app);
@@ -383,11 +391,5 @@ class TaskSchedulerContextImplWrapper implements TaskSchedulerContext {
     public AppFinalStatus call() throws Exception {
       return app.getFinalAppStatus();
     }
-  }
-
-  @VisibleForTesting
-  @InterfaceAudience.Private
-  ExecutorService getExecutorService() {
-    return executorService;
   }
 }

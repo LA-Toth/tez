@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 package org.apache.tez.mapreduce.processor.reduce;
-
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,10 +25,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tez.dag.api.TezConfiguration;
-import org.apache.tez.hadoop.shim.DefaultHadoopShim;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -42,15 +37,17 @@ import org.apache.hadoop.mapreduce.MRConfig;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.yarn.util.AuxiliaryServiceHelper;
 import org.apache.tez.common.MRFrameworkConfigs;
-import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.TezRuntimeFrameworkConfigs;
 import org.apache.tez.common.TezSharedExecutor;
+import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.dag.api.InputDescriptor;
 import org.apache.tez.dag.api.OutputDescriptor;
 import org.apache.tez.dag.api.ProcessorDescriptor;
+import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.hadoop.shim.DefaultHadoopShim;
 import org.apache.tez.mapreduce.TestUmbilical;
 import org.apache.tez.mapreduce.TezTestUtils;
 import org.apache.tez.mapreduce.hadoop.IDConverter;
@@ -66,41 +63,43 @@ import org.apache.tez.runtime.LogicalIOProcessorRuntimeTask;
 import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.events.CompositeDataMovementEvent;
 import org.apache.tez.runtime.api.events.DataMovementEvent;
-import org.apache.tez.runtime.api.impl.ExecutionContextImpl;
 import org.apache.tez.runtime.api.impl.EventType;
+import org.apache.tez.runtime.api.impl.ExecutionContextImpl;
 import org.apache.tez.runtime.api.impl.InputSpec;
 import org.apache.tez.runtime.api.impl.OutputSpec;
 import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.common.Constants;
-import org.apache.tez.runtime.library.common.task.local.output.TezTaskOutput;
 import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
+import org.apache.tez.runtime.library.common.task.local.output.TezTaskOutput;
 import org.apache.tez.runtime.library.common.task.local.output.TezTaskOutputFiles;
 import org.apache.tez.runtime.library.input.OrderedGroupedInputLegacy;
 import org.apache.tez.runtime.library.output.OrderedPartitionedKVOutput;
+
+import com.google.common.collect.HashMultimap;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.collect.HashMultimap;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("deprecation")
 public class TestReduceProcessor {
-  
+
   private static final Logger LOG = LoggerFactory.getLogger(TestReduceProcessor.class);
 
   private static JobConf defaultConf = new JobConf();
   private static FileSystem localFs = null;
   private static Path workDir = null;
+
   static {
     try {
       defaultConf.set("fs.defaultFS", "file:///");
       localFs = FileSystem.getLocal(defaultConf);
       workDir =
-          new Path(new Path(System.getProperty("test.build.data", "/tmp")),
-                   "TestReduceProcessor").makeQualified(localFs);
+        new Path(new Path(System.getProperty("test.build.data", "/tmp")),
+          "TestReduceProcessor").makeQualified(localFs);
       LOG.info("Using workDir: " + workDir);
       MapUtils.configureLocalDirs(defaultConf, workDir.toString());
     } catch (IOException e) {
@@ -112,9 +111,9 @@ public class TestReduceProcessor {
     job.set(TezRuntimeFrameworkConfigs.LOCAL_DIRS, workDir.toString());
     job.set(MRConfig.LOCAL_DIR, workDir.toString());
     job.setClass(
-        Constants.TEZ_RUNTIME_TASK_OUTPUT_MANAGER,
-        TezTaskOutputFiles.class,
-        TezTaskOutput.class);
+      Constants.TEZ_RUNTIME_TASK_OUTPUT_MANAGER,
+      TezTaskOutputFiles.class,
+      TezTaskOutput.class);
     job.set(TezRuntimeConfiguration.TEZ_RUNTIME_PARTITIONER_CLASS, MRPartitioner.class.getName());
     job.setNumReduceTasks(1);
     job.setInt(MRJobConfig.FILEOUTPUTCOMMITTER_ALGORITHM_VERSION, 1);
@@ -133,36 +132,36 @@ public class TestReduceProcessor {
     String reduceVertexName = MultiStageMRConfigUtil.getFinalReduceVertexName();
     JobConf jobConf = new JobConf(defaultConf);
     setUpJobConf(jobConf);
-    
+
     MRHelpers.translateMRConfToTez(jobConf);
     jobConf.setInt(MRJobConfig.APPLICATION_ATTEMPT_ID, 0);
 
     jobConf.set(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR, new Path(workDir,
-        "localized-resources").toUri().toString());
+      "localized-resources").toUri().toString());
     jobConf.setBoolean(MRJobConfig.MR_TEZ_SPLITS_VIA_EVENTS, false);
-    
+
     Path mapInput = new Path(workDir, "map0");
     MapUtils.generateInputSplit(localFs, workDir, jobConf, mapInput, 10);
 
     InputSpec mapInputSpec = new InputSpec("NullSrcVertex",
-        InputDescriptor.create(MRInputLegacy.class.getName())
-            .setUserPayload(UserPayload.create(ByteBuffer.wrap(
-                MRRuntimeProtos.MRInputUserPayloadProto.newBuilder()
-                    .setConfigurationBytes(TezUtils.createByteStringFromConf(jobConf)).build()
-                    .toByteArray()))),
-        1);
-    OutputSpec mapOutputSpec = new OutputSpec("NullDestVertex", 
-        OutputDescriptor.create(OrderedPartitionedKVOutput.class.getName()).
-          setUserPayload(TezUtils.createUserPayloadFromConf(jobConf)), 1);
+      InputDescriptor.create(MRInputLegacy.class.getName())
+        .setUserPayload(UserPayload.create(ByteBuffer.wrap(
+          MRRuntimeProtos.MRInputUserPayloadProto.newBuilder()
+            .setConfigurationBytes(TezUtils.createByteStringFromConf(jobConf)).build()
+            .toByteArray()))),
+      1);
+    OutputSpec mapOutputSpec = new OutputSpec("NullDestVertex",
+      OutputDescriptor.create(OrderedPartitionedKVOutput.class.getName()).
+        setUserPayload(TezUtils.createUserPayloadFromConf(jobConf)), 1);
     // Run a map
 
     TestUmbilical testUmbilical = new TestUmbilical();
 
     TezSharedExecutor sharedExecutor = new TezSharedExecutor(jobConf);
     LogicalIOProcessorRuntimeTask mapTask = MapUtils.createLogicalTask(localFs, workDir, jobConf, 0,
-        mapInput, testUmbilical, dagName, mapVertexName,
-        Collections.singletonList(mapInputSpec),
-        Collections.singletonList(mapOutputSpec), sharedExecutor);
+      mapInput, testUmbilical, dagName, mapVertexName,
+      Collections.singletonList(mapInputSpec),
+      Collections.singletonList(mapOutputSpec), sharedExecutor);
 
     mapTask.initialize();
     mapTask.run();
@@ -177,67 +176,67 @@ public class TestReduceProcessor {
     Assert.assertEquals(1, cdmEvent.getCount());
     DataMovementEvent dme = cdmEvent.getEvents().iterator().next();
     dme.setTargetIndex(0);
-    
+
     LOG.info("Starting reduce...");
-    
+
     JobTokenIdentifier identifier = new JobTokenIdentifier(new Text(dagName));
     JobTokenSecretManager jobTokenSecretManager = new JobTokenSecretManager();
     Token<JobTokenIdentifier> shuffleToken = new Token<JobTokenIdentifier>(identifier,
-        jobTokenSecretManager);
+      jobTokenSecretManager);
     shuffleToken.setService(identifier.getJobId());
 
     jobConf.setOutputFormat(SequenceFileOutputFormat.class);
     jobConf.set(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR, new Path(workDir,
-        "localized-resources").toUri().toString());
+      "localized-resources").toUri().toString());
     jobConf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_OPTIMIZE_LOCAL_FETCH, true);
     FileOutputFormat.setOutputPath(jobConf, new Path(workDir, "output"));
     ProcessorDescriptor reduceProcessorDesc = ProcessorDescriptor.create(
-        ReduceProcessor.class.getName()).setUserPayload(
-        TezUtils.createUserPayloadFromConf(jobConf));
-    
+      ReduceProcessor.class.getName()).setUserPayload(
+      TezUtils.createUserPayloadFromConf(jobConf));
+
     InputSpec reduceInputSpec = new InputSpec(mapVertexName,
-        InputDescriptor.create(OrderedGroupedInputLegacy.class.getName())
-            .setUserPayload(TezUtils.createUserPayloadFromConf(jobConf)), 1);
+      InputDescriptor.create(OrderedGroupedInputLegacy.class.getName())
+        .setUserPayload(TezUtils.createUserPayloadFromConf(jobConf)), 1);
     OutputSpec reduceOutputSpec = new OutputSpec("NullDestinationVertex",
-        OutputDescriptor.create(MROutputLegacy.class.getName())
-            .setUserPayload(TezUtils.createUserPayloadFromConf(jobConf)), 1);
+      OutputDescriptor.create(MROutputLegacy.class.getName())
+        .setUserPayload(TezUtils.createUserPayloadFromConf(jobConf)), 1);
 
     // Now run a reduce
     TaskSpec taskSpec = new TaskSpec(
-        TezTestUtils.getMockTaskAttemptId(0, 1, 0, 0),
-        dagName,
-        reduceVertexName, -1,
-        reduceProcessorDesc,
-        Collections.singletonList(reduceInputSpec),
-        Collections.singletonList(reduceOutputSpec), null, null);
+      TezTestUtils.getMockTaskAttemptId(0, 1, 0, 0),
+      dagName,
+      reduceVertexName, -1,
+      reduceProcessorDesc,
+      Collections.singletonList(reduceInputSpec),
+      Collections.singletonList(reduceOutputSpec), null, null);
 
     Map<String, ByteBuffer> serviceConsumerMetadata = new HashMap<String, ByteBuffer>();
     String auxiliaryService = jobConf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
+      TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
     serviceConsumerMetadata.put(auxiliaryService,
-        ShuffleUtils.convertJobTokenToBytes(shuffleToken));
+      ShuffleUtils.convertJobTokenToBytes(shuffleToken));
     Map<String, String> serviceProviderEnvMap = new HashMap<String, String>();
     ByteBuffer shufflePortBb = ByteBuffer.allocate(4).putInt(0, 8000);
     AuxiliaryServiceHelper
-        .setServiceDataIntoEnv(auxiliaryService, shufflePortBb,
-            serviceProviderEnvMap);
+      .setServiceDataIntoEnv(auxiliaryService, shufflePortBb,
+        serviceProviderEnvMap);
 
     LogicalIOProcessorRuntimeTask task = new LogicalIOProcessorRuntimeTask(
-        taskSpec,
-        0,
-        jobConf,
-        new String[] {workDir.toString()},
-        new TestUmbilical(),
-        serviceConsumerMetadata,
-        serviceProviderEnvMap,
-        HashMultimap.<String, String>create(), null, "", new ExecutionContextImpl("localhost"),
-        Runtime.getRuntime().maxMemory(), true, new DefaultHadoopShim(), sharedExecutor);
+      taskSpec,
+      0,
+      jobConf,
+      new String[]{workDir.toString()},
+      new TestUmbilical(),
+      serviceConsumerMetadata,
+      serviceProviderEnvMap,
+      HashMultimap.<String, String>create(), null, "", new ExecutionContextImpl("localhost"),
+      Runtime.getRuntime().maxMemory(), true, new DefaultHadoopShim(), sharedExecutor);
 
     List<Event> destEvents = new LinkedList<Event>();
     destEvents.add(dme);
     task.initialize();
     OrderedGroupedInputLegacy sortedOut =
-        (OrderedGroupedInputLegacy) task.getInputs().values().iterator().next();
+      (OrderedGroupedInputLegacy) task.getInputs().values().iterator().next();
     sortedOut.handleEvents(destEvents);
     task.run();
     task.close();
@@ -248,17 +247,15 @@ public class TestReduceProcessor {
     // Likely not applicable anymore.
     // Assert.assertNull(mrTask.getPartitioner());
 
-
-
     // Only a task commit happens, hence the data is still in the temporary directory.
     Path reduceOutputDir = new Path(new Path(workDir, "output"),
-        "_temporary/0/" + IDConverter
-            .toMRTaskIdForOutput(TezTestUtils.getMockTaskId(0, 1, 0)));
+      "_temporary/0/" + IDConverter
+        .toMRTaskIdForOutput(TezTestUtils.getMockTaskId(0, 1, 0)));
 
     Path reduceOutputFile = new Path(reduceOutputDir, "part-v001-o000-00000");
 
     SequenceFile.Reader reader = new SequenceFile.Reader(localFs,
-        reduceOutputFile, jobConf);
+      reduceOutputFile, jobConf);
 
     LongWritable key = new LongWritable();
     Text value = new Text();
@@ -272,5 +269,4 @@ public class TestReduceProcessor {
 
     reader.close();
   }
-
 }

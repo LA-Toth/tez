@@ -18,14 +18,15 @@ import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import org.apache.tez.common.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileContext;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.util.Shell;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.service.impl.TezTestService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,12 +42,9 @@ public class MiniTezTestServiceCluster extends AbstractService {
 
   private TezTestService tezTestService;
 
-  public static MiniTezTestServiceCluster create(String clusterName, int numExecutorsPerService, long availableMemory, int numLocalDirs) {
-    return new MiniTezTestServiceCluster(clusterName, numExecutorsPerService, availableMemory, numLocalDirs);
-  }
-
   // TODO Add support for multiple instances
-  private MiniTezTestServiceCluster(String clusterName, int numExecutorsPerService, long availableMemory, int numLocalDirs) {
+  private MiniTezTestServiceCluster(String clusterName, int numExecutorsPerService, long availableMemory,
+                                    int numLocalDirs) {
     super(clusterName + "_TezTestServerCluster");
     Preconditions.checkArgument(numExecutorsPerService > 0);
     Preconditions.checkArgument(availableMemory > 0);
@@ -55,7 +53,7 @@ public class MiniTezTestServiceCluster extends AbstractService {
     File targetWorkDir = new File("target", clusterNameTrimmed);
     try {
       FileContext.getLocalFSFileContext().delete(
-          new Path(targetWorkDir.getAbsolutePath()), true);
+        new Path(targetWorkDir.getAbsolutePath()), true);
     } catch (Exception e) {
       LOG.warn("Could not cleanup test workDir: " + targetWorkDir, e);
       throw new RuntimeException("Could not cleanup test workDir: " + targetWorkDir, e);
@@ -69,7 +67,7 @@ public class MiniTezTestServiceCluster extends AbstractService {
       // symlink as the test working directory.
       String targetPath = targetWorkDir.getAbsolutePath();
       File link = new File(System.getProperty("java.io.tmpdir"),
-          String.valueOf(System.currentTimeMillis()));
+        String.valueOf(System.currentTimeMillis()));
       String linkPath = link.getAbsolutePath();
 
       try {
@@ -82,13 +80,13 @@ public class MiniTezTestServiceCluster extends AbstractService {
       targetWorkDir.mkdirs();
 
       Shell.ShellCommandExecutor shexec = new Shell.ShellCommandExecutor(
-          Shell.getSymlinkCommand(targetPath, linkPath));
+        Shell.getSymlinkCommand(targetPath, linkPath));
       try {
         shexec.execute();
       } catch (IOException e) {
         throw new YarnRuntimeException(String.format(
-            "failed to create symlink from %s to %s, shell output: %s", linkPath,
-            targetPath, shexec.getOutput()), e);
+          "failed to create symlink from %s to %s, shell output: %s", linkPath,
+          targetPath, shexec.getOutput()), e);
       }
 
       this.testWorkDir = link;
@@ -100,7 +98,7 @@ public class MiniTezTestServiceCluster extends AbstractService {
 
     // Setup Local Dirs
     localDirs = new String[numLocalDirs];
-    for (int i = 0 ; i < numLocalDirs ; i++) {
+    for (int i = 0; i < numLocalDirs; i++) {
       File f = new File(testWorkDir, "localDir");
       f.mkdirs();
       LOG.info("Created localDir: " + f.getAbsolutePath());
@@ -108,11 +106,15 @@ public class MiniTezTestServiceCluster extends AbstractService {
     }
   }
 
+  public static MiniTezTestServiceCluster create(String clusterName, int numExecutorsPerService, long availableMemory
+    , int numLocalDirs) {
+    return new MiniTezTestServiceCluster(clusterName, numExecutorsPerService, availableMemory, numLocalDirs);
+  }
+
   @Override
   public void serviceInit(Configuration conf) {
     tezTestService = new TezTestService(conf, numExecutorsPerService, availableMemory, localDirs);
     tezTestService.init(conf);
-
   }
 
   @Override
@@ -120,15 +122,15 @@ public class MiniTezTestServiceCluster extends AbstractService {
     tezTestService.start();
 
     clusterSpecificConfiguration.set(TezTestServiceConfConstants.TEZ_TEST_SERVICE_HOSTS,
-        getServiceAddress().getHostName());
+      getServiceAddress().getHostName());
     clusterSpecificConfiguration.setInt(TezTestServiceConfConstants.TEZ_TEST_SERVICE_RPC_PORT,
-        getServiceAddress().getPort());
+      getServiceAddress().getPort());
 
     clusterSpecificConfiguration.setInt(
-        TezTestServiceConfConstants.TEZ_TEST_SERVICE_NUM_EXECUTORS_PER_INSTANCE,
-        numExecutorsPerService);
+      TezTestServiceConfConstants.TEZ_TEST_SERVICE_NUM_EXECUTORS_PER_INSTANCE,
+      numExecutorsPerService);
     clusterSpecificConfiguration.setLong(
-        TezTestServiceConfConstants.TEZ_TEST_SERVICE_MEMORY_PER_INSTANCE_MB, availableMemory);
+      TezTestServiceConfConstants.TEZ_TEST_SERVICE_MEMORY_PER_INSTANCE_MB, availableMemory);
   }
 
   @Override
@@ -141,6 +143,7 @@ public class MiniTezTestServiceCluster extends AbstractService {
 
   /**
    * return the address at which the service is listening
+   *
    * @return host:port
    */
   public InetSocketAddress getServiceAddress() {
@@ -162,5 +165,4 @@ public class MiniTezTestServiceCluster extends AbstractService {
   public int getNumSubmissions() {
     return tezTestService.getNumSubmissions();
   }
-
 }

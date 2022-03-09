@@ -5,9 +5,9 @@
  * licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -36,9 +36,6 @@ import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Descriptors;
-import com.google.protobuf.TextFormat;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
@@ -48,29 +45,35 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.log4j.Appender;
 import org.apache.tez.common.io.NonSyncByteArrayOutputStream;
 import org.apache.tez.dag.api.DagTypeConverters;
-import org.apache.tez.dag.records.TezDAGID;
-import org.apache.tez.dag.records.TezTaskAttemptID;
-import org.apache.tez.dag.records.TezVertexID;
-import org.apache.tez.hadoop.shim.HadoopShim;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.api.records.DAGProtos;
 import org.apache.tez.dag.api.records.DAGProtos.ConfigurationProto;
 import org.apache.tez.dag.api.records.DAGProtos.PlanKeyValuePair;
+import org.apache.tez.dag.records.TaskAttemptTerminationCause;
+import org.apache.tez.dag.records.TezDAGID;
+import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.dag.records.TezVertexID;
+import org.apache.tez.hadoop.shim.HadoopShim;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.util.StopWatch;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Descriptors;
+import com.google.protobuf.TextFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.tez.dag.records.TaskAttemptTerminationCause;
 
 @Private
 public class TezUtilsInternal {
 
+  @Private
+  public static final int MAX_VERTEX_NAME_LENGTH = 40;
   private static final Logger LOG = LoggerFactory.getLogger(TezUtilsInternal.class);
+  private static final Pattern pattern = Pattern.compile("\\W");
 
   public static ConfigurationProto readUserSpecifiedTezConfiguration(String baseDir) throws
-      IOException {
+    IOException {
     File confPBFile = new File(baseDir, TezConstants.TEZ_PB_BINARY_CONF_NAME);
     try (FileInputStream fis = new FileInputStream(confPBFile)) {
       return ConfigurationProto.parseFrom(fis);
@@ -92,7 +95,7 @@ public class TezUtilsInternal {
     sw.stop();
     if (LOG.isDebugEnabled()) {
       LOG.debug("UncompressedSize: " + inBytes.length + ", CompressedSize: " + compressed.length
-          + ", CompressTime: " + sw.now(TimeUnit.MILLISECONDS));
+        + ", CompressTime: " + sw.now(TimeUnit.MILLISECONDS));
     }
     return compressed;
   }
@@ -103,7 +106,7 @@ public class TezUtilsInternal {
     sw.stop();
     if (LOG.isDebugEnabled()) {
       LOG.debug("CompressedSize: " + inBytes.length + ", UncompressedSize: " + uncompressed.length
-          + ", UncompressTimeTaken: " + sw.now(TimeUnit.MILLISECONDS));
+        + ", UncompressTimeTaken: " + sw.now(TimeUnit.MILLISECONDS));
     }
     return uncompressed;
   }
@@ -140,14 +143,10 @@ public class TezUtilsInternal {
     return output;
   }
 
-  private static final Pattern pattern = Pattern.compile("\\W");
-  @Private
-  public static final int MAX_VERTEX_NAME_LENGTH = 40;
-
   @Private
   public static String cleanVertexName(String vertexName) {
     return sanitizeString(vertexName).substring(0,
-        vertexName.length() > MAX_VERTEX_NAME_LENGTH ? MAX_VERTEX_NAME_LENGTH : vertexName.length());
+      vertexName.length() > MAX_VERTEX_NAME_LENGTH ? MAX_VERTEX_NAME_LENGTH : vertexName.length());
   }
 
   private static String sanitizeString(String srcString) {
@@ -161,20 +160,20 @@ public class TezUtilsInternal {
     LOG.info("Redirecting log file based on addend: " + addend);
 
     Appender appender = org.apache.log4j.Logger.getRootLogger().getAppender(
-        TezConstants.TEZ_CONTAINER_LOGGER_NAME);
+      TezConstants.TEZ_CONTAINER_LOGGER_NAME);
     if (appender != null) {
       if (appender instanceof TezContainerLogAppender) {
         TezContainerLogAppender claAppender = (TezContainerLogAppender) appender;
         claAppender.setLogFileName(constructLogFileName(
-            TezConstants.TEZ_CONTAINER_LOG_FILE_NAME, addend));
+          TezConstants.TEZ_CONTAINER_LOG_FILE_NAME, addend));
         claAppender.activateOptions();
       } else {
         LOG.warn("Appender is a " + appender.getClass() + "; require an instance of "
-            + TezContainerLogAppender.class.getName() + " to reconfigure the logger output");
+          + TezContainerLogAppender.class.getName() + " to reconfigure the logger output");
       }
     } else {
       LOG.warn("Not configured with appender named: " + TezConstants.TEZ_CONTAINER_LOGGER_NAME
-          + ". Cannot reconfigure logger output");
+        + ". Cannot reconfigure logger output");
     }
   }
 
@@ -225,17 +224,17 @@ public class TezUtilsInternal {
         TextFormat.printField(entry.getKey(), entry.getValue(), sb);
       } else {
         Credentials credentials =
-            DagTypeConverters.convertByteStringToCredentials(dagPlan.getCredentialsBinary());
+          DagTypeConverters.convertByteStringToCredentials(dagPlan.getCredentialsBinary());
         TextFormat.printField(entry.getKey(),
-            ByteString.copyFrom(TezCommonUtils.getCredentialsInfo(credentials,"dag").getBytes(
-                Charset.forName("UTF-8"))), sb);
+          ByteString.copyFrom(TezCommonUtils.getCredentialsInfo(credentials, "dag").getBytes(
+            Charset.forName("UTF-8"))), sb);
       }
     }
     return sb.toString();
   }
 
   public static TaskAttemptTerminationCause fromTaskAttemptEndReason(
-      TaskAttemptEndReason taskAttemptEndReason) {
+    TaskAttemptEndReason taskAttemptEndReason) {
     if (taskAttemptEndReason == null) {
       return null;
     }
@@ -307,7 +306,7 @@ public class TezUtilsInternal {
   }
 
   public static <T extends Enum<T>> Set<T> getEnums(Configuration conf, String confName,
-      Class<T> enumType, String defaultValues) {
+                                                    Class<T> enumType, String defaultValues) {
     String[] names = conf.getStrings(confName);
     if (names == null) {
       names = StringUtils.getStrings(defaultValues);
@@ -354,7 +353,7 @@ public class TezUtilsInternal {
     } catch (NoSuchMethodException e) {
       // This is not available, so ignore it.
     } catch (SecurityException | IllegalAccessException | IllegalArgumentException |
-        InvocationTargetException e) {
+      InvocationTargetException e) {
       log.warn("Error invoking SecurityUtil.setConfiguration: ", e);
       throw new TezUncheckedException("Error invoking SecurityUtil.setConfiguration", e);
     }

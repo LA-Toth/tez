@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,7 +40,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DataOutputBuffer;
@@ -60,13 +59,15 @@ import org.apache.tez.runtime.api.events.DataMovementEvent;
 import org.apache.tez.runtime.api.events.InputReadErrorEvent;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
+import org.apache.tez.runtime.library.common.shuffle.FetchResult;
 import org.apache.tez.runtime.library.common.shuffle.FetchedInput;
 import org.apache.tez.runtime.library.common.shuffle.FetchedInputAllocator;
 import org.apache.tez.runtime.library.common.shuffle.Fetcher;
 import org.apache.tez.runtime.library.common.shuffle.InputAttemptFetchFailure;
-import org.apache.tez.runtime.library.common.shuffle.FetchResult;
 import org.apache.tez.runtime.library.common.shuffle.InputHost;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.DataMovementEventPayloadProto;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -74,7 +75,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
 
 public class TestShuffleManager {
 
@@ -100,7 +100,7 @@ public class TestShuffleManager {
    * partitions, wait for some time and then send DataMovementEvents for the
    * rest of the partitions. Then do the same thing for the next mapper.
    * Verify ShuffleManager is able to get all the events.
-  */
+   */
   @Test(timeout = 50000)
   public void testMultiplePartitions() throws Exception {
     final int numOfMappers = 3;
@@ -108,11 +108,11 @@ public class TestShuffleManager {
     final int firstPart = 2;
     InputContext inputContext = createInputContext();
     ShuffleManagerForTest shuffleManager = createShuffleManager(inputContext,
-        numOfMappers * numOfPartitions);
+      numOfMappers * numOfPartitions);
     FetchedInputAllocator inputAllocator = mock(FetchedInputAllocator.class);
 
     ShuffleInputEventHandlerImpl handler = new ShuffleInputEventHandlerImpl(
-        inputContext, shuffleManager, inputAllocator, null, false, 0, false);
+      inputContext, shuffleManager, inputAllocator, null, false, 0, false);
     shuffleManager.run();
 
     List<Event> eventList = new LinkedList<Event>();
@@ -126,19 +126,18 @@ public class TestShuffleManager {
       eventList.clear();
       for (int j = 0; j < firstPart; j++) {
         Event dme = createDataMovementEvent(mapperHost, srcIndex++,
-            targetIndex++);
+          targetIndex++);
         eventList.add(dme);
       }
       handler.handleEvents(eventList);
 
       Thread.sleep(500);
 
-
       // Send the second batch of DataMovementEvents
       eventList.clear();
       for (int j = 0; j < numOfPartitions - firstPart; j++) {
         Event dme = createDataMovementEvent(mapperHost, srcIndex++,
-            targetIndex++);
+          targetIndex++);
         eventList.add(dme);
       }
       handler.handleEvents(eventList);
@@ -146,21 +145,21 @@ public class TestShuffleManager {
 
     int waitCount = 100;
     while (waitCount-- > 0 &&
-        !(shuffleManager.isFetcherExecutorShutdown() &&
-            numOfMappers * numOfPartitions ==
-                shuffleManager.getNumOfCompletedInputs())) {
+      !(shuffleManager.isFetcherExecutorShutdown() &&
+        numOfMappers * numOfPartitions ==
+          shuffleManager.getNumOfCompletedInputs())) {
       Thread.sleep(100);
     }
     assertTrue(shuffleManager.isFetcherExecutorShutdown());
     assertEquals(numOfMappers * numOfPartitions,
-        shuffleManager.getNumOfCompletedInputs());
+      shuffleManager.getNumOfCompletedInputs());
   }
 
   private InputContext createInputContext() throws IOException {
     DataOutputBuffer port_dob = new DataOutputBuffer();
     port_dob.writeInt(PORT);
     final ByteBuffer shuffleMetaData = ByteBuffer.wrap(port_dob.getData(), 0,
-        port_dob.getLength());
+      port_dob.getLength());
     port_dob.close();
 
     ExecutionContext executionContext = mock(ExecutionContext.class);
@@ -171,22 +170,22 @@ public class TestShuffleManager {
     doReturn("sourceVertex").when(inputContext).getSourceVertexName();
     doReturn("taskVertex").when(inputContext).getTaskVertexName();
     doReturn(shuffleMetaData).when(inputContext)
-        .getServiceProviderMetaData(conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-            TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
+      .getServiceProviderMetaData(conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
+        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
     doReturn(executionContext).when(inputContext).getExecutionContext();
     when(inputContext.createTezFrameworkExecutorService(anyInt(), anyString())).thenAnswer(
-        new Answer<ExecutorService>() {
-          @Override
-          public ExecutorService answer(InvocationOnMock invocation) throws Throwable {
-            return sharedExecutor.createExecutorService(
-                invocation.getArgumentAt(0, Integer.class),
-                invocation.getArgumentAt(1, String.class));
-          }
-        });
+      new Answer<ExecutorService>() {
+        @Override
+        public ExecutorService answer(InvocationOnMock invocation) throws Throwable {
+          return sharedExecutor.createExecutorService(
+            invocation.getArgumentAt(0, Integer.class),
+            invocation.getArgumentAt(1, String.class));
+        }
+      });
     return inputContext;
   }
 
-  @Test(timeout=5000)
+  @Test(timeout = 5000)
   public void testUseSharedExecutor() throws Exception {
     InputContext inputContext = createInputContext();
     createShuffleManager(inputContext, 2);
@@ -198,7 +197,7 @@ public class TestShuffleManager {
     verify(inputContext).createTezFrameworkExecutorService(anyInt(), anyString());
   }
 
-  @Test (timeout = 20000)
+  @Test(timeout = 20000)
   public void testProgressWithEmptyPendingHosts() throws Exception {
     InputContext inputContext = createInputContext();
     final ShuffleManager shuffleManager = spy(createShuffleManager(inputContext, 1));
@@ -207,7 +206,7 @@ public class TestShuffleManager {
       public void run() {
         try {
           shuffleManager.run();
-          } catch (Exception e) {
+        } catch (Exception e) {
           e.printStackTrace();
         }
       }
@@ -218,7 +217,7 @@ public class TestShuffleManager {
     verify(inputContext, atLeast(3)).notifyProgress();
   }
 
-  @Test (timeout = 200000)
+  @Test(timeout = 200000)
   public void testFetchFailed() throws Exception {
     InputContext inputContext = createInputContext();
     final ShuffleManager shuffleManager = spy(createShuffleManager(inputContext, 1));
@@ -233,7 +232,7 @@ public class TestShuffleManager {
       }
     });
     InputAttemptFetchFailure inputAttemptFetchFailure =
-        new InputAttemptFetchFailure(new InputAttemptIdentifier(1, 1));
+      new InputAttemptFetchFailure(new InputAttemptIdentifier(1, 1));
 
     schedulerGetHostThread.start();
     Thread.sleep(1000);
@@ -242,15 +241,15 @@ public class TestShuffleManager {
 
     ArgumentCaptor<List> captor = ArgumentCaptor.forClass(List.class);
     verify(inputContext, times(1))
-        .sendEvents(captor.capture());
+      .sendEvents(captor.capture());
     Assert.assertEquals("Size was: " + captor.getAllValues().size(),
-        captor.getAllValues().size(), 1);
+      captor.getAllValues().size(), 1);
     List<Event> capturedList = captor.getAllValues().get(0);
     Assert.assertEquals("Size was: " + capturedList.size(),
-        capturedList.size(), 1);
-    InputReadErrorEvent inputEvent = (InputReadErrorEvent)capturedList.get(0);
+      capturedList.size(), 1);
+    InputReadErrorEvent inputEvent = (InputReadErrorEvent) capturedList.get(0);
     Assert.assertEquals("Number of failures was: " + inputEvent.getNumFailures(),
-        inputEvent.getNumFailures(), 1);
+      inputEvent.getNumFailures(), 1);
 
     shuffleManager.fetchFailed("host1", inputAttemptFetchFailure, false);
     shuffleManager.fetchFailed("host1", inputAttemptFetchFailure, false);
@@ -262,79 +261,78 @@ public class TestShuffleManager {
     Thread.sleep(5000);
     captor = ArgumentCaptor.forClass(List.class);
     verify(inputContext, times(2))
-        .sendEvents(captor.capture());
+      .sendEvents(captor.capture());
     Assert.assertEquals("Size was: " + captor.getAllValues().size(),
-        captor.getAllValues().size(), 2);
+      captor.getAllValues().size(), 2);
     capturedList = captor.getAllValues().get(1);
     Assert.assertEquals("Size was: " + capturedList.size(),
-        capturedList.size(), 1);
-    inputEvent = (InputReadErrorEvent)capturedList.get(0);
+      capturedList.size(), 1);
+    inputEvent = (InputReadErrorEvent) capturedList.get(0);
     Assert.assertEquals("Number of failures was: " + inputEvent.getNumFailures(),
-        inputEvent.getNumFailures(), 2);
-
+      inputEvent.getNumFailures(), 2);
 
     schedulerGetHostThread.interrupt();
   }
 
   private ShuffleManagerForTest createShuffleManager(
-      InputContext inputContext, int expectedNumOfPhysicalInputs)
-          throws IOException {
+    InputContext inputContext, int expectedNumOfPhysicalInputs)
+    throws IOException {
     Path outDirBase = new Path(".", "outDir");
-    String[] outDirs = new String[] { outDirBase.toString() };
+    String[] outDirs = new String[]{outDirBase.toString()};
     doReturn(outDirs).when(inputContext).getWorkDirs();
     conf.setStrings(TezRuntimeFrameworkConfigs.LOCAL_DIRS,
-        inputContext.getWorkDirs());
+      inputContext.getWorkDirs());
     // 5 seconds
     conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_BATCH_WAIT, 5000);
 
     DataOutputBuffer out = new DataOutputBuffer();
     Token<JobTokenIdentifier> token = new Token<JobTokenIdentifier>(new JobTokenIdentifier(),
-        new JobTokenSecretManager(null));
+      new JobTokenSecretManager(null));
     token.write(out);
     doReturn(ByteBuffer.wrap(out.getData())).when(inputContext).
-        getServiceConsumerMetaData(
-            conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-                TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
+      getServiceConsumerMetaData(
+        conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
+          TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
 
     FetchedInputAllocator inputAllocator = mock(FetchedInputAllocator.class);
     return new ShuffleManagerForTest(inputContext, conf,
-        expectedNumOfPhysicalInputs, 1024, false, -1, null, inputAllocator);
+      expectedNumOfPhysicalInputs, 1024, false, -1, null, inputAllocator);
   }
 
   private Event createDataMovementEvent(String host, int srcIndex, int targetIndex) {
     DataMovementEventPayloadProto.Builder builder =
-        DataMovementEventPayloadProto.newBuilder();
+      DataMovementEventPayloadProto.newBuilder();
     builder.setHost(host);
     builder.setPort(PORT);
     builder.setPathComponent(PATH_COMPONENT);
     Event dme = DataMovementEvent
-        .create(srcIndex, targetIndex, 0,
-            builder.build().toByteString().asReadOnlyByteBuffer());
+      .create(srcIndex, targetIndex, 0,
+        builder.build().toByteString().asReadOnlyByteBuffer());
     return dme;
   }
 
   private static class ShuffleManagerForTest extends ShuffleManager {
     public ShuffleManagerForTest(InputContext inputContext, Configuration conf,
-        int numInputs, int bufferSize, boolean ifileReadAheadEnabled,
-        int ifileReadAheadLength, CompressionCodec codec,
-        FetchedInputAllocator inputAllocator) throws IOException {
+                                 int numInputs, int bufferSize, boolean ifileReadAheadEnabled,
+                                 int ifileReadAheadLength, CompressionCodec codec,
+                                 FetchedInputAllocator inputAllocator) throws IOException {
       super(inputContext, conf, numInputs, bufferSize, ifileReadAheadEnabled,
-          ifileReadAheadLength, codec, inputAllocator);
+        ifileReadAheadLength, codec, inputAllocator);
     }
 
     @Override
     Fetcher constructFetcherForHost(InputHost inputHost, Configuration conf) {
       final Fetcher fetcher = spy(super.constructFetcherForHost(inputHost,
-          conf));
+        conf));
       final FetchResult mockFetcherResult = mock(FetchResult.class);
       try {
         doAnswer(new Answer<FetchResult>() {
           @Override
           public FetchResult answer(InvocationOnMock invocation) throws Throwable {
-            for(InputAttemptIdentifier input : fetcher.getSrcAttempts()) {
+            for (InputAttemptIdentifier input : fetcher.getSrcAttempts()) {
               ShuffleManagerForTest.this.fetchSucceeded(
-                  fetcher.getHost(), input, new TestFetchedInput(input), 0, 0,
-                      0);
+                fetcher.getHost(), input, new TestFetchedInput(input), 0, 0,
+                0);
             }
             return mockFetcherResult;
           }

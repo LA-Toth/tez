@@ -33,6 +33,7 @@ import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.service.MiniTezTestServiceCluster;
 import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
 import org.apache.tez.test.MiniTezCluster;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,11 +57,11 @@ public class ExternalTezServiceTestHelper {
    * Alternately tearDown the sharedTezClient independently
    */
   public ExternalTezServiceTestHelper(String testRootDir) throws
-      IOException {
+    IOException {
     try {
       clusterConf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, testRootDir);
       dfsCluster =
-          new MiniDFSCluster.Builder(clusterConf).numDataNodes(1).format(true).racks(null).build();
+        new MiniDFSCluster.Builder(clusterConf).numDataNodes(1).format(true).racks(null).build();
       remoteFs = dfsCluster.getFileSystem();
       LOG.info("MiniDFSCluster started");
     } catch (IOException io) {
@@ -81,14 +82,14 @@ public class ExternalTezServiceTestHelper {
     long jvmMax = Runtime.getRuntime().maxMemory();
 
     tezTestServiceCluster = MiniTezTestServiceCluster
-        .create(TestExternalTezServices.class.getSimpleName(), 3, ((long) (jvmMax * 0.5d)), 1);
+      .create(TestExternalTezServices.class.getSimpleName(), 3, ((long) (jvmMax * 0.5d)), 1);
     tezTestServiceCluster.init(clusterConf);
     tezTestServiceCluster.start();
     LOG.info("MiniTezTestServer started");
 
     confForJobs = new Configuration(clusterConf);
     for (Map.Entry<String, String> entry : tezTestServiceCluster
-        .getClusterSpecificConfiguration()) {
+      .getClusterSpecificConfiguration()) {
       confForJobs.set(entry.getKey(), entry.getValue());
     }
 
@@ -100,13 +101,13 @@ public class ExternalTezServiceTestHelper {
   }
 
   public void setupSharedTezClient(ServicePluginsDescriptor servicePluginsDescriptor) throws
-      IOException, TezException, InterruptedException {
+    IOException, TezException, InterruptedException {
     // Create a session to use for all tests.
     TezConfiguration tezClientConf = new TezConfiguration(confForJobs);
 
     sharedTezClient = TezClient
-        .newBuilder(TestExternalTezServices.class.getSimpleName() + "_session", tezClientConf)
-        .setIsSession(true).setServicePluginDescriptor(servicePluginsDescriptor).build();
+      .newBuilder(TestExternalTezServices.class.getSimpleName() + "_session", tezClientConf)
+      .setIsSession(true).setServicePluginDescriptor(servicePluginsDescriptor).build();
 
     sharedTezClient.start();
     LOG.info("Shared TezSession started");
@@ -142,26 +143,24 @@ public class ExternalTezServiceTestHelper {
     }
   }
 
-
   public void setupHashJoinData(Path srcDataDir, Path dataPath1, Path dataPath2,
                                 Path expectedResultPath, Path outputPath) throws
-      Exception {
+    Exception {
     remoteFs.mkdirs(srcDataDir);
     TezConfiguration tezConf = new TezConfiguration(confForJobs);
     //   Generate join data - with 2 tasks.
     JoinDataGen dataGen = new JoinDataGen();
     String[] dataGenArgs = new String[]{
-        dataPath1.toString(), "1048576", dataPath2.toString(), "524288",
-        expectedResultPath.toString(), "2"};
+      dataPath1.toString(), "1048576", dataPath2.toString(), "524288",
+      expectedResultPath.toString(), "2"};
     assertEquals(0, dataGen.run(tezConf, dataGenArgs, sharedTezClient));
     //    Run the actual join - with 2 reducers
     HashJoinExample joinExample = new HashJoinExample();
     String[] args = new String[]{
-        dataPath1.toString(), dataPath2.toString(), "2", outputPath.toString()};
+      dataPath1.toString(), dataPath2.toString(), "2", outputPath.toString()};
     assertEquals(0, joinExample.run(tezConf, args, sharedTezClient));
     LOG.info("Completed generating Data - Expected Hash Result and Actual Join Result");
   }
-
 
   public MiniTezCluster getTezCluster() {
     return tezCluster;

@@ -33,47 +33,53 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-
 /**
  * Analyze slow tasks in the DAG. Top 100 tasks are listed by default.
- *
+ * <p>
  * <p/>
  * //TODO: We do not get counters for killed task attempts yet.
  */
 public class SlowTaskIdentifier extends TezAnalyzerBase implements Analyzer {
 
-  private static final String[] headers = { "vertexName", "taskAttemptId",
-      "Node", "taskDuration", "Status", "diagnostics",
-      "NoOfInputs" };
-
-  private final CSVResult csvResult;
-
+  private static final String[] headers = {"vertexName", "taskAttemptId",
+    "Node", "taskDuration", "Status", "diagnostics",
+    "NoOfInputs"};
   private static final String NO_OF_TASKS = "tez.slow-task-analyzer.task.count";
   private static final int NO_OF_TASKS_DEFAULT = 100;
+  private final CSVResult csvResult;
 
   public SlowTaskIdentifier(Configuration config) {
     super(config);
     this.csvResult = new CSVResult(headers);
   }
 
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    SlowTaskIdentifier analyzer = new SlowTaskIdentifier(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
+  }
+
   @Override
   public void analyze(DagInfo dagInfo) throws TezException {
     List<TaskAttemptInfo> taskAttempts = Lists.newArrayList();
-    for(VertexInfo vertexInfo : dagInfo.getVertices()) {
+    for (VertexInfo vertexInfo : dagInfo.getVertices()) {
       taskAttempts.addAll(vertexInfo.getTaskAttempts());
     }
 
     //sort them by runtime in descending order
     Collections.sort(taskAttempts, new Comparator<TaskAttemptInfo>() {
-      @Override public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
+      @Override
+      public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
         return (o1.getTimeTaken() > o2.getTimeTaken()) ? -1 :
-            ((o1.getTimeTaken() == o2.getTimeTaken()) ?
-                0 : 1);
+          ((o1.getTimeTaken() == o2.getTimeTaken()) ?
+            0 : 1);
       }
     });
 
     int limit = Math.min(taskAttempts.size(),
-        Math.max(0, getConf().getInt(NO_OF_TASKS, NO_OF_TASKS_DEFAULT)));
+      Math.max(0, getConf().getInt(NO_OF_TASKS, NO_OF_TASKS_DEFAULT)));
 
     if (limit == 0) {
       return;
@@ -91,7 +97,6 @@ public class SlowTaskIdentifier extends TezAnalyzerBase implements Analyzer {
 
       csvResult.addRecord(record.toArray(new String[record.size()]));
     }
-
   }
 
   @Override
@@ -107,13 +112,5 @@ public class SlowTaskIdentifier extends TezAnalyzerBase implements Analyzer {
   @Override
   public String getDescription() {
     return "Identifies slow tasks in the DAG";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    SlowTaskIdentifier analyzer = new SlowTaskIdentifier(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

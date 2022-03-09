@@ -22,7 +22,7 @@ import java.util.Objects;
 import org.apache.hadoop.classification.InterfaceAudience;
 
 @SuppressWarnings("unchecked")
-public class NamedEntityDescriptor<T extends NamedEntityDescriptor<T>> extends EntityDescriptor<NamedEntityDescriptor<T>>  {
+public class NamedEntityDescriptor<T extends NamedEntityDescriptor<T>> extends EntityDescriptor<NamedEntityDescriptor<T>> {
   private final String entityName;
 
   @InterfaceAudience.Private
@@ -43,19 +43,19 @@ public class NamedEntityDescriptor<T extends NamedEntityDescriptor<T>> extends E
   @Override
   public void write(DataOutput out) throws IOException {
     throw new UnsupportedOperationException(
-        "write is not expected to be used for a NamedEntityDescriptor");
+      "write is not expected to be used for a NamedEntityDescriptor");
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     throw new UnsupportedOperationException(
-        "readFields is not expected to be used for a NamedEntityDescriptor");
+      "readFields is not expected to be used for a NamedEntityDescriptor");
   }
 
   @Override
   public String toString() {
     boolean hasPayload =
-        getUserPayload() == null ? false : getUserPayload().getPayload() == null ? false : true;
+      getUserPayload() == null ? false : getUserPayload().getPayload() == null ? false : true;
     return "EntityName=" + entityName + ", ClassName=" + getClassName() + ", hasPayload=" + hasPayload;
   }
 }

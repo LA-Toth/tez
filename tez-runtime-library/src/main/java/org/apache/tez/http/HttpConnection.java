@@ -18,17 +18,6 @@
 
 package org.apache.tez.http;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
-import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.hadoop.io.IOUtils;
-import org.apache.tez.common.security.JobTokenSecretManager;
-import org.apache.tez.runtime.library.common.security.SecureShuffleUtils;
-import org.apache.tez.runtime.library.common.shuffle.orderedgrouped.ShuffleHeader;
-import org.apache.tez.util.StopWatch;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -38,27 +27,35 @@ import java.net.URL;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.io.IOUtils;
+import org.apache.tez.common.Preconditions;
+import org.apache.tez.common.security.JobTokenSecretManager;
+import org.apache.tez.runtime.library.common.security.SecureShuffleUtils;
+import org.apache.tez.runtime.library.common.shuffle.orderedgrouped.ShuffleHeader;
+import org.apache.tez.util.StopWatch;
+
+import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HttpConnection extends BaseHttpConnection {
 
   private static final Logger LOG = LoggerFactory.getLogger(HttpConnection.class);
   private static final Logger URL_LOG = LoggerFactory.getLogger(LOG.getName() + ".url");
-
-  private URL url;
   private final String logIdentifier;
-
-  @VisibleForTesting
-  protected volatile HttpURLConnection connection;
-  private volatile DataInputStream input;
-  private volatile boolean connectionSucceeed;
-  private volatile boolean cleanup;
-
   private final JobTokenSecretManager jobTokenSecretMgr;
-  private String encHash;
-  private String msgToEncode;
-
   private final HttpConnectionParams httpConnParams;
   private final StopWatch stopWatch;
   private final AtomicLong urlLogCount;
+  @VisibleForTesting
+  protected volatile HttpURLConnection connection;
+  private URL url;
+  private volatile DataInputStream input;
+  private volatile boolean connectionSucceeed;
+  private volatile boolean cleanup;
+  private String encHash;
+  private String msgToEncode;
 
   /**
    * HttpConnection
@@ -70,7 +67,7 @@ public class HttpConnection extends BaseHttpConnection {
    * @throws IOException
    */
   public HttpConnection(URL url, HttpConnectionParams connParams,
-      String logIdentifier, JobTokenSecretManager jobTokenSecretManager) throws IOException {
+                        String logIdentifier, JobTokenSecretManager jobTokenSecretManager) throws IOException {
     this.logIdentifier = logIdentifier;
     this.jobTokenSecretMgr = jobTokenSecretManager;
     this.httpConnParams = connParams;
@@ -104,9 +101,9 @@ public class HttpConnection extends BaseHttpConnection {
     connection.setReadTimeout(httpConnParams.getReadTimeout());
     // put shuffle version into http header
     connection.addRequestProperty(ShuffleHeader.HTTP_HEADER_NAME,
-        ShuffleHeader.DEFAULT_HTTP_HEADER_NAME);
+      ShuffleHeader.DEFAULT_HTTP_HEADER_NAME);
     connection.addRequestProperty(ShuffleHeader.HTTP_HEADER_VERSION,
-        ShuffleHeader.DEFAULT_HTTP_HEADER_VERSION);
+      ShuffleHeader.DEFAULT_HTTP_HEADER_VERSION);
   }
 
   /**
@@ -154,8 +151,8 @@ public class HttpConnection extends BaseHttpConnection {
         connectionFailures++;
         if (cleanup) {
           LOG.info("Cleanup is set to true. Not attempting to"
-              + " connect again. Last exception was: ["
-              + ioe.getClass().getName() + ", " + ioe.getMessage() + "]");
+            + " connect again. Last exception was: ["
+            + ioe.getClass().getName() + ", " + ioe.getMessage() + "]");
           return false;
         }
         // update the total remaining connect-timeout
@@ -164,7 +161,7 @@ public class HttpConnection extends BaseHttpConnection {
         // note that the updated value if timeout is used here
         if (connectionTimeout <= 0) {
           throw new IOException(
-              "Failed to connect to " + url + ", #connectionFailures=" + connectionFailures, ioe);
+            "Failed to connect to " + url + ", #connectionFailures=" + connectionFailures, ioe);
         }
         long elapsed = System.currentTimeMillis() - connectStartTime;
         if (elapsed < unit) {
@@ -172,13 +169,13 @@ public class HttpConnection extends BaseHttpConnection {
             long sleepTime = unit - elapsed;
             if (LOG.isDebugEnabled()) {
               LOG.debug("Sleeping for " + sleepTime + " while establishing connection to " + url +
-                  ", since connectAttempt returned in " + elapsed + " ms");
+                ", since connectAttempt returned in " + elapsed + " ms");
             }
             Thread.sleep(sleepTime);
           } catch (InterruptedException e) {
             throw new IOException(
-                "Connection establishment sleep interrupted, #connectionFailures=" +
-                    connectionFailures, e);
+              "Connection establishment sleep interrupted, #connectionFailures=" +
+                connectionFailures, e);
           }
         }
 
@@ -188,13 +185,12 @@ public class HttpConnection extends BaseHttpConnection {
           // reset the connect time out for the final connect
           connection.setConnectTimeout(unit);
         }
-
       }
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Time taken to connect to " + url.toString() +
-          " " + stopWatch.now(TimeUnit.MILLISECONDS) + " ms; connectionFailures="
-          + connectionFailures);
+        " " + stopWatch.now(TimeUnit.MILLISECONDS) + " ms; connectionFailures="
+        + connectionFailures);
     }
     return true;
   }
@@ -205,28 +201,28 @@ public class HttpConnection extends BaseHttpConnection {
     int rc = connection.getResponseCode();
     if (rc != HttpURLConnection.HTTP_OK) {
       throw new IOException("Got invalid response code " + rc + " from " + url
-          + ": " + connection.getResponseMessage());
+        + ": " + connection.getResponseMessage());
     }
 
     // get the shuffle version
     if (!ShuffleHeader.DEFAULT_HTTP_HEADER_NAME.equals(connection
-        .getHeaderField(ShuffleHeader.HTTP_HEADER_NAME))
-        || !ShuffleHeader.DEFAULT_HTTP_HEADER_VERSION.equals(connection
-        .getHeaderField(ShuffleHeader.HTTP_HEADER_VERSION))) {
+      .getHeaderField(ShuffleHeader.HTTP_HEADER_NAME))
+      || !ShuffleHeader.DEFAULT_HTTP_HEADER_VERSION.equals(connection
+      .getHeaderField(ShuffleHeader.HTTP_HEADER_VERSION))) {
       throw new IOException("Incompatible shuffle response version");
     }
 
     // get the replyHash which is HMac of the encHash we sent to the server
     String replyHash =
-        connection
-            .getHeaderField(SecureShuffleUtils.HTTP_HEADER_REPLY_URL_HASH);
+      connection
+        .getHeaderField(SecureShuffleUtils.HTTP_HEADER_REPLY_URL_HASH);
     if (replyHash == null) {
       throw new IOException("security validation of TT Map output failed");
     }
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("url=" + msgToEncode + ";encHash=" + encHash + ";replyHash="
-          + replyHash);
+        + replyHash);
     }
 
     // verify that replyHash is HMac of encHash
@@ -235,7 +231,7 @@ public class HttpConnection extends BaseHttpConnection {
       // Following log statement will be used by tez-tool perf-analyzer for mapping attempt to NM
       // host
       URL_LOG.info("for url=" + url + " sent hash and receievd reply " +
-          stopWatch.now(TimeUnit.MILLISECONDS) + " ms");
+        stopWatch.now(TimeUnit.MILLISECONDS) + " ms");
     } else {
       // Log summary.
       if (urlLogCount.incrementAndGet() % 1000 == 0) {
@@ -255,11 +251,11 @@ public class HttpConnection extends BaseHttpConnection {
     stopWatch.reset().start();
     if (connectionSucceeed) {
       input = new DataInputStream(new BufferedInputStream(
-              connection.getInputStream(), httpConnParams.getBufferSize()));
+        connection.getInputStream(), httpConnParams.getBufferSize()));
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Time taken to getInputStream (connect) " + url +
-          " " + stopWatch.now(TimeUnit.MILLISECONDS) + " ms");
+        " " + stopWatch.now(TimeUnit.MILLISECONDS) + " ms");
     }
     return input;
   }
@@ -297,12 +293,12 @@ public class HttpConnection extends BaseHttpConnection {
         LOG.debug("Exception while shutting down fetcher " + logIdentifier, e);
       } else {
         LOG.info("Exception while shutting down fetcher " + logIdentifier
-            + ": " + e.getMessage());
+          + ": " + e.getMessage());
       }
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Time taken to cleanup connection to " + url +
-          " " + stopWatch.now(TimeUnit.MILLISECONDS) + " ms");
+        " " + stopWatch.now(TimeUnit.MILLISECONDS) + " ms");
     }
   }
 
@@ -325,4 +321,3 @@ public class HttpConnection extends BaseHttpConnection {
     }
   }
 }
-

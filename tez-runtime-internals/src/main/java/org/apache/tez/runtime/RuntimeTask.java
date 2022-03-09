@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,23 +39,23 @@ import com.google.common.collect.Maps;
 public abstract class RuntimeTask {
 
   protected final AtomicBoolean errorReported = new AtomicBoolean(false);
-  protected float progress;
   protected final TezCounters tezCounters;
-  private final Map<String, TezCounters> counterMap = Maps.newConcurrentMap();
-  
   protected final TaskSpec taskSpec;
   protected final Configuration tezConf;
   protected final TezUmbilical tezUmbilical;
   protected final AtomicInteger eventCounter;
   protected final AtomicInteger nextFromEventId;
   protected final AtomicInteger nextPreRoutedEventId;
+  protected final AtomicReference<State> state = new AtomicReference<State>();
+  private final Map<String, TezCounters> counterMap = Maps.newConcurrentMap();
   private final AtomicBoolean taskDone;
   private final TaskCounterUpdater counterUpdater;
   private final TaskStatistics statistics;
   private final AtomicBoolean progressNotified = new AtomicBoolean(false);
+  protected float progress;
 
   protected RuntimeTask(TaskSpec taskSpec, Configuration tezConf,
-      TezUmbilical tezUmbilical, String pid, boolean setupSysCounterUpdater) {
+                        TezUmbilical tezUmbilical, String pid, boolean setupSysCounterUpdater) {
     this.taskSpec = taskSpec;
     this.tezConf = tezConf;
     this.tezUmbilical = tezUmbilical;
@@ -73,12 +73,6 @@ public abstract class RuntimeTask {
     }
   }
 
-  protected enum State {
-    NEW, INITED, RUNNING, CLOSED;
-  }
-
-  protected final AtomicReference<State> state = new AtomicReference<State>();
-
   public boolean isRunning() {
     return (state.get() == State.RUNNING);
   }
@@ -88,11 +82,11 @@ public abstract class RuntimeTask {
     counterMap.put(name, counter);
     return counter;
   }
-  
+
   public boolean hasInitialized() {
     return EnumSet.of(State.RUNNING, State.CLOSED).contains(state.get());
   }
-  
+
   public String getVertexName() {
     return taskSpec.getVertexName();
   }
@@ -100,11 +94,11 @@ public abstract class RuntimeTask {
   public void registerError() {
     errorReported.set(true);
   }
-  
+
   public final void notifyProgressInvocation() {
     progressNotified.lazySet(true);
   }
-  
+
   public boolean getAndClearProgressNotification() {
     boolean retVal = progressNotified.getAndSet(false);
     return retVal;
@@ -114,12 +108,12 @@ public abstract class RuntimeTask {
     return errorReported.get();
   }
 
-  public synchronized void setProgress(float progress) {
-    this.progress = progress;
-  }
-
   public synchronized float getProgress() {
     return this.progress;
+  }
+
+  public synchronized void setProgress(float progress) {
+    this.progress = progress;
   }
 
   public TezCounters getCounters() {
@@ -146,19 +140,19 @@ public abstract class RuntimeTask {
   public int getEventCounter() {
     return eventCounter.get();
   }
-  
+
   public int getNextFromEventId() {
     return nextFromEventId.get();
   }
-  
-  public int getNextPreRoutedEventId() {
-    return nextPreRoutedEventId.get();
-  }
-  
+
   public void setNextFromEventId(int nextFromEventId) {
     this.nextFromEventId.set(nextFromEventId);
   }
-  
+
+  public int getNextPreRoutedEventId() {
+    return nextPreRoutedEventId.get();
+  }
+
   public void setNextPreRoutedEventId(int nextPreRoutedEventId) {
     this.nextPreRoutedEventId.set(nextPreRoutedEventId);
   }
@@ -166,7 +160,7 @@ public abstract class RuntimeTask {
   public boolean isTaskDone() {
     return taskDone.get();
   }
-  
+
   public void setFrameworkCounters() {
     if (counterUpdater != null) {
       this.counterUpdater.updateCounters();
@@ -181,5 +175,9 @@ public abstract class RuntimeTask {
 
   protected final boolean isUpdatingSystemCounters() {
     return counterUpdater != null;
+  }
+
+  protected enum State {
+    NEW, INITED, RUNNING, CLOSED;
   }
 }

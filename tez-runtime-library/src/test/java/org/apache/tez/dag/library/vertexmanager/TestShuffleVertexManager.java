@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,24 +17,6 @@
  */
 
 package org.apache.tez.dag.library.vertexmanager;
-
-import com.google.common.collect.Lists;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.tez.common.ReflectionUtils;
-import org.apache.tez.dag.api.*;
-import org.apache.tez.dag.api.EdgeProperty.SchedulingType;
-import org.apache.tez.dag.api.event.VertexState;
-import org.apache.tez.dag.api.event.VertexStateUpdate;
-import org.apache.tez.runtime.api.TaskAttemptIdentifier;
-import org.apache.tez.runtime.api.events.VertexManagerEvent;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
@@ -47,10 +29,48 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings({ "unchecked", "rawtypes" })
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.tez.common.ReflectionUtils;
+import org.apache.tez.dag.api.EdgeManagerPlugin;
+import org.apache.tez.dag.api.EdgeProperty;
+import org.apache.tez.dag.api.EdgeProperty.SchedulingType;
+import org.apache.tez.dag.api.InputDescriptor;
+import org.apache.tez.dag.api.OutputDescriptor;
+import org.apache.tez.dag.api.VertexLocationHint;
+import org.apache.tez.dag.api.VertexManagerPluginContext;
+import org.apache.tez.dag.api.VertexManagerPluginDescriptor;
+import org.apache.tez.dag.api.event.VertexState;
+import org.apache.tez.dag.api.event.VertexStateUpdate;
+import org.apache.tez.runtime.api.TaskAttemptIdentifier;
+import org.apache.tez.runtime.api.events.VertexManagerEvent;
+
+import com.google.common.collect.Lists;
+import org.junit.Assert;
+import org.junit.Test;
+
+@SuppressWarnings({"unchecked", "rawtypes"})
 public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
 
   List<TaskAttemptIdentifier> emptyCompletions = null;
+
+  private static ShuffleVertexManager createManager(Configuration conf,
+                                                    VertexManagerPluginContext context, Float min, Float max) {
+    return createManager(conf, context, true, 1000l, min, max);
+  }
+
+  private static ShuffleVertexManager createManager(Configuration conf,
+                                                    VertexManagerPluginContext context,
+                                                    Boolean enableAutoParallelism, Long desiredTaskInputSize, Float min,
+                                                    Float max) {
+    return (ShuffleVertexManager) TestShuffleVertexManagerBase.createManager(
+      ShuffleVertexManager.class, conf, context,
+      enableAutoParallelism, desiredTaskInputSize, min, max);
+  }
 
   @Test(timeout = 5000)
   public void testLargeDataSize() throws IOException {
@@ -64,10 +84,10 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
 
     final List<Integer> scheduledTasks = Lists.newLinkedList();
     final Map<String, EdgeManagerPlugin> newEdgeManagers =
-        new HashMap<String, EdgeManagerPlugin>();
+      new HashMap<String, EdgeManagerPlugin>();
     final VertexManagerPluginContext mockContext = createVertexManagerContext(
-        mockSrcVertexId1, 2, mockSrcVertexId2, 2, mockSrcVertexId3, 2,
-        mockManagedVertexId, 4, scheduledTasks, newEdgeManagers);
+      mockSrcVertexId1, 2, mockSrcVertexId2, 2, mockSrcVertexId3, 2,
+      mockManagedVertexId, 4, scheduledTasks, newEdgeManagers);
 
     VertexManagerEvent vmEvent = getVertexManagerEvent(null, 5000L, mockSrcVertexId1);
     // parallelism not change due to large data size
@@ -82,13 +102,13 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
     manager.onSourceTaskCompleted(createTaskAttemptIdentifier(mockSrcVertexId1, 0));
     manager.onSourceTaskCompleted(createTaskAttemptIdentifier(mockSrcVertexId2, 0));
     verify(mockContext, times(0)).reconfigureVertex(anyInt(), any
-        (VertexLocationHint.class), anyMap());
+      (VertexLocationHint.class), anyMap());
     verify(mockContext, times(0)).doneReconfiguringVertex();
     // trigger scheduling
     manager.onVertexStateUpdated(new VertexStateUpdate(mockSrcVertexId3, VertexState.CONFIGURED));
     Assert.assertTrue(manager.totalNumBipartiteSourceTasks == 4);
     verify(mockContext, times(0)).reconfigureVertex(anyInt(), any
-        (VertexLocationHint.class), anyMap());
+      (VertexLocationHint.class), anyMap());
     verify(mockContext, times(1)).doneReconfiguringVertex(); // reconfig done
     Assert.assertEquals(0, manager.pendingTasks.size()); // all tasks scheduled
     Assert.assertEquals(4, scheduledTasks.size());
@@ -100,7 +120,7 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
     // Ensure long overflow doesn't reduce mistakenly
     // Overflow can occur previously when output size * num tasks for a single vertex would over flow max long
     //
-    manager = createManager(conf, mockContext, true, (long)(Long.MAX_VALUE / 1.5), 1.0f, 1.0f);
+    manager = createManager(conf, mockContext, true, (long) (Long.MAX_VALUE / 1.5), 1.0f, 1.0f);
     manager.onVertexStarted(emptyCompletions);
     manager.onVertexStateUpdated(new VertexStateUpdate(mockSrcVertexId1, VertexState.CONFIGURED));
     manager.onVertexStateUpdated(new VertexStateUpdate(mockSrcVertexId2, VertexState.CONFIGURED));
@@ -130,7 +150,7 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
     Assert.assertEquals(2, manager.numBipartiteSourceTasksCompleted);
     Assert.assertEquals(0L, manager.completedSourceTasksOutputSize);
     // First source 2 task completes
-    vmEvent = getVertexManagerEvent(null, Long.MAX_VALUE >> 1 , mockSrcVertexId2);
+    vmEvent = getVertexManagerEvent(null, Long.MAX_VALUE >> 1, mockSrcVertexId2);
     manager.onVertexManagerEventReceived(vmEvent);
     manager.onSourceTaskCompleted(createTaskAttemptIdentifier(mockSrcVertexId2, 0));
     Assert.assertEquals(4, manager.pendingTasks.size());
@@ -138,7 +158,7 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
     Assert.assertEquals(3, manager.numBipartiteSourceTasksCompleted);
     Assert.assertEquals(Long.MAX_VALUE >> 1, manager.completedSourceTasksOutputSize);
     // Second source 2 task completes
-    vmEvent = getVertexManagerEvent(null, Long.MAX_VALUE >> 1 , mockSrcVertexId2);
+    vmEvent = getVertexManagerEvent(null, Long.MAX_VALUE >> 1, mockSrcVertexId2);
     manager.onVertexManagerEventReceived(vmEvent);
     manager.onSourceTaskCompleted(createTaskAttemptIdentifier(mockSrcVertexId2, 1));
     // Auto-reduce is triggered
@@ -169,20 +189,19 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
     final List<Integer> scheduledTasks = Lists.newLinkedList();
 
     final VertexManagerPluginContext mockContext = createVertexManagerContext(
-        "Vertex1", 2, "Vertex2", 2, "Vertex3", 2,
-        "Vertex4", 4, scheduledTasks, null);
+      "Vertex1", 2, "Vertex2", 2, "Vertex3", 2,
+      "Vertex4", 4, scheduledTasks, null);
 
     //Check via setters
     ShuffleVertexManager.ShuffleVertexManagerConfigBuilder configurer = ShuffleVertexManager
-        .createConfigBuilder(null);
+      .createConfigBuilder(null);
     VertexManagerPluginDescriptor pluginDesc = configurer.setAutoReduceParallelism(true)
-        .setDesiredTaskInputSize(1000l)
-        .setMinTaskParallelism(10).setSlowStartMaxSrcCompletionFraction(0.5f).build();
+      .setDesiredTaskInputSize(1000l)
+      .setMinTaskParallelism(10).setSlowStartMaxSrcCompletionFraction(0.5f).build();
     when(mockContext.getUserPayload()).thenReturn(pluginDesc.getUserPayload());
 
-
     manager = ReflectionUtils.createClazzInstance(pluginDesc.getClassName(),
-        new Class[]{VertexManagerPluginContext.class}, new Object[]{mockContext});
+      new Class[]{VertexManagerPluginContext.class}, new Object[]{mockContext});
     manager.initialize();
     verify(mockContext, times(1)).vertexReconfigurationPlanned(); // Tez notified of reconfig
 
@@ -197,18 +216,18 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
     when(mockContext.getUserPayload()).thenReturn(pluginDesc.getUserPayload());
 
     manager = ReflectionUtils.createClazzInstance(pluginDesc.getClassName(),
-        new Class[]{VertexManagerPluginContext.class}, new Object[]{mockContext});
+      new Class[]{VertexManagerPluginContext.class}, new Object[]{mockContext});
     manager.initialize();
     verify(mockContext, times(1)).vertexReconfigurationPlanned(); // Tez not notified of reconfig
 
     Assert.assertTrue(!manager.config.isAutoParallelismEnabled());
     Assert.assertTrue(manager.config.getDesiredTaskInputDataSize() ==
-        ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_DESIRED_TASK_INPUT_SIZE_DEFAULT);
+      ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_DESIRED_TASK_INPUT_SIZE_DEFAULT);
     Assert.assertTrue(manager.mgrConfig.getMinTaskParallelism() == 1);
     Assert.assertTrue(manager.config.getMinFraction() ==
-        ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_MIN_SRC_FRACTION_DEFAULT);
+      ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_MIN_SRC_FRACTION_DEFAULT);
     Assert.assertTrue(manager.config.getMaxFraction() ==
-        ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_MAX_SRC_FRACTION_DEFAULT);
+      ShuffleVertexManager.TEZ_SHUFFLE_VERTEX_MANAGER_MAX_SRC_FRACTION_DEFAULT);
   }
 
   @Test(timeout = 5000)
@@ -219,25 +238,25 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
     HashMap<String, EdgeProperty> mockInputVertices = new HashMap<String, EdgeProperty>();
     String r1 = "R1";
     EdgeProperty eProp1 = EdgeProperty.create(
-        EdgeProperty.DataMovementType.SCATTER_GATHER,
-        EdgeProperty.DataSourceType.PERSISTED,
-        SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create("out"),
-        InputDescriptor.create("in"));
+      EdgeProperty.DataMovementType.SCATTER_GATHER,
+      EdgeProperty.DataSourceType.PERSISTED,
+      SchedulingType.SEQUENTIAL,
+      OutputDescriptor.create("out"),
+      InputDescriptor.create("in"));
     String m2 = "M2";
     EdgeProperty eProp2 = EdgeProperty.create(
-        EdgeProperty.DataMovementType.BROADCAST,
-        EdgeProperty.DataSourceType.PERSISTED,
-        SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create("out"),
-        InputDescriptor.create("in"));
+      EdgeProperty.DataMovementType.BROADCAST,
+      EdgeProperty.DataSourceType.PERSISTED,
+      SchedulingType.SEQUENTIAL,
+      OutputDescriptor.create("out"),
+      InputDescriptor.create("in"));
     String m3 = "M3";
     EdgeProperty eProp3 = EdgeProperty.create(
-        EdgeProperty.DataMovementType.BROADCAST,
-        EdgeProperty.DataSourceType.PERSISTED,
-        SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create("out"),
-        InputDescriptor.create("in"));
+      EdgeProperty.DataMovementType.BROADCAST,
+      EdgeProperty.DataSourceType.PERSISTED,
+      SchedulingType.SEQUENTIAL,
+      OutputDescriptor.create("out"),
+      InputDescriptor.create("in"));
 
     final String mockManagedVertexId = "R2";
 
@@ -255,7 +274,7 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
 
     final List<Integer> scheduledTasks = Lists.newLinkedList();
     doAnswer(new ScheduledTasksAnswer(scheduledTasks)).when(
-        mockContext).scheduleTasks(anyList());
+      mockContext).scheduleTasks(anyList());
 
     // check initialization
     manager = createManager(conf, mockContext, 0.001f, 0.001f);
@@ -299,20 +318,5 @@ public class TestShuffleVertexManager extends TestShuffleVertexManagerUtils {
     Assert.assertTrue(scheduledTasks.get(0) == 2);
     Assert.assertTrue(scheduledTasks.get(1) == 0);
     Assert.assertTrue(scheduledTasks.get(2) == 1);
-  }
-
-
-  private static ShuffleVertexManager createManager(Configuration conf,
-      VertexManagerPluginContext context, Float min, Float max) {
-    return createManager(conf, context, true, 1000l, min, max);
-  }
-
-  private static ShuffleVertexManager createManager(Configuration conf,
-      VertexManagerPluginContext context,
-      Boolean enableAutoParallelism, Long desiredTaskInputSize, Float min,
-      Float max) {
-    return (ShuffleVertexManager)TestShuffleVertexManagerBase.createManager(
-        ShuffleVertexManager.class, conf, context,
-        enableAutoParallelism, desiredTaskInputSize, min, max);
   }
 }

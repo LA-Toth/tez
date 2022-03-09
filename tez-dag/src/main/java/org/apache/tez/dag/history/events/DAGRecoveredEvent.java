@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,13 +20,14 @@ package org.apache.tez.dag.history.events;
 
 import java.io.IOException;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.tez.dag.app.dag.DAGState;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.records.TezDAGID;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class DAGRecoveredEvent implements HistoryEvent {
 
@@ -42,9 +43,9 @@ public class DAGRecoveredEvent implements HistoryEvent {
   private String containerLogs;
 
   public DAGRecoveredEvent(ApplicationAttemptId applicationAttemptId,
-      TezDAGID dagId, String dagName, String user,
-      long recoveredTime, DAGState recoveredState,
-      String recoveryFailureReason, String containerLogs) {
+                           TezDAGID dagId, String dagName, String user,
+                           long recoveredTime, DAGState recoveredState,
+                           String recoveryFailureReason, String containerLogs) {
     this.applicationAttemptId = applicationAttemptId;
     this.dagID = dagId;
     this.dagName = dagName;
@@ -56,7 +57,7 @@ public class DAGRecoveredEvent implements HistoryEvent {
   }
 
   public DAGRecoveredEvent(ApplicationAttemptId applicationAttemptId,
-      TezDAGID dagId, String dagName, String user, long recoveredTime, String containerLogs) {
+                           TezDAGID dagId, String dagName, String user, long recoveredTime, String containerLogs) {
     this(applicationAttemptId, dagId, dagName, user, recoveredTime, null, null, containerLogs);
   }
 
@@ -78,13 +79,13 @@ public class DAGRecoveredEvent implements HistoryEvent {
   @Override
   public void toProtoStream(CodedOutputStream outputStream) throws IOException {
     throw new UnsupportedOperationException("Invalid operation for eventType "
-        + getEventType().name());
+      + getEventType().name());
   }
 
   @Override
   public void fromProtoStream(CodedInputStream inputStream) throws IOException {
     throw new UnsupportedOperationException("Invalid operation for eventType "
-        + getEventType().name());
+      + getEventType().name());
   }
 
   public ApplicationAttemptId getApplicationAttemptId() {
@@ -130,11 +131,10 @@ public class DAGRecoveredEvent implements HistoryEvent {
   @Override
   public String toString() {
     return "applicationAttemptId="
-        + (applicationAttemptId != null ? applicationAttemptId.toString() : "null")
-        + ", dagId=" + (dagID != null ? dagID.toString() : "null")
-        + ", recoveredTime=" + recoveredTime
-        + ", recoveredState=" + (recoveredDagState != null ? recoveredDagState.name() : "null" )
-        + ", recoveryFailureReason=" + recoveryFailureReason;
+      + (applicationAttemptId != null ? applicationAttemptId.toString() : "null")
+      + ", dagId=" + (dagID != null ? dagID.toString() : "null")
+      + ", recoveredTime=" + recoveredTime
+      + ", recoveredState=" + (recoveredDagState != null ? recoveredDagState.name() : "null")
+      + ", recoveryFailureReason=" + recoveryFailureReason;
   }
-
 }

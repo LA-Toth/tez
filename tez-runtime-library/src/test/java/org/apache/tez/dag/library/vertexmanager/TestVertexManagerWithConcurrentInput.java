@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,6 +17,15 @@
  */
 
 package org.apache.tez.dag.library.vertexmanager;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 
 import org.apache.tez.dag.api.EdgeManagerPluginDescriptor;
 import org.apache.tez.dag.api.EdgeProperty;
@@ -27,21 +36,13 @@ import org.apache.tez.dag.api.VertexManagerPluginDescriptor;
 import org.apache.tez.dag.api.event.VertexState;
 import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.dag.library.edgemanager.SilentEdgeManager;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class TestVertexManagerWithConcurrentInput {
 
@@ -56,30 +57,30 @@ public class TestVertexManagerWithConcurrentInput {
   @Test(timeout = 5000)
   public void testBasicVertexWithConcurrentInput() throws Exception {
     HashMap<String, EdgeProperty> mockInputVertices =
-        new HashMap<String, EdgeProperty>();
+      new HashMap<String, EdgeProperty>();
     String mockSrcVertexId1 = "Vertex1";
     int srcVertex1Parallelism = 2;
     EdgeProperty eProp1 = EdgeProperty.create(
-        EdgeManagerPluginDescriptor.create(SilentEdgeManager.class.getName()),
-        EdgeProperty.DataSourceType.EPHEMERAL,
-        EdgeProperty.SchedulingType.CONCURRENT,
-        OutputDescriptor.create("out"),
-        InputDescriptor.create("in"));
+      EdgeManagerPluginDescriptor.create(SilentEdgeManager.class.getName()),
+      EdgeProperty.DataSourceType.EPHEMERAL,
+      EdgeProperty.SchedulingType.CONCURRENT,
+      OutputDescriptor.create("out"),
+      InputDescriptor.create("in"));
 
     String mockSrcVertexId2 = "Vertex2";
     int srcVertex2Parallelism = 3;
     EdgeProperty eProp2 = EdgeProperty.create(
-        EdgeManagerPluginDescriptor.create(SilentEdgeManager.class.getName()),
-        EdgeProperty.DataSourceType.EPHEMERAL,
-        EdgeProperty.SchedulingType.CONCURRENT,
-        OutputDescriptor.create("out"),
-        InputDescriptor.create("in"));
+      EdgeManagerPluginDescriptor.create(SilentEdgeManager.class.getName()),
+      EdgeProperty.DataSourceType.EPHEMERAL,
+      EdgeProperty.SchedulingType.CONCURRENT,
+      OutputDescriptor.create("out"),
+      InputDescriptor.create("in"));
 
     String mockManagedVertexId = "Vertex";
     int vertexParallelism = 2;
 
     VertexManagerWithConcurrentInput.ConcurrentInputVertexManagerConfigBuilder configurer =
-        VertexManagerWithConcurrentInput.createConfigBuilder(null);
+      VertexManagerWithConcurrentInput.createConfigBuilder(null);
     VertexManagerPluginDescriptor pluginDesc = configurer.build();
 
     VertexManagerPluginContext mockContext = mock(VertexManagerPluginContext.class);
@@ -107,7 +108,7 @@ public class TestVertexManagerWithConcurrentInput {
 
     // then own vertex started
     manager.onVertexStarted(Collections.singletonList(
-        TestShuffleVertexManager.createTaskAttemptIdentifier(mockSrcVertexId1, 0)));
+      TestShuffleVertexManager.createTaskAttemptIdentifier(mockSrcVertexId1, 0)));
     verify(mockContext, times(1)).scheduleTasks(requestCaptor.capture());
     Assert.assertEquals(0, manager.completedUpstreamTasks);
   }

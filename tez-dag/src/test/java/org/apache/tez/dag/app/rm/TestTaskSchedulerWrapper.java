@@ -14,9 +14,10 @@
 
 package org.apache.tez.dag.app.rm;
 
-import com.google.common.collect.Sets;
 import org.apache.tez.dag.app.PluginWrapperTestHelpers;
 import org.apache.tez.serviceplugins.api.TaskScheduler;
+
+import com.google.common.collect.Sets;
 import org.junit.Test;
 
 public class TestTaskSchedulerWrapper {
@@ -24,6 +25,6 @@ public class TestTaskSchedulerWrapper {
   @Test(timeout = 5000)
   public void testDelegation() throws Exception {
     PluginWrapperTestHelpers.testDelegation(TaskSchedulerWrapper.class, TaskScheduler.class,
-        Sets.newHashSet("getTaskScheduler"));
+      Sets.newHashSet("getTaskScheduler"));
   }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,7 +34,7 @@ public class TaskReportImpl implements TaskReport {
   }
 
   public TaskReportImpl(TezTaskID taskID, TaskState taskState,
-      float progress, long startTime, long finishTime) {
+                        float progress, long startTime, long finishTime) {
     this.taskID = taskID;
     this.taskState = taskState;
     this.progress = progress;
@@ -48,28 +48,13 @@ public class TaskReportImpl implements TaskReport {
   }
 
   @Override
-  public TaskState getTaskState() {
-    return taskState;
-  }
-
-  @Override
-  public float getProgress() {
-    return progress;
-  }
-
-  @Override
-  public long getStartTime() {
-    return startTime;
-  }
-
-  @Override
-  public long getFinishTime() {
-    return finishTime;
-  }
-
-  @Override
   public void setTaskId(TezTaskID taskId) {
     this.taskID = taskId;
+  }
+
+  @Override
+  public TaskState getTaskState() {
+    return taskState;
   }
 
   @Override
@@ -78,8 +63,18 @@ public class TaskReportImpl implements TaskReport {
   }
 
   @Override
+  public float getProgress() {
+    return progress;
+  }
+
+  @Override
   public void setProgress(float progress) {
     this.progress = progress;
+  }
+
+  @Override
+  public long getStartTime() {
+    return startTime;
   }
 
   @Override
@@ -88,8 +83,12 @@ public class TaskReportImpl implements TaskReport {
   }
 
   @Override
+  public long getFinishTime() {
+    return finishTime;
+  }
+
+  @Override
   public void setFinishTime(long finishTime) {
     this.finishTime = finishTime;
   }
-
 }

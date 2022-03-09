@@ -1,29 +1,26 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.mapreduce;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.apache.tez.dag.api.TezConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.RandomTextWriterJob;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileContext;
@@ -38,29 +35,29 @@ import org.apache.hadoop.mapreduce.JobStatus;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.mapreduce.examples.MRRSleepJob;
 import org.apache.tez.mapreduce.hadoop.MRJobConfig;
 import org.apache.tez.test.MiniTezCluster;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestMRRJobs {
 
   private static final Logger LOG = LoggerFactory.getLogger(TestMRRJobs.class);
-
+  private static final String OUTPUT_ROOT_DIR = "/tmp" + Path.SEPARATOR +
+    TestMRRJobs.class.getSimpleName();
   protected static MiniTezCluster mrrTezCluster;
   protected static MiniDFSCluster dfsCluster;
-
   private static Configuration conf = new Configuration();
   private static FileSystem remoteFs;
-
   private static String TEST_ROOT_DIR = "target"
-      + Path.SEPARATOR + TestMRRJobs.class.getName() + "-tmpDir";
-
-  private static final String OUTPUT_ROOT_DIR = "/tmp" + Path.SEPARATOR +
-      TestMRRJobs.class.getSimpleName();
+    + Path.SEPARATOR + TestMRRJobs.class.getName() + "-tmpDir";
 
   @BeforeClass
   public static void setup() throws IOException {
@@ -76,13 +73,13 @@ public class TestMRRJobs {
 
     if (!(new File(MiniTezCluster.APPJAR)).exists()) {
       LOG.info("MRAppJar " + MiniTezCluster.APPJAR
-               + " not found. Not running test.");
+        + " not found. Not running test.");
       return;
     }
 
     if (mrrTezCluster == null) {
       mrrTezCluster = new MiniTezCluster(TestMRRJobs.class.getName(), 1,
-          1, 1);
+        1, 1);
       Configuration conf = new Configuration();
       conf.set("fs.defaultFS", remoteFs.getUri().toString());   // use HDFS
       conf.set(MRJobConfig.MR_AM_STAGING_DIR, "/apps_staging_dir");
@@ -91,7 +88,6 @@ public class TestMRRJobs {
       mrrTezCluster.init(conf);
       mrrTezCluster.start();
     }
-
   }
 
   @AfterClass
@@ -106,14 +102,14 @@ public class TestMRRJobs {
     }
   }
 
-  @Test (timeout = 60000)
+  @Test(timeout = 60000)
   public void testMRRSleepJob() throws IOException, InterruptedException,
-      ClassNotFoundException {
+    ClassNotFoundException {
     LOG.info("\n\n\nStarting testMRRSleepJob().");
 
     if (!(new File(MiniTezCluster.APPJAR)).exists()) {
       LOG.info("MRAppJar " + MiniTezCluster.APPJAR
-               + " not found. Not running test.");
+        + " not found. Not running test.");
       return;
     }
 
@@ -123,7 +119,7 @@ public class TestMRRJobs {
     sleepJob.setConf(sleepConf);
 
     Job job = sleepJob.createJob(1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1);
+      1, 1, 1, 1, 1);
 
     job.setJarByClass(MRRSleepJob.class);
     job.setMaxMapAttempts(1); // speed up failures
@@ -138,22 +134,22 @@ public class TestMRRJobs {
     // to http://localhost:53419/proxy/application_1430963524753_0005/ui/
     // So here use String#contains to verify.
     Assert.assertTrue("Tracking URL was " + trackingUrl +
-                      " but didn't Match Job ID " + jobId ,
-          trackingUrl.contains(jobId.substring(jobId.indexOf("_"))));
+        " but didn't Match Job ID " + jobId,
+      trackingUrl.contains(jobId.substring(jobId.indexOf("_"))));
 
     // FIXME once counters and task progress can be obtained properly
     // TODO use dag client to test counters and task progress?
     // what about completed jobs?
   }
 
-  @Test (timeout = 60000)
+  @Test(timeout = 60000)
   public void testRandomWriter() throws IOException, InterruptedException,
-      ClassNotFoundException {
+    ClassNotFoundException {
 
     LOG.info("\n\n\nStarting testRandomWriter().");
     if (!(new File(MiniTezCluster.APPJAR)).exists()) {
       LOG.info("MRAppJar " + MiniTezCluster.APPJAR
-               + " not found. Not running test.");
+        + " not found. Not running test.");
       return;
     }
 
@@ -173,36 +169,34 @@ public class TestMRRJobs {
     Assert.assertTrue(succeeded);
     Assert.assertEquals(JobStatus.State.SUCCEEDED, job.getJobState());
     Assert.assertTrue("Tracking URL was " + trackingUrl +
-                      " but didn't Match Job ID " + jobId ,
-          trackingUrl.contains(jobId.substring(jobId.indexOf("_"))));
+        " but didn't Match Job ID " + jobId,
+      trackingUrl.contains(jobId.substring(jobId.indexOf("_"))));
 
     // Make sure there are three files in the output-dir
 
     RemoteIterator<FileStatus> iterator =
-        FileContext.getFileContext(mrrTezCluster.getConfig()).listStatus(
-            outputDir);
+      FileContext.getFileContext(mrrTezCluster.getConfig()).listStatus(
+        outputDir);
     int count = 0;
     while (iterator.hasNext()) {
       FileStatus file = iterator.next();
       if (!file.getPath().getName()
-          .equals(FileOutputCommitter.SUCCEEDED_FILE_NAME)) {
+        .equals(FileOutputCommitter.SUCCEEDED_FILE_NAME)) {
         count++;
       }
     }
     Assert.assertEquals("Number of part files is wrong!", 3, count);
-
   }
 
-
-  @Test (timeout = 60000)
+  @Test(timeout = 60000)
   public void testFailingJob() throws IOException, InterruptedException,
-      ClassNotFoundException {
+    ClassNotFoundException {
 
     LOG.info("\n\n\nStarting testFailingJob().");
 
     if (!(new File(MiniTezCluster.APPJAR)).exists()) {
       LOG.info("MRAppJar " + MiniTezCluster.APPJAR
-               + " not found. Not running test.");
+        + " not found. Not running test.");
       return;
     }
 
@@ -212,7 +206,7 @@ public class TestMRRJobs {
     sleepJob.setConf(sleepConf);
 
     Job job = sleepJob.createJob(1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1);
+      1, 1, 1, 1, 1);
 
     job.setJarByClass(MRRSleepJob.class);
     job.setMaxMapAttempts(1); // speed up failures
@@ -228,15 +222,15 @@ public class TestMRRJobs {
     // TODO verify failed task diagnostics
   }
 
-  @Test (timeout = 60000)
+  @Test(timeout = 60000)
   public void testFailingAttempt() throws IOException, InterruptedException,
-      ClassNotFoundException {
+    ClassNotFoundException {
 
     LOG.info("\n\n\nStarting testFailingAttempt().");
 
     if (!(new File(MiniTezCluster.APPJAR)).exists()) {
       LOG.info("MRAppJar " + MiniTezCluster.APPJAR
-               + " not found. Not running test.");
+        + " not found. Not running test.");
       return;
     }
 
@@ -246,7 +240,7 @@ public class TestMRRJobs {
     sleepJob.setConf(sleepConf);
 
     Job job = sleepJob.createJob(1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1);
+      1, 1, 1, 1, 1);
 
     job.setJarByClass(MRRSleepJob.class);
     job.setMaxMapAttempts(3); // speed up failures
@@ -262,14 +256,14 @@ public class TestMRRJobs {
     // TODO verify failed task diagnostics
   }
 
-  @Test (timeout = 60000)
+  @Test(timeout = 60000)
   public void testMRRSleepJobWithCompression() throws IOException,
-      InterruptedException, ClassNotFoundException {
+    InterruptedException, ClassNotFoundException {
     LOG.info("\n\n\nStarting testMRRSleepJobWithCompression().");
 
     if (!(new File(MiniTezCluster.APPJAR)).exists()) {
       LOG.info("MRAppJar " + MiniTezCluster.APPJAR
-               + " not found. Not running test.");
+        + " not found. Not running test.");
       return;
     }
 
@@ -279,7 +273,7 @@ public class TestMRRJobs {
     sleepJob.setConf(sleepConf);
 
     Job job = sleepJob.createJob(1, 1, 2, 1, 1,
-        1, 1, 1, 1, 1);
+      1, 1, 1, 1, 1);
 
     job.setJarByClass(MRRSleepJob.class);
     job.setMaxMapAttempts(1); // speed up failures
@@ -287,7 +281,7 @@ public class TestMRRJobs {
     // enable compression
     job.getConfiguration().setBoolean(MRJobConfig.MAP_OUTPUT_COMPRESS, true);
     job.getConfiguration().set(MRJobConfig.MAP_OUTPUT_COMPRESS_CODEC,
-        DefaultCodec.class.getName());
+      DefaultCodec.class.getName());
 
     job.submit();
     String trackingUrl = job.getTrackingURL();
@@ -296,8 +290,8 @@ public class TestMRRJobs {
     Assert.assertTrue(succeeded);
     Assert.assertEquals(JobStatus.State.SUCCEEDED, job.getJobState());
     Assert.assertTrue("Tracking URL was " + trackingUrl +
-                      " but didn't Match Job ID " + jobId ,
-          trackingUrl.contains(jobId.substring(jobId.indexOf("_"))));
+        " but didn't Match Job ID " + jobId,
+      trackingUrl.contains(jobId.substring(jobId.indexOf("_"))));
 
     // FIXME once counters and task progress can be obtained properly
     // TODO use dag client to test counters and task progress?
@@ -361,5 +355,4 @@ public class TestMRRJobs {
     // TODO later:  add explicit "isUber()" checks of some sort
   }
   */
-
 }

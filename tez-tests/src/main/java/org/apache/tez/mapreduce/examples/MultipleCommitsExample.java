@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -51,6 +51,7 @@ import org.apache.tez.runtime.library.api.KeyValueWriter;
 import org.apache.tez.runtime.library.conf.OrderedPartitionedKVEdgeConfig;
 import org.apache.tez.runtime.library.input.ConcatenatedMergedKeyValuesInput;
 import org.apache.tez.runtime.library.partitioner.HashPartitioner;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,20 +64,24 @@ import org.slf4j.LoggerFactory;
  */
 public class MultipleCommitsExample extends TezExampleBase {
 
+  public static final String CommitOnVertexSuccessOption = "commitOnVertexSuccess";
   private static final Logger LOG = LoggerFactory.getLogger(MultipleCommitsExample.class);
   private static final String UV12OutputNamePrefix = "uv12Output";
   private static final String V1OutputNamePrefix = "v1Output";
   private static final String V2OutputNamePrefix = "v2Output";
   private static final String V3OutputNamePrefix = "v3Output";
 
-  public static final String CommitOnVertexSuccessOption = "commitOnVertexSuccess";
+  public static void main(String[] args) throws Exception {
+    int res = ToolRunner.run(new MultipleCommitsExample(), args);
+    System.exit(res);
+  }
 
   @Override
   protected void printUsage() {
     System.err.println("Usage: "
-        + " multiplecommitsExample v1OutputPrefix v1OutputNum v2OutputPrefix v2OutputNum"
-        + " uv12OutputPrefix uv12OutputNum v3OutputPrefix v3OutputNum"
-        + " [" + CommitOnVertexSuccessOption + "]" + "(default false)");
+      + " multiplecommitsExample v1OutputPrefix v1OutputNum v2OutputPrefix v2OutputNum"
+      + " uv12OutputPrefix uv12OutputNum v3OutputPrefix v3OutputNum"
+      + " [" + CommitOnVertexSuccessOption + "]" + "(default false)");
   }
 
   @Override
@@ -88,6 +93,82 @@ public class MultipleCommitsExample extends TezExampleBase {
       return 2;
     }
     return 0;
+  }
+
+  @Override
+  protected int runJob(String[] args, TezConfiguration tezConf,
+                       TezClient tezClient) throws Exception {
+    boolean commitOnVertexSuccess =
+      args.length == 5 && args[4].equals(CommitOnVertexSuccessOption) ? true : false;
+    DAG dag = createDAG(tezConf, args[0], Integer.parseInt(args[1]),
+      args[2], Integer.parseInt(args[3]),
+      args[4], Integer.parseInt(args[5]),
+      args[6], Integer.parseInt(args[7]),
+      commitOnVertexSuccess);
+    LOG.info("Running MultipleCommitsExample");
+    return runDag(dag, false, LOG);
+  }
+
+  private DAG createDAG(TezConfiguration tezConf,
+                        String v1OutputPathPrefix, int v1OutputNum, String v2OutputPathPrefix, int v2OutputNum,
+                        String uv12OutputPathPrefix, int uv12OutputNum,
+                        String v3OutputPathPrefix, int v3OutputNum, boolean commitOnVertexSuccess) throws IOException {
+    DAG dag = DAG.create("multipleCommitsDAG");
+    dag.setConf(TezConfiguration.TEZ_AM_COMMIT_ALL_OUTPUTS_ON_DAG_SUCCESS, !commitOnVertexSuccess + "");
+    Vertex v1 = Vertex.create("v1", ProcessorDescriptor.create(MultipleOutputProcessor.class.getName())
+      .setUserPayload(
+        new MultipleOutputProcessor.MultipleOutputProcessorConfig(
+          V1OutputNamePrefix, v1OutputNum, UV12OutputNamePrefix, uv12OutputNum)
+          .toUserPayload()), 2);
+    Vertex v2 = Vertex.create("v2", ProcessorDescriptor.create(MultipleOutputProcessor.class.getName())
+      .setUserPayload(
+        new MultipleOutputProcessor.MultipleOutputProcessorConfig(
+          V2OutputNamePrefix, v2OutputNum, UV12OutputNamePrefix, uv12OutputNum)
+          .toUserPayload()), 2);
+    // add data sinks for v1
+    for (int i = 0; i < v1OutputNum; ++i) {
+      DataSinkDescriptor sink = MROutput.createConfigBuilder(
+        new Configuration(tezConf), TextOutputFormat.class, v1OutputPathPrefix + "_" + i).build();
+      v1.addDataSink(V1OutputNamePrefix + "_" + i, sink);
+    }
+    // add data sinks for v2
+    for (int i = 0; i < v2OutputNum; ++i) {
+      DataSinkDescriptor sink = MROutput.createConfigBuilder(
+        new Configuration(tezConf), TextOutputFormat.class, v2OutputPathPrefix + "_" + i).build();
+      v2.addDataSink(V2OutputNamePrefix + "_" + i, sink);
+    }
+    // add data sinks for (v1,v2)
+    VertexGroup uv12 = dag.createVertexGroup("uv12", v1, v2);
+    for (int i = 0; i < uv12OutputNum; ++i) {
+      DataSinkDescriptor sink = MROutput.createConfigBuilder(
+        new Configuration(tezConf), TextOutputFormat.class, uv12OutputPathPrefix + "_" + i).build();
+      uv12.addDataSink(UV12OutputNamePrefix + "_" + i, sink);
+    }
+
+    Vertex v3 = Vertex.create("v3", ProcessorDescriptor.create(MultipleOutputProcessor.class.getName())
+      .setUserPayload(
+        new MultipleOutputProcessor.MultipleOutputProcessorConfig(V3OutputNamePrefix, v3OutputNum)
+          .toUserPayload()), 2);
+    // add data sinks for v3
+    for (int i = 0; i < v3OutputNum; ++i) {
+      DataSinkDescriptor sink = MROutput.createConfigBuilder(
+        new Configuration(tezConf), TextOutputFormat.class, v3OutputPathPrefix + "_" + i).build();
+      v3.addDataSink(V3OutputNamePrefix + "_" + i, sink);
+    }
+
+    OrderedPartitionedKVEdgeConfig edgeConfig =
+      OrderedPartitionedKVEdgeConfig.newBuilder(
+          NullWritable.class.getName(), Text.class.getName(), HashPartitioner.class.getName())
+        .setFromConfiguration(tezConf)
+        .build();
+    GroupInputEdge edge = GroupInputEdge.create(uv12, v3, edgeConfig.createDefaultEdgeProperty(),
+      InputDescriptor.create(
+        ConcatenatedMergedKeyValuesInput.class.getName()));
+    dag.addVertex(v1)
+      .addVertex(v2)
+      .addVertex(v3)
+      .addEdge(edge);
+    return dag;
   }
 
   public static class MultipleOutputProcessor extends SimpleMRProcessor {
@@ -103,43 +184,51 @@ public class MultipleCommitsExample extends TezExampleBase {
       super.initialize();
       config = MultipleOutputProcessorConfig.fromUserPayload(getContext().getUserPayload());
     }
-    
+
     @Override
     public void run() throws Exception {
-      for (int i=0;i < config.outputNum;++i) {
+      for (int i = 0; i < config.outputNum; ++i) {
         KeyValueWriter writer = (KeyValueWriter)
-            getOutputs().get(config.outputNamePrefix+"_" + i).getWriter();
+          getOutputs().get(config.outputNamePrefix + "_" + i).getWriter();
         writer.write(NullWritable.get(), new Text("dummy"));
       }
-      for (int i=0;i < config.sharedOutputNum; ++i) {
+      for (int i = 0; i < config.sharedOutputNum; ++i) {
         KeyValueWriter writer = (KeyValueWriter)
-            getOutputs().get(config.sharedOutputNamePrefix +"_" + i).getWriter();
+          getOutputs().get(config.sharedOutputNamePrefix + "_" + i).getWriter();
         writer.write(NullWritable.get(), new Text("dummy"));
       }
     }
-    
+
     public static class MultipleOutputProcessorConfig implements Writable {
-      
+
       String outputNamePrefix;
       int outputNum;
       String sharedOutputNamePrefix = null;
       int sharedOutputNum;
 
-      public MultipleOutputProcessorConfig(){
-        
+      public MultipleOutputProcessorConfig() {
+
       }
-      
+
       public MultipleOutputProcessorConfig(String outputNamePrefix, int outputNum) {
         this.outputNamePrefix = outputNamePrefix;
         this.outputNum = outputNum;
       }
 
       public MultipleOutputProcessorConfig(String outputNamePrefix, int outputNum,
-          String sharedOutputNamePrefix, int sharedOutputNum) {
+                                           String sharedOutputNamePrefix, int sharedOutputNum) {
         this.outputNamePrefix = outputNamePrefix;
         this.outputNum = outputNum;
         this.sharedOutputNamePrefix = sharedOutputNamePrefix;
         this.sharedOutputNum = sharedOutputNum;
+      }
+
+      public static MultipleOutputProcessorConfig fromUserPayload(UserPayload payload)
+        throws IOException {
+        MultipleOutputProcessorConfig config = new MultipleOutputProcessorConfig();
+        config.readFields(new DataInputStream(
+          new NonSyncByteArrayInputStream(payload.deepCopyAsArray())));
+        return config;
       }
 
       @Override
@@ -170,101 +259,12 @@ public class MultipleCommitsExample extends TezExampleBase {
           sharedOutputNum = in.readInt();
         }
       }
-      
+
       public UserPayload toUserPayload() throws IOException {
         NonSyncByteArrayOutputStream out = new NonSyncByteArrayOutputStream();
         this.write(new NonSyncDataOutputStream(out));
         return UserPayload.create(ByteBuffer.wrap(out.toByteArray()));
       }
-
-      public static MultipleOutputProcessorConfig fromUserPayload(UserPayload payload)
-          throws IOException {
-        MultipleOutputProcessorConfig config = new MultipleOutputProcessorConfig();
-        config.readFields(new DataInputStream(
-            new NonSyncByteArrayInputStream(payload.deepCopyAsArray())));
-        return config;
-      }
     }
-  }
-
-  @Override
-  protected int runJob(String[] args, TezConfiguration tezConf,
-      TezClient tezClient) throws Exception {
-    boolean commitOnVertexSuccess =
-        args.length == 5 && args[4].equals(CommitOnVertexSuccessOption) ? true : false;
-    DAG dag = createDAG(tezConf, args[0], Integer.parseInt(args[1]),
-        args[2], Integer.parseInt(args[3]),
-        args[4], Integer.parseInt(args[5]),
-        args[6], Integer.parseInt(args[7]),
-        commitOnVertexSuccess);
-    LOG.info("Running MultipleCommitsExample");
-    return runDag(dag, false, LOG);
-  }
-
-  private DAG createDAG(TezConfiguration tezConf, 
-      String v1OutputPathPrefix, int v1OutputNum, String v2OutputPathPrefix, int v2OutputNum,
-      String uv12OutputPathPrefix, int uv12OutputNum,
-      String v3OutputPathPrefix, int v3OutputNum, boolean commitOnVertexSuccess) throws IOException {
-    DAG dag = DAG.create("multipleCommitsDAG");
-    dag.setConf(TezConfiguration.TEZ_AM_COMMIT_ALL_OUTPUTS_ON_DAG_SUCCESS, !commitOnVertexSuccess + "");
-    Vertex v1 = Vertex.create("v1", ProcessorDescriptor.create(MultipleOutputProcessor.class.getName())
-        .setUserPayload(
-            new MultipleOutputProcessor.MultipleOutputProcessorConfig(
-                V1OutputNamePrefix, v1OutputNum, UV12OutputNamePrefix, uv12OutputNum)
-              .toUserPayload()), 2);
-    Vertex v2 = Vertex.create("v2", ProcessorDescriptor.create(MultipleOutputProcessor.class.getName())
-        .setUserPayload(
-            new MultipleOutputProcessor.MultipleOutputProcessorConfig(
-                V2OutputNamePrefix, v2OutputNum, UV12OutputNamePrefix, uv12OutputNum)
-              .toUserPayload()), 2);
-    // add data sinks for v1
-    for (int i=0;i<v1OutputNum;++i) {
-      DataSinkDescriptor sink = MROutput.createConfigBuilder(
-          new Configuration(tezConf), TextOutputFormat.class, v1OutputPathPrefix + "_" + i).build();
-      v1.addDataSink(V1OutputNamePrefix + "_" + i, sink);
-    }
-    // add data sinks for v2
-    for (int i=0;i<v2OutputNum;++i) {
-      DataSinkDescriptor sink = MROutput.createConfigBuilder(
-          new Configuration(tezConf), TextOutputFormat.class, v2OutputPathPrefix + "_" + i).build();
-      v2.addDataSink(V2OutputNamePrefix + "_" + i, sink);
-    }
-    // add data sinks for (v1,v2)
-    VertexGroup uv12 = dag.createVertexGroup("uv12", v1,v2);
-    for (int i=0;i<uv12OutputNum;++i) {
-      DataSinkDescriptor sink = MROutput.createConfigBuilder(
-          new Configuration(tezConf), TextOutputFormat.class, uv12OutputPathPrefix + "_" + i).build();
-      uv12.addDataSink(UV12OutputNamePrefix + "_" + i, sink);
-    }
-
-    Vertex v3 = Vertex.create("v3", ProcessorDescriptor.create(MultipleOutputProcessor.class.getName())
-        .setUserPayload(
-            new MultipleOutputProcessor.MultipleOutputProcessorConfig(V3OutputNamePrefix, v3OutputNum)
-              .toUserPayload()), 2);
-    // add data sinks for v3
-    for (int i=0;i<v3OutputNum;++i) {
-      DataSinkDescriptor sink = MROutput.createConfigBuilder(
-          new Configuration(tezConf), TextOutputFormat.class, v3OutputPathPrefix + "_" + i).build();
-      v3.addDataSink(V3OutputNamePrefix + "_" + i, sink);
-    }
-
-    OrderedPartitionedKVEdgeConfig edgeConfig =
-        OrderedPartitionedKVEdgeConfig.newBuilder(
-            NullWritable.class.getName(), Text.class.getName(), HashPartitioner.class.getName())
-            .setFromConfiguration(tezConf)
-            .build();
-    GroupInputEdge edge = GroupInputEdge.create(uv12, v3, edgeConfig.createDefaultEdgeProperty(),
-        InputDescriptor.create(
-            ConcatenatedMergedKeyValuesInput.class.getName()));
-    dag.addVertex(v1)
-      .addVertex(v2)
-      .addVertex(v3)
-      .addEdge(edge);
-    return dag;
-  }
-
-  public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(new MultipleCommitsExample(), args);
-    System.exit(res);
   }
 }

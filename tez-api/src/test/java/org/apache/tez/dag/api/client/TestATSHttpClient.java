@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -33,6 +33,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezException;
+
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Assert;
@@ -56,11 +57,11 @@ public class TestATSHttpClient {
   public void testGetDagStatusThrowsExceptionOnEmptyJson() throws TezException {
     ApplicationId mockAppId = mock(ApplicationId.class);
     DAGClientTimelineImpl httpClient = new DAGClientTimelineImpl(mockAppId, "EXAMPLE_DAG_ID",
-        new TezConfiguration(), null, 0);
+      new TezConfiguration(), null, 0);
     DAGClientTimelineImpl spyClient = spy(httpClient);
     spyClient.baseUri = "http://yarn.ats.webapp/ws/v1/timeline";
     final String expectedDagUrl = "http://yarn.ats.webapp/ws/v1/timeline/TEZ_DAG_ID/EXAMPLE_DAG_ID" +
-        "?fields=primaryfilters,otherinfo";
+      "?fields=primaryfilters,otherinfo";
 
     doReturn(new JSONObject()).when(spyClient).getJsonRootEntity(expectedDagUrl);
     boolean exceptionHappened = false;
@@ -79,39 +80,38 @@ public class TestATSHttpClient {
   @Test(timeout = 5000)
   public void testGetDagStatusSimple() throws TezException, JSONException, IOException {
     DAGClientTimelineImpl
-        httpClient = new DAGClientTimelineImpl(mock(ApplicationId.class),"EXAMPLE_DAG_ID",
-        new TezConfiguration(), null, 0);
+      httpClient = new DAGClientTimelineImpl(mock(ApplicationId.class), "EXAMPLE_DAG_ID",
+      new TezConfiguration(), null, 0);
     DAGClientTimelineImpl spyClient = spy(httpClient);
     spyClient.baseUri = "http://yarn.ats.webapp/ws/v1/timeline";
     final String expectedDagUrl = "http://yarn.ats.webapp/ws/v1/timeline/TEZ_DAG_ID/EXAMPLE_DAG_ID" +
-        "?fields=primaryfilters,otherinfo";
+      "?fields=primaryfilters,otherinfo";
     final String expectedVertexUrl = "http://yarn.ats.webapp/ws/v1/timeline/TEZ_VERTEX_ID" +
-        "?primaryFilter=TEZ_DAG_ID:EXAMPLE_DAG_ID&fields=primaryfilters,otherinfo";
+      "?primaryFilter=TEZ_DAG_ID:EXAMPLE_DAG_ID&fields=primaryfilters,otherinfo";
 
     Set<StatusGetOpts> statusOptions = new HashSet<StatusGetOpts>(1);
     statusOptions.add(StatusGetOpts.GET_COUNTERS);
 
-
     final String jsonDagData =
-            "{ " +
-            "  otherinfo: { " +
-            "    status: 'SUCCEEDED'," +
-            "    diagnostics: 'SAMPLE_DIAGNOSTICS'," +
-            "    counters: { counterGroups: [ " +
-            "      { counterGroupName: 'CG1', counterGroupDisplayName: 'CGD1', counters: [" +
-            "        {counterName:'C1', counterDisplayName: 'CD1', counterValue: 1 }," +
-            "        {counterName:'C2', counterDisplayName: 'CD2', counterValue: 2 }" +
-            "      ]}" +
-            "    ]}" +
-            "  }" +
-            "}";
+      "{ " +
+        "  otherinfo: { " +
+        "    status: 'SUCCEEDED'," +
+        "    diagnostics: 'SAMPLE_DIAGNOSTICS'," +
+        "    counters: { counterGroups: [ " +
+        "      { counterGroupName: 'CG1', counterGroupDisplayName: 'CGD1', counters: [" +
+        "        {counterName:'C1', counterDisplayName: 'CD1', counterValue: 1 }," +
+        "        {counterName:'C2', counterDisplayName: 'CD2', counterValue: 2 }" +
+        "      ]}" +
+        "    ]}" +
+        "  }" +
+        "}";
 
     final String jsonVertexData = "{entities:[ " +
-        "{otherinfo: {vertexName:'v1', numTasks:5,numFailedTasks:1,numSucceededTasks:2," +
-          "numKilledTasks:3,numCompletedTasks:3}}," +
-        "{otherinfo: {vertexName:'v2',numTasks:10,numFailedTasks:1,numSucceededTasks:5," +
-          "numKilledTasks:3,numCompletedTasks:4}}" +
-        "]}";
+      "{otherinfo: {vertexName:'v1', numTasks:5,numFailedTasks:1,numSucceededTasks:2," +
+      "numKilledTasks:3,numCompletedTasks:3}}," +
+      "{otherinfo: {vertexName:'v2',numTasks:10,numFailedTasks:1,numSucceededTasks:5," +
+      "numKilledTasks:3,numCompletedTasks:4}}" +
+      "]}";
 
     doReturn(new JSONObject(jsonDagData)).when(spyClient).getJsonRootEntity(expectedDagUrl);
     doReturn(new JSONObject(jsonVertexData)).when(spyClient).getJsonRootEntity(expectedVertexUrl);
@@ -121,10 +121,10 @@ public class TestATSHttpClient {
     Assert.assertEquals("DAG State", DAGStatus.State.SUCCEEDED, dagStatus.getState());
     Assert.assertEquals("DAG Diagnostics size", 1, dagStatus.getDiagnostics().size());
     Assert.assertEquals("DAG diagnostics detail", "SAMPLE_DIAGNOSTICS",
-        dagStatus.getDiagnostics().get(0));
+      dagStatus.getDiagnostics().get(0));
     Assert.assertEquals("Counters Size", 2, dagStatus.getDAGCounters().countCounters());
     Assert.assertEquals("Counter Value", 1,
-        dagStatus.getDAGCounters().getGroup("CG1").findCounter("C1").getValue());
+      dagStatus.getDAGCounters().getGroup("CG1").findCounter("C1").getValue());
     Assert.assertEquals("total tasks", 15, dagStatus.getDAGProgress().getTotalTaskCount());
     Assert.assertEquals("failed tasks", 2, dagStatus.getDAGProgress().getFailedTaskCount());
     Assert.assertEquals("killed tasks", 6, dagStatus.getDAGProgress().getKilledTaskCount());
@@ -139,27 +139,27 @@ public class TestATSHttpClient {
   @Test(timeout = 5000)
   public void testGetVertexStatusSimple() throws JSONException, TezException, IOException {
     DAGClientTimelineImpl
-        httpClient = new DAGClientTimelineImpl(mock(ApplicationId.class), "EXAMPLE_DAG_ID",
-        new TezConfiguration(), null, 0);
+      httpClient = new DAGClientTimelineImpl(mock(ApplicationId.class), "EXAMPLE_DAG_ID",
+      new TezConfiguration(), null, 0);
     DAGClientTimelineImpl spyClient = spy(httpClient);
     spyClient.baseUri = "http://yarn.ats.webapp/ws/v1/timeline";
     final String expectedVertexUrl = "http://yarn.ats.webapp/ws/v1/timeline/TEZ_VERTEX_ID" +
-        "?primaryFilter=TEZ_DAG_ID:EXAMPLE_DAG_ID&secondaryFilter=vertexName:vertex1name&" +
-        "fields=primaryfilters,otherinfo";
+      "?primaryFilter=TEZ_DAG_ID:EXAMPLE_DAG_ID&secondaryFilter=vertexName:vertex1name&" +
+      "fields=primaryfilters,otherinfo";
 
     Set<StatusGetOpts> statusOptions = new HashSet<StatusGetOpts>(1);
     statusOptions.add(StatusGetOpts.GET_COUNTERS);
 
     final String jsonData = "{entities:[ {otherinfo:{numFailedTasks:1,numSucceededTasks:2," +
-        "status:'SUCCEEDED', vertexName:'vertex1name', numTasks:4, numKilledTasks: 3, " +
-        "numCompletedTasks: 4, diagnostics: 'diagnostics1', " +
-        "counters: { counterGroups: [ " +
-        "      { counterGroupName: 'CG1', counterGroupDisplayName: 'CGD1', counters: [" +
-        "        {counterName:'C1', counterDisplayName: 'CD1', counterValue: 1 }," +
-        "        {counterName:'C2', counterDisplayName: 'CD2', counterValue: 2 }" +
-        "      ]}" +
-        "    ]}" +
-        "}}]}";
+      "status:'SUCCEEDED', vertexName:'vertex1name', numTasks:4, numKilledTasks: 3, " +
+      "numCompletedTasks: 4, diagnostics: 'diagnostics1', " +
+      "counters: { counterGroups: [ " +
+      "      { counterGroupName: 'CG1', counterGroupDisplayName: 'CGD1', counters: [" +
+      "        {counterName:'C1', counterDisplayName: 'CD1', counterValue: 1 }," +
+      "        {counterName:'C2', counterDisplayName: 'CD2', counterValue: 2 }" +
+      "      ]}" +
+      "    ]}" +
+      "}}]}";
 
     doReturn(new JSONObject(jsonData)).when(spyClient).getJsonRootEntity(expectedVertexUrl);
 
@@ -174,6 +174,6 @@ public class TestATSHttpClient {
     Assert.assertEquals("total task count", 4, progress.getTotalTaskCount());
     Assert.assertEquals("Counters Size", 2, vertexCounters.countCounters());
     Assert.assertEquals("Counter Value", 1,
-        vertexCounters.getGroup("CG1").findCounter("C1").getValue());
+      vertexCounters.getGroup("CG1").findCounter("C1").getValue());
   }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,15 +17,16 @@
  */
 package org.apache.tez.mapreduce.output;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.lib.db.DBOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.mapreduce.hadoop.MRJobConfig;
+
 import org.junit.Test;
-
-import static org.junit.Assert.*;
-
 
 public class TestMROutputConfigBuilder {
 
@@ -37,8 +38,8 @@ public class TestMROutputConfigBuilder {
       fail();
     } catch (TezUncheckedException e) {
       assertEquals("OutputPaths must be specified for OutputFormats based "
-          + "on org.apache.hadoop.mapreduce.lib.output.FileOutputFormat "
-          +"or org.apache.hadoop.mapred.FileOutputFormat", e.getMessage());
+        + "on org.apache.hadoop.mapreduce.lib.output.FileOutputFormat "
+        + "or org.apache.hadoop.mapred.FileOutputFormat", e.getMessage());
     }
     MROutput.createConfigBuilder(conf, TextOutputFormat.class, "/tmp/output").build();
 
@@ -53,37 +54,37 @@ public class TestMROutputConfigBuilder {
       MROutput.createConfigBuilder(conf, null).build();
       fail();
     } catch (TezUncheckedException e) {
-      assertEquals("no outputFormat setting on Configuration, useNewAPI:true",  e.getMessage());
+      assertEquals("no outputFormat setting on Configuration, useNewAPI:true", e.getMessage());
     }
 
     // wrong output_format class
     conf.set(MRJobConfig.OUTPUT_FORMAT_CLASS_ATTR,
-        org.apache.hadoop.mapred.TextOutputFormat.class.getName());
+      org.apache.hadoop.mapred.TextOutputFormat.class.getName());
     try {
       MROutput.createConfigBuilder(conf, null).build();
       fail();
     } catch (IllegalStateException e) {
       assertEquals("outputFormat must be assignable from org.apache.hadoop.mapreduce.OutputFormat",
-          e.getMessage());
+        e.getMessage());
     }
 
     // correct output_format class, but no output_dir specified
     conf.set(MRJobConfig.OUTPUT_FORMAT_CLASS_ATTR,
-        TextOutputFormat.class.getName());
+      TextOutputFormat.class.getName());
     try {
       MROutput.createConfigBuilder(conf, null).build();
       fail();
     } catch (TezUncheckedException e) {
       assertEquals("OutputPaths must be specified for OutputFormats based "
-          + "on org.apache.hadoop.mapreduce.lib.output.FileOutputFormat "
-          +"or org.apache.hadoop.mapred.FileOutputFormat", e.getMessage());
+        + "on org.apache.hadoop.mapreduce.lib.output.FileOutputFormat "
+        + "or org.apache.hadoop.mapred.FileOutputFormat", e.getMessage());
     }
 
     conf.set(org.apache.hadoop.mapreduce.lib.output.FileOutputFormat.OUTDIR, "/tmp/output");
     MROutput.createConfigBuilder(conf, null).build();
   }
 
-  @Test(timeout = 5000 )
+  @Test(timeout = 5000)
   public void testOldAPI() {
     Configuration conf = new Configuration();
     try {
@@ -91,11 +92,11 @@ public class TestMROutputConfigBuilder {
       fail();
     } catch (TezUncheckedException e) {
       assertEquals("OutputPaths must be specified for OutputFormats based "
-          + "on org.apache.hadoop.mapreduce.lib.output.FileOutputFormat "
-          +"or org.apache.hadoop.mapred.FileOutputFormat", e.getMessage());
+        + "on org.apache.hadoop.mapreduce.lib.output.FileOutputFormat "
+        + "or org.apache.hadoop.mapred.FileOutputFormat", e.getMessage());
     }
     MROutput.createConfigBuilder(conf, org.apache.hadoop.mapred.TextOutputFormat.class,
-        "/tmp/output").build();
+      "/tmp/output").build();
 
     // no outputPaths needs to be specified
     MROutput.createConfigBuilder(conf, org.apache.hadoop.mapred.lib.db.DBOutputFormat.class).build();
@@ -109,30 +110,30 @@ public class TestMROutputConfigBuilder {
       MROutput.createConfigBuilder(conf, null).build();
       fail();
     } catch (TezUncheckedException e) {
-      assertEquals("no outputFormat setting on Configuration, useNewAPI:false",  e.getMessage());
+      assertEquals("no outputFormat setting on Configuration, useNewAPI:false", e.getMessage());
     }
 
     // wrong output_format class
     conf.set("mapred.output.format.class",
-        TextOutputFormat.class.getName());
+      TextOutputFormat.class.getName());
     try {
       MROutput.createConfigBuilder(conf, null).build();
       fail();
     } catch (IllegalStateException e) {
       assertEquals("outputFormat must be assignable from org.apache.hadoop.mapred.OutputFormat",
-          e.getMessage());
+        e.getMessage());
     }
 
     // correct output_format class, but no output_dir specified
     conf.set("mapred.output.format.class",
-        org.apache.hadoop.mapred.TextOutputFormat.class.getName());
+      org.apache.hadoop.mapred.TextOutputFormat.class.getName());
     try {
       MROutput.createConfigBuilder(conf, null).build();
       fail();
     } catch (TezUncheckedException e) {
       assertEquals("OutputPaths must be specified for OutputFormats based "
-          + "on org.apache.hadoop.mapreduce.lib.output.FileOutputFormat "
-          +"or org.apache.hadoop.mapred.FileOutputFormat", e.getMessage());
+        + "on org.apache.hadoop.mapreduce.lib.output.FileOutputFormat "
+        + "or org.apache.hadoop.mapred.FileOutputFormat", e.getMessage());
     }
 
     conf.set(org.apache.hadoop.mapreduce.lib.output.FileOutputFormat.OUTDIR, "/tmp/output");

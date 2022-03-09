@@ -26,6 +26,7 @@ import org.apache.tez.http.HttpConnectionParams;
 import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
 import org.apache.tez.runtime.library.common.shuffle.FetcherErrorTestingConfig;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,17 +37,24 @@ public class FetcherOrderedGroupedWithInjectableErrors extends FetcherOrderedGro
   private String srcNameTrimmed;
 
   public FetcherOrderedGroupedWithInjectableErrors(HttpConnectionParams httpConnectionParams,
-      ShuffleScheduler scheduler, FetchedInputAllocatorOrderedGrouped allocator, ExceptionReporter exceptionReporter,
-      JobTokenSecretManager jobTokenSecretMgr, boolean ifileReadAhead, int ifileReadAheadLength, CompressionCodec codec,
-      Configuration conf, RawLocalFileSystem localFs, boolean localDiskFetchEnabled, String localHostname,
-      int shufflePort, MapHost mapHost, TezCounter ioErrsCounter,
-      TezCounter wrongLengthErrsCounter, TezCounter badIdErrsCounter, TezCounter wrongMapErrsCounter,
-      TezCounter connectionErrsCounter, TezCounter wrongReduceErrsCounter, boolean asyncHttp,
-      boolean sslShuffle, boolean verifyDiskChecksum, boolean compositeFetch, InputContext inputContext) {
+                                                   ShuffleScheduler scheduler,
+                                                   FetchedInputAllocatorOrderedGrouped allocator,
+                                                   ExceptionReporter exceptionReporter,
+                                                   JobTokenSecretManager jobTokenSecretMgr, boolean ifileReadAhead,
+                                                   int ifileReadAheadLength, CompressionCodec codec,
+                                                   Configuration conf, RawLocalFileSystem localFs,
+                                                   boolean localDiskFetchEnabled, String localHostname,
+                                                   int shufflePort, MapHost mapHost, TezCounter ioErrsCounter,
+                                                   TezCounter wrongLengthErrsCounter, TezCounter badIdErrsCounter,
+                                                   TezCounter wrongMapErrsCounter,
+                                                   TezCounter connectionErrsCounter,
+                                                   TezCounter wrongReduceErrsCounter, boolean asyncHttp,
+                                                   boolean sslShuffle, boolean verifyDiskChecksum,
+                                                   boolean compositeFetch, InputContext inputContext) {
     super(httpConnectionParams, scheduler, allocator, exceptionReporter, jobTokenSecretMgr, ifileReadAhead,
-        ifileReadAheadLength, codec, conf, localFs, localDiskFetchEnabled, localHostname, shufflePort,
-        mapHost, ioErrsCounter, wrongLengthErrsCounter, badIdErrsCounter, wrongMapErrsCounter, connectionErrsCounter,
-        wrongReduceErrsCounter, asyncHttp, sslShuffle, verifyDiskChecksum, compositeFetch, inputContext);
+      ifileReadAheadLength, codec, conf, localFs, localDiskFetchEnabled, localHostname, shufflePort,
+      mapHost, ioErrsCounter, wrongLengthErrsCounter, badIdErrsCounter, wrongMapErrsCounter, connectionErrsCounter,
+      wrongReduceErrsCounter, asyncHttp, sslShuffle, verifyDiskChecksum, compositeFetch, inputContext);
     this.fetcherErrorTestingConfig = new FetcherErrorTestingConfig(conf, inputContext.getObjectRegistry());
     this.srcNameTrimmed = TezUtilsInternal.cleanVertexName(inputContext.getSourceVertexName());
     LOG.info("Initialized FetcherOrderedGroupedWithInjectableErrors with config: {}", fetcherErrorTestingConfig);
@@ -54,13 +62,13 @@ public class FetcherOrderedGroupedWithInjectableErrors extends FetcherOrderedGro
 
   @Override
   protected void setupConnectionInternal(MapHost host, Collection<InputAttemptIdentifier> attempts)
-      throws IOException, InterruptedException {
+    throws IOException, InterruptedException {
     LOG.info("Checking if fetcher should fail for host: {} ...", mapHost.getHost());
     for (InputAttemptIdentifier inputAttemptIdentifier : attempts) {
       if (fetcherErrorTestingConfig.shouldFail(mapHost.getHost(), srcNameTrimmed, inputAttemptIdentifier)) {
         throw new IOException(String.format(
-            "FetcherOrderedGroupedWithInjectableErrors tester made failure for host: %s, input attempt: %s",
-            mapHost.getHost(), inputAttemptIdentifier.getAttemptNumber()));
+          "FetcherOrderedGroupedWithInjectableErrors tester made failure for host: %s, input attempt: %s",
+          mapHost.getHost(), inputAttemptIdentifier.getAttemptNumber()));
       }
     }
     super.setupConnectionInternal(host, attempts);

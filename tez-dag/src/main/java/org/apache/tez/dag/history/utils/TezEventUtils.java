@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,6 +18,7 @@
 package org.apache.tez.dag.history.utils;
 
 import java.io.IOException;
+
 import org.apache.tez.common.ProtoConverters;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.recovery.records.RecoveryProtos;
@@ -36,25 +37,25 @@ public class TezEventUtils {
 
   public static TezEventProto toProto(TezEvent event) throws IOException {
     TezEventProto.Builder evtBuilder =
-        TezEventProto.newBuilder();
+      TezEventProto.newBuilder();
     if (event.getEventType().equals(EventType.COMPOSITE_DATA_MOVEMENT_EVENT)) {
       evtBuilder.setCompositeDataMovementEvent(
-          ProtoConverters.convertCompositeDataMovementEventToProto(
-              (CompositeDataMovementEvent) event.getEvent()));
+        ProtoConverters.convertCompositeDataMovementEventToProto(
+          (CompositeDataMovementEvent) event.getEvent()));
     } else if (event.getEventType().equals(EventType.DATA_MOVEMENT_EVENT)) {
       evtBuilder.setDataMovementEvent(
-          ProtoConverters.convertDataMovementEventToProto(
-              (DataMovementEvent) event.getEvent()));
+        ProtoConverters.convertDataMovementEventToProto(
+          (DataMovementEvent) event.getEvent()));
     } else if (event.getEventType().equals(EventType.ROOT_INPUT_INITIALIZER_EVENT)) {
       evtBuilder.setInputInitializerEvent(ProtoConverters
-          .convertRootInputInitializerEventToProto((InputInitializerEvent) event.getEvent()));
+        .convertRootInputInitializerEventToProto((InputInitializerEvent) event.getEvent()));
     } else if (event.getEventType().equals(EventType.VERTEX_MANAGER_EVENT)) {
       evtBuilder.setVmEvent(ProtoConverters
-          .convertVertexManagerEventToProto((VertexManagerEvent)event.getEvent()));
+        .convertVertexManagerEventToProto((VertexManagerEvent) event.getEvent()));
     } else if (event.getEventType().equals(EventType.ROOT_INPUT_DATA_INFORMATION_EVENT)) {
       evtBuilder.setRootInputDataInformationEvent(
-          ProtoConverters.convertRootInputDataInformationEventToProto(
-              (InputDataInformationEvent) event.getEvent()));
+        ProtoConverters.convertRootInputDataInformationEventToProto(
+          (InputDataInformationEvent) event.getEvent()));
     } else {
       throw new IOException("Unsupported TezEvent type:" + event.getEventType());
     }
@@ -73,19 +74,19 @@ public class TezEventUtils {
     Event evt = null;
     if (eventProto.hasCompositeDataMovementEvent()) {
       evt = ProtoConverters.convertCompositeDataMovementEventFromProto(
-          eventProto.getCompositeDataMovementEvent());
+        eventProto.getCompositeDataMovementEvent());
     } else if (eventProto.hasDataMovementEvent()) {
       evt = ProtoConverters.convertDataMovementEventFromProto(
-          eventProto.getDataMovementEvent());
+        eventProto.getDataMovementEvent());
     } else if (eventProto.hasInputInitializerEvent()) {
       evt = ProtoConverters.convertRootInputInitializerEventFromProto(
-          eventProto.getInputInitializerEvent());
+        eventProto.getInputInitializerEvent());
     } else if (eventProto.hasVmEvent()) {
       evt = ProtoConverters.convertVertexManagerEventFromProto(
-          eventProto.getVmEvent());
+        eventProto.getVmEvent());
     } else if (eventProto.hasRootInputDataInformationEvent()) {
       evt = ProtoConverters.convertRootInputDataInformationEventFromProto(
-          eventProto.getRootInputDataInformationEvent());
+        eventProto.getRootInputDataInformationEvent());
     } else {
       throw new IOException("Unsupported TezEvent type");
     }
@@ -102,30 +103,30 @@ public class TezEventUtils {
     tezEvent.setDestinationInfo(destinationInfo);
     return tezEvent;
   }
-  
+
   public static RecoveryProtos.EventMetaDataProto convertEventMetaDataToProto(
-      EventMetaData eventMetaData) {
+    EventMetaData eventMetaData) {
     RecoveryProtos.EventMetaDataProto.Builder builder =
-        RecoveryProtos.EventMetaDataProto.newBuilder()
+      RecoveryProtos.EventMetaDataProto.newBuilder()
         .setProducerConsumerType(eventMetaData.getEventGenerator().ordinal())
         .setEdgeVertexName(eventMetaData.getEdgeVertexName())
         .setTaskVertexName(eventMetaData.getTaskVertexName());
     if (eventMetaData.getTaskAttemptID() != null) {
-        builder.setTaskAttemptId(eventMetaData.getTaskAttemptID().toString());
+      builder.setTaskAttemptId(eventMetaData.getTaskAttemptID().toString());
     }
     return builder.build();
   }
 
   public static EventMetaData convertEventMetaDataFromProto(
-      RecoveryProtos.EventMetaDataProto proto) {
+    RecoveryProtos.EventMetaDataProto proto) {
     TezTaskAttemptID attemptID = null;
     if (proto.hasTaskAttemptId()) {
       attemptID = TezTaskAttemptID.fromString(proto.getTaskAttemptId());
     }
     return new EventMetaData(
-        EventMetaData.EventProducerConsumerType.values()[proto.getProducerConsumerType()],
-        proto.getTaskVertexName(),
-        proto.getEdgeVertexName(),
-        attemptID);
+      EventMetaData.EventProducerConsumerType.values()[proto.getProducerConsumerType()],
+      proto.getTaskVertexName(),
+      proto.getEdgeVertexName(),
+      attemptID);
   }
 }

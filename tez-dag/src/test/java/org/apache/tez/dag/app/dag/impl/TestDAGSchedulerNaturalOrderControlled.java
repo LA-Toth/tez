@@ -42,6 +42,7 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
+
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -53,7 +54,7 @@ public class TestDAGSchedulerNaturalOrderControlled {
     EventHandler eventHandler = mock(EventHandler.class);
     DAG dag = createMockDag();
     DAGSchedulerNaturalOrderControlled dagScheduler =
-        new DAGSchedulerNaturalOrderControlled(dag, eventHandler);
+      new DAGSchedulerNaturalOrderControlled(dag, eventHandler);
 
     int numVertices = 5;
     Vertex[] vertices = new Vertex[numVertices];
@@ -96,7 +97,6 @@ public class TestDAGSchedulerNaturalOrderControlled {
     verify(eventHandler, times(vertices[3].getTotalTasks() - 3)).handle(any(Event.class));
     reset(eventHandler);
 
-
     // Schedule all tasks belonging to v4
     for (int i = 0; i < vertices[4].getTotalTasks(); i++) {
       dagScheduler.scheduleTaskEx(createScheduleRequest(vertices[4].getVertexId(), i, 0));
@@ -112,7 +112,7 @@ public class TestDAGSchedulerNaturalOrderControlled {
     EventHandler eventHandler = mock(EventHandler.class);
     DAG dag = createMockDag();
     DAGSchedulerNaturalOrderControlled dagScheduler =
-        new DAGSchedulerNaturalOrderControlled(dag, eventHandler);
+      new DAGSchedulerNaturalOrderControlled(dag, eventHandler);
 
     int numVertices = 5;
     Vertex[] vertices = new Vertex[numVertices];
@@ -157,8 +157,8 @@ public class TestDAGSchedulerNaturalOrderControlled {
     ArgumentCaptor<Event> args = ArgumentCaptor.forClass(Event.class);
     // All of v2 and v3 should be sent out.
     verify(eventHandler, times(vertices[2].getTotalTasks() - 3 + vertices[4].getTotalTasks()))
-        .handle(
-            args.capture());
+      .handle(
+        args.capture());
     int count = 0;
     // Verify the order in which the events were sent out.
     for (Event raw : args.getAllValues()) {
@@ -173,14 +173,13 @@ public class TestDAGSchedulerNaturalOrderControlled {
     reset(eventHandler);
   }
 
-
   @SuppressWarnings("unchecked")
   @Test(timeout = 5000)
   public void testParallelismUpdated() {
     EventHandler eventHandler = mock(EventHandler.class);
     DAG dag = createMockDag();
     DAGSchedulerNaturalOrderControlled dagScheduler =
-        new DAGSchedulerNaturalOrderControlled(dag, eventHandler);
+      new DAGSchedulerNaturalOrderControlled(dag, eventHandler);
 
     int numVertices = 5;
     Vertex[] vertices = new Vertex[numVertices];
@@ -221,7 +220,7 @@ public class TestDAGSchedulerNaturalOrderControlled {
       dagScheduler.scheduleTaskEx(createScheduleRequest(vertices[2].getVertexId(), i, 0));
     }
     verify(eventHandler, times(vertices[2].getTotalTasks() + vertices[4].getTotalTasks()))
-        .handle(any(Event.class));
+      .handle(any(Event.class));
     reset(eventHandler);
   }
 
@@ -231,7 +230,7 @@ public class TestDAGSchedulerNaturalOrderControlled {
     EventHandler eventHandler = mock(EventHandler.class);
     DAG dag = createMockDag();
     DAGSchedulerNaturalOrderControlled dagScheduler =
-        new DAGSchedulerNaturalOrderControlled(dag, eventHandler);
+      new DAGSchedulerNaturalOrderControlled(dag, eventHandler);
 
     int numVertices = 5;
     Vertex[] vertices = new Vertex[numVertices];
@@ -245,7 +244,6 @@ public class TestDAGSchedulerNaturalOrderControlled {
     }
     verify(eventHandler, times(vertices[0].getTotalTasks() - 1)).handle(any(Event.class));
     reset(eventHandler);
-
 
     // Schedule all tasks belonging to v2
     for (int i = 0; i < vertices[2].getTotalTasks(); i++) {
@@ -265,11 +263,10 @@ public class TestDAGSchedulerNaturalOrderControlled {
 
     // Schedule last task of v0, with attempt 1
     dagScheduler.scheduleTaskEx(
-        createScheduleRequest(vertices[0].getVertexId(), vertices[0].getTotalTasks() - 1, 1));
+      createScheduleRequest(vertices[0].getVertexId(), vertices[0].getTotalTasks() - 1, 1));
     // One v0 request and all of v2 should have gone out
     verify(eventHandler, times(1 + vertices[2].getTotalTasks())).handle(any(Event.class));
   }
-
 
   // Test parallelism updated form -1
   // Reduce parallelism
@@ -309,21 +306,19 @@ public class TestDAGSchedulerNaturalOrderControlled {
       doReturn(vertices[i]).when(dag).getVertex(vertexId);
     }
 
-
     updateMockVertexWithConnections(vertices[0], createConnectionMap((Vertex[]) null),
-        createConnectionMap(vertices[2]));
+      createConnectionMap(vertices[2]));
     updateMockVertexWithConnections(vertices[1], createConnectionMap((Vertex[]) null),
-        createConnectionMap(vertices[3]));
+      createConnectionMap(vertices[3]));
     updateMockVertexWithConnections(vertices[2], createConnectionMap(vertices[0]),
-        createConnectionMap(vertices[4]));
+      createConnectionMap(vertices[4]));
     updateMockVertexWithConnections(vertices[3], createConnectionMap(vertices[1]),
-        createConnectionMap(vertices[4]));
+      createConnectionMap(vertices[4]));
     updateMockVertexWithConnections(vertices[4], createConnectionMap(vertices[2], vertices[3]),
-        createConnectionMap((Vertex[]) null));
+      createConnectionMap((Vertex[]) null));
 
     return dag;
   }
-
 
   private void updateParallelismOnMockVertex(Vertex vertex, int newParallelism) {
     doReturn(newParallelism).when(vertex).getTotalTasks();
@@ -374,5 +369,4 @@ public class TestDAGSchedulerNaturalOrderControlled {
     TaskAttempt mockAttempt = createTaskAttempt(vertexId, taskIdInt, attemptIdInt);
     return new DAGEventSchedulerUpdate(DAGEventSchedulerUpdate.UpdateType.TA_SCHEDULE, mockAttempt);
   }
-
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,19 +17,20 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import org.apache.tez.dag.api.EdgeManagerPluginContext;
-import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.EventRouteMetadata;
-import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.CompositeEventRouteMetadata;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.*;
+import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import org.apache.tez.dag.api.EdgeManagerPluginContext;
+import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.CompositeEventRouteMetadata;
+import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.EventRouteMetadata;
+
+import org.junit.Before;
+import org.junit.Test;
 
 public class TestFairCartesianProductEdgeManager {
   private EdgeManagerPluginContext mockContext;
@@ -39,18 +40,6 @@ public class TestFairCartesianProductEdgeManager {
   public void setup() {
     mockContext = mock(EdgeManagerPluginContext.class);
     edgeManager = new FairCartesianProductEdgeManager(mockContext);
-  }
-
-  static class TestData {
-    int srcId, destId, inputId;
-    Object expected;
-
-    public TestData(int srcId, int destId, int inputId, Object expected) {
-      this.srcId = srcId;
-      this.destId = destId;
-      this.inputId = inputId;
-      this.expected = expected;
-    }
   }
 
   private TestData dataForRouting(int srcId, int destId, Object expected) {
@@ -91,7 +80,7 @@ public class TestFairCartesianProductEdgeManager {
     cDME = edgeManager.routeCompositeDataMovementEventToDestination(cDMEValid.srcId,
       cDMEValid.destId);
     assertNotNull(cDME);
-    CompositeEventRouteMetadata expectedCDME = (CompositeEventRouteMetadata)(cDMEValid.expected);
+    CompositeEventRouteMetadata expectedCDME = (CompositeEventRouteMetadata) (cDMEValid.expected);
     assertEquals(expectedCDME.getCount(), cDME.getCount());
     assertEquals(expectedCDME.getTarget(), cDME.getTarget());
     assertEquals(expectedCDME.getSource(), cDME.getSource());
@@ -106,7 +95,7 @@ public class TestFairCartesianProductEdgeManager {
     dme = edgeManager.routeInputSourceTaskFailedEventToDestination(srcFailValid.srcId,
       srcFailValid.destId);
     assertNotNull(dme);
-    EventRouteMetadata expectedDME = (EventRouteMetadata)(srcFailValid.expected);
+    EventRouteMetadata expectedDME = (EventRouteMetadata) (srcFailValid.expected);
     assertEquals(expectedDME.getNumEvents(), dme.getNumEvents());
     assertArrayEquals(expectedDME.getTargetIndices(), dme.getTargetIndices());
 
@@ -134,13 +123,13 @@ public class TestFairCartesianProductEdgeManager {
     testEdgeManager(config, "v0", 2, null, dataForRouting(1, 1, null),
       dataForRouting(1, 3, CompositeEventRouteMetadata.create(10, 0, 0)),
       dataForRouting(1, 1, null),
-      dataForRouting(1, 3, EventRouteMetadata.create(10, new int[]{0,1,2,3,4,5,6,7,8,9})),
+      dataForRouting(1, 3, EventRouteMetadata.create(10, new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})),
       dataForInputError(1, 0, 0), dataForDest(1, 10), dataForSrc(1, 10), dataForSrc(1, 3));
     testEdgeManager(config, "v1", 30, null, dataForRouting(1, 2, null),
       dataForRouting(1, 0, CompositeEventRouteMetadata.create(10, 10, 0)),
       dataForRouting(1, 2, null),
-      dataForRouting(1, 0, EventRouteMetadata.create(10, new int[]{10,11,12,13,14,15,16,17,18,19})),
-      dataForInputError(1,0,10), dataForDest(1, 100), dataForSrc(1, 10), dataForSrc(1, 2));
+      dataForRouting(1, 0, EventRouteMetadata.create(10, new int[]{10, 11, 12, 13, 14, 15, 16, 17, 18, 19})),
+      dataForInputError(1, 0, 10), dataForDest(1, 100), dataForSrc(1, 10), dataForSrc(1, 2));
   }
 
   /**
@@ -158,17 +147,17 @@ public class TestFairCartesianProductEdgeManager {
     testEdgeManager(config, "v0", 2, null, dataForRouting(1, 1, null),
       dataForRouting(1, 12, CompositeEventRouteMetadata.create(12, 0, 0)),
       dataForRouting(1, 1, null),
-      dataForRouting(1, 12, EventRouteMetadata.create(12, new int[]{0,1,2,3,4,5,6,7,8,9,10,11})),
+      dataForRouting(1, 12, EventRouteMetadata.create(12, new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11})),
       dataForInputError(1, 0, 0), dataForDest(1, 12), dataForSrc(1, 12), dataForSrc(1, 12));
     testEdgeManager(config, "v1", 30, null, dataForRouting(1, 4, null),
       dataForRouting(1, 13, CompositeEventRouteMetadata.create(12, 12, 0)),
       dataForRouting(1, 4, null),
       dataForRouting(1, 13,
-        EventRouteMetadata.create(12, new int[]{12,13,14,15,16,17,18,19,20,21,22,23})),
+        EventRouteMetadata.create(12, new int[]{12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23})),
       dataForInputError(1, 0, 0), dataForDest(1, 120), dataForSrc(1, 12), dataForSrc(1, 8));
     testEdgeManager(config, "v2", 1, null,
       null, dataForRouting(0, 13, CompositeEventRouteMetadata.create(3, 0, 3)),
-      null, dataForRouting(0, 13, EventRouteMetadata.create(3, new int[]{0,1,2})),
+      null, dataForRouting(0, 13, EventRouteMetadata.create(3, new int[]{0, 1, 2})),
       dataForInputError(1, 0, 0), dataForDest(1, 3), dataForSrc(0, 12), dataForSrc(0, 24));
   }
 
@@ -188,13 +177,13 @@ public class TestFairCartesianProductEdgeManager {
     testEdgeManager(builder.build(), "v1", 10, "g0", dataForRouting(0, 4, null),
       dataForRouting(0, 3, CompositeEventRouteMetadata.create(10, 0, 0)),
       dataForRouting(0, 4, null),
-      dataForRouting(0, 3, EventRouteMetadata.create(10, new int[]{0,1,2,3,4,5,6,7,8,9})),
+      dataForRouting(0, 3, EventRouteMetadata.create(10, new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})),
       dataForInputError(3, 0, 0), dataForDest(2, 34), dataForSrc(0, 10), dataForSrc(0, 2));
     builder.setPositionInGroup(1);
     testEdgeManager(builder.build(), "v2", 20, "g0", dataForRouting(1, 1, null),
       dataForRouting(6, 1, CompositeEventRouteMetadata.create(4, 33, 6)),
       dataForRouting(1, 1, null),
-      dataForRouting(6, 1, EventRouteMetadata.create(4, new int[]{33,34,35,36})),
+      dataForRouting(6, 1, EventRouteMetadata.create(4, new int[]{33, 34, 35, 36})),
       dataForInputError(1, 33, 6), dataForDest(0, 66), dataForSrc(1, 10), dataForSrc(6, 4));
   }
 
@@ -215,13 +204,13 @@ public class TestFairCartesianProductEdgeManager {
     testEdgeManager(builder.build(), "v0", 2, "g0", dataForRouting(1, 1, null),
       dataForRouting(0, 1, CompositeEventRouteMetadata.create(10, 0, 0)),
       dataForRouting(1, 1, null),
-      dataForRouting(0, 1, EventRouteMetadata.create(10, new int[]{0,1,2,3,4,5,6,7,8,9})),
+      dataForRouting(0, 1, EventRouteMetadata.create(10, new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9})),
       dataForInputError(1, 0, 0), dataForDest(1, 10), dataForSrc(1, 10), dataForSrc(1, 3));
     builder.setPositionInGroup(1);
     testEdgeManager(builder.build(), "v1", 5, "g0", dataForRouting(3, 1, null),
       dataForRouting(1, 1, CompositeEventRouteMetadata.create(10, 20, 0)),
       dataForRouting(3, 1, null),
-      dataForRouting(1, 1, EventRouteMetadata.create(10, new int[]{20,21,22,23,24,25,26,27,28,29})),
+      dataForRouting(1, 1, EventRouteMetadata.create(10, new int[]{20, 21, 22, 23, 24, 25, 26, 27, 28, 29})),
       dataForInputError(1, 15, 0), dataForDest(1, 25), dataForSrc(1, 10), dataForSrc(1, 3));
   }
 
@@ -241,5 +230,17 @@ public class TestFairCartesianProductEdgeManager {
     edgeManager = new FairCartesianProductEdgeManager(mockContext);
     edgeManager.initialize(builder.build());
     assertEquals(20, edgeManager.getNumSourceTaskPhysicalOutputs(0));
+  }
+
+  static class TestData {
+    int srcId, destId, inputId;
+    Object expected;
+
+    public TestData(int srcId, int destId, int inputId, Object expected) {
+      this.srcId = srcId;
+      this.destId = destId;
+      this.inputId = inputId;
+      this.expected = expected;
+    }
   }
 }

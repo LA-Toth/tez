@@ -14,9 +14,10 @@
 
 package org.apache.tez.serviceplugins.api;
 
-import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.util.Map;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -37,10 +38,9 @@ import org.apache.tez.runtime.api.impl.TaskSpec;
  * <p/>
  * The plugin is initialized with an instance of {@link TaskCommunicatorContext} - which provides
  * a mechanism to notify the system about allocation decisions and resources to the Tez framework.
- *
+ * <p>
  * If setting up a heartbeat between the task and the AM, the framework is responsible for error checking
  * of this heartbeat mechanism, handling lost or duplicate responses.
- *
  */
 public abstract class TaskCommunicator implements ServicePluginLifecycle {
 
@@ -99,7 +99,6 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
   public void shutdown() throws Exception {
   }
 
-
   /**
    * Register a new container.
    *
@@ -107,7 +106,7 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
    * @param hostname    the hostname on which the container runs
    * @param port        the port for the service which is running the container
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract void registerRunningContainer(ContainerId containerId, String hostname,
                                                 int port) throws ServicePluginException;
@@ -120,11 +119,11 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
    * @param endReason   the end reason for the container completing
    * @param diagnostics diagnostics associated with the container end
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract void registerContainerEnd(ContainerId containerId, ContainerEndReason endReason,
                                             @Nullable String diagnostics) throws
-      ServicePluginException;
+    ServicePluginException;
 
   /**
    * Register a task attempt to execute on a container
@@ -139,13 +138,13 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
    *                            associated with this container
    * @param priority            the priority of the task being executed
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract void registerRunningTaskAttempt(ContainerId containerId, TaskSpec taskSpec,
                                                   Map<String, LocalResource> additionalResources,
                                                   Credentials credentials,
                                                   boolean credentialsChanged, int priority) throws
-      ServicePluginException;
+    ServicePluginException;
 
   /**
    * Register the completion of a task. This may be a result of preemption, the container dying,
@@ -155,19 +154,19 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
    * @param endReason     the endReason for the task attempt.
    * @param diagnostics   diagnostics associated with the task end
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract void unregisterRunningTaskAttempt(TezTaskAttemptID taskAttemptID,
                                                     TaskAttemptEndReason endReason,
                                                     @Nullable String diagnostics) throws
-      ServicePluginException;
+    ServicePluginException;
 
   /**
    * Return the address, if any, that the service listens on
    *
    * @return the address
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract InetSocketAddress getAddress() throws ServicePluginException;
 
@@ -189,7 +188,7 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
    *                    Additional information may be available for specific events, Look at the
    *                    type hierarchy for {@link org.apache.tez.dag.api.event.VertexStateUpdate}
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract void onVertexStateUpdated(VertexStateUpdate stateUpdate) throws ServicePluginException;
 
@@ -202,7 +201,7 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
    *
    * @param dagIdentifier the unique numerical identifier for the DAG in the specified execution context.
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract void dagComplete(int dagIdentifier) throws ServicePluginException;
 
@@ -213,13 +212,14 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
    *
    * @return meta info for the task communicator
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract Object getMetaInfo() throws ServicePluginException;
 
   /**
    * Return a URL that can be used as a link to the logs for a running attempt.
-   * @param attemptID Attempt ID for which the log link should be provided
+   *
+   * @param attemptID       Attempt ID for which the log link should be provided
    * @param containerNodeId Node Id on which the attempt is meant to have run
    * @return URL to logs for the attempt
    */
@@ -229,7 +229,8 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
 
   /**
    * Return a URL that can be used as a link to the logs for a completed attempt.
-   * @param attemptID Attempt ID for which the log link should be provided
+   *
+   * @param attemptID       Attempt ID for which the log link should be provided
    * @param containerNodeId Node Id on which the attempt is meant to have run
    * @return URL to logs for the attempt
    */
@@ -241,6 +242,7 @@ public abstract class TaskCommunicator implements ServicePluginLifecycle {
    * Return the amount of memory used by the containers. Each container is supposed to refresh
    * its current state via heartbeat requests, and the TaskCommunicator implementation is supposed
    * to aggregate this properly.
+   *
    * @return memory in MB
    */
   public long getTotalUsedMemory() {

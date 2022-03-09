@@ -25,7 +25,7 @@ import com.google.common.collect.Interners;
 public final class StringInterner {
 
   private static final Interner<String> STRING_INTERNER =
-      Interners.newWeakInterner();
+    Interners.newWeakInterner();
 
   private StringInterner() {
   }

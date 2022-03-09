@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,17 +17,6 @@
  */
 
 package org.apache.tez.mapreduce.common;
-
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.mapreduce.InputFormat;
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.JobContext;
-import org.apache.hadoop.mapreduce.RecordReader;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.split.TezGroupedSplit;
-import org.apache.tez.dag.api.DataSourceDescriptor;
-import org.apache.tez.dag.api.UserPayload;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -42,6 +31,16 @@ import java.util.List;
 
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Writable;
+import org.apache.hadoop.mapreduce.InputFormat;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.split.TezGroupedSplit;
+import org.apache.tez.dag.api.DataSourceDescriptor;
+import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.mapreduce.TezTestUtils;
 import org.apache.tez.mapreduce.input.MRInput;
 import org.apache.tez.mapreduce.lib.MRInputUtils;
@@ -50,9 +49,9 @@ import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.InputInitializerContext;
 import org.apache.tez.runtime.api.events.InputConfigureVertexTasksEvent;
 import org.apache.tez.runtime.api.events.InputDataInformationEvent;
-import org.junit.Test;
 
 import com.google.protobuf.ByteString;
+import org.junit.Test;
 
 public class TestMRInputAMSplitGenerator {
 
@@ -60,30 +59,30 @@ public class TestMRInputAMSplitGenerator {
 
   @Test(timeout = 5000)
   public void testGroupSplitsDisabledSortSplitsEnabled()
-      throws Exception {
+    throws Exception {
     testGroupSplitsAndSortSplits(false, true);
   }
 
   @Test(timeout = 5000)
   public void testGroupSplitsDisabledSortSplitsDisabled()
-      throws Exception {
+    throws Exception {
     testGroupSplitsAndSortSplits(false, false);
   }
 
   @Test(timeout = 5000)
   public void testGroupSplitsEnabledSortSplitsEnabled()
-      throws Exception {
+    throws Exception {
     testGroupSplitsAndSortSplits(true, true);
   }
 
   @Test(timeout = 5000)
   public void testGroupSplitsEnabledSortSplitsDisabled()
-          throws Exception {
+    throws Exception {
     testGroupSplitsAndSortSplits(true, false);
   }
 
   private void testGroupSplitsAndSortSplits(boolean groupSplitsEnabled,
-      boolean sortSplitsEnabled) throws Exception {
+                                            boolean sortSplitsEnabled) throws Exception {
     Configuration conf = new Configuration();
     String[] splitLengths = new String[50];
     for (int i = 0; i < splitLengths.length; i++) {
@@ -92,13 +91,13 @@ public class TestMRInputAMSplitGenerator {
     conf.setStrings(SPLITS_LENGTHS, splitLengths);
     DataSourceDescriptor dataSource = MRInput.createConfigBuilder(
         conf, InputFormatForTest.class).
-        groupSplits(groupSplitsEnabled).sortSplits(sortSplitsEnabled).build();
+      groupSplits(groupSplitsEnabled).sortSplits(sortSplitsEnabled).build();
     UserPayload userPayload = dataSource.getInputDescriptor().getUserPayload();
 
     InputInitializerContext context =
-        new TezTestUtils.TezRootInputInitializerContextForTest(userPayload, new Configuration(false));
+      new TezTestUtils.TezRootInputInitializerContextForTest(userPayload, new Configuration(false));
     MRInputAMSplitGenerator splitGenerator =
-        new MRInputAMSplitGenerator(context);
+      new MRInputAMSplitGenerator(context);
 
     List<Event> events = splitGenerator.initialize();
 
@@ -112,16 +111,16 @@ public class TestMRInputAMSplitGenerator {
       assertNull(diEvent.getDeserializedUserPayload());
       assertNotNull(diEvent.getUserPayload());
       MRSplitProto eventProto = MRSplitProto.parseFrom(ByteString.copyFrom(
-          diEvent.getUserPayload()));
+        diEvent.getUserPayload()));
       InputSplit is = MRInputUtils.getNewSplitDetailsFromEvent(
-          eventProto, new Configuration());
+        eventProto, new Configuration());
       if (groupSplitsEnabled) {
-        numRawInputSplits += ((TezGroupedSplit)is).getGroupedSplits().size();
-        for (InputSplit inputSplit : ((TezGroupedSplit)is).getGroupedSplits()) {
+        numRawInputSplits += ((TezGroupedSplit) is).getGroupedSplits().size();
+        for (InputSplit inputSplit : ((TezGroupedSplit) is).getGroupedSplits()) {
           assertTrue(inputSplit instanceof InputSplitForTest);
         }
-        assertTrue(((TezGroupedSplit)is).getGroupedSplits().get(0)
-            instanceof InputSplitForTest);
+        assertTrue(((TezGroupedSplit) is).getGroupedSplits().get(0)
+          instanceof InputSplitForTest);
       } else {
         numRawInputSplits++;
         assertTrue(is instanceof InputSplitForTest);
@@ -148,13 +147,13 @@ public class TestMRInputAMSplitGenerator {
   }
 
   private static class InputFormatForTest
-      extends InputFormat<IntWritable, IntWritable> {
+    extends InputFormat<IntWritable, IntWritable> {
 
     @Override
     public RecordReader<IntWritable, IntWritable> createRecordReader(
-        org.apache.hadoop.mapreduce.InputSplit split,
-        TaskAttemptContext context) throws IOException,
-        InterruptedException {
+      org.apache.hadoop.mapreduce.InputSplit split,
+      TaskAttemptContext context) throws IOException,
+      InterruptedException {
       return new RecordReader<IntWritable, IntWritable>() {
 
         private boolean done = false;
@@ -165,13 +164,13 @@ public class TestMRInputAMSplitGenerator {
 
         @Override
         public IntWritable getCurrentKey() throws IOException,
-                InterruptedException {
+          InterruptedException {
           return new IntWritable(0);
         }
 
         @Override
         public IntWritable getCurrentValue() throws IOException,
-                InterruptedException {
+          InterruptedException {
           return new IntWritable(0);
         }
 
@@ -182,7 +181,7 @@ public class TestMRInputAMSplitGenerator {
 
         @Override
         public void initialize(org.apache.hadoop.mapreduce.InputSplit split, TaskAttemptContext context)
-            throws IOException, InterruptedException {
+          throws IOException, InterruptedException {
         }
 
         @Override
@@ -198,7 +197,7 @@ public class TestMRInputAMSplitGenerator {
 
     @Override
     public List<org.apache.hadoop.mapreduce.InputSplit> getSplits(
-        JobContext context) throws IOException, InterruptedException {
+      JobContext context) throws IOException, InterruptedException {
       List<org.apache.hadoop.mapreduce.InputSplit> list = new ArrayList<org.apache.hadoop.mapreduce.InputSplit>();
       int[] lengths = context.getConfiguration().getInts(SPLITS_LENGTHS);
       for (int i = 0; i < lengths.length; i++) {
@@ -210,7 +209,7 @@ public class TestMRInputAMSplitGenerator {
 
   @Private
   public static class InputSplitForTest extends InputSplit
-      implements Writable {
+    implements Writable {
 
     private int identifier;
     private int length;
@@ -220,12 +219,13 @@ public class TestMRInputAMSplitGenerator {
       // For writable
     }
 
-    public int getIdentifier() {
-      return this.identifier;
-    }
     public InputSplitForTest(int identifier, int length) {
       this.identifier = identifier;
       this.length = length;
+    }
+
+    public int getIdentifier() {
+      return this.identifier;
     }
 
     @Override
@@ -247,7 +247,7 @@ public class TestMRInputAMSplitGenerator {
 
     @Override
     public String[] getLocations() throws IOException {
-      return new String[] {"localhost"};
+      return new String[]{"localhost"};
     }
   }
 }

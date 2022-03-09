@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,6 +22,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.dag.records.TezDAGID;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -61,12 +62,12 @@ public class TestDeletionTracker {
     int shufflePort = 9999;
     deletionTracker.addNodeShufflePort(nodeId, shufflePort);
     Assert.assertEquals("Unexpected number of entries in NodeIdShufflePortMap!",
-        1, deletionTracker.getNodeIdShufflePortMap().size());
+      1, deletionTracker.getNodeIdShufflePortMap().size());
     deletionTracker.addNodeShufflePort(nodeId, shufflePort);
     Assert.assertEquals("Unexpected number of entries in NodeIdShufflePortMap!",
-        1, deletionTracker.getNodeIdShufflePortMap().size());
+      1, deletionTracker.getNodeIdShufflePortMap().size());
     deletionTracker.dagComplete(new TezDAGID(), new JobTokenSecretManager());
     Assert.assertEquals("Unexpected number of entries in NodeIdShufflePortMap after dagComplete!",
-        1, deletionTracker.getNodeIdShufflePortMap().size());
+      1, deletionTracker.getNodeIdShufflePortMap().size());
   }
 }

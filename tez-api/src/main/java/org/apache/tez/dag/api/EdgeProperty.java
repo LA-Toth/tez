@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,7 +20,6 @@ package org.apache.tez.dag.api;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
-
 import org.apache.tez.common.Preconditions;
 
 /**
@@ -34,6 +33,144 @@ import org.apache.tez.common.Preconditions;
 @Public
 public class EdgeProperty {
 
+  final DataMovementType dataMovementType;
+  final DataSourceType dataSourceType;
+  final SchedulingType schedulingType;
+  final InputDescriptor inputDescriptor;
+  final OutputDescriptor outputDescriptor;
+  final EdgeManagerPluginDescriptor edgeManagerDescriptor;
+  private EdgeProperty(DataMovementType dataMovementType,
+                       DataSourceType dataSourceType,
+                       SchedulingType schedulingType,
+                       OutputDescriptor edgeSource,
+                       InputDescriptor edgeDestination) {
+    this(null, dataMovementType, dataSourceType, schedulingType, edgeSource, edgeDestination);
+    Preconditions.checkArgument(dataMovementType != DataMovementType.CUSTOM,
+      DataMovementType.CUSTOM + " cannot be used with this constructor");
+  }
+  private EdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor,
+                       DataSourceType dataSourceType,
+                       SchedulingType schedulingType,
+                       OutputDescriptor edgeSource,
+                       InputDescriptor edgeDestination) {
+    this(edgeManagerDescriptor, DataMovementType.CUSTOM, dataSourceType, schedulingType,
+      edgeSource, edgeDestination);
+  }
+  private EdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor,
+                       DataMovementType dataMovementType, DataSourceType dataSourceType,
+                       SchedulingType schedulingType, OutputDescriptor edgeSource, InputDescriptor edgeDestination) {
+    this.dataMovementType = dataMovementType;
+    this.edgeManagerDescriptor = edgeManagerDescriptor;
+    this.dataSourceType = dataSourceType;
+    this.schedulingType = schedulingType;
+    this.inputDescriptor = edgeDestination;
+    this.outputDescriptor = edgeSource;
+  }
+
+  /**
+   * Setup an EdgeProperty which makes use of one of the provided {@link
+   * org.apache.tez.dag.api.EdgeProperty.DataMovementType}s
+   *
+   * @param dataMovementType
+   * @param dataSourceType
+   * @param schedulingType
+   * @param edgeSource       The {@link OutputDescriptor} that generates data on the edge.
+   * @param edgeDestination  The {@link InputDescriptor} which will consume data from the edge.
+   */
+  public static EdgeProperty create(DataMovementType dataMovementType,
+                                    DataSourceType dataSourceType,
+                                    SchedulingType schedulingType,
+                                    OutputDescriptor edgeSource,
+                                    InputDescriptor edgeDestination) {
+    return new EdgeProperty(dataMovementType, dataSourceType, schedulingType, edgeSource,
+      edgeDestination);
+  }
+
+  /**
+   * Setup an Edge which uses a custom EdgeManager
+   *
+   * @param edgeManagerDescriptor
+   *          the EdgeManager specifications. This can be null if the edge
+   *          manager will be setup at runtime
+   * @param dataSourceType
+   * @param schedulingType
+   * @param edgeSource
+   *          The {@link OutputDescriptor} that generates data on the edge.
+   * @param edgeDestination
+   *          The {@link InputDescriptor} which will consume data from the edge.
+   */
+  public static EdgeProperty create(EdgeManagerPluginDescriptor edgeManagerDescriptor,
+                                    DataSourceType dataSourceType,
+                                    SchedulingType schedulingType,
+                                    OutputDescriptor edgeSource,
+                                    InputDescriptor edgeDestination) {
+    return new EdgeProperty(edgeManagerDescriptor, dataSourceType, schedulingType, edgeSource,
+      edgeDestination);
+  }
+
+  @Private
+  public static EdgeProperty create(EdgeManagerPluginDescriptor edgeManagerDescriptor,
+                                    DataMovementType dataMovementType, DataSourceType dataSourceType,
+                                    SchedulingType schedulingType, OutputDescriptor edgeSource,
+                                    InputDescriptor edgeDestination) {
+    return new EdgeProperty(edgeManagerDescriptor, dataMovementType, dataSourceType,
+      schedulingType, edgeSource, edgeDestination);
+  }
+
+  /**
+   * Get the {@link DataMovementType}
+   * @return {@link DataMovementType}
+   */
+  public DataMovementType getDataMovementType() {
+    return dataMovementType;
+  }
+
+  /**
+   * Get the {@link DataSourceType}
+   * @return {@link DataSourceType}
+   */
+  public DataSourceType getDataSourceType() {
+    return dataSourceType;
+  }
+
+  /**
+   * Get the {@link SchedulingType}
+   * @return {@link SchedulingType}
+   */
+  public SchedulingType getSchedulingType() {
+    return schedulingType;
+  }
+
+  /**
+   * @return the {@link InputDescriptor} which will consume data from the edge.
+   */
+  public InputDescriptor getEdgeDestination() {
+    return inputDescriptor;
+  }
+
+  /**
+   * @return the {@link OutputDescriptor} which produces data on the edge.
+   */
+  public OutputDescriptor getEdgeSource() {
+    return outputDescriptor;
+  }
+
+  /**
+   * Returns the Edge Manager specifications for this edge.
+   * @return @link {@link EdgeManagerPluginDescriptor} if a custom edge was setup, null otherwise.
+   */
+  @Private
+  public EdgeManagerPluginDescriptor getEdgeManagerDescriptor() {
+    return edgeManagerDescriptor;
+  }
+
+  @Override
+  public String toString() {
+    return "{ " + dataMovementType + " : " + inputDescriptor.getClassName()
+      + " >> " + dataSourceType + " >> " + outputDescriptor.getClassName()
+      + " >> " + (edgeManagerDescriptor == null ? "NullEdgeManager" : edgeManagerDescriptor.getClassName())
+      + " }";
+  }
 
   /**
    * Defines the manner of data movement between source and destination tasks.
@@ -125,148 +262,4 @@ public class EdgeProperty {
      */
     SOURCE_TASK_STARTED
   }
-
-
-  final DataMovementType dataMovementType;
-  final DataSourceType dataSourceType;
-  final SchedulingType schedulingType;
-  final InputDescriptor inputDescriptor;
-  final OutputDescriptor outputDescriptor;
-  final EdgeManagerPluginDescriptor edgeManagerDescriptor;
-
-  /**
-   * Setup an EdgeProperty which makes use of one of the provided {@link
-   * org.apache.tez.dag.api.EdgeProperty.DataMovementType}s
-   *
-   * @param dataMovementType
-   * @param dataSourceType
-   * @param schedulingType
-   * @param edgeSource       The {@link OutputDescriptor} that generates data on the edge.
-   * @param edgeDestination  The {@link InputDescriptor} which will consume data from the edge.
-   */
-  public static EdgeProperty create(DataMovementType dataMovementType,
-                                    DataSourceType dataSourceType,
-                                    SchedulingType schedulingType,
-                                    OutputDescriptor edgeSource,
-                                    InputDescriptor edgeDestination) {
-    return new EdgeProperty(dataMovementType, dataSourceType, schedulingType, edgeSource,
-        edgeDestination);
-  }
-
-  /**
-   * Setup an Edge which uses a custom EdgeManager
-   *
-   * @param edgeManagerDescriptor
-   *          the EdgeManager specifications. This can be null if the edge
-   *          manager will be setup at runtime
-   * @param dataSourceType
-   * @param schedulingType
-   * @param edgeSource
-   *          The {@link OutputDescriptor} that generates data on the edge.
-   * @param edgeDestination
-   *          The {@link InputDescriptor} which will consume data from the edge.
-   */
-  public static EdgeProperty create(EdgeManagerPluginDescriptor edgeManagerDescriptor,
-                                    DataSourceType dataSourceType,
-                                    SchedulingType schedulingType,
-                                    OutputDescriptor edgeSource,
-                                    InputDescriptor edgeDestination) {
-    return new EdgeProperty(edgeManagerDescriptor, dataSourceType, schedulingType, edgeSource,
-        edgeDestination);
-  }
-
-  @Private
-  public static EdgeProperty create(EdgeManagerPluginDescriptor edgeManagerDescriptor,
-      DataMovementType dataMovementType, DataSourceType dataSourceType,
-      SchedulingType schedulingType, OutputDescriptor edgeSource, InputDescriptor edgeDestination) {
-    return new EdgeProperty(edgeManagerDescriptor, dataMovementType, dataSourceType,
-        schedulingType, edgeSource, edgeDestination);
-  }
-
-  private EdgeProperty(DataMovementType dataMovementType,
-                       DataSourceType dataSourceType,
-                       SchedulingType schedulingType,
-                       OutputDescriptor edgeSource,
-                       InputDescriptor edgeDestination) {
-    this(null, dataMovementType, dataSourceType, schedulingType, edgeSource, edgeDestination);
-    Preconditions.checkArgument(dataMovementType != DataMovementType.CUSTOM,
-        DataMovementType.CUSTOM + " cannot be used with this constructor");
-  }
-
-
-  private EdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor,
-                       DataSourceType dataSourceType,
-                       SchedulingType schedulingType,
-                       OutputDescriptor edgeSource,
-                       InputDescriptor edgeDestination) {
-    this(edgeManagerDescriptor, DataMovementType.CUSTOM, dataSourceType, schedulingType,
-        edgeSource, edgeDestination);
-  }
-
-  private EdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor,
-      DataMovementType dataMovementType, DataSourceType dataSourceType,
-      SchedulingType schedulingType, OutputDescriptor edgeSource, InputDescriptor edgeDestination) {
-    this.dataMovementType = dataMovementType;
-    this.edgeManagerDescriptor = edgeManagerDescriptor;
-    this.dataSourceType = dataSourceType;
-    this.schedulingType = schedulingType;
-    this.inputDescriptor = edgeDestination;
-    this.outputDescriptor = edgeSource;
-  }
-
-  /**
-   * Get the {@link DataMovementType}
-   * @return {@link DataMovementType}
-   */
-  public DataMovementType getDataMovementType() {
-    return dataMovementType;
-  }
-
-  /**
-   * Get the {@link DataSourceType}
-   * @return {@link DataSourceType}
-   */
-  public DataSourceType getDataSourceType() {
-    return dataSourceType;
-  }
-
-  /**
-   * Get the {@link SchedulingType}
-   * @return {@link SchedulingType}
-   */
-  public SchedulingType getSchedulingType() {
-    return schedulingType;
-  }
-
-  /**
-   * @return the {@link InputDescriptor} which will consume data from the edge.
-   */
-  public InputDescriptor getEdgeDestination() {
-    return inputDescriptor;
-  }
-
-  /**
-   * @return the {@link OutputDescriptor} which produces data on the edge.
-   */
-  public OutputDescriptor getEdgeSource() {
-    return outputDescriptor;
-  }
-
-  /**
-   * Returns the Edge Manager specifications for this edge.
-   * @return @link {@link EdgeManagerPluginDescriptor} if a custom edge was setup, null otherwise.
-   */
-  @Private
-  public EdgeManagerPluginDescriptor getEdgeManagerDescriptor() {
-    return edgeManagerDescriptor;
-  }
-
-  @Override
-  public String toString() {
-    return "{ " + dataMovementType + " : " + inputDescriptor.getClassName()
-        + " >> " + dataSourceType + " >> " + outputDescriptor.getClassName()
-        + " >> " + (edgeManagerDescriptor == null ? "NullEdgeManager" : edgeManagerDescriptor.getClassName())
-        + " }";
-  }
-
 }

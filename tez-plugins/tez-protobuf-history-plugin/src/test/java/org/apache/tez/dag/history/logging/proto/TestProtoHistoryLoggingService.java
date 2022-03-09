@@ -59,6 +59,7 @@ import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.hadoop.shim.HadoopShim;
+
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,10 +69,9 @@ public class TestProtoHistoryLoggingService {
   private static ApplicationId appId = ApplicationId.newInstance(1000l, 1);
   private static ApplicationAttemptId attemptId = ApplicationAttemptId.newInstance(appId, 1);
   private static String user = "TEST_USER";
-  private Clock clock;
-
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
+  private Clock clock;
 
   @Test
   public void testService() throws Exception {
@@ -106,7 +106,7 @@ public class TestProtoHistoryLoggingService {
     // Verify manifest events are logged.
     DatePartitionedLogger<ManifestEntryProto> manifestLogger = loggers.getManifestEventsLogger();
     Path manifestFilePath = manifestLogger.getPathForDate(
-        LocalDate.ofEpochDay(0), attemptId.toString());
+      LocalDate.ofEpochDay(0), attemptId.toString());
     ProtoMessageReader<ManifestEntryProto> reader2 = manifestLogger.getReader(manifestFilePath);
     ManifestEntryProto manifest = reader2.readEvent();
     Assert.assertEquals(appId.toString(), manifest.getAppId());
@@ -154,7 +154,7 @@ public class TestProtoHistoryLoggingService {
     DatePartitionedLogger<HistoryEventProto> dagLogger = loggers.getDagEventsLogger();
     Path dagFilePath1 = dagLogger.getPathForDate(LocalDate.ofEpochDay(0), dagId + "_1");
     Path dagFilePath2 = dagLogger.getPathForDate(LocalDate.ofEpochDay(0), dagId + "_1" +
-        ProtoHistoryLoggingService.SPLIT_DAG_EVENTS_FILE_SUFFIX);
+      ProtoHistoryLoggingService.SPLIT_DAG_EVENTS_FILE_SUFFIX);
 
     try (ProtoMessageReader<HistoryEventProto> reader = dagLogger.getReader(dagFilePath1)) {
       assertEventsRead(reader, protos, 1, 1 + 3);
@@ -176,9 +176,9 @@ public class TestProtoHistoryLoggingService {
     DatePartitionedLogger<ManifestEntryProto> manifestLogger = loggers.getManifestEventsLogger();
     DagManifesFileScanner scanner = new DagManifesFileScanner(manifestLogger);
     Path manifestFilePath = manifestLogger.getPathForDate(
-        LocalDate.ofEpochDay(0), attemptId.toString());
+      LocalDate.ofEpochDay(0), attemptId.toString());
     ProtoMessageReader<ManifestEntryProto> manifestReader = manifestLogger.getReader(
-        manifestFilePath);
+      manifestFilePath);
     ManifestEntryProto manifest = manifestReader.readEvent();
     Assert.assertEquals(manifest, scanner.getNext());
     Assert.assertEquals(appId.toString(), manifest.getAppId());
@@ -191,7 +191,7 @@ public class TestProtoHistoryLoggingService {
     HistoryEventProto evt = null;
     // Verify offsets in manifest logger.
     try (ProtoMessageReader<HistoryEventProto> reader = dagLogger.getReader(
-        new Path(manifest.getDagFilePath()))) {
+      new Path(manifest.getDagFilePath()))) {
       reader.setOffset(manifest.getDagSubmittedEventOffset());
       evt = reader.readEvent();
       Assert.assertNotNull(evt);
@@ -208,7 +208,7 @@ public class TestProtoHistoryLoggingService {
     Assert.assertEquals(-1, manifest.getDagSubmittedEventOffset());
 
     try (ProtoMessageReader<HistoryEventProto> reader = dagLogger.getReader(
-        new Path(manifest.getDagFilePath()))) {
+      new Path(manifest.getDagFilePath()))) {
       reader.setOffset(manifest.getDagFinishedEventOffset());
       evt = reader.readEvent();
       Assert.assertNotNull(evt);
@@ -221,48 +221,35 @@ public class TestProtoHistoryLoggingService {
   }
 
   private List<DAGHistoryEvent> makeHistoryEvents(TezDAGID dagId,
-      ProtoHistoryLoggingService service) {
+                                                  ProtoHistoryLoggingService service) {
     List<DAGHistoryEvent> historyEvents = new ArrayList<>();
     DAGPlan dagPlan = DAGPlan.newBuilder().setName("DAGPlanMock").build();
 
     long time = System.currentTimeMillis();
     Configuration conf = new Configuration(service.getConfig());
     historyEvents.add(new DAGHistoryEvent(null, new AppLaunchedEvent(appId, time, time, user, conf,
-        new VersionInfo("component", "1.1.0", "rev1", "20120101", "git.apache.org") {})));
+      new VersionInfo("component", "1.1.0", "rev1", "20120101", "git.apache.org") {
+      })));
     historyEvents.add(new DAGHistoryEvent(dagId, new DAGSubmittedEvent(dagId, time,
-        DAGPlan.getDefaultInstance(), attemptId, null, user, conf, null, "default")));
+      DAGPlan.getDefaultInstance(), attemptId, null, user, conf, null, "default")));
     historyEvents.add(new DAGHistoryEvent(dagId, new DAGInitializedEvent(dagId, time + 1, user,
-        "test_dag", Collections.emptyMap())));
+      "test_dag", Collections.emptyMap())));
     historyEvents.add(new DAGHistoryEvent(dagId, new DAGStartedEvent(dagId, time + 2, user,
-        "test_dag")));
+      "test_dag")));
 
     TezVertexID vertexID = TezVertexID.getInstance(dagId, 1);
     historyEvents.add(new DAGHistoryEvent(dagId, new VertexStartedEvent(vertexID, time, time)));
     TezTaskID tezTaskID = TezTaskID.getInstance(vertexID, 1);
     historyEvents
-        .add(new DAGHistoryEvent(dagId, new TaskStartedEvent(tezTaskID, "test", time, time)));
+      .add(new DAGHistoryEvent(dagId, new TaskStartedEvent(tezTaskID, "test", time, time)));
     historyEvents.add(new DAGHistoryEvent(dagId,
-        new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(tezTaskID, 1), "test", time,
-            ContainerId.newContainerId(attemptId, 1), NodeId.newInstance("localhost", 8765), null,
-            null, null)));
+      new TaskAttemptStartedEvent(TezTaskAttemptID.getInstance(tezTaskID, 1), "test", time,
+        ContainerId.newContainerId(attemptId, 1), NodeId.newInstance("localhost", 8765), null,
+        null, null)));
     historyEvents.add(new DAGHistoryEvent(dagId, new DAGFinishedEvent(dagId, time, time,
-        DAGState.ERROR, "diagnostics", null, user, dagPlan.getName(),
-        new HashMap<String, Integer>(), attemptId, dagPlan)));
+      DAGState.ERROR, "diagnostics", null, user, dagPlan.getName(),
+      new HashMap<String, Integer>(), attemptId, dagPlan)));
     return historyEvents;
-  }
-
-  private static class FixedClock implements Clock {
-    final Clock clock = SystemClock.getInstance();
-    final long diff;
-
-    public FixedClock(long startTime) {
-      diff = clock.getTime() - startTime;
-    }
-
-    @Override
-    public long getTime() {
-      return clock.getTime() - diff;
-    }
   }
 
   private ProtoHistoryLoggingService createService(boolean splitEvents) throws IOException {
@@ -272,7 +259,8 @@ public class TestProtoHistoryLoggingService {
     when(appContext.getApplicationID()).thenReturn(appId);
     when(appContext.getApplicationAttemptId()).thenReturn(attemptId);
     when(appContext.getUser()).thenReturn(user);
-    when(appContext.getHadoopShim()).thenReturn(new HadoopShim() {});
+    when(appContext.getHadoopShim()).thenReturn(new HadoopShim() {
+    });
     when(appContext.getClock()).thenReturn(clock);
     service.setAppContext(appContext);
     Configuration conf = new Configuration(false);
@@ -285,7 +273,7 @@ public class TestProtoHistoryLoggingService {
   }
 
   private void assertEventsRead(ProtoMessageReader<HistoryEventProto> reader,
-      List<HistoryEventProto> protos, int start, int finish) throws Exception {
+                                List<HistoryEventProto> protos, int start, int finish) throws Exception {
     for (int i = start; i < finish; ++i) {
       try {
         HistoryEventProto evt = reader.readEvent();
@@ -299,6 +287,20 @@ public class TestProtoHistoryLoggingService {
       Assert.assertNull(evt);
     } catch (EOFException e) {
       // Expected.
+    }
+  }
+
+  private static class FixedClock implements Clock {
+    final Clock clock = SystemClock.getInstance();
+    final long diff;
+
+    public FixedClock(long startTime) {
+      diff = clock.getTime() - startTime;
+    }
+
+    @Override
+    public long getTime() {
+      return clock.getTime() - diff;
     }
   }
 }

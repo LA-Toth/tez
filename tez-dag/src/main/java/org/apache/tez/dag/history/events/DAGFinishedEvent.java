@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.DagTypeConverters;
@@ -40,9 +38,12 @@ import org.apache.tez.dag.recovery.records.RecoveryProtos.SummaryEventProto;
 
 import com.google.common.primitives.Ints;
 import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class DAGFinishedEvent implements HistoryEvent, SummaryEvent, DAGIDAware {
 
+  Map<String, Integer> dagTaskStats;
   private TezDAGID dagID;
   private long startTime;
   private long finishTime;
@@ -51,7 +52,6 @@ public class DAGFinishedEvent implements HistoryEvent, SummaryEvent, DAGIDAware 
   private TezCounters tezCounters;
   private String user;
   private String dagName;
-  Map<String, Integer> dagTaskStats;
   private DAGPlan dagPlan;
 
   private ApplicationAttemptId applicationAttemptId;
@@ -60,10 +60,10 @@ public class DAGFinishedEvent implements HistoryEvent, SummaryEvent, DAGIDAware 
   }
 
   public DAGFinishedEvent(TezDAGID dagId, long startTime,
-      long finishTime, DAGState state,
-      String diagnostics, TezCounters counters,
-      String user, String dagName, Map<String, Integer> dagTaskStats,
-      ApplicationAttemptId applicationAttemptId, DAGPlan dagPlan) {
+                          long finishTime, DAGState state,
+                          String diagnostics, TezCounters counters,
+                          String user, String dagName, Map<String, Integer> dagTaskStats,
+                          ApplicationAttemptId applicationAttemptId, DAGPlan dagPlan) {
     this.dagID = dagId;
     this.startTime = startTime;
     this.finishTime = finishTime;
@@ -96,8 +96,8 @@ public class DAGFinishedEvent implements HistoryEvent, SummaryEvent, DAGIDAware 
     DAGFinishedProto.Builder builder = DAGFinishedProto.newBuilder();
 
     builder.setDagId(dagID.toString())
-        .setState(state.ordinal())
-        .setFinishTime(finishTime);
+      .setState(state.ordinal())
+      .setFinishTime(finishTime);
 
     if (diagnostics != null) {
       builder.setDiagnostics(diagnostics);
@@ -118,7 +118,7 @@ public class DAGFinishedEvent implements HistoryEvent, SummaryEvent, DAGIDAware 
     }
     if (proto.hasCounters()) {
       this.tezCounters = DagTypeConverters.convertTezCountersFromProto(
-          proto.getCounters());
+        proto.getCounters());
     }
   }
 
@@ -139,23 +139,23 @@ public class DAGFinishedEvent implements HistoryEvent, SummaryEvent, DAGIDAware 
   @Override
   public String toString() {
     return "dagId=" + dagID
-        + ", startTime=" + startTime
-        + ", finishTime=" + finishTime
-        + ", timeTaken=" + (finishTime - startTime)
-        + ", status=" + state.name()
-        + ", diagnostics=" + diagnostics
-        + ", counters=" + ((tezCounters == null) ? "null" :
-          (tezCounters.toString()
-            .replaceAll("\\n", ", ").replaceAll("\\s+", " ")));
+      + ", startTime=" + startTime
+      + ", finishTime=" + finishTime
+      + ", timeTaken=" + (finishTime - startTime)
+      + ", status=" + state.name()
+      + ", diagnostics=" + diagnostics
+      + ", counters=" + ((tezCounters == null) ? "null" :
+      (tezCounters.toString()
+        .replaceAll("\\n", ", ").replaceAll("\\s+", " ")));
   }
 
   @Override
   public void toSummaryProtoStream(OutputStream outputStream) throws IOException {
     SummaryEventProto.Builder builder = RecoveryProtos.SummaryEventProto.newBuilder()
-        .setDagId(dagID.toString())
-        .setTimestamp(finishTime)
-        .setEventType(getEventType().ordinal())
-        .setEventPayload(ByteString.copyFrom(Ints.toByteArray(state.ordinal())));
+      .setDagId(dagID.toString())
+      .setTimestamp(finishTime)
+      .setEventType(getEventType().ordinal())
+      .setEventPayload(ByteString.copyFrom(Ints.toByteArray(state.ordinal())));
     builder.build().writeDelimitedTo(outputStream);
   }
 
@@ -164,7 +164,7 @@ public class DAGFinishedEvent implements HistoryEvent, SummaryEvent, DAGIDAware 
     this.dagID = TezDAGID.fromString(proto.getDagId());
     this.finishTime = proto.getTimestamp();
     this.state = DAGState.values()[
-        Ints.fromByteArray(proto.getEventPayload().toByteArray())];
+      Ints.fromByteArray(proto.getEventPayload().toByteArray())];
   }
 
   @Override

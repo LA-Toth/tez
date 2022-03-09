@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,8 +24,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.CompositeService;
 import org.apache.tez.common.ReflectionUtils;
@@ -42,27 +40,27 @@ import org.apache.tez.dag.records.TaskAttemptTerminationCause;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HistoryEventHandler extends CompositeService {
 
   private static Logger LOG = LoggerFactory.getLogger(HistoryEventHandler.class);
   private static Logger LOG_CRITICAL_EVENTS =
-      LoggerFactory.getLogger(LOG.getName() + ".criticalEvents");
+    LoggerFactory.getLogger(LOG.getName() + ".criticalEvents");
 
   private final AppContext context;
+  private final Map<TezDAGID, HistoryLogLevel> dagIdToLogLevel = new ConcurrentHashMap<>();
+  private final Map<TezDAGID, Set<TaskAttemptTerminationCause>> dagIdToTaskAttemptFilters =
+    new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<TezTaskAttemptID, DAGHistoryEvent> suppressedEvents =
+    new ConcurrentHashMap<>();
+  private final AtomicLong criticalEventCount = new AtomicLong();
   private RecoveryService recoveryService;
   private boolean recoveryEnabled;
   private HistoryLoggingService historyLoggingService;
-
   private HistoryLogLevel amHistoryLogLevel;
-  private final Map<TezDAGID, HistoryLogLevel> dagIdToLogLevel = new ConcurrentHashMap<>();
   private Set<TaskAttemptTerminationCause> amTaskAttemptFilters;
-  private final Map<TezDAGID, Set<TaskAttemptTerminationCause>> dagIdToTaskAttemptFilters =
-      new ConcurrentHashMap<>();
-
-  private final ConcurrentHashMap<TezTaskAttemptID, DAGHistoryEvent> suppressedEvents =
-      new ConcurrentHashMap<>();
-
-  private final AtomicLong criticalEventCount = new AtomicLong();
 
   public HistoryEventHandler(AppContext context) {
     super(HistoryEventHandler.class.getName());
@@ -72,35 +70,35 @@ public class HistoryEventHandler extends CompositeService {
   @Override
   public void serviceInit(Configuration conf) throws Exception {
     this.recoveryEnabled = context.getAMConf().getBoolean(TezConfiguration.DAG_RECOVERY_ENABLED,
-        TezConfiguration.DAG_RECOVERY_ENABLED_DEFAULT);
+      TezConfiguration.DAG_RECOVERY_ENABLED_DEFAULT);
 
     String historyServiceClassName = context.getAMConf().get(
-        TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-        TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS_DEFAULT);
+      TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
+      TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS_DEFAULT);
 
     LOG.info("Initializing HistoryEventHandler with"
-        + "recoveryEnabled=" + recoveryEnabled
-        + ", historyServiceClassName=" + historyServiceClassName);
+      + "recoveryEnabled=" + recoveryEnabled
+      + ", historyServiceClassName=" + historyServiceClassName);
 
     historyLoggingService =
-        ReflectionUtils.createClazzInstance(historyServiceClassName);
+      ReflectionUtils.createClazzInstance(historyServiceClassName);
     historyLoggingService.setAppContext(context);
     addService(historyLoggingService);
 
     if (recoveryEnabled) {
       String recoveryServiceClass = conf.get(TezConfiguration.TEZ_AM_RECOVERY_SERVICE_CLASS,
-          TezConfiguration.TEZ_AM_RECOVERY_SERVICE_CLASS_DEFAULT);
+        TezConfiguration.TEZ_AM_RECOVERY_SERVICE_CLASS_DEFAULT);
       recoveryService = ReflectionUtils.createClazzInstance(recoveryServiceClass,
-          new Class[]{AppContext.class}, new Object[] {context});
+        new Class[]{AppContext.class}, new Object[]{context});
       addService(recoveryService);
     }
 
     amHistoryLogLevel = HistoryLogLevel.getLogLevel(context.getAMConf(), HistoryLogLevel.DEFAULT);
     amTaskAttemptFilters = TezUtilsInternal.getEnums(
-        context.getAMConf(),
-        TezConfiguration.TEZ_HISTORY_LOGGING_TASKATTEMPT_FILTERS,
-        TaskAttemptTerminationCause.class,
-        null);
+      context.getAMConf(),
+      TezConfiguration.TEZ_HISTORY_LOGGING_TASKATTEMPT_FILTERS,
+      TaskAttemptTerminationCause.class,
+      null);
 
     super.serviceInit(conf);
   }
@@ -126,14 +124,14 @@ public class HistoryEventHandler extends CompositeService {
   public void handleCriticalEvent(DAGHistoryEvent event) throws IOException {
     TezDAGID dagId = event.getDAGID();
     String dagIdStr = "N/A";
-    if(dagId != null) {
+    if (dagId != null) {
       dagIdStr = dagId.toString();
     }
     HistoryEvent historyEvent = event.getHistoryEvent();
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("Handling history event"
-          + ", eventType=" + historyEvent.getEventType());
+        + ", eventType=" + historyEvent.getEventType());
     }
     if (recoveryEnabled && historyEvent.isRecoveryEvent()) {
       recoveryService.handle(event);
@@ -150,9 +148,9 @@ public class HistoryEventHandler extends CompositeService {
       // TODO at some point we should look at removing this once
       // there is a UI in place
       LOG_CRITICAL_EVENTS.info("[HISTORY]"
-          + "[DAG:" + dagIdStr + "]"
-          + "[Event:" + event.getHistoryEvent().getEventType().name() + "]"
-          + ": " + event.getHistoryEvent().toString());
+        + "[DAG:" + dagIdStr + "]"
+        + "[Event:" + event.getHistoryEvent().getEventType().name() + "]"
+        + ": " + event.getHistoryEvent().toString());
     } else {
       if (criticalEventCount.incrementAndGet() % 1000 == 0) {
         LOG.info("Got {} critical events", criticalEventCount);
@@ -174,7 +172,7 @@ public class HistoryEventHandler extends CompositeService {
     HistoryEvent historyEvent = event.getHistoryEvent();
     HistoryEventType eventType = historyEvent.getEventType();
     if (eventType == HistoryEventType.DAG_SUBMITTED) {
-      Configuration dagConf = ((DAGSubmittedEvent)historyEvent).getConf();
+      Configuration dagConf = ((DAGSubmittedEvent) historyEvent).getConf();
       dagLogLevel = HistoryLogLevel.getLogLevel(dagConf, amHistoryLogLevel);
       dagIdToLogLevel.put(dagId, dagLogLevel);
       maybeUpdateDagTaskAttemptFilters(dagId, dagLogLevel, dagConf);
@@ -205,8 +203,8 @@ public class HistoryEventHandler extends CompositeService {
     HistoryEvent historyEvent = event.getHistoryEvent();
     HistoryEventType eventType = historyEvent.getEventType();
     if (dagLogLevel == HistoryLogLevel.TASK_ATTEMPT &&
-        (eventType == HistoryEventType.TASK_ATTEMPT_STARTED ||
-         eventType == HistoryEventType.TASK_ATTEMPT_FINISHED)) {
+      (eventType == HistoryEventType.TASK_ATTEMPT_STARTED ||
+        eventType == HistoryEventType.TASK_ATTEMPT_FINISHED)) {
       TezDAGID dagId = event.getDAGID();
       Set<TaskAttemptTerminationCause> filters = null;
       if (dagId != null) {
@@ -219,10 +217,10 @@ public class HistoryEventHandler extends CompositeService {
         return true;
       }
       if (eventType == HistoryEventType.TASK_ATTEMPT_STARTED) {
-        suppressedEvents.put(((TaskAttemptStartedEvent)historyEvent).getTaskAttemptID(), event);
+        suppressedEvents.put(((TaskAttemptStartedEvent) historyEvent).getTaskAttemptID(), event);
         return false;
       } else { // TaskAttemptFinishedEvent
-        TaskAttemptFinishedEvent finishedEvent = (TaskAttemptFinishedEvent)historyEvent;
+        TaskAttemptFinishedEvent finishedEvent = (TaskAttemptFinishedEvent) historyEvent;
         if (filters.contains(finishedEvent.getTaskAttemptError())) {
           suppressedEvents.remove(finishedEvent.getTaskAttemptID());
           return false;
@@ -233,13 +231,13 @@ public class HistoryEventHandler extends CompositeService {
   }
 
   private void maybeUpdateDagTaskAttemptFilters(TezDAGID dagId, HistoryLogLevel dagLogLevel,
-      Configuration dagConf) {
+                                                Configuration dagConf) {
     if (dagLogLevel == HistoryLogLevel.TASK_ATTEMPT) {
       Set<TaskAttemptTerminationCause> filters = TezUtilsInternal.getEnums(
-          dagConf,
-          TezConfiguration.TEZ_HISTORY_LOGGING_TASKATTEMPT_FILTERS,
-          TaskAttemptTerminationCause.class,
-          null);
+        dagConf,
+        TezConfiguration.TEZ_HISTORY_LOGGING_TASKATTEMPT_FILTERS,
+        TaskAttemptTerminationCause.class,
+        null);
       if (filters != null) {
         dagIdToTaskAttemptFilters.put(dagId, filters);
       }
@@ -248,7 +246,7 @@ public class HistoryEventHandler extends CompositeService {
 
   private DAGHistoryEvent getSupressedEvent(HistoryEvent historyEvent) {
     if (historyEvent.getEventType() == HistoryEventType.TASK_ATTEMPT_FINISHED) {
-      TaskAttemptFinishedEvent finishedEvent = (TaskAttemptFinishedEvent)historyEvent;
+      TaskAttemptFinishedEvent finishedEvent = (TaskAttemptFinishedEvent) historyEvent;
       return suppressedEvents.remove(finishedEvent.getTaskAttemptID());
     }
     return null;
@@ -259,7 +257,7 @@ public class HistoryEventHandler extends CompositeService {
       handleCriticalEvent(event);
     } catch (IOException e) {
       LOG.warn("Failed to handle recovery event"
-          + ", eventType=" + event.getHistoryEvent().getEventType(), e);
+        + ", eventType=" + event.getHistoryEvent().getEventType(), e);
     }
   }
 
@@ -270,5 +268,4 @@ public class HistoryEventHandler extends CompositeService {
       return false;
     }
   }
-
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -55,6 +55,7 @@ import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.runtime.library.processor.SleepProcessor;
 import org.apache.tez.runtime.library.processor.SleepProcessor.SleepProcessorConfig;
 import org.apache.tez.tests.MiniTezClusterWithTimeline;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -78,7 +79,7 @@ public class TestATSHistoryV15 {
   private static FileSystem remoteFs;
 
   private static String TEST_ROOT_DIR = "target" + Path.SEPARATOR
-      + TestATSHistoryV15.class.getName() + "-tmpDir";
+    + TestATSHistoryV15.class.getName() + "-tmpDir";
   private static Path atsActivePath;
 
   @BeforeClass
@@ -86,7 +87,7 @@ public class TestATSHistoryV15 {
     try {
       conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, TEST_ROOT_DIR);
       dfsCluster = new MiniDFSCluster.Builder(conf).numDataNodes(2).format(true).racks(null)
-          .build();
+        .build();
       remoteFs = dfsCluster.getFileSystem();
     } catch (IOException io) {
       throw new RuntimeException("problem starting mini dfs cluster", io);
@@ -95,7 +96,7 @@ public class TestATSHistoryV15 {
     if (mrrTezCluster == null) {
       try {
         mrrTezCluster = new MiniTezClusterWithTimeline(TestATSHistoryV15.class.getName(),
-            1, 1, 1, true);
+          1, 1, 1, true);
         Configuration conf = new Configuration();
         conf.setBoolean(YarnConfiguration.TIMELINE_SERVICE_ENABLED, true);
         conf.set(YarnConfiguration.TIMELINE_SERVICE_LEVELDB_PATH, TEST_ROOT_DIR);
@@ -110,10 +111,9 @@ public class TestATSHistoryV15 {
 
         conf.setInt(DFSConfigKeys.DFS_REPLICATION_KEY, 1);
         conf.set(YarnConfiguration.TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_ACTIVE_DIR,
-            remoteFs.resolvePath(atsActivePath).toString());
+          remoteFs.resolvePath(atsActivePath).toString());
         conf.set(YarnConfiguration.TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_DONE_DIR,
-            remoteFs.resolvePath(atsDonePath).toString());
-
+          remoteFs.resolvePath(atsDonePath).toString());
 
         mrrTezCluster.init(conf);
         mrrTezCluster.start();
@@ -122,7 +122,7 @@ public class TestATSHistoryV15 {
       }
     }
     timelineAddress = mrrTezCluster.getConfig().get(
-        YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS);
+      YarnConfiguration.TIMELINE_SERVICE_WEBAPP_ADDRESS);
     if (timelineAddress != null) {
       // Hack to handle bug in MiniYARNCluster handling of webapp address
       timelineAddress = timelineAddress.replace("0.0.0.0", "localhost");
@@ -143,7 +143,7 @@ public class TestATSHistoryV15 {
     }
   }
 
-  @Test(timeout=50000)
+  @Test(timeout = 50000)
   public void testSimpleDAG() throws Exception {
     TezClient tezSession = null;
     ApplicationId applicationId;
@@ -153,20 +153,20 @@ public class TestATSHistoryV15 {
 
       DAG dag = DAG.create("TezSleepProcessor");
       Vertex vertex = Vertex.create("SleepVertex", ProcessorDescriptor.create(
-              SleepProcessor.class.getName()).setUserPayload(spConf.toUserPayload()), 1,
-          Resource.newInstance(256, 1));
+          SleepProcessor.class.getName()).setUserPayload(spConf.toUserPayload()), 1,
+        Resource.newInstance(256, 1));
       dag.addVertex(vertex);
 
       TezConfiguration tezConf = new TezConfiguration(mrrTezCluster.getConfig());
 
       tezConf.set(YarnConfiguration.TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_SUMMARY_ENTITY_TYPES,
-          "TEZ_DAG_ID");
+        "TEZ_DAG_ID");
 
       tezConf.set(TezConfiguration.TEZ_AM_VIEW_ACLS, viewAcls);
       tezConf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-          ATSV15HistoryLoggingService.class.getName());
+        ATSV15HistoryLoggingService.class.getName());
       Path remoteStagingDir = remoteFs.makeQualified(new Path("/tmp", String.valueOf(random
-          .nextInt(100000))));
+        .nextInt(100000))));
       remoteFs.mkdirs(remoteStagingDir);
       tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR, remoteStagingDir.toString());
 
@@ -180,7 +180,7 @@ public class TestATSHistoryV15 {
       DAGStatus dagStatus = dagClient.getDAGStatus(null);
       while (!dagStatus.isCompleted()) {
         LOG.info("Waiting for job to complete. Sleeping for 500ms." + " Current state: "
-            + dagStatus.getState());
+          + dagStatus.getState());
         Thread.sleep(500l);
         dagStatus = dagClient.getDAGStatus(null);
       }
@@ -206,20 +206,20 @@ public class TestATSHistoryV15 {
 
       DAG dag = DAG.create("TezSleepProcessor");
       Vertex vertex = Vertex.create("SleepVertex", ProcessorDescriptor.create(
-              SleepProcessor.class.getName()).setUserPayload(spConf.toUserPayload()), 1,
-          Resource.newInstance(256, 1));
+          SleepProcessor.class.getName()).setUserPayload(spConf.toUserPayload()), 1,
+        Resource.newInstance(256, 1));
       dag.addVertex(vertex);
 
       TezConfiguration tezConf = new TezConfiguration(mrrTezCluster.getConfig());
 
       tezConf.set(YarnConfiguration.TIMELINE_SERVICE_ENTITYGROUP_FS_STORE_SUMMARY_ENTITY_TYPES,
-          "TEZ_DAG_ID");
+        "TEZ_DAG_ID");
 
       tezConf.set(TezConfiguration.TEZ_AM_VIEW_ACLS, viewAcls);
       tezConf.set(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS,
-          ATSV15HistoryLoggingService.class.getName());
+        ATSV15HistoryLoggingService.class.getName());
       Path remoteStagingDir = remoteFs.makeQualified(new Path("/tmp", String.valueOf(random
-          .nextInt(100000))));
+        .nextInt(100000))));
       remoteFs.mkdirs(remoteStagingDir);
       tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR, remoteStagingDir.toString());
 
@@ -234,7 +234,7 @@ public class TestATSHistoryV15 {
       DAGStatus dagStatus = dagClient.getDAGStatus(null);
       while (!dagStatus.isCompleted()) {
         LOG.info("Waiting for job to complete. Sleeping for 500ms." + " Current state: "
-            + dagStatus.getState());
+          + dagStatus.getState());
         Thread.sleep(500l);
         dagStatus = dagClient.getDAGStatus(null);
       }
@@ -260,7 +260,7 @@ public class TestATSHistoryV15 {
         count += verifyATSDataOnHDFS(f.getPath(), applicationId);
       } else {
         if (f.getPath().getName().contains(
-            "" + applicationId.getClusterTimestamp() + "_" + applicationId.getId())) {
+          "" + applicationId.getClusterTimestamp() + "_" + applicationId.getId())) {
           ++count;
         }
       }
@@ -303,7 +303,8 @@ public class TestATSHistoryV15 {
       ATSV15HistoryLoggingService service = new ATSV15HistoryLoggingService();
       AppContext appContext = mock(AppContext.class);
       when(appContext.getApplicationID()).thenReturn(appId);
-      when(appContext.getHadoopShim()).thenReturn(new HadoopShim() {});
+      when(appContext.getHadoopShim()).thenReturn(new HadoopShim() {
+      });
       service.setAppContext(appContext);
 
       TimelineEntityGroupId grpId = service.getGroupId(event);
@@ -323,5 +324,4 @@ public class TestATSHistoryV15 {
       service.close();
     }
   }
-
 }

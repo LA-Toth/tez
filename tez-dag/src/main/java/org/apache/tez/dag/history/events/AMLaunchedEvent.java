@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,13 +20,14 @@ package org.apache.tez.dag.history.events;
 
 import java.io.IOException;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.AMLaunchedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class AMLaunchedEvent implements HistoryEvent {
 
@@ -39,7 +40,7 @@ public class AMLaunchedEvent implements HistoryEvent {
   }
 
   public AMLaunchedEvent(ApplicationAttemptId appAttemptId,
-      long launchTime, long appSubmitTime, String user) {
+                         long launchTime, long appSubmitTime, String user) {
     this.applicationAttemptId = appAttemptId;
     this.launchTime = launchTime;
     this.appSubmitTime = appSubmitTime;
@@ -64,21 +65,21 @@ public class AMLaunchedEvent implements HistoryEvent {
   @Override
   public String toString() {
     return "appAttemptId=" + applicationAttemptId
-        + ", appSubmitTime=" + appSubmitTime
-        + ", launchTime=" + launchTime;
+      + ", appSubmitTime=" + appSubmitTime
+      + ", launchTime=" + launchTime;
   }
 
   public AMLaunchedProto toProto() {
     return AMLaunchedProto.newBuilder()
-        .setApplicationAttemptId(this.applicationAttemptId.toString())
-        .setAppSubmitTime(appSubmitTime)
-        .setLaunchTime(launchTime)
-        .build();
+      .setApplicationAttemptId(this.applicationAttemptId.toString())
+      .setAppSubmitTime(appSubmitTime)
+      .setLaunchTime(launchTime)
+      .build();
   }
 
   public void fromProto(AMLaunchedProto proto) {
     this.applicationAttemptId =
-        ConverterUtils.toApplicationAttemptId(proto.getApplicationAttemptId());
+      ConverterUtils.toApplicationAttemptId(proto.getApplicationAttemptId());
     this.launchTime = proto.getLaunchTime();
     this.appSubmitTime = proto.getAppSubmitTime();
   }
@@ -112,5 +113,4 @@ public class AMLaunchedEvent implements HistoryEvent {
   public String getUser() {
     return user;
   }
-
 }

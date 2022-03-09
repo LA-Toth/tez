@@ -79,17 +79,17 @@ public abstract class ContainerLauncher implements ServicePluginLifecycle {
    *
    * @param launchRequest the actual launch request
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract void launchContainer(ContainerLaunchRequest launchRequest) throws
-      ServicePluginException;
+    ServicePluginException;
 
   /**
    * A request to stop a specific container
    *
    * @param stopRequest the actual stop request
    * @throws ServicePluginException when the service runs into a fatal error which it cannot handle.
-   *                               This will cause the app to shutdown.
+   *                                This will cause the app to shutdown.
    */
   public abstract void stopContainer(ContainerStopRequest stopRequest) throws ServicePluginException;
 }

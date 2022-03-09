@@ -41,12 +41,12 @@ public class ProtoConverters {
 
   public static TaskSpec getTaskSpecfromProto(TaskSpecProto taskSpecProto) {
     TezTaskAttemptID taskAttemptID =
-        TezTaskAttemptID.fromString(taskSpecProto.getTaskAttemptIdString());
+      TezTaskAttemptID.fromString(taskSpecProto.getTaskAttemptIdString());
 
     ProcessorDescriptor processorDescriptor = null;
     if (taskSpecProto.hasProcessorDescriptor()) {
       processorDescriptor = DagTypeConverters
-          .convertProcessorDescriptorFromDAGPlan(taskSpecProto.getProcessorDescriptor());
+        .convertProcessorDescriptorFromDAGPlan(taskSpecProto.getProcessorDescriptor());
     }
 
     List<InputSpec> inputSpecList = new ArrayList<InputSpec>(taskSpecProto.getInputSpecsCount());
@@ -57,7 +57,7 @@ public class ProtoConverters {
     }
 
     List<OutputSpec> outputSpecList =
-        new ArrayList<OutputSpec>(taskSpecProto.getOutputSpecsCount());
+      new ArrayList<OutputSpec>(taskSpecProto.getOutputSpecsCount());
     if (taskSpecProto.getOutputSpecsCount() > 0) {
       for (IOSpecProto outputSpecProto : taskSpecProto.getOutputSpecsList()) {
         outputSpecList.add(getOutputSpecFromProto(outputSpecProto));
@@ -65,7 +65,7 @@ public class ProtoConverters {
     }
 
     List<GroupInputSpec> groupInputSpecs =
-        new ArrayList<GroupInputSpec>(taskSpecProto.getGroupedInputSpecsCount());
+      new ArrayList<GroupInputSpec>(taskSpecProto.getGroupedInputSpecsCount());
     if (taskSpecProto.getGroupedInputSpecsCount() > 0) {
       for (GroupInputSpecProto groupInputSpecProto : taskSpecProto.getGroupedInputSpecsList()) {
         groupInputSpecs.add(getGroupInputSpecFromProto(groupInputSpecProto));
@@ -76,15 +76,15 @@ public class ProtoConverters {
     if (taskSpecProto.hasTaskConf()) {
       taskConf = new Configuration(false);
       Map<String, String> confMap =
-          DagTypeConverters.convertConfFromProto(taskSpecProto.getTaskConf());
+        DagTypeConverters.convertConfFromProto(taskSpecProto.getTaskConf());
       for (Entry<String, String> e : confMap.entrySet()) {
         taskConf.set(e.getKey(), e.getValue());
       }
     }
     TaskSpec taskSpec =
-        new TaskSpec(taskAttemptID, taskSpecProto.getDagName(), taskSpecProto.getVertexName(),
-            taskSpecProto.getVertexParallelism(), processorDescriptor, inputSpecList,
-            outputSpecList, groupInputSpecs, taskConf);
+      new TaskSpec(taskAttemptID, taskSpecProto.getDagName(), taskSpecProto.getVertexName(),
+        taskSpecProto.getVertexParallelism(), processorDescriptor, inputSpecList,
+        outputSpecList, groupInputSpecs, taskConf);
     return taskSpec;
   }
 
@@ -97,7 +97,7 @@ public class ProtoConverters {
 
     if (taskSpec.getProcessorDescriptor() != null) {
       builder.setProcessorDescriptor(
-          DagTypeConverters.convertToDAGPlan(taskSpec.getProcessorDescriptor()));
+        DagTypeConverters.convertToDAGPlan(taskSpec.getProcessorDescriptor()));
     }
 
     if (taskSpec.getInputs() != null && !taskSpec.getInputs().isEmpty()) {
@@ -115,7 +115,6 @@ public class ProtoConverters {
     if (taskSpec.getGroupInputs() != null && !taskSpec.getGroupInputs().isEmpty()) {
       for (GroupInputSpec groupInputSpec : taskSpec.getGroupInputs()) {
         builder.addGroupedInputSpecs(convertGroupInputSpecToProto(groupInputSpec));
-
       }
     }
     if (taskSpec.getTaskConf() != null) {
@@ -124,23 +123,22 @@ public class ProtoConverters {
       while (iter.hasNext()) {
         Entry<String, String> entry = iter.next();
         confBuilder.addConfKeyValues(PlanKeyValuePair.newBuilder()
-            .setKey(entry.getKey())
-            .setValue(entry.getValue()).build());
+          .setKey(entry.getKey())
+          .setValue(entry.getValue()).build());
       }
       builder.setTaskConf(confBuilder.build());
     }
     return builder.build();
   }
 
-
   public static InputSpec getInputSpecFromProto(IOSpecProto inputSpecProto) {
     InputDescriptor inputDescriptor = null;
     if (inputSpecProto.hasIoDescriptor()) {
       inputDescriptor =
-          DagTypeConverters.convertInputDescriptorFromDAGPlan(inputSpecProto.getIoDescriptor());
+        DagTypeConverters.convertInputDescriptorFromDAGPlan(inputSpecProto.getIoDescriptor());
     }
     InputSpec inputSpec = new InputSpec(inputSpecProto.getConnectedVertexName(), inputDescriptor,
-        inputSpecProto.getPhysicalEdgeCount());
+      inputSpecProto.getPhysicalEdgeCount());
     return inputSpec;
   }
 
@@ -160,11 +158,11 @@ public class ProtoConverters {
     OutputDescriptor outputDescriptor = null;
     if (outputSpecProto.hasIoDescriptor()) {
       outputDescriptor =
-          DagTypeConverters.convertOutputDescriptorFromDAGPlan(outputSpecProto.getIoDescriptor());
+        DagTypeConverters.convertOutputDescriptorFromDAGPlan(outputSpecProto.getIoDescriptor());
     }
     OutputSpec outputSpec =
-        new OutputSpec(outputSpecProto.getConnectedVertexName(), outputDescriptor,
-            outputSpecProto.getPhysicalEdgeCount());
+      new OutputSpec(outputSpecProto.getConnectedVertexName(), outputDescriptor,
+        outputSpecProto.getPhysicalEdgeCount());
     return outputSpec;
   }
 
@@ -182,8 +180,8 @@ public class ProtoConverters {
 
   public static GroupInputSpec getGroupInputSpecFromProto(GroupInputSpecProto groupInputSpecProto) {
     GroupInputSpec groupSpec = new GroupInputSpec(groupInputSpecProto.getGroupName(),
-        groupInputSpecProto.getGroupVerticesList(), DagTypeConverters
-        .convertInputDescriptorFromDAGPlan(groupInputSpecProto.getMergedInputDescriptor()));
+      groupInputSpecProto.getGroupVerticesList(), DagTypeConverters
+      .convertInputDescriptorFromDAGPlan(groupInputSpecProto.getMergedInputDescriptor()));
     return groupSpec;
   }
 
@@ -192,8 +190,7 @@ public class ProtoConverters {
     builder.setGroupName(groupInputSpec.getGroupName());
     builder.addAllGroupVertices(groupInputSpec.getGroupVertices());
     builder.setMergedInputDescriptor(
-        DagTypeConverters.convertToDAGPlan(groupInputSpec.getMergedInputDescriptor()));
+      DagTypeConverters.convertToDAGPlan(groupInputSpec.getMergedInputDescriptor()));
     return builder.build();
   }
-
 }

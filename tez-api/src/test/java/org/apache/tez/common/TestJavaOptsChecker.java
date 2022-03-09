@@ -20,7 +20,7 @@ package org.apache.tez.common;
 
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezException;
-import org.apache.tez.dag.api.TezUncheckedException;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -42,7 +42,7 @@ public class TestJavaOptsChecker {
       Assert.fail("Expected check to fail with opts=" + opts);
     } catch (TezException e) {
       Assert.assertTrue(e.getMessage(),
-          e.getMessage().contains("Invalid/conflicting GC options found"));
+        e.getMessage().contains("Invalid/conflicting GC options found"));
     }
   }
 
@@ -55,7 +55,7 @@ public class TestJavaOptsChecker {
       Assert.fail("Expected check to fail with opts=" + opts);
     } catch (TezException e) {
       Assert.assertTrue(e.getMessage(),
-          e.getMessage().contains("Invalid/conflicting GC options found"));
+        e.getMessage().contains("Invalid/conflicting GC options found"));
     }
 
     // Positive following a negative is still a positive
@@ -65,7 +65,7 @@ public class TestJavaOptsChecker {
       Assert.fail("Expected check to fail with opts=" + opts);
     } catch (TezException e) {
       Assert.assertTrue(e.getMessage(),
-          e.getMessage().contains("Invalid/conflicting GC options found"));
+        e.getMessage().contains("Invalid/conflicting GC options found"));
     }
 
     // Order of positive and negative matters
@@ -75,7 +75,7 @@ public class TestJavaOptsChecker {
       Assert.fail("Expected check to fail with opts=" + opts);
     } catch (TezException e) {
       Assert.assertTrue(e.getMessage(),
-          e.getMessage().contains("Invalid/conflicting GC options found"));
+        e.getMessage().contains("Invalid/conflicting GC options found"));
     }
 
     // Sanity check for good condition
@@ -85,7 +85,6 @@ public class TestJavaOptsChecker {
     // Invalid negative can be ignored
     opts = " -XX:+UseG1GC -XX:+UseParallelGC -XX:-UseG1GC -XX:-UseConcMarkSweepGC ";
     javaOptsChecker.checkOpts(opts);
-
   }
 
   @Test(timeout = 5000)
@@ -105,10 +104,7 @@ public class TestJavaOptsChecker {
       Assert.fail("Expected check to fail with opts=" + opts);
     } catch (TezException e) {
       Assert.assertTrue(e.getMessage(),
-          e.getMessage().contains("Invalid/conflicting GC options found"));
+        e.getMessage().contains("Invalid/conflicting GC options found"));
     }
-
-
   }
-
 }

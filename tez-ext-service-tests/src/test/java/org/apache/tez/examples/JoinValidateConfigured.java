@@ -14,7 +14,6 @@
 
 package org.apache.tez.examples;
 
-
 import java.io.IOException;
 
 import org.apache.hadoop.fs.Path;
@@ -67,7 +66,7 @@ public class JoinValidateConfigured extends JoinValidate {
   }
 
   public DAG createDag(TezConfiguration tezConf, Path lhs, Path rhs, int numPartitions)
-      throws IOException {
+    throws IOException {
     return super.createDag(tezConf, lhs, rhs, numPartitions);
   }
 }

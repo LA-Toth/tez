@@ -14,6 +14,7 @@
 
 package org.apache.tez.runtime.library.common.shuffle.orderedgrouped;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
@@ -26,7 +27,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -56,6 +56,7 @@ import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.common.CompositeInputAttemptIdentifier;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
 import org.apache.tez.runtime.library.common.shuffle.InputAttemptFetchFailure;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -77,7 +78,7 @@ public class TestShuffleScheduler {
     sharedExecutor.shutdownNow();
   }
 
-  @Test (timeout = 10000)
+  @Test(timeout = 10000)
   public void testNumParallelScheduledFetchers() throws IOException, InterruptedException {
     InputContext inputContext = createTezInputContext();
     Configuration conf = new TezConfiguration();
@@ -88,9 +89,9 @@ public class TestShuffleScheduler {
     MergeManager mergeManager = mock(MergeManager.class);
 
     final ShuffleSchedulerForTest scheduler =
-        new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
-            mergeManager,
-            System.currentTimeMillis(), null, false, 0, "srcName", true);
+      new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
+        mergeManager,
+        System.currentTimeMillis(), null, false, 0, "srcName", true);
     Future<Void> executorFuture = null;
     ExecutorService executor = Executors.newFixedThreadPool(1);
     try {
@@ -107,14 +108,13 @@ public class TestShuffleScheduler {
       // Schedule all copies.
       for (int i = 0; i < numInputs; i++) {
         CompositeInputAttemptIdentifier inputAttemptIdentifier =
-            new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
         scheduler.addKnownMapOutput("host" + i, 10000, 1, inputAttemptIdentifier);
         identifiers[i] = inputAttemptIdentifier;
       }
       // wait for all the copies to be scheduled with timeout
       scheduler.latch.await(2000, TimeUnit.MILLISECONDS);
       assertEquals(0, scheduler.latch.getCount());
-
     } finally {
       scheduler.close();
       if (executorFuture != null) {
@@ -124,7 +124,7 @@ public class TestShuffleScheduler {
     }
   }
 
-  @Test(timeout=5000)
+  @Test(timeout = 5000)
   public void testUseSharedExecutor() throws Exception {
     InputContext inputContext = createTezInputContext();
     Configuration conf = new TezConfiguration();
@@ -133,14 +133,14 @@ public class TestShuffleScheduler {
     MergeManager mergeManager = mock(MergeManager.class);
 
     ShuffleSchedulerForTest scheduler = new ShuffleSchedulerForTest(inputContext, conf, numInputs,
-        shuffle, mergeManager, mergeManager, System.currentTimeMillis(), null, false, 0, "srcName");
+      shuffle, mergeManager, mergeManager, System.currentTimeMillis(), null, false, 0, "srcName");
     verify(inputContext, times(0)).createTezFrameworkExecutorService(anyInt(), anyString());
     scheduler.close();
 
     inputContext = createTezInputContext();
     conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCHER_USE_SHARED_POOL, true);
     scheduler = new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
-        mergeManager, System.currentTimeMillis(), null, false, 0, "srcName");
+      mergeManager, System.currentTimeMillis(), null, false, 0, "srcName");
     verify(inputContext).createTezFrameworkExecutorService(anyInt(), anyString());
     scheduler.close();
   }
@@ -154,9 +154,9 @@ public class TestShuffleScheduler {
     MergeManager mergeManager = mock(MergeManager.class);
 
     final ShuffleSchedulerForTest scheduler =
-        new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
-            mergeManager,
-            System.currentTimeMillis(), null, false, 0, "srcName");
+      new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
+        mergeManager,
+        System.currentTimeMillis(), null, false, 0, "srcName");
 
     ExecutorService executor = Executors.newFixedThreadPool(1);
     try {
@@ -172,7 +172,7 @@ public class TestShuffleScheduler {
 
       for (int i = 0; i < numInputs; i++) {
         CompositeInputAttemptIdentifier inputAttemptIdentifier =
-            new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
         scheduler.addKnownMapOutput("host" + i, 10000, 1, inputAttemptIdentifier);
         identifiers[i] = inputAttemptIdentifier;
       }
@@ -185,12 +185,12 @@ public class TestShuffleScheduler {
 
       for (int i = 0; i < numInputs; i++) {
         MapOutput mapOutput = MapOutput
-            .createMemoryMapOutput(identifiers[i], mock(FetchedInputAllocatorOrderedGrouped.class),
-                100, false);
+          .createMemoryMapOutput(identifiers[i], mock(FetchedInputAllocatorOrderedGrouped.class),
+            100, false);
         scheduler.copySucceeded(identifiers[i], mapHosts[i], 20, 25, 100, mapOutput, false);
         scheduler.freeHost(mapHosts[i]);
       }
-      
+
       verify(inputContext, atLeast(numInputs)).notifyProgress();
 
       // Ensure the executor exits, and without an error.
@@ -214,7 +214,7 @@ public class TestShuffleScheduler {
     Configuration conf = new TezConfiguration();
     _testReducerHealth_1(conf);
     conf.setInt(
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST, 4000);
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST, 4000);
     _testReducerHealth_1(conf);
   }
 
@@ -222,48 +222,47 @@ public class TestShuffleScheduler {
     long startTime = System.currentTimeMillis() - 500000;
     Shuffle shuffle = mock(Shuffle.class);
     final ShuffleSchedulerForTest scheduler = createScheduler(startTime, 320,
-        shuffle, conf);
+      shuffle, conf);
 
     int totalProducerNodes = 20;
 
     //Generate 320 events
     for (int i = 0; i < 320; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + (i % totalProducerNodes),
-          10000, i, inputAttemptIdentifier);
+        10000, i, inputAttemptIdentifier);
     }
 
     //100 succeeds
     for (int i = 0; i < 100; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(inputAttemptIdentifier, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
+        10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
     }
 
     //99 fails
     for (int i = 100; i < 199; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-          new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
+        new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
     }
 
-
     InputAttemptIdentifier inputAttemptIdentifier =
-        new InputAttemptIdentifier(200, 0, "attempt_");
+      new InputAttemptIdentifier(200, 0, "attempt_");
 
     //Should fail here and report exception as reducer is not healthy
     scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-        new MapHost("host" + (200 % totalProducerNodes), 10000, 200, 1), false, true);
+      new MapHost("host" + (200 % totalProducerNodes), 10000, 200, 1), false, true);
 
     int minFailurePerHost = conf.getInt(
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST,
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST_DEFAULT);
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST,
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST_DEFAULT);
 
     if (minFailurePerHost <= 4) {
       //As per test threshold. Should fail & retrigger shuffle
@@ -297,31 +296,30 @@ public class TestShuffleScheduler {
     //Generate 0-200 events
     for (int i = 0; i < 200; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + (i % totalProducerNodes),
-          10000, i, inputAttemptIdentifier);
+        10000, i, inputAttemptIdentifier);
     }
     assertEquals(320, scheduler.remainingMaps.get());
 
     //Generate 200-320 events with empty partitions
     for (int i = 200; i < 320; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       scheduler.copySucceeded(inputAttemptIdentifier, null, 0, 0, 0, null, true);
     }
     //120 are successful. so remaining is 200
     assertEquals(200, scheduler.remainingMaps.get());
 
-
     //200 pending to be downloaded. Download 190.
     for (int i = 0; i < 190; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(inputAttemptIdentifier, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
+        10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
     }
 
     assertEquals(10, scheduler.remainingMaps.get());
@@ -329,9 +327,9 @@ public class TestShuffleScheduler {
     //10 fails
     for (int i = 190; i < 200; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-          new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
+        new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
     }
 
     //Shuffle has not stalled. so no issues.
@@ -341,9 +339,9 @@ public class TestShuffleScheduler {
     scheduler.lastProgressTime = System.currentTimeMillis() - 250000;
 
     InputAttemptIdentifier inputAttemptIdentifier =
-        new InputAttemptIdentifier(190, 0, "attempt_");
+      new InputAttemptIdentifier(190, 0, "attempt_");
     scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-        new MapHost("host" + (190 % totalProducerNodes), 10000, 190, 1), false, true);
+      new MapHost("host" + (190 % totalProducerNodes), 10000, 190, 1), false, true);
 
     //Even when it is stalled, need (320 - 300 = 20) * 3 = 60 failures
     verify(scheduler.reporter, times(0)).reportException(any(Throwable.class));
@@ -353,18 +351,18 @@ public class TestShuffleScheduler {
     //fail to download 50 more times across attempts
     for (int i = 190; i < 200; i++) {
       inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       InputAttemptFetchFailure failure = InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), false, true);
+        10000, i, 1), false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), false, true);
+        10000, i, 1), false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), false, true);
+        10000, i, 1), false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), false, true);
+        10000, i, 1), false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), false, true);
+        10000, i, 1), false, true);
     }
 
     assertEquals(61, scheduler.failedShufflesSinceLastCompletion);
@@ -375,23 +373,21 @@ public class TestShuffleScheduler {
     //fail another 30
     for (int i = 110; i < 120; i++) {
       inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       InputAttemptFetchFailure failure =
-          InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier);
+        InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
     }
 
     // Should fail now due to fetcherHealthy. (stall has already happened and
     // these are the only pending tasks)
     verify(shuffle, atLeast(1)).reportException(any(Throwable.class));
   }
-
-
 
   @Test(timeout = 60000)
   /**
@@ -415,27 +411,27 @@ public class TestShuffleScheduler {
     //Generate 320 events
     for (int i = 0; i < 320; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + (i % totalProducerNodes),
-          10000, i, inputAttemptIdentifier);
+        10000, i, inputAttemptIdentifier);
     }
 
     //319 succeeds
     for (int i = 0; i < 319; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(inputAttemptIdentifier, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
+        10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
     }
 
     //1 fails (last fetch)
     InputAttemptIdentifier inputAttemptIdentifier =
-        new InputAttemptIdentifier(319, 0, "attempt_");
+      new InputAttemptIdentifier(319, 0, "attempt_");
     scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-        new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1), false, true);
+      new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1), false, true);
 
     //stall the shuffle
     scheduler.lastProgressTime = System.currentTimeMillis() - 1000000;
@@ -445,11 +441,11 @@ public class TestShuffleScheduler {
     //Retry for 3 more times
     InputAttemptFetchFailure failure = InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier);
     scheduler.copyFailed(failure, new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1),
-        false, true);
+      false, true);
     scheduler.copyFailed(failure, new MapHost("host" + (319 % totalProducerNodes), 10000, 310, 1),
-        false, true);
+      false, true);
     scheduler.copyFailed(failure, new MapHost("host" + (319 % totalProducerNodes), 10000, 310, 1),
-        false, true);
+      false, true);
 
     // failedShufflesSinceLastCompletion has crossed the limits. Throw error
     verify(shuffle, times(0)).reportException(any(Throwable.class));
@@ -478,48 +474,48 @@ public class TestShuffleScheduler {
     //Generate 320 events
     for (int i = 0; i < 320; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + (i % totalProducerNodes),
-          10000, i, inputAttemptIdentifier);
+        10000, i, inputAttemptIdentifier);
     }
 
     //Tasks fail in 20% of nodes 3 times, but are able to proceed further
     for (int i = 0; i < 64; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       InputAttemptFetchFailure failure =
-          InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier);
+        InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier);
 
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
 
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(inputAttemptIdentifier, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
+        10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
     }
 
-      //319 succeeds
+    //319 succeeds
     for (int i = 64; i < 319; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(inputAttemptIdentifier, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
+        10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
     }
 
     //1 fails (last fetch)
     InputAttemptIdentifier inputAttemptIdentifier =
-        new InputAttemptIdentifier(319, 0, "attempt_");
+      new InputAttemptIdentifier(319, 0, "attempt_");
     scheduler.copyFailed(new InputAttemptFetchFailure(inputAttemptIdentifier),
-        new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1), false, true);
+      new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1), false, true);
 
     //stall the shuffle (but within limits)
     scheduler.lastProgressTime = System.currentTimeMillis() - 100000;
@@ -529,11 +525,11 @@ public class TestShuffleScheduler {
     //Retry for 3 more times
     InputAttemptFetchFailure failure = InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier);
     scheduler.copyFailed(failure, new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1),
-        false, true);
+      false, true);
     scheduler.copyFailed(failure, new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1),
-        false, true);
+      false, true);
     scheduler.copyFailed(failure, new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1),
-        false, true);
+      false, true);
 
     // failedShufflesSinceLastCompletion has crossed the limits. 20% of other nodes had failures as
     // well. However, it has failed only in one host. So this should proceed
@@ -543,9 +539,8 @@ public class TestShuffleScheduler {
     //stall the shuffle (but within limits)
     scheduler.lastProgressTime = System.currentTimeMillis() - 300000;
     scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-        new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1), false, true);
+      new MapHost("host" + (319 % totalProducerNodes), 10000, 319, 1), false, true);
     verify(shuffle, times(1)).reportException(any(Throwable.class));
-
   }
 
   @Test(timeout = 60000)
@@ -570,28 +565,28 @@ public class TestShuffleScheduler {
     //Generate 319 events (last event has not arrived)
     for (int i = 0; i < 319; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + (i % totalProducerNodes),
-          10000, i, inputAttemptIdentifier);
+        10000, i, inputAttemptIdentifier);
     }
 
     //318 succeeds
     for (int i = 0; i < 319; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(inputAttemptIdentifier, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
+        10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
     }
 
     //1 fails (last fetch)
     InputAttemptIdentifier inputAttemptIdentifier =
-        new InputAttemptIdentifier(318, 0, "attempt_");
+      new InputAttemptIdentifier(318, 0, "attempt_");
     InputAttemptFetchFailure failure = new InputAttemptFetchFailure(inputAttemptIdentifier);
     scheduler.copyFailed(failure, new MapHost("host" + (318 % totalProducerNodes),
-        10000, 318, 1), false, true);
+      10000, 318, 1), false, true);
 
     //stall the shuffle
     scheduler.lastProgressTime = System.currentTimeMillis() - 1000000;
@@ -600,16 +595,15 @@ public class TestShuffleScheduler {
 
     //Retry for 3 more times
     scheduler.copyFailed(failure, new MapHost("host" + (318 % totalProducerNodes), 10000, 318, 1),
-        false, true);
+      false, true);
     scheduler.copyFailed(failure, new MapHost("host" + (318 % totalProducerNodes), 10000, 318, 1),
-        false, true);
+      false, true);
     scheduler.copyFailed(failure, new MapHost("host" + (318 % totalProducerNodes), 10000, 318, 1),
-        false, true);
+      false, true);
 
     //Shuffle has not received the events completely. So do not bail out yet.
     verify(shuffle, times(0)).reportException(any(Throwable.class));
   }
-
 
   @Test(timeout = 60000)
   /**
@@ -625,50 +619,49 @@ public class TestShuffleScheduler {
   public void testReducerHealth_6() throws IOException {
     Configuration conf = new TezConfiguration();
     conf.setBoolean
-        (TezRuntimeConfiguration
-                .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION, true);
+      (TezRuntimeConfiguration
+        .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION, true);
     _testReducerHealth_6(conf);
 
     conf.setBoolean
-        (TezRuntimeConfiguration
-            .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION, false);
+      (TezRuntimeConfiguration
+        .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION, false);
     _testReducerHealth_6(conf);
-
   }
 
   public void _testReducerHealth_6(Configuration conf) throws IOException {
     long startTime = System.currentTimeMillis() - 500000;
     Shuffle shuffle = mock(Shuffle.class);
     final ShuffleSchedulerForTest scheduler = createScheduler(startTime, 320,
-        shuffle, conf);
+      shuffle, conf);
 
     int totalProducerNodes = 20;
 
     //Generate 320 events (last event has not arrived)
     for (int i = 0; i < 320; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + (i % totalProducerNodes),
-          10000, i, inputAttemptIdentifier);
+        10000, i, inputAttemptIdentifier);
     }
 
     //10 succeeds
     for (int i = 0; i < 10; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(inputAttemptIdentifier, new MapHost("host" + (i % totalProducerNodes),
-          10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
+        10000, i, 1), 100, 200, startTime + (i * 100), mapOutput, false);
     }
 
     //5 fetches fail once
     for (int i = 10; i < 15; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-          new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
+        new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
     }
 
     assertTrue(scheduler.failureCounts.size() >= 5);
@@ -680,18 +673,18 @@ public class TestShuffleScheduler {
     //5 fetches fail repeatedly
     for (int i = 10; i < 15; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-          new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
+        new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
       scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier),
-          new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
+        new MapHost("host" + (i % totalProducerNodes), 10000, i, 1), false, true);
     }
 
     boolean checkFailedFetchSinceLastCompletion = conf.getBoolean
-        (TezRuntimeConfiguration
-                .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION,
-            TezRuntimeConfiguration
-                .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION_DEFAULT);
+      (TezRuntimeConfiguration
+          .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION,
+        TezRuntimeConfiguration
+          .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION_DEFAULT);
     if (checkFailedFetchSinceLastCompletion) {
       // Now bail out, as Shuffle has crossed the
       // failedShufflesSinceLastCompletion limits. (even
@@ -701,7 +694,6 @@ public class TestShuffleScheduler {
       //Do not bail out yet.
       verify(shuffle, atLeast(0)).reportException(any(Throwable.class));
     }
-
   }
 
   @Test(timeout = 60000)
@@ -723,57 +715,57 @@ public class TestShuffleScheduler {
     //Generate 320 events
     for (int i = 0; i < 320; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + (i % totalProducerNodes), 10000, i,
-          inputAttemptIdentifier);
+        inputAttemptIdentifier);
     }
 
     //100 succeeds
     for (int i = 0; i < 100; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(inputAttemptIdentifier, mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(inputAttemptIdentifier,
-          new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          100, 200, startTime + (i * 100), mapOutput, false);
+        new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
+        100, 200, startTime + (i * 100), mapOutput, false);
     }
 
     //99 fails
     for (int i = 100; i < 199; i++) {
       InputAttemptIdentifier inputAttemptIdentifier =
-          new InputAttemptIdentifier(i, 0, "attempt_");
+        new InputAttemptIdentifier(i, 0, "attempt_");
       InputAttemptFetchFailure failure = InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
       scheduler.copyFailed(failure, new MapHost("host" + (i % totalProducerNodes), 10000, i, 1),
-          false, true);
+        false, true);
     }
 
     verify(shuffle, atLeast(1)).reportException(any(Throwable.class));
   }
 
   private ShuffleSchedulerForTest createScheduler(long startTime, int
-      numInputs, Shuffle shuffle, Configuration conf)
-      throws IOException {
+    numInputs, Shuffle shuffle, Configuration conf)
+    throws IOException {
     InputContext inputContext = createTezInputContext();
     MergeManager mergeManager = mock(MergeManager.class);
 
     final ShuffleSchedulerForTest scheduler =
-        new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
-            mergeManager,startTime, null, false, 0, "srcName");
+      new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
+        mergeManager, startTime, null, false, 0, "srcName");
     return scheduler;
   }
 
   private ShuffleSchedulerForTest createScheduler(long startTime, int numInputs, Shuffle shuffle)
-      throws IOException {
+    throws IOException {
     return createScheduler(startTime, numInputs, shuffle, new
-        TezConfiguration());
+      TezConfiguration());
   }
 
   @Test(timeout = 60000)
@@ -783,7 +775,7 @@ public class TestShuffleScheduler {
     final ShuffleSchedulerForTest scheduler = createScheduler(startTime, 1, shuffle);
 
     CompositeInputAttemptIdentifier inputAttemptIdentifier =
-        new CompositeInputAttemptIdentifier(0, 0, "attempt_", 1);
+      new CompositeInputAttemptIdentifier(0, 0, "attempt_", 1);
     scheduler.addKnownMapOutput("host0", 10000, 0, inputAttemptIdentifier);
 
     assertTrue(scheduler.pendingHosts.size() == 1);
@@ -792,20 +784,21 @@ public class TestShuffleScheduler {
 
     //Fails to pull from host0. host0 should be added to penalties
     scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(inputAttemptIdentifier), mapHost,
-        false, true);
+      false, true);
 
     //Should not get host, as it is added to penalty loop
     MapHost host = scheduler.getHost();
-    assertFalse("Host identifier mismatch", (host.getHost() + ":" + host.getPort() + ":" + host.getPartitionId()).equalsIgnoreCase("host0:10000"));
-
+    assertFalse("Host identifier mismatch",
+      (host.getHost() + ":" + host.getPort() + ":" + host.getPartitionId()).equalsIgnoreCase("host0:10000"));
 
     //Refree thread would release it after INITIAL_PENALTY timeout
     Thread.sleep(ShuffleScheduler.INITIAL_PENALTY + 1000);
     host = scheduler.getHost();
-    assertFalse("Host identifier mismatch", (host.getHost() + ":" + host.getPort() + ":" + host.getPartitionId()).equalsIgnoreCase("host0:10000"));
+    assertFalse("Host identifier mismatch",
+      (host.getHost() + ":" + host.getPort() + ":" + host.getPartitionId()).equalsIgnoreCase("host0:10000"));
   }
 
-  @Test (timeout = 20000)
+  @Test(timeout = 20000)
   public void testProgressDuringGetHostWait() throws IOException, InterruptedException {
     long startTime = System.currentTimeMillis();
     Configuration conf = new TezConfiguration();
@@ -836,9 +829,9 @@ public class TestShuffleScheduler {
     MergeManager mergeManager = mock(MergeManager.class);
 
     final ShuffleSchedulerForTest scheduler =
-        new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
-            mergeManager,
-            System.currentTimeMillis(), null, false, 0, "srcName");
+      new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
+        mergeManager,
+        System.currentTimeMillis(), null, false, 0, "srcName");
 
     ExecutorService executor = Executors.newFixedThreadPool(1);
     try {
@@ -854,7 +847,7 @@ public class TestShuffleScheduler {
 
       for (int i = 0; i < numInputs; i++) {
         CompositeInputAttemptIdentifier inputAttemptIdentifier =
-            new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
         scheduler.addKnownMapOutput("host" + i, 10000, 1, inputAttemptIdentifier);
         identifiers[i] = inputAttemptIdentifier;
       }
@@ -868,8 +861,8 @@ public class TestShuffleScheduler {
       // Copy succeeded for 1 less host
       for (int i = 0; i < numInputs - 1; i++) {
         MapOutput mapOutput = MapOutput
-            .createMemoryMapOutput(identifiers[i], mock(FetchedInputAllocatorOrderedGrouped.class),
-                100, false);
+          .createMemoryMapOutput(identifiers[i], mock(FetchedInputAllocatorOrderedGrouped.class),
+            100, false);
         scheduler.copySucceeded(identifiers[i], mapHosts[i], 20, 25, 100, mapOutput, false);
         scheduler.freeHost(mapHosts[i]);
       }
@@ -892,9 +885,9 @@ public class TestShuffleScheduler {
     MergeManager mergeManager = mock(MergeManager.class);
 
     final ShuffleSchedulerForTest scheduler =
-        new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
-            mergeManager,
-            System.currentTimeMillis(), null, false, 0, "srcName");
+      new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
+        mergeManager,
+        System.currentTimeMillis(), null, false, 0, "srcName");
 
     ExecutorService executor = Executors.newFixedThreadPool(1);
 
@@ -910,7 +903,7 @@ public class TestShuffleScheduler {
 
     for (int i = 0; i < numInputs; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + i, 10000, 1, inputAttemptIdentifier);
       identifiers[i] = inputAttemptIdentifier;
     }
@@ -924,8 +917,8 @@ public class TestShuffleScheduler {
     // Copy succeeded for 1 less host
     for (int i = 0; i < numInputs - 1; i++) {
       MapOutput mapOutput = MapOutput
-          .createMemoryMapOutput(identifiers[i], mock(FetchedInputAllocatorOrderedGrouped.class),
-              100, false);
+        .createMemoryMapOutput(identifiers[i], mock(FetchedInputAllocatorOrderedGrouped.class),
+          100, false);
       scheduler.copySucceeded(identifiers[i], mapHosts[i], 20, 25, 100, mapOutput, false);
       scheduler.freeHost(mapHosts[i]);
     }
@@ -933,20 +926,21 @@ public class TestShuffleScheduler {
     try {
       // Close the scheduler on different thread to trigger interrupt
       Thread thread = new Thread(new Runnable() {
-        @Override public void run() {
-            scheduler.close();
+        @Override
+        public void run() {
+          scheduler.close();
         }
       });
       thread.start();
       thread.join();
     } finally {
       assertTrue("Fetcher executor should be shutdown, but still running",
-          scheduler.hasFetcherExecutorStopped());
+        scheduler.hasFetcherExecutorStopped());
       executor.shutdownNow();
     }
   }
 
-  @Test (timeout = 120000)
+  @Test(timeout = 120000)
   public void testPenalties() throws Exception {
     InputContext inputContext = createTezInputContext();
     Configuration conf = new TezConfiguration();
@@ -956,9 +950,9 @@ public class TestShuffleScheduler {
     MergeManager mergeManager = mock(MergeManager.class);
 
     final ShuffleSchedulerForTest scheduler =
-        new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
-            mergeManager,
-            System.currentTimeMillis(), null, false, 0, "srcName");
+      new ShuffleSchedulerForTest(inputContext, conf, numInputs, shuffle, mergeManager,
+        mergeManager,
+        System.currentTimeMillis(), null, false, 0, "srcName");
 
     ExecutorService executor = Executors.newFixedThreadPool(1);
 
@@ -974,7 +968,7 @@ public class TestShuffleScheduler {
 
     for (int i = 0; i < numInputs; i++) {
       CompositeInputAttemptIdentifier inputAttemptIdentifier =
-          new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
+        new CompositeInputAttemptIdentifier(i, 0, "attempt_", 1);
       scheduler.addKnownMapOutput("host" + i, 10000, 1, inputAttemptIdentifier);
       identifiers[i] = inputAttemptIdentifier;
     }
@@ -987,7 +981,7 @@ public class TestShuffleScheduler {
 
     for (int i = 0; i < 10; i++) {
       scheduler.copyFailed(InputAttemptFetchFailure.fromAttempt(identifiers[0]), mapHosts[0], false,
-          false);
+        false);
     }
     ShuffleScheduler.Penalty[] penaltyArray = new ShuffleScheduler.Penalty[scheduler.getPenalties().size()];
     scheduler.getPenalties().toArray(penaltyArray);
@@ -1007,28 +1001,28 @@ public class TestShuffleScheduler {
     ByteBuffer shuffleBuffer = ByteBuffer.allocate(4).putInt(0, 4);
     doReturn(shuffleBuffer).when(inputContext).getServiceProviderMetaData(anyString());
     Token<JobTokenIdentifier>
-        sessionToken = new Token<JobTokenIdentifier>(new JobTokenIdentifier(new Text("text")),
-        new JobTokenSecretManager());
+      sessionToken = new Token<JobTokenIdentifier>(new JobTokenIdentifier(new Text("text")),
+      new JobTokenSecretManager());
     ByteBuffer tokenBuffer = TezCommonUtils.serializeServiceData(sessionToken);
     doReturn(tokenBuffer).when(inputContext).getServiceConsumerMetaData(anyString());
     when(inputContext.createTezFrameworkExecutorService(anyInt(), anyString())).thenAnswer(
-        new Answer<ExecutorService>() {
-          @Override
-          public ExecutorService answer(InvocationOnMock invocation) throws Throwable {
-            return sharedExecutor.createExecutorService(
-                invocation.getArgumentAt(0, Integer.class),
-                invocation.getArgumentAt(1, String.class));
-          }
-        });
+      new Answer<ExecutorService>() {
+        @Override
+        public ExecutorService answer(InvocationOnMock invocation) throws Throwable {
+          return sharedExecutor.createExecutorService(
+            invocation.getArgumentAt(0, Integer.class),
+            invocation.getArgumentAt(1, String.class));
+        }
+      });
     return inputContext;
   }
 
   private static class ShuffleSchedulerForTest extends ShuffleScheduler {
 
-    private CountDownLatch latch = new CountDownLatch(10);
     private final boolean fetcherShouldWait;
     private final ExceptionReporter reporter;
     private final InputContext inputContext;
+    private CountDownLatch latch = new CountDownLatch(10);
 
     public ShuffleSchedulerForTest(InputContext inputContext, Configuration conf,
                                    int numberOfInputs,
@@ -1039,7 +1033,7 @@ public class TestShuffleScheduler {
                                    boolean ifileReadAhead, int ifileReadAheadLength,
                                    String srcNameTrimmed) throws IOException {
       this(inputContext, conf, numberOfInputs, shuffle, mergeManager, allocator, startTime, codec,
-          ifileReadAhead, ifileReadAheadLength, srcNameTrimmed, false);
+        ifileReadAhead, ifileReadAheadLength, srcNameTrimmed, false);
     }
 
     public ShuffleSchedulerForTest(InputContext inputContext, Configuration conf,
@@ -1051,7 +1045,7 @@ public class TestShuffleScheduler {
                                    boolean ifileReadAhead, int ifileReadAheadLength,
                                    String srcNameTrimmed, boolean fetcherShouldWait) throws IOException {
       super(inputContext, conf, numberOfInputs, shuffle, mergeManager, allocator, startTime, codec,
-          ifileReadAhead, ifileReadAheadLength, srcNameTrimmed);
+        ifileReadAhead, ifileReadAheadLength, srcNameTrimmed);
       this.fetcherShouldWait = fetcherShouldWait;
       this.reporter = shuffle;
       this.inputContext = inputContext;

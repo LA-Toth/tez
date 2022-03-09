@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,17 +18,18 @@
 
 package org.apache.tez.dag.app.launcher;
 
+import java.io.IOException;
+import java.net.URL;
+
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.http.BaseHttpConnection;
 import org.apache.tez.http.HttpConnectionParams;
 import org.apache.tez.runtime.library.common.TezRuntimeUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.net.URL;
 
 class DagDeleteRunnable implements Runnable {
   private static final Logger LOG = LoggerFactory.getLogger(DagDeleteRunnable.class);
@@ -53,10 +54,10 @@ class DagDeleteRunnable implements Runnable {
     BaseHttpConnection httpConnection = null;
     try {
       URL baseURL = TezRuntimeUtils.constructBaseURIForShuffleHandlerDagComplete(
-          nodeId.getHost(), shufflePort,
-          dag.getApplicationId().toString(), dag.getId(), false);
+        nodeId.getHost(), shufflePort,
+        dag.getApplicationId().toString(), dag.getId(), false);
       httpConnection = TezRuntimeUtils.getHttpConnection(true, baseURL, httpConnectionParams,
-          "DAGDelete", jobTokenSecretManager);
+        "DAGDelete", jobTokenSecretManager);
       httpConnection.connect();
       httpConnection.getInputStream();
     } catch (Exception e) {

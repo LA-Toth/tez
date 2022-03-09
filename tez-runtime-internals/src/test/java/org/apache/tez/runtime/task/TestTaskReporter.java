@@ -34,8 +34,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.common.collect.Lists;
-
 import org.apache.tez.common.TezTaskUmbilicalProtocol;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.TezUncheckedException;
@@ -46,6 +44,8 @@ import org.apache.tez.runtime.api.impl.TaskStatistics;
 import org.apache.tez.runtime.api.impl.TezEvent;
 import org.apache.tez.runtime.api.impl.TezHeartbeatRequest;
 import org.apache.tez.runtime.api.impl.TezHeartbeatResponse;
+
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -93,9 +93,9 @@ public class TestTaskReporter {
 
     // Setup the sleep time to be way higher than the test timeout
     TaskReporter.HeartbeatCallable heartbeatCallable =
-        new TaskReporter.HeartbeatCallable(mockTask, mockUmbilical, 100000, 100000, maxEvents,
-            new AtomicLong(0),
-            "containerIdStr");
+      new TaskReporter.HeartbeatCallable(mockTask, mockUmbilical, 100000, 100000, maxEvents,
+        new AtomicLong(0),
+        "containerIdStr");
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
     executor.submit(heartbeatCallable);
@@ -112,9 +112,8 @@ public class TestTaskReporter {
     } finally {
       executor.shutdownNow();
     }
-
   }
-  
+
   @Test(timeout = 10000)
   public void testEventThrottling() throws Exception {
     TezTaskAttemptID mockTaskAttemptId = mock(TezTaskAttemptID.class);
@@ -133,9 +132,9 @@ public class TestTaskReporter {
 
     // Setup the sleep time to be way higher than the test timeout
     TaskReporter.HeartbeatCallable heartbeatCallable =
-        new TaskReporter.HeartbeatCallable(mockTask, mockUmbilical, 100000, 100000, 5,
-            new AtomicLong(0),
-            "containerIdStr");
+      new TaskReporter.HeartbeatCallable(mockTask, mockUmbilical, 100000, 100000, 5,
+        new AtomicLong(0),
+        "containerIdStr");
 
     ExecutorService executor = Executors.newSingleThreadExecutor();
     try {
@@ -152,7 +151,7 @@ public class TestTaskReporter {
     Assert.assertEquals(1, req.getMaxEvents());
   }
 
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void testStatusUpdateAfterInitializationAndCounterFlag() {
     TezTaskAttemptID mockTaskAttemptId = mock(TezTaskAttemptID.class);
     LogicalIOProcessorRuntimeTask mockTask = mock(LogicalIOProcessorRuntimeTask.class);
@@ -161,20 +160,20 @@ public class TestTaskReporter {
     boolean progressNotified = false;
     doReturn(progressNotified).when(mockTask).getAndClearProgressNotification();
     TezTaskUmbilicalProtocol mockUmbilical = mock(TezTaskUmbilicalProtocol.class);
-    
+
     float progress = 0.5f;
     TaskStatistics stats = new TaskStatistics();
     TezCounters counters = new TezCounters();
     doReturn(progress).when(mockTask).getProgress();
     doReturn(stats).when(mockTask).getTaskStatistics();
     doReturn(counters).when(mockTask).getCounters();
-    
+
     // Setup the sleep time to be way higher than the test timeout
     TaskReporter.HeartbeatCallable heartbeatCallable =
-        new TaskReporter.HeartbeatCallable(mockTask, mockUmbilical, 100000, 100000, 5,
-            new AtomicLong(0),
-            "containerIdStr");
-    
+      new TaskReporter.HeartbeatCallable(mockTask, mockUmbilical, 100000, 100000, 5,
+        new AtomicLong(0),
+        "containerIdStr");
+
     // task not initialized - nothing obtained from task
     doReturn(false).when(mockTask).hasInitialized();
     TaskStatusUpdateEvent event = heartbeatCallable.getStatusUpdateEvent(true);
@@ -215,7 +214,6 @@ public class TestTaskReporter {
     Assert.assertEquals(progressNotified, event.getProgressNotified());
     Assert.assertEquals(counters, event.getCounters());
     Assert.assertEquals(stats, event.getStatistics());
-
   }
 
   private List<TezEvent> createEvents(int numEvents) {

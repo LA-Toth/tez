@@ -47,12 +47,12 @@ public class ProtoMessageReader<T extends MessageLite> implements Closeable {
     return filePath;
   }
 
-  public void setOffset(long offset) throws IOException {
-    reader.seek(offset);
-  }
-
   public long getOffset() throws IOException {
     return reader.getPosition();
+  }
+
+  public void setOffset(long offset) throws IOException {
+    reader.seek(offset);
   }
 
   public T readEvent() throws IOException {

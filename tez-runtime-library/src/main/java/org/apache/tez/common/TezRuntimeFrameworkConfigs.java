@@ -29,16 +29,14 @@ import org.apache.hadoop.classification.InterfaceAudience.Private;
 @Private
 public class TezRuntimeFrameworkConfigs {
 
+  public static final String TEZ_RUNTIME_METRICS_SESSION_ID_DEFAULT = "";
   private static final String TEZ_RUNTIME_FRAMEWORK_PREFIX = "tez.runtime.framework.";
-
   /**
    * List of directories available to the Runtime.
    */
   public static final String LOCAL_DIRS = TEZ_RUNTIME_FRAMEWORK_PREFIX + "local.dirs";
-
-  public static final String TEZ_RUNTIME_NUM_EXPECTED_PARTITIONS = TEZ_RUNTIME_FRAMEWORK_PREFIX + "num.expected.partitions";
-
+  public static final String TEZ_RUNTIME_NUM_EXPECTED_PARTITIONS =
+    TEZ_RUNTIME_FRAMEWORK_PREFIX + "num.expected.partitions";
   public static final String TEZ_RUNTIME_METRICS_SESSION_ID = TEZ_RUNTIME_FRAMEWORK_PREFIX +
-      "metrics.session.id";
-  public static final String TEZ_RUNTIME_METRICS_SESSION_ID_DEFAULT = "";
+    "metrics.session.id";
 }

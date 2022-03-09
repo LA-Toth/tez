@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -39,10 +39,6 @@ public enum HistoryLogLevel {
 
   public static final HistoryLogLevel DEFAULT = ALL;
 
-  public boolean shouldLog(HistoryLogLevel eventLevel) {
-    return eventLevel.ordinal() <= ordinal();
-  }
-
   public static HistoryLogLevel getLogLevel(Configuration conf, HistoryLogLevel defaultValue) {
     String logLevel = conf.getTrimmed(TezConfiguration.TEZ_HISTORY_LOGGING_LOGLEVEL);
     if (logLevel == null) {
@@ -60,5 +56,9 @@ public enum HistoryLogLevel {
       }
     }
     return true;
+  }
+
+  public boolean shouldLog(HistoryLogLevel eventLevel) {
+    return eventLevel.ordinal() <= ordinal();
   }
 }

@@ -18,16 +18,17 @@
 
 package org.apache.tez.common.counters;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.tez.dag.api.TezConfiguration;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @InterfaceAudience.Private
 public class Limits {
-  
+
   private static final Logger LOG = LoggerFactory.getLogger(Limits.class);
 
   private static final Configuration DEFAULT_CONFIGURATION = new TezConfiguration();
@@ -41,6 +42,9 @@ public class Limits {
     init(DEFAULT_CONFIGURATION);
   }
 
+  private int totalCounters;
+  private LimitExceededException firstViolation;
+
   public synchronized static void setConfiguration(Configuration conf) {
     // see change to reset()
     if (Limits.conf == DEFAULT_CONFIGURATION && conf != null) {
@@ -51,20 +55,17 @@ public class Limits {
   private static void init(Configuration conf) {
     Limits.conf = conf;
     GROUP_NAME_MAX = conf.getInt(TezConfiguration.TEZ_COUNTERS_GROUP_NAME_MAX_LENGTH,
-        TezConfiguration.TEZ_COUNTERS_GROUP_NAME_MAX_LENGTH_DEFAULT);
+      TezConfiguration.TEZ_COUNTERS_GROUP_NAME_MAX_LENGTH_DEFAULT);
     COUNTER_NAME_MAX = conf.getInt(TezConfiguration.TEZ_COUNTERS_COUNTER_NAME_MAX_LENGTH,
-        TezConfiguration.TEZ_COUNTERS_COUNTER_NAME_MAX_LENGTH_DEFAULT);
+      TezConfiguration.TEZ_COUNTERS_COUNTER_NAME_MAX_LENGTH_DEFAULT);
     GROUPS_MAX = conf.getInt(TezConfiguration.TEZ_COUNTERS_MAX_GROUPS,
-        TezConfiguration.TEZ_COUNTERS_MAX_GROUPS_DEFAULT);
+      TezConfiguration.TEZ_COUNTERS_MAX_GROUPS_DEFAULT);
     COUNTERS_MAX =
-        conf.getInt(TezConfiguration.TEZ_COUNTERS_MAX, TezConfiguration.TEZ_COUNTERS_MAX_DEFAULT);
+      conf.getInt(TezConfiguration.TEZ_COUNTERS_MAX, TezConfiguration.TEZ_COUNTERS_MAX_DEFAULT);
     LOG.info("Counter limits initialized with parameters: " + " GROUP_NAME_MAX=" + GROUP_NAME_MAX
-        + ", MAX_GROUPS=" + GROUPS_MAX + ", COUNTER_NAME_MAX=" + COUNTER_NAME_MAX
-        + ", MAX_COUNTERS=" + COUNTERS_MAX);
+      + ", MAX_GROUPS=" + GROUPS_MAX + ", COUNTER_NAME_MAX=" + COUNTER_NAME_MAX
+      + ", MAX_COUNTERS=" + COUNTERS_MAX);
   }
-
-  private int totalCounters;
-  private LimitExceededException firstViolation;
 
   public static String filterName(String name, int maxLen) {
     return name.length() > maxLen ? name.substring(0, maxLen - 1) : name;
@@ -78,13 +79,19 @@ public class Limits {
     return filterName(name, GROUP_NAME_MAX);
   }
 
+  @VisibleForTesting
+  @InterfaceAudience.Private
+  public synchronized static void reset() {
+    conf = DEFAULT_CONFIGURATION;
+  }
+
   public synchronized void checkCounters(int size) {
     if (firstViolation != null) {
       throw new LimitExceededException(firstViolation);
     }
     if (size > COUNTERS_MAX) {
-      firstViolation = new LimitExceededException("Too many counters: "+ size +
-                                                  " max="+ COUNTERS_MAX);
+      firstViolation = new LimitExceededException("Too many counters: " + size +
+        " max=" + COUNTERS_MAX);
       throw firstViolation;
     }
   }
@@ -99,15 +106,8 @@ public class Limits {
       throw new LimitExceededException(firstViolation);
     }
     if (size > GROUPS_MAX) {
-      firstViolation = new LimitExceededException("Too many counter groups: "+
-                                                  size +" max="+ GROUPS_MAX);
+      firstViolation = new LimitExceededException("Too many counter groups: " +
+        size + " max=" + GROUPS_MAX);
     }
   }
-
-  @VisibleForTesting
-  @InterfaceAudience.Private
-  public synchronized static void reset() {
-    conf = DEFAULT_CONFIGURATION;
-  }
-
 }

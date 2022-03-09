@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,6 @@ package org.apache.tez.dag.history.events;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.history.SummaryEvent;
@@ -30,6 +28,9 @@ import org.apache.tez.dag.recovery.records.RecoveryProtos;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.DAGKillRequestProto;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.SummaryEventProto;
 import org.apache.tez.dag.utils.ProtoUtils;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class DAGKillRequestEvent implements HistoryEvent, SummaryEvent {
 
@@ -68,10 +69,10 @@ public class DAGKillRequestEvent implements HistoryEvent, SummaryEvent {
 
   public DAGKillRequestProto toProto() {
     return DAGKillRequestProto.newBuilder()
-        .setDagId(dagID.toString())
-        .setKillRequestTime(killRequestTime)
-        .setIsSessionStopped(isSessionStopped)
-        .build();
+      .setDagId(dagID.toString())
+      .setKillRequestTime(killRequestTime)
+      .setIsSessionStopped(isSessionStopped)
+      .build();
   }
 
   @Override
@@ -82,7 +83,7 @@ public class DAGKillRequestEvent implements HistoryEvent, SummaryEvent {
     }
     fromProto(proto);
   }
-  
+
   public void fromProto(RecoveryProtos.DAGKillRequestProto proto) {
     this.dagID = TezDAGID.fromString(proto.getDagId());
     this.killRequestTime = proto.getKillRequestTime();
@@ -91,15 +92,15 @@ public class DAGKillRequestEvent implements HistoryEvent, SummaryEvent {
 
   @Override
   public void toSummaryProtoStream(OutputStream outputStream)
-      throws IOException {
+    throws IOException {
     ProtoUtils.toSummaryEventProto(dagID, killRequestTime,
         HistoryEventType.DAG_KILL_REQUEST, isSessionStopped ? new byte[]{1} : new byte[]{0})
-        .writeDelimitedTo(outputStream);
+      .writeDelimitedTo(outputStream);
   }
 
   @Override
   public void fromSummaryProtoStream(SummaryEventProto proto)
-      throws IOException {
+    throws IOException {
     this.dagID = TezDAGID.fromString(proto.getDagId());
     this.killRequestTime = proto.getTimestamp();
     if (proto.getEventPayload().byteAt(0) == 1) {
@@ -117,7 +118,7 @@ public class DAGKillRequestEvent implements HistoryEvent, SummaryEvent {
   public TezDAGID getDagID() {
     return dagID;
   }
-  
+
   public long getKillRequestTime() {
     return killRequestTime;
   }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,10 +31,10 @@ import org.apache.tez.common.ATSConstants;
 import org.apache.tez.dag.api.EdgeManagerPluginDescriptor;
 import org.apache.tez.dag.api.EdgeProperty;
 import org.apache.tez.dag.api.EdgeProperty.DataMovementType;
-import org.apache.tez.dag.api.InputDescriptor;
-import org.apache.tez.dag.api.OutputDescriptor;
 import org.apache.tez.dag.api.EdgeProperty.DataSourceType;
 import org.apache.tez.dag.api.EdgeProperty.SchedulingType;
+import org.apache.tez.dag.api.InputDescriptor;
+import org.apache.tez.dag.api.OutputDescriptor;
 import org.apache.tez.dag.api.oldrecords.TaskAttemptState;
 import org.apache.tez.dag.api.oldrecords.TaskState;
 import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
@@ -59,11 +59,11 @@ import org.apache.tez.dag.history.events.TaskAttemptStartedEvent;
 import org.apache.tez.dag.history.events.TaskFinishedEvent;
 import org.apache.tez.dag.history.events.TaskStartedEvent;
 import org.apache.tez.dag.history.events.VertexCommitStartedEvent;
+import org.apache.tez.dag.history.events.VertexConfigurationDoneEvent;
 import org.apache.tez.dag.history.events.VertexFinishedEvent;
 import org.apache.tez.dag.history.events.VertexGroupCommitFinishedEvent;
 import org.apache.tez.dag.history.events.VertexGroupCommitStartedEvent;
 import org.apache.tez.dag.history.events.VertexInitializedEvent;
-import org.apache.tez.dag.history.events.VertexConfigurationDoneEvent;
 import org.apache.tez.dag.history.events.VertexStartedEvent;
 import org.apache.tez.dag.history.utils.DAGUtils;
 import org.apache.tez.dag.records.TaskAttemptTerminationCause;
@@ -71,6 +71,7 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
+
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -113,18 +114,18 @@ public class TestHistoryEventJsonConversion {
       switch (eventType) {
         case APP_LAUNCHED:
           event = new AppLaunchedEvent(applicationId, random.nextInt(), random.nextInt(),
-              user, new Configuration(false), null);
+            user, new Configuration(false), null);
           break;
         case AM_LAUNCHED:
           event = new AMLaunchedEvent(applicationAttemptId, random.nextInt(), random.nextInt(),
-              user);
+            user);
           break;
         case AM_STARTED:
           event = new AMStartedEvent(applicationAttemptId, random.nextInt(), user);
           break;
         case DAG_SUBMITTED:
           event = new DAGSubmittedEvent(tezDAGID, random.nextInt(), dagPlan, applicationAttemptId,
-              null, user, null, null, "Q_" + eventType.name());
+            null, user, null, null, "Q_" + eventType.name());
           break;
         case DAG_INITIALIZED:
           event = new DAGInitializedEvent(tezDAGID, random.nextInt(), user, dagPlan.getName(), null);
@@ -134,11 +135,11 @@ public class TestHistoryEventJsonConversion {
           break;
         case DAG_FINISHED:
           event = new DAGFinishedEvent(tezDAGID, random.nextInt(), random.nextInt(), DAGState.ERROR,
-              null, null, user, dagPlan.getName(), null, applicationAttemptId, dagPlan);
+            null, null, user, dagPlan.getName(), null, applicationAttemptId, dagPlan);
           break;
         case VERTEX_INITIALIZED:
           event = new VertexInitializedEvent(tezVertexID, "v1", random.nextInt(), random.nextInt(),
-              random.nextInt(), "proc", null, null, null);
+            random.nextInt(), "proc", null, null, null);
           break;
         case VERTEX_STARTED:
           event = new VertexStartedEvent(tezVertexID, random.nextInt(), random.nextInt());
@@ -148,29 +149,29 @@ public class TestHistoryEventJsonConversion {
           break;
         case VERTEX_FINISHED:
           event = new VertexFinishedEvent(tezVertexID, "v1", 1, random.nextInt(), random.nextInt(),
-              random.nextInt(), random.nextInt(), random.nextInt(), VertexState.ERROR,
-              null, null, null, null, null);
+            random.nextInt(), random.nextInt(), random.nextInt(), VertexState.ERROR,
+            null, null, null, null, null);
           break;
         case TASK_STARTED:
           event = new TaskStartedEvent(tezTaskID, "v1", random.nextInt(), random.nextInt());
           break;
         case TASK_FINISHED:
           event = new TaskFinishedEvent(tezTaskID, "v1", random.nextInt(), random.nextInt(),
-              tezTaskAttemptID, TaskState.FAILED, null, null, 0);
+            tezTaskAttemptID, TaskState.FAILED, null, null, 0);
           break;
         case TASK_ATTEMPT_STARTED:
           event = new TaskAttemptStartedEvent(tezTaskAttemptID, "v1", random.nextInt(), containerId,
-              nodeId, null, null, "nodeHttpAddress");
+            nodeId, null, null, "nodeHttpAddress");
           break;
         case TASK_ATTEMPT_FINISHED:
           event = new TaskAttemptFinishedEvent(tezTaskAttemptID, "v1", random.nextInt(),
-              random.nextInt(), TaskAttemptState.KILLED, null, TaskAttemptTerminationCause.TERMINATED_BY_CLIENT,
-              null, null, null, null, 0, null, 0,
-              containerId, nodeId, null, null, "nodeHttpAddress");
+            random.nextInt(), TaskAttemptState.KILLED, null, TaskAttemptTerminationCause.TERMINATED_BY_CLIENT,
+            null, null, null, null, 0, null, 0,
+            containerId, nodeId, null, null, "nodeHttpAddress");
           break;
         case CONTAINER_LAUNCHED:
           event = new ContainerLaunchedEvent(containerId, random.nextInt(),
-              applicationAttemptId);
+            applicationAttemptId);
           break;
         case CONTAINER_STOPPED:
           event = new ContainerStoppedEvent(containerId, random.nextInt(), -1, applicationAttemptId);
@@ -189,7 +190,7 @@ public class TestHistoryEventJsonConversion {
           break;
         case DAG_RECOVERED:
           event = new DAGRecoveredEvent(applicationAttemptId, tezDAGID, dagPlan.getName(), user,
-              1l, null);
+            1l, null);
           break;
         case DAG_KILL_REQUEST:
           event = new DAGKillRequestEvent();
@@ -204,9 +205,9 @@ public class TestHistoryEventJsonConversion {
       if (eventType == HistoryEventType.DAG_SUBMITTED) {
         try {
           Assert.assertEquals("Q_" + eventType.name(), json.getJSONObject(ATSConstants.OTHER_INFO)
-              .getString(ATSConstants.DAG_QUEUE_NAME));
+            .getString(ATSConstants.DAG_QUEUE_NAME));
           Assert.assertEquals("Q_" + eventType.name(), json
-              .getJSONObject(ATSConstants.PRIMARY_FILTERS).getString(ATSConstants.DAG_QUEUE_NAME));
+            .getJSONObject(ATSConstants.PRIMARY_FILTERS).getString(ATSConstants.DAG_QUEUE_NAME));
         } catch (JSONException ex) {
           Assert.fail("Exception: " + ex.getMessage() + " for type: " + eventType);
         }
@@ -217,16 +218,16 @@ public class TestHistoryEventJsonConversion {
   @Test(timeout = 5000)
   public void testConvertVertexReconfigureDoneEvent() throws JSONException {
     TezVertexID vId = TezVertexID.getInstance(
-        TezDAGID.getInstance(
-            ApplicationId.newInstance(1l, 1), 1), 1);
+      TezDAGID.getInstance(
+        ApplicationId.newInstance(1l, 1), 1), 1);
     Map<String, EdgeProperty> edgeMgrs =
-        new HashMap<String, EdgeProperty>();
-    
+      new HashMap<String, EdgeProperty>();
+
     edgeMgrs.put("a", EdgeProperty.create(EdgeManagerPluginDescriptor.create("a.class")
         .setHistoryText("text"), DataSourceType.PERSISTED, SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create("Out"), InputDescriptor.create("In")));
+      OutputDescriptor.create("Out"), InputDescriptor.create("In")));
     VertexConfigurationDoneEvent event = new VertexConfigurationDoneEvent(vId, 0L, 1, null,
-        edgeMgrs, null, true);
+      edgeMgrs, null, true);
 
     JSONObject jsonObject = HistoryEventJsonConversion.convertToJson(event);
     Assert.assertNotNull(jsonObject);
@@ -238,7 +239,7 @@ public class TestHistoryEventJsonConversion {
 
     JSONObject evt = events.getJSONObject(0);
     Assert.assertEquals(HistoryEventType.VERTEX_CONFIGURE_DONE.name(),
-        evt.getString(ATSConstants.EVENT_TYPE));
+      evt.getString(ATSConstants.EVENT_TYPE));
 
     JSONObject evtInfo = evt.getJSONObject(ATSConstants.EVENT_INFO);
     Assert.assertEquals(1, evtInfo.getInt(ATSConstants.NUM_TASKS));
@@ -250,11 +251,8 @@ public class TestHistoryEventJsonConversion {
     JSONObject updatedEdgeMgr = updatedEdgeMgrs.getJSONObject("a");
 
     Assert.assertEquals(DataMovementType.CUSTOM.name(),
-        updatedEdgeMgr.getString(DAGUtils.DATA_MOVEMENT_TYPE_KEY));
+      updatedEdgeMgr.getString(DAGUtils.DATA_MOVEMENT_TYPE_KEY));
     Assert.assertEquals("In", updatedEdgeMgr.getString(DAGUtils.EDGE_DESTINATION_CLASS_KEY));
     Assert.assertEquals("a.class", updatedEdgeMgr.getString(DAGUtils.EDGE_MANAGER_CLASS_KEY));
-
   }
-
-
 }

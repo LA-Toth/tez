@@ -32,19 +32,17 @@ import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.dag.app.TezTaskCommunicatorImpl;
 import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
+
 import org.junit.Test;
 
 public class TestTezTaskCommunicatorManager {
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testContainerAliveOnGetTask() throws IOException {
 
     TaskCommunicatorContext context = mock(TaskCommunicatorContext.class);
     Configuration conf = new Configuration(false);
     UserPayload userPayload = TezUtils.createUserPayloadFromConf(conf);
-
-
-
 
     ApplicationId appId = ApplicationId.newInstance(1000, 1);
     ApplicationAttemptId appAttemptId = ApplicationAttemptId.newInstance(appId, 1);

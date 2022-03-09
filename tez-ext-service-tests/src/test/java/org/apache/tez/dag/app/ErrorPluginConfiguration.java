@@ -80,7 +80,7 @@ public class ErrorPluginConfiguration {
 
   @SuppressWarnings("unchecked")
   public static ErrorPluginConfiguration toErrorPluginConfiguration(UserPayload userPayload) throws
-      IOException, ClassNotFoundException {
+    IOException, ClassNotFoundException {
 
     byte[] b = new byte[userPayload.getPayload().remaining()];
     userPayload.getPayload().get(b);
@@ -92,15 +92,29 @@ public class ErrorPluginConfiguration {
     return conf;
   }
 
+  public static void processError(ErrorPluginConfiguration conf, ServicePluginContextBase context) {
+    if (conf.shouldThrowError()) {
+      throw new RuntimeException(ErrorPluginConfiguration.THROW_ERROR_EXCEPTION_STRING);
+    } else if (conf.shouldReportFatalError(null)) {
+      context.reportError(ServicePluginErrorDefaults.INCONSISTENT_STATE,
+        ErrorPluginConfiguration.REPORT_FATAL_ERROR_MESSAGE,
+        context.getCurrentDagInfo());
+    } else if (conf.shouldReportNonFatalError(null)) {
+      context.reportError(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE,
+        ErrorPluginConfiguration.REPORT_NONFATAL_ERROR_MESSAGE,
+        context.getCurrentDagInfo());
+    }
+  }
+
   public boolean shouldThrowError() {
     return (kv.containsKey(CONF_THROW_ERROR) && Boolean.parseBoolean(kv.get(CONF_THROW_ERROR)));
   }
 
   public boolean shouldReportFatalError(String dagName) {
     if (kv.containsKey(CONF_REPORT_ERROR) && Boolean.parseBoolean(kv.get(CONF_REPORT_ERROR)) &&
-        Boolean.parseBoolean(kv.get(CONF_REPORT_ERROR_FATAL))) {
+      Boolean.parseBoolean(kv.get(CONF_REPORT_ERROR_FATAL))) {
       if (dagName == null || dagName.isEmpty() || kv.get(CONF_REPORT_ERROR_DAG_NAME).equals("*") ||
-          kv.get(CONF_REPORT_ERROR_DAG_NAME).equals(dagName)) {
+        kv.get(CONF_REPORT_ERROR_DAG_NAME).equals(dagName)) {
         return true;
       }
     }
@@ -109,26 +123,12 @@ public class ErrorPluginConfiguration {
 
   public boolean shouldReportNonFatalError(String dagName) {
     if (kv.containsKey(CONF_REPORT_ERROR) && Boolean.parseBoolean(kv.get(CONF_REPORT_ERROR)) &&
-        Boolean.parseBoolean(kv.get(CONF_REPORT_ERROR_FATAL)) == false) {
+      Boolean.parseBoolean(kv.get(CONF_REPORT_ERROR_FATAL)) == false) {
       if (dagName == null || dagName.isEmpty() || kv.get(CONF_REPORT_ERROR_DAG_NAME).equals("*") ||
-          kv.get(CONF_REPORT_ERROR_DAG_NAME).equals(dagName)) {
+        kv.get(CONF_REPORT_ERROR_DAG_NAME).equals(dagName)) {
         return true;
       }
     }
     return false;
-  }
-
-  public static void processError(ErrorPluginConfiguration conf, ServicePluginContextBase context) {
-    if (conf.shouldThrowError()) {
-      throw new RuntimeException(ErrorPluginConfiguration.THROW_ERROR_EXCEPTION_STRING);
-    } else if (conf.shouldReportFatalError(null)) {
-      context.reportError(ServicePluginErrorDefaults.INCONSISTENT_STATE,
-          ErrorPluginConfiguration.REPORT_FATAL_ERROR_MESSAGE,
-          context.getCurrentDagInfo());
-    } else if (conf.shouldReportNonFatalError(null)) {
-      context.reportError(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE,
-          ErrorPluginConfiguration.REPORT_NONFATAL_ERROR_MESSAGE,
-          context.getCurrentDagInfo());
-    }
   }
 }

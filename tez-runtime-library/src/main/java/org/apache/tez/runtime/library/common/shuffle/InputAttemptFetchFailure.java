@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,22 +40,10 @@ public class InputAttemptFetchFailure {
   }
 
   public InputAttemptFetchFailure(InputAttemptIdentifier inputAttemptIdentifier,
-      boolean isLocalFetch, boolean isDiskErrorAtSource) {
+                                  boolean isLocalFetch, boolean isDiskErrorAtSource) {
     this.inputAttemptIdentifier = inputAttemptIdentifier;
     this.isLocalFetch = isLocalFetch;
     this.isDiskErrorAtSource = isDiskErrorAtSource;
-  }
-
-  public InputAttemptIdentifier getInputAttemptIdentifier() {
-    return inputAttemptIdentifier;
-  }
-
-  public boolean isLocalFetch() {
-    return isLocalFetch;
-  }
-
-  public boolean isDiskErrorAtSource() {
-    return isDiskErrorAtSource;
   }
 
   public static InputAttemptFetchFailure fromAttempt(InputAttemptIdentifier attempt) {
@@ -72,24 +60,36 @@ public class InputAttemptFetchFailure {
 
   public static InputAttemptFetchFailure[] fromAttempts(Collection<InputAttemptIdentifier> values) {
     return values.stream().map(identifier -> new InputAttemptFetchFailure(identifier, false, false))
-        .toArray(InputAttemptFetchFailure[]::new);
+      .toArray(InputAttemptFetchFailure[]::new);
   }
 
   public static InputAttemptFetchFailure[] fromAttempts(InputAttemptIdentifier[] values) {
     return Arrays.asList(values).stream()
-        .map(identifier -> new InputAttemptFetchFailure(identifier, false, false))
-        .toArray(InputAttemptFetchFailure[]::new);
+      .map(identifier -> new InputAttemptFetchFailure(identifier, false, false))
+      .toArray(InputAttemptFetchFailure[]::new);
   }
 
   public static InputAttemptFetchFailure[] fromAttemptsLocalFetchFailure(
-      Collection<InputAttemptIdentifier> values) {
+    Collection<InputAttemptIdentifier> values) {
     return values.stream().map(identifier -> new InputAttemptFetchFailure(identifier, true, false))
-        .toArray(InputAttemptFetchFailure[]::new);
+      .toArray(InputAttemptFetchFailure[]::new);
   }
 
   public static InputAttemptFetchFailure fromCompositeAttemptLocalFetchFailure(
-      CompositeInputAttemptIdentifier compositeInputAttemptIdentifier) {
+    CompositeInputAttemptIdentifier compositeInputAttemptIdentifier) {
     return new InputAttemptFetchFailure(compositeInputAttemptIdentifier, true, false);
+  }
+
+  public InputAttemptIdentifier getInputAttemptIdentifier() {
+    return inputAttemptIdentifier;
+  }
+
+  public boolean isLocalFetch() {
+    return isLocalFetch;
+  }
+
+  public boolean isDiskErrorAtSource() {
+    return isDiskErrorAtSource;
   }
 
   @Override
@@ -98,20 +98,20 @@ public class InputAttemptFetchFailure {
       return false;
     }
     return inputAttemptIdentifier.equals(((InputAttemptFetchFailure) obj).inputAttemptIdentifier)
-        && isLocalFetch == ((InputAttemptFetchFailure) obj).isLocalFetch
-        && isDiskErrorAtSource == ((InputAttemptFetchFailure) obj).isDiskErrorAtSource;
+      && isLocalFetch == ((InputAttemptFetchFailure) obj).isLocalFetch
+      && isDiskErrorAtSource == ((InputAttemptFetchFailure) obj).isDiskErrorAtSource;
   }
 
   @Override
   public int hashCode() {
     return 31 * inputAttemptIdentifier.hashCode() + 31 * (isLocalFetch ? 0 : 1)
-        + 31 * (isDiskErrorAtSource ? 0 : 1);
+      + 31 * (isDiskErrorAtSource ? 0 : 1);
   }
 
   @Override
   public String toString() {
     return String.format("%s, isLocalFetch: %s, isDiskErrorAtSource: %s",
-        inputAttemptIdentifier.toString(), isLocalFetch, isDiskErrorAtSource);
+      inputAttemptIdentifier.toString(), isLocalFetch, isDiskErrorAtSource);
   }
 
   public InputAttemptFetchFailure withCause(Throwable throwable) {

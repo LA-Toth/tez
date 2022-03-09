@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,30 +22,29 @@ import static org.apache.hadoop.yarn.util.StringHelper.pajoin;
 
 import java.net.InetSocketAddress;
 
-import org.apache.tez.common.Preconditions;
-import com.google.inject.name.Names;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.net.NetUtils;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.webapp.WebApp;
 import org.apache.hadoop.yarn.webapp.WebApps;
 import org.apache.hadoop.yarn.webapp.YarnWebParams;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.app.AppContext;
 
+import com.google.inject.name.Names;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class WebUIService extends AbstractService {
-  private static final String WS_PREFIX = "/ui/ws/v1/tez/";
-  private static final String WS_PREFIX_V2 = "/ui/ws/v2/tez/";
   public static final String VERTEX_ID = "vertexID";
   public static final String DAG_ID = "dagID";
   public static final String TASK_ID = "taskID";
   public static final String ATTEMPT_ID = "attemptID";
   public static final String COUNTERS = "counters";
-
   public static final String LIMIT = "limit";
-
+  private static final String WS_PREFIX = "/ui/ws/v1/tez/";
+  private static final String WS_PREFIX_V2 = "/ui/ws/v2/tez/";
   private static final Logger LOG = LoggerFactory.getLogger(WebUIService.class);
 
   private final AppContext context;
@@ -81,7 +80,7 @@ public class WebUIService extends AbstractService {
       // use AmIpFilter to restrict connections only from the rm proxy
       Configuration conf = getConfig();
       conf.set("hadoop.http.filter.initializers",
-          "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer");
+        "org.apache.hadoop.yarn.server.webproxy.amfilter.AmFilterInitializer");
       try {
         // Explicitly disabling SSL for the web service. For https we do not want AM users to allow
         // access to the keystore file for opening SSL listener. We can trust RM/NM to issue SSL
@@ -89,21 +88,21 @@ public class WebUIService extends AbstractService {
         // ideally the withHttpPolicy should be used, however hadoop 2.2 does not have the api
         conf.set("yarn.http.policy", "HTTP_ONLY");
         this.webApp = WebApps
-            .$for(this.tezAMWebApp)
-            .with(conf)
-            .start(this.tezAMWebApp);
+          .$for(this.tezAMWebApp)
+          .with(conf)
+          .start(this.tezAMWebApp);
         InetSocketAddress address = webApp.getListenerAddress();
         if (address != null) {
           InetSocketAddress bindAddress = NetUtils.createSocketAddrForHost(
-              context.getAppMaster().getAppNMHost(), address.getPort());
+            context.getAppMaster().getAppNMHost(), address.getPort());
           String hostname = context.getAppMaster().getAppNMHost();
           final int port = address.getPort();
           if (bindAddress.getAddress() != null
-              && bindAddress.getAddress().getCanonicalHostName() != null) {
+            && bindAddress.getAddress().getCanonicalHostName() != null) {
             hostname = bindAddress.getAddress().getCanonicalHostName();
           } else {
             LOG.warn("Failed to resolve canonical hostname for "
-                + context.getAppMaster().getAppNMHost());
+              + context.getAppMaster().getAppNMHost());
           }
           trackingUrl = "http://" + hostname + ":" + port + "/ui/";
           LOG.info("Instantiated WebUIService at " + trackingUrl);
@@ -139,8 +138,8 @@ public class WebUIService extends AbstractService {
 
   private static class TezAMWebApp extends WebApp implements YarnWebParams {
 
-    private String historyUrl;
     AppContext context;
+    private String historyUrl;
 
     public TezAMWebApp(AppContext context) {
       this.context = context;
@@ -161,9 +160,9 @@ public class WebUIService extends AbstractService {
       route(WS_PREFIX + "about", AMWebController.class, "about");
       route(WS_PREFIX + pajoin("dagProgress", DAG_ID), AMWebController.class, "getDagProgress");
       route(WS_PREFIX + pajoin("vertexProgress", VERTEX_ID), AMWebController.class,
-          "getVertexProgress");
+        "getVertexProgress");
       route(WS_PREFIX + pajoin("vertexProgresses", VERTEX_ID, DAG_ID), AMWebController.class,
-          "getVertexProgresses");
+        "getVertexProgresses");
 
       /**
        *  AM Web Service API V2
@@ -211,9 +210,9 @@ public class WebUIService extends AbstractService {
       route(WS_PREFIX_V2 + pajoin("dagInfo", DAG_ID), AMWebController.class, "getDagInfo");
       route(WS_PREFIX_V2 + pajoin("verticesInfo", VERTEX_ID, DAG_ID), AMWebController.class, "getVerticesInfo");
       route(WS_PREFIX_V2 + pajoin("tasksInfo", TASK_ID, VERTEX_ID, DAG_ID), AMWebController.class,
-          "getTasksInfo");
+        "getTasksInfo");
       route(WS_PREFIX_V2 + pajoin("attemptsInfo", ATTEMPT_ID, DAG_ID), AMWebController.class,
-          "getAttemptsInfo");
+        "getAttemptsInfo");
     }
   }
 }

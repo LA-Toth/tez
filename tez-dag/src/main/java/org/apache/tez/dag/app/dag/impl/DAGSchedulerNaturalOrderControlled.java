@@ -25,11 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.dag.app.dag.DAG;
 import org.apache.tez.dag.app.dag.DAGScheduler;
@@ -38,6 +33,12 @@ import org.apache.tez.dag.app.dag.Vertex;
 import org.apache.tez.dag.app.dag.event.DAGEventSchedulerUpdate;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventSchedule;
 import org.apache.tez.dag.records.TezTaskAttemptID;
+
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Schedules task attempts belonging to downstream vertices only after all attempts belonging to
@@ -52,14 +53,14 @@ import org.apache.tez.dag.records.TezTaskAttemptID;
 public class DAGSchedulerNaturalOrderControlled extends DAGScheduler {
 
   private static final Logger LOG =
-      LoggerFactory.getLogger(DAGSchedulerNaturalOrderControlled.class);
+    LoggerFactory.getLogger(DAGSchedulerNaturalOrderControlled.class);
 
   private final DAG dag;
   private final EventHandler handler;
 
   // Tracks pending events, in case they're not sent immediately.
   private final ListMultimap<String, TaskAttemptEventSchedule> pendingEvents =
-      LinkedListMultimap.create();
+    LinkedListMultimap.create();
   // Tacks vertices for which no additional scheduling checks are required. Once in this list, the
   // vertex is considered to be fully scheduled.
   private final Set<String> scheduledVertices = new HashSet<>();
@@ -82,7 +83,7 @@ public class DAGSchedulerNaturalOrderControlled extends DAGScheduler {
     int priorityHighLimit = getPriorityHighLimit(dag, vertex);
 
     TaskAttemptEventSchedule attemptEvent = new TaskAttemptEventSchedule(
-        attempt.getTaskAttemptID(), priorityLowLimit, priorityHighLimit);
+      attempt.getTaskAttemptID(), priorityLowLimit, priorityHighLimit);
 
     taskAttemptSeen(vertex.getName(), attempt.getTaskAttemptID());
 
@@ -90,7 +91,7 @@ public class DAGSchedulerNaturalOrderControlled extends DAGScheduler {
       // Vertex previously marked ready for scheduling.
       if (LOG.isDebugEnabled()) {
         LOG.debug("Scheduling " + attempt.getTaskAttemptID() + " between priorityLow: " + priorityLowLimit
-            + " and priorityHigh: " + priorityHighLimit);
+          + " and priorityHigh: " + priorityHighLimit);
       }
       sendEvent(attemptEvent);
       // A new taks coming in here could send us over the enough tasks scheduled limit.
@@ -98,7 +99,7 @@ public class DAGSchedulerNaturalOrderControlled extends DAGScheduler {
     } else {
       if (LOG.isDebugEnabled()) {
         LOG.debug("Attempting to schedule vertex: " + vertex.getLogIdentifier() +
-            " due to schedule event");
+          " due to schedule event");
       }
       boolean scheduled = trySchedulingVertex(vertex);
       if (scheduled) {
@@ -157,12 +158,12 @@ public class DAGSchedulerNaturalOrderControlled extends DAGScheduler {
       if (!vertexAlreadyScheduled(destVertex)) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("Attempting to schedule vertex: " + destVertex.getLogIdentifier() +
-              " due to upstream event from " + vertex.getLogIdentifier());
+            " due to upstream event from " + vertex.getLogIdentifier());
         }
         boolean scheduled = trySchedulingVertex(destVertex);
         if (scheduled) {
           LOG.info("Scheduled vertex: " + destVertex.getLogIdentifier() +
-              " due to upstream event from " + vertex.getLogIdentifier());
+            " due to upstream event from " + vertex.getLogIdentifier());
           sendEventsForVertex(destVertex.getName());
           newlyScheduledVertices.add(destVertex);
         }
@@ -183,7 +184,7 @@ public class DAGSchedulerNaturalOrderControlled extends DAGScheduler {
       // 0 task vertices handled elsewhere.
       if (LOG.isDebugEnabled()) {
         LOG.debug(
-            "No schedule requests for vertex: " + vertex.getLogIdentifier() + ", Not scheduling");
+          "No schedule requests for vertex: " + vertex.getLogIdentifier() + ", Not scheduling");
       }
       canSchedule = false;
     } else {
@@ -200,25 +201,25 @@ public class DAGSchedulerNaturalOrderControlled extends DAGScheduler {
             // Nothing to wait for. Go ahead and check the next source.
             if (LOG.isDebugEnabled()) {
               LOG.debug("Trying to schedule: " + vertex.getLogIdentifier() +
-                  ", All tasks forwarded for srcVertex: " + srcVertex.getLogIdentifier() +
-                  ", count: " + srcVertex.getTotalTasks());
+                ", All tasks forwarded for srcVertex: " + srcVertex.getLogIdentifier() +
+                ", count: " + srcVertex.getTotalTasks());
             }
           } else {
             // Special case for vertices with 0 tasks. 0 check is sufficient since parallelism cannot increase.
             if (srcVertex.getTotalTasks() == 0) {
               LOG.info(
-                  "Vertex: " + srcVertex.getLogIdentifier() + " has 0 tasks. Marking as scheduled");
+                "Vertex: " + srcVertex.getLogIdentifier() + " has 0 tasks. Marking as scheduled");
               scheduledVertices.add(srcVertex.getName());
               taskAttemptSeen(srcVertex.getName(), null);
             } else {
               if (LOG.isDebugEnabled()) {
                 LOG.debug(
-                    "Not all sources schedule requests complete while trying to schedule: " +
-                        vertex.getLogIdentifier() + ", For source vertex: " +
-                        srcVertex.getLogIdentifier() + ", Forwarded requests: " +
-                        (vertexScheduledTasks.get(srcVertex.getName()) == null ? "null(0)" :
-                            vertexScheduledTasks.get(srcVertex.getName()).cardinality()) +
-                        " out of " + srcVertex.getTotalTasks());
+                  "Not all sources schedule requests complete while trying to schedule: " +
+                    vertex.getLogIdentifier() + ", For source vertex: " +
+                    srcVertex.getLogIdentifier() + ", Forwarded requests: " +
+                    (vertexScheduledTasks.get(srcVertex.getName()) == null ? "null(0)" :
+                      vertexScheduledTasks.get(srcVertex.getName()).cardinality()) +
+                    " out of " + srcVertex.getTotalTasks());
               }
               canSchedule = false;
               break;
@@ -241,5 +242,4 @@ public class DAGSchedulerNaturalOrderControlled extends DAGScheduler {
   private void sendEvent(TaskAttemptEventSchedule event) {
     handler.handle(event);
   }
-
 }

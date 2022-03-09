@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,16 +22,15 @@ import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.Charset;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.BytesWritable;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestProxyComparator {
-  private static final Logger LOG = LoggerFactory.getLogger(TestProxyComparator.class);
-
   final static String[] keys = {
     "",
     "A", "B",
@@ -42,6 +41,7 @@ public class TestProxyComparator {
     "\u00F7\u00F7", "\u00F7\u00F7\u00E6\u00E6A",
     "\u00F7\u00F7\u00E6\u00E6A"
   };
+  private static final Logger LOG = LoggerFactory.getLogger(TestProxyComparator.class);
 
   private static final void set(BytesWritable bw, String s) {
     byte[] b = s.getBytes(Charset.forName("utf-8"));
@@ -70,11 +70,11 @@ public class TestProxyComparator {
         final int rproxy = comparator.getProxy(rhs);
         if (lproxy < rproxy) {
           assertTrue(String.format("(%s) %d < (%s) %d", l, lproxy, r, rproxy),
-              comparator.compare(lhs, rhs) < 0);
+            comparator.compare(lhs, rhs) < 0);
         }
         if (lproxy > rproxy) {
           assertTrue(String.format("(%s) %d > (%s) %d", l, lproxy, r, rproxy),
-              comparator.compare(lhs, rhs) > 0);
+            comparator.compare(lhs, rhs) > 0);
         }
       }
     }

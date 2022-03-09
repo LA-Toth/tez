@@ -21,10 +21,10 @@ package org.apache.tez.common.counters;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.classification.InterfaceAudience;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
-import org.apache.hadoop.classification.InterfaceAudience;
 
 /**
  * An abstract class to provide common implementation of the
@@ -35,31 +35,20 @@ import org.apache.hadoop.classification.InterfaceAudience;
  */
 @InterfaceAudience.Private
 public abstract class CounterGroupFactory<C extends TezCounter,
-                                          G extends CounterGroupBase<C>> {
-
-  public interface FrameworkGroupFactory<F> {
-    F newGroup(String name);
-  }
+  G extends CounterGroupBase<C>> {
 
   // Integer mapping (for serialization) for framework groups
   private static final Map<String, Integer> s2i = Maps.newHashMap();
   private static final List<String> i2s = Lists.newArrayList();
   private static final int VERSION = 1;
   private static final String FS_GROUP_NAME = FileSystemCounter.class.getName();
-
   private final Map<String, FrameworkGroupFactory<G>> fmap = Maps.newHashMap();
+
   {
     // Add builtin counter class here and the version when changed.
     addFrameworkGroup(TaskCounter.class);
     addFrameworkGroup(JobCounter.class);
     addFrameworkGroup(DAGCounter.class);
-  }
-
-  // Initialize the framework counter group mapping
-  private synchronized <T extends Enum<T>>
-  void addFrameworkGroup(final Class<T> cls) {
-    updateFrameworkGroupMapping(cls);
-    fmap.put(cls.getName(), newFrameworkGroupFactory(cls));
   }
 
   // Update static mappings (c2i, i2s) of framework groups
@@ -72,7 +61,46 @@ public abstract class CounterGroupFactory<C extends TezCounter,
   }
 
   /**
+   * Get the id of a framework group
+   *
+   * @param name of the group
+   * @return the framework group id
+   */
+  public static synchronized int getFrameworkGroupId(String name) {
+    Integer i = s2i.get(name);
+    if (i == null) throwBadFrameworkGroupNameException(name);
+    return i;
+  }
+
+  /**
+   * Check whether a group name is a name of a framework group (including
+   * the filesystem group).
+   *
+   * @param name to check
+   * @return true for framework group names
+   */
+  public static synchronized boolean isFrameworkGroup(String name) {
+    return s2i.get(name) != null || name.equals(FS_GROUP_NAME);
+  }
+
+  private static void throwBadFrameGroupIdException(int id) {
+    throw new IllegalArgumentException("bad framework group id: " + id);
+  }
+
+  private static void throwBadFrameworkGroupNameException(String name) {
+    throw new IllegalArgumentException("bad framework group name: " + name);
+  }
+
+  // Initialize the framework counter group mapping
+  private synchronized <T extends Enum<T>>
+  void addFrameworkGroup(final Class<T> cls) {
+    updateFrameworkGroupMapping(cls);
+    fmap.put(cls.getName(), newFrameworkGroupFactory(cls));
+  }
+
+  /**
    * Required override to return a new framework group factory
+   *
    * @param <T> type of the counter enum class
    * @param cls the counter enum class
    * @return a new framework group factory
@@ -82,7 +110,8 @@ public abstract class CounterGroupFactory<C extends TezCounter,
 
   /**
    * Create a new counter group
-   * @param name of the group
+   *
+   * @param name   of the group
    * @param limits the counters limits policy object
    * @return a new counter group
    */
@@ -92,9 +121,10 @@ public abstract class CounterGroupFactory<C extends TezCounter,
 
   /**
    * Create a new counter group
-   * @param name of the group
+   *
+   * @param name        of the group
    * @param displayName of the group
-   * @param limits the counters limits policy object
+   * @param limits      the counters limits policy object
    * @return a new counter group
    */
   public G newGroup(String name, String displayName, Limits limits) {
@@ -110,29 +140,19 @@ public abstract class CounterGroupFactory<C extends TezCounter,
 
   /**
    * Create a new framework group
+   *
    * @param id of the group
    * @return a new framework group
    */
   public G newFrameworkGroup(int id) {
     String name;
-    synchronized(CounterGroupFactory.class) {
+    synchronized (CounterGroupFactory.class) {
       if (id < 0 || id >= i2s.size()) throwBadFrameGroupIdException(id);
       name = i2s.get(id); // should not throw here.
     }
     FrameworkGroupFactory<G> gf = fmap.get(name);
     if (gf == null) throwBadFrameGroupIdException(id);
     return gf.newGroup(name);
-  }
-
-  /**
-   * Get the id of a framework group
-   * @param name of the group
-   * @return the framework group id
-   */
-  public static synchronized int getFrameworkGroupId(String name) {
-    Integer i = s2i.get(name);
-    if (i == null) throwBadFrameworkGroupNameException(name);
-    return i;
   }
 
   /**
@@ -143,29 +163,11 @@ public abstract class CounterGroupFactory<C extends TezCounter,
   }
 
   /**
-   * Check whether a group name is a name of a framework group (including
-   * the filesystem group).
-   *
-   * @param name  to check
-   * @return true for framework group names
-   */
-  public static synchronized boolean isFrameworkGroup(String name) {
-    return s2i.get(name) != null || name.equals(FS_GROUP_NAME);
-  }
-
-  private static void throwBadFrameGroupIdException(int id) {
-    throw new IllegalArgumentException("bad framework group id: "+ id);
-  }
-
-  private static void throwBadFrameworkGroupNameException(String name) {
-    throw new IllegalArgumentException("bad framework group name: "+ name);
-  }
-
-  /**
    * Abstract factory method to create a generic (vs framework) counter group
-   * @param name  of the group
+   *
+   * @param name        of the group
    * @param displayName of the group
-   * @param limits limits of the counters
+   * @param limits      limits of the counters
    * @return a new generic counter group
    */
   protected abstract G newGenericGroup(String name, String displayName,
@@ -173,7 +175,12 @@ public abstract class CounterGroupFactory<C extends TezCounter,
 
   /**
    * Abstract factory method to create a file system counter group
+   *
    * @return a new file system counter group
    */
   protected abstract G newFileSystemGroup();
+
+  public interface FrameworkGroupFactory<F> {
+    F newGroup(String name);
+  }
 }

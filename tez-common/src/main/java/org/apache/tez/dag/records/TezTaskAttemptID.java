@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -48,23 +48,11 @@ import com.google.common.collect.Interners;
 @InterfaceStability.Stable
 public class TezTaskAttemptID extends TezID implements TaskIDAware {
   public static final String ATTEMPT = "attempt";
-  private TezTaskID taskId;
-
   private static Interner<TezTaskAttemptID> tezTaskAttemptIDCache = Interners.newWeakInterner();
+  private TezTaskID taskId;
 
   // Public for Writable serialization. Verify if this is actually required.
   public TezTaskAttemptID() {
-  }
-  
-  /**
-   * Constructs a TaskAttemptID object from given {@link TezTaskID}.  
-   * @param taskID TaskID that this task belongs to  
-   * @param id the task attempt number
-   * @throws  NullPointerException if {@code taskID} is {@code null}
-   */
-  public static TezTaskAttemptID getInstance(TezTaskID taskID, int id) {
-    Objects.requireNonNull(taskID);
-    return tezTaskAttemptIDCache.intern(new TezTaskAttemptID(taskID, id));
   }
 
   private TezTaskAttemptID(TezTaskID taskId, int id) {
@@ -72,70 +60,21 @@ public class TezTaskAttemptID extends TezID implements TaskIDAware {
     this.taskId = taskId;
   }
 
-  /** Returns the {@link TezTaskID} object that this task attempt belongs to */
-  @Override
-  public TezTaskID getTaskID() {
-    return taskId;
-  }
-  
-  @Override
-  public boolean equals(Object o) {
-    if (!super.equals(o))
-      return false;
-
-    TezTaskAttemptID that = (TezTaskAttemptID)o;
-    return this.taskId.equals(that.taskId);
-  }
-  
   /**
-   * Add the unique string to the StringBuilder
-   * @param builder the builder to append ot
-   * @return the builder that was passed in.
+   * Constructs a TaskAttemptID object from given {@link TezTaskID}.
+   * @param taskID TaskID that this task belongs to
+   * @param id the task attempt number
+   * @throws NullPointerException if {@code taskID} is {@code null}
    */
-  protected StringBuilder appendTo(StringBuilder builder) {
-    taskId.appendTo(builder);
-    builder.append(SEPARATOR);
-    return builder.append(id);
+  public static TezTaskAttemptID getInstance(TezTaskID taskID, int id) {
+    Objects.requireNonNull(taskID);
+    return tezTaskAttemptIDCache.intern(new TezTaskAttemptID(taskID, id));
   }
-  
-  @Override
-  public int hashCode() {
-    return taskId.hashCode() * 539501 + id;
-  }
-  
-  /**Compare TaskIds by first tipIds, then by task numbers. */
-  @Override
-  public int compareTo(TezID o) {
-    TezTaskAttemptID that = (TezTaskAttemptID)o;
-    int tipComp = this.taskId.compareTo(that.taskId);
-    if(tipComp == 0) {
-      return this.id - that.id;
-    }
-    else return tipComp;
-  }
-  @Override
-  public String toString() { 
-    return appendTo(new StringBuilder(ATTEMPT)).toString();
-  }
-  
-  @Override
-  // Can't do much about this instance if used via the RPC layer. Any downstream
-  // users can however avoid using this method.
-  public void readFields(DataInput in) throws IOException {
-    taskId = TezTaskID.readTezTaskID(in);
-    super.readFields(in);
-  }
-  
+
   public static TezTaskAttemptID readTezTaskAttemptID(DataInput in) throws IOException {
     TezTaskID taskID = TezTaskID.readTezTaskID(in);
     int attemptIdInt = TezID.readID(in);
     return getInstance(taskID, attemptIdInt);
-  }
-
-  @Override
-  public void write(DataOutput out) throws IOException {
-    taskId.write(out);
-    super.write(out);
   }
 
   public static TezTaskAttemptID fromString(String taIdStr) {
@@ -154,14 +93,73 @@ public class TezTaskAttemptID extends TezID implements TaskIDAware {
       int id = Integer.parseInt(taIdStr.substring(pos6 + 1));
 
       return TezTaskAttemptID.getInstance(
-          TezTaskID.getInstance(
-              TezVertexID.getInstance(
-                  TezDAGID.getInstance(rmId, appId, dagId),
-                  vId), taskId), id);
+        TezTaskID.getInstance(
+          TezVertexID.getInstance(
+            TezDAGID.getInstance(rmId, appId, dagId),
+            vId), taskId), id);
     } catch (Exception e) {
       e.printStackTrace();
     }
     return null;
   }
 
+  /** Returns the {@link TezTaskID} object that this task attempt belongs to */
+  @Override
+  public TezTaskID getTaskID() {
+    return taskId;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (!super.equals(o))
+      return false;
+
+    TezTaskAttemptID that = (TezTaskAttemptID) o;
+    return this.taskId.equals(that.taskId);
+  }
+
+  /**
+   * Add the unique string to the StringBuilder
+   * @param builder the builder to append ot
+   * @return the builder that was passed in.
+   */
+  protected StringBuilder appendTo(StringBuilder builder) {
+    taskId.appendTo(builder);
+    builder.append(SEPARATOR);
+    return builder.append(id);
+  }
+
+  @Override
+  public int hashCode() {
+    return taskId.hashCode() * 539501 + id;
+  }
+
+  /**Compare TaskIds by first tipIds, then by task numbers. */
+  @Override
+  public int compareTo(TezID o) {
+    TezTaskAttemptID that = (TezTaskAttemptID) o;
+    int tipComp = this.taskId.compareTo(that.taskId);
+    if (tipComp == 0) {
+      return this.id - that.id;
+    } else return tipComp;
+  }
+
+  @Override
+  public String toString() {
+    return appendTo(new StringBuilder(ATTEMPT)).toString();
+  }
+
+  @Override
+  // Can't do much about this instance if used via the RPC layer. Any downstream
+  // users can however avoid using this method.
+  public void readFields(DataInput in) throws IOException {
+    taskId = TezTaskID.readTezTaskID(in);
+    super.readFields(in);
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    taskId.write(out);
+    super.write(out);
+  }
 }

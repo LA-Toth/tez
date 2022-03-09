@@ -25,6 +25,7 @@ import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.http.HttpConnectionParams;
 import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,14 +36,16 @@ public class FetcherWithInjectableErrors extends Fetcher {
   private String srcNameTrimmed;
 
   protected FetcherWithInjectableErrors(FetcherCallback fetcherCallback, HttpConnectionParams params,
-      FetchedInputAllocator inputManager, InputContext inputContext,
-      JobTokenSecretManager jobTokenSecretManager, Configuration conf,
-      RawLocalFileSystem localFs, LocalDirAllocator localDirAllocator, Path lockPath, boolean localDiskFetchEnabled,
-      boolean sharedFetchEnabled, String localHostname, int shufflePort, boolean asyncHttp, boolean verifyDiskChecksum,
-      boolean compositeFetch) {
+                                        FetchedInputAllocator inputManager, InputContext inputContext,
+                                        JobTokenSecretManager jobTokenSecretManager, Configuration conf,
+                                        RawLocalFileSystem localFs, LocalDirAllocator localDirAllocator,
+                                        Path lockPath, boolean localDiskFetchEnabled,
+                                        boolean sharedFetchEnabled, String localHostname, int shufflePort,
+                                        boolean asyncHttp, boolean verifyDiskChecksum,
+                                        boolean compositeFetch) {
     super(fetcherCallback, params, inputManager, inputContext, jobTokenSecretManager, conf,
-        localFs, localDirAllocator, lockPath, localDiskFetchEnabled, sharedFetchEnabled, localHostname, shufflePort,
-        asyncHttp, verifyDiskChecksum, compositeFetch);
+      localFs, localDirAllocator, lockPath, localDiskFetchEnabled, sharedFetchEnabled, localHostname, shufflePort,
+      asyncHttp, verifyDiskChecksum, compositeFetch);
     this.fetcherErrorTestingConfig = new FetcherErrorTestingConfig(conf, inputContext.getObjectRegistry());
     this.srcNameTrimmed = TezUtilsInternal.cleanVertexName(inputContext.getSourceVertexName());
     LOG.info("Initialized FetcherWithInjectableErrors with config: {}", fetcherErrorTestingConfig);
@@ -50,13 +53,13 @@ public class FetcherWithInjectableErrors extends Fetcher {
 
   @Override
   protected void setupConnectionInternal(String host, Collection<InputAttemptIdentifier> attempts)
-      throws IOException, InterruptedException {
+    throws IOException, InterruptedException {
     LOG.info("Checking if fetcher should fail for host: {} ...", host);
     for (InputAttemptIdentifier inputAttemptIdentifier : attempts) {
       if (fetcherErrorTestingConfig.shouldFail(host, srcNameTrimmed, inputAttemptIdentifier)) {
         throw new IOException(String.format(
-            "FetcherWithInjectableErrors tester made failure for host: %s, input attempt: %s", host,
-            inputAttemptIdentifier.getAttemptNumber()));
+          "FetcherWithInjectableErrors tester made failure for host: %s, input attempt: %s", host,
+          inputAttemptIdentifier.getAttemptNumber()));
       }
     }
     super.setupConnectionInternal(host, attempts);

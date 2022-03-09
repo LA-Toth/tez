@@ -32,14 +32,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.collect.Lists;
-
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.api.event.VertexState;
 import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.dag.api.event.VertexStateUpdateParallelismUpdated;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezVertexID;
+
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -47,59 +47,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestStateChangeNotifier {
-  
-  // uses the thread based notification code path but effectively blocks update
-  // events till listeners have been notified
-  public static class StateChangeNotifierForTest extends StateChangeNotifier {
-    private static final Logger LOG = LoggerFactory.getLogger(StateChangeNotifierForTest.class);
-    AtomicInteger count = new AtomicInteger(0);
-    AtomicInteger totalCount = new AtomicInteger(0);
-
-    public StateChangeNotifierForTest(DAG dag) {
-      super(dag);
-    }
-
-    public void reset() {
-      count.set(0);
-      totalCount.set(0);
-    }
-    
-    @Override
-    protected void processedEventFromQueue() {
-      // addedEventToQueue runs in dispatcher thread while
-      // processedEventFromQueue runs in state change notifier event handling thread.
-      // It is not guaranteed that addedEventToQueue is invoked before processedEventFromQueue.
-      // so sleep here until there's available events
-      while(count.get() <=0) {
-        try {
-          Thread.sleep(10);
-          LOG.info("sleep to wait for available events");
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-      }
-      synchronized (count) {
-        if (count.decrementAndGet() == 0) {
-          count.notifyAll();
-        }
-      }
-    }
-    
-    @Override
-    protected void addedEventToQueue() {
-      totalCount.incrementAndGet();
-      synchronized (count) {
-        // processing may finish by the time we get here
-        if (count.incrementAndGet() > 0) {
-          try {
-            count.wait();
-          } catch (InterruptedException e) {
-            e.printStackTrace();
-          }
-        }
-      }
-    }
-  }
 
   @Test(timeout = 5000)
   public void testEventsOnRegistration() {
@@ -117,28 +64,28 @@ public class TestStateChangeNotifier {
     VertexStateUpdateListener mockListener12 = mock(VertexStateUpdateListener.class);
     VertexStateUpdateListener mockListener13 = mock(VertexStateUpdateListener.class);
     VertexStateUpdateListener mockListener14 = mock(VertexStateUpdateListener.class);
-      // Register for all states
+    // Register for all states
     tracker.registerForVertexUpdates(v1.getName(), null, mockListener11);
-      // Register for all states
+    // Register for all states
     tracker.registerForVertexUpdates(v1.getName(), EnumSet.allOf(
-        VertexState.class), mockListener12);
-      // Register for specific state, event generated
+      VertexState.class), mockListener12);
+    // Register for specific state, event generated
     tracker.registerForVertexUpdates(v1.getName(), EnumSet.of(
-        VertexState.RUNNING), mockListener13);
-      // Register for specific state, event not generated
+      VertexState.RUNNING), mockListener13);
+    // Register for specific state, event not generated
     tracker.registerForVertexUpdates(v1.getName(), EnumSet.of(
-        VertexState.SUCCEEDED), mockListener14);
+      VertexState.SUCCEEDED), mockListener14);
     ArgumentCaptor<VertexStateUpdate> argumentCaptor =
-        ArgumentCaptor.forClass(VertexStateUpdate.class);
+      ArgumentCaptor.forClass(VertexStateUpdate.class);
     verify(mockListener11, times(1)).onStateUpdated(argumentCaptor.capture());
     assertEquals(VertexState.RUNNING,
-        argumentCaptor.getValue().getVertexState());
+      argumentCaptor.getValue().getVertexState());
     verify(mockListener12, times(1)).onStateUpdated(argumentCaptor.capture());
     assertEquals(VertexState.RUNNING,
-        argumentCaptor.getValue().getVertexState());
+      argumentCaptor.getValue().getVertexState());
     verify(mockListener13, times(1)).onStateUpdated(argumentCaptor.capture());
     assertEquals(VertexState.RUNNING,
-        argumentCaptor.getValue().getVertexState());
+      argumentCaptor.getValue().getVertexState());
     verify(mockListener14, never()).onStateUpdated(any(VertexStateUpdate.class));
 
     // Vertex has not notified of state
@@ -154,7 +101,7 @@ public class TestStateChangeNotifier {
     tracker.registerForVertexUpdates(v3.getName(), null, mockListener3);
     verify(mockListener3, times(1)).onStateUpdated(argumentCaptor.capture());
     assertEquals(VertexState.PARALLELISM_UPDATED,
-        argumentCaptor.getValue().getVertexState());
+      argumentCaptor.getValue().getVertexState());
   }
 
   @Test(timeout = 5000)
@@ -169,24 +116,24 @@ public class TestStateChangeNotifier {
     tracker.registerForVertexUpdates(v1.getName(), null, mockListener);
 
     List<VertexState> expectedStates = Lists.newArrayList(
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED,
-        VertexState.FAILED,
-        VertexState.KILLED,
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED);
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED,
+      VertexState.FAILED,
+      VertexState.KILLED,
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED);
 
     for (VertexState state : expectedStates) {
       notifyTracker(tracker, v1, state);
     }
 
     ArgumentCaptor<VertexStateUpdate> argumentCaptor =
-        ArgumentCaptor.forClass(VertexStateUpdate.class);
+      ArgumentCaptor.forClass(VertexStateUpdate.class);
     verify(mockListener, times(expectedStates.size())).onStateUpdated(argumentCaptor.capture());
     List<VertexStateUpdate> stateUpdatesSent = argumentCaptor.getAllValues();
 
     Iterator<VertexState> expectedStateIter =
-        expectedStates.iterator();
+      expectedStates.iterator();
     for (int i = 0; i < expectedStates.size(); i++) {
       assertEquals(expectedStateIter.next(), stateUpdatesSent.get(i).getVertexState());
     }
@@ -220,33 +167,33 @@ public class TestStateChangeNotifier {
 
     VertexStateUpdateListener mockListener = mock(VertexStateUpdateListener.class);
     tracker.registerForVertexUpdates(v1.getName(), EnumSet.of(
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED), mockListener);
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED), mockListener);
 
     List<VertexState> states = Lists.newArrayList(
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED,
-        VertexState.FAILED,
-        VertexState.KILLED,
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED);
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED,
+      VertexState.FAILED,
+      VertexState.KILLED,
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED);
     List<VertexState> expectedStates = Lists.newArrayList(
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED,
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED);
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED,
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED);
 
     for (VertexState state : states) {
       notifyTracker(tracker, v1, state);
     }
 
     ArgumentCaptor<VertexStateUpdate> argumentCaptor =
-        ArgumentCaptor.forClass(VertexStateUpdate.class);
+      ArgumentCaptor.forClass(VertexStateUpdate.class);
     verify(mockListener, times(expectedStates.size())).onStateUpdated(argumentCaptor.capture());
     List<VertexStateUpdate> stateUpdatesSent = argumentCaptor.getAllValues();
 
     Iterator<VertexState> expectedStateIter =
-        expectedStates.iterator();
+      expectedStates.iterator();
     for (int i = 0; i < expectedStates.size(); i++) {
       assertEquals(expectedStateIter.next(), stateUpdatesSent.get(i).getVertexState());
     }
@@ -264,12 +211,12 @@ public class TestStateChangeNotifier {
     tracker.registerForVertexUpdates(v1.getName(), null, mockListener);
 
     List<VertexState> expectedStates = Lists.newArrayList(
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED,
-        VertexState.FAILED,
-        VertexState.KILLED,
-        VertexState.RUNNING,
-        VertexState.SUCCEEDED);
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED,
+      VertexState.FAILED,
+      VertexState.KILLED,
+      VertexState.RUNNING,
+      VertexState.SUCCEEDED);
 
     int count = 0;
     int numExpectedEvents = 3;
@@ -282,12 +229,12 @@ public class TestStateChangeNotifier {
     }
 
     ArgumentCaptor<VertexStateUpdate> argumentCaptor =
-        ArgumentCaptor.forClass(VertexStateUpdate.class);
+      ArgumentCaptor.forClass(VertexStateUpdate.class);
     verify(mockListener, times(numExpectedEvents)).onStateUpdated(argumentCaptor.capture());
     List<VertexStateUpdate> stateUpdatesSent = argumentCaptor.getAllValues();
 
     Iterator<VertexState> expectedStateIter =
-        expectedStates.iterator();
+      expectedStates.iterator();
     for (int i = 0; i < numExpectedEvents; i++) {
       assertEquals(expectedStateIter.next(), stateUpdatesSent.get(i).getVertexState());
     }
@@ -318,5 +265,58 @@ public class TestStateChangeNotifier {
   private void notifyTracker(StateChangeNotifier notifier, Vertex v,
                              VertexState state) {
     notifier.stateChanged(v.getVertexId(), new VertexStateUpdate(v.getName(), state));
+  }
+
+  // uses the thread based notification code path but effectively blocks update
+  // events till listeners have been notified
+  public static class StateChangeNotifierForTest extends StateChangeNotifier {
+    private static final Logger LOG = LoggerFactory.getLogger(StateChangeNotifierForTest.class);
+    AtomicInteger count = new AtomicInteger(0);
+    AtomicInteger totalCount = new AtomicInteger(0);
+
+    public StateChangeNotifierForTest(DAG dag) {
+      super(dag);
+    }
+
+    public void reset() {
+      count.set(0);
+      totalCount.set(0);
+    }
+
+    @Override
+    protected void processedEventFromQueue() {
+      // addedEventToQueue runs in dispatcher thread while
+      // processedEventFromQueue runs in state change notifier event handling thread.
+      // It is not guaranteed that addedEventToQueue is invoked before processedEventFromQueue.
+      // so sleep here until there's available events
+      while (count.get() <= 0) {
+        try {
+          Thread.sleep(10);
+          LOG.info("sleep to wait for available events");
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+      synchronized (count) {
+        if (count.decrementAndGet() == 0) {
+          count.notifyAll();
+        }
+      }
+    }
+
+    @Override
+    protected void addedEventToQueue() {
+      totalCount.incrementAndGet();
+      synchronized (count) {
+        // processing may finish by the time we get here
+        if (count.incrementAndGet() > 0) {
+          try {
+            count.wait();
+          } catch (InterruptedException e) {
+            e.printStackTrace();
+          }
+        }
+      }
+    }
   }
 }

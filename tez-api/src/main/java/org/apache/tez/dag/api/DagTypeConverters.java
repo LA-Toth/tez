@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,10 +27,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.zip.Inflater;
-import java.util.Map.Entry;
 
 import javax.annotation.Nullable;
 
@@ -70,9 +70,9 @@ import org.apache.tez.dag.api.records.DAGProtos.PlanEdgeProperty;
 import org.apache.tez.dag.api.records.DAGProtos.PlanEdgeSchedulingType;
 import org.apache.tez.dag.api.records.DAGProtos.PlanKeyValuePair;
 import org.apache.tez.dag.api.records.DAGProtos.PlanLocalResource;
-import org.apache.tez.dag.api.records.DAGProtos.PlanLocalResourcesProto;
 import org.apache.tez.dag.api.records.DAGProtos.PlanLocalResourceType;
 import org.apache.tez.dag.api.records.DAGProtos.PlanLocalResourceVisibility;
+import org.apache.tez.dag.api.records.DAGProtos.PlanLocalResourcesProto;
 import org.apache.tez.dag.api.records.DAGProtos.PlanTaskConfiguration;
 import org.apache.tez.dag.api.records.DAGProtos.PlanTaskLocationHint;
 import org.apache.tez.dag.api.records.DAGProtos.RootInputLeafOutputProto;
@@ -83,24 +83,28 @@ import org.apache.tez.dag.api.records.DAGProtos.TezEntityDescriptorProto;
 import org.apache.tez.dag.api.records.DAGProtos.TezNamedEntityDescriptorProto;
 import org.apache.tez.dag.api.records.DAGProtos.VertexExecutionContextProto;
 import org.apache.tez.dag.api.records.DAGProtos.VertexLocationHintProto;
+import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
 
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ByteString.Output;
-import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
 
 @Private
 public class DagTypeConverters {
 
-  public static PlanLocalResourceVisibility convertToDAGPlan(LocalResourceVisibility visibility){
-    switch(visibility){
-      case PUBLIC : return PlanLocalResourceVisibility.PUBLIC;
-      case PRIVATE : return PlanLocalResourceVisibility.PRIVATE;
-      case APPLICATION : return PlanLocalResourceVisibility.APPLICATION;
-      default : throw new RuntimeException("unknown 'visibility': " + visibility);
+  public static PlanLocalResourceVisibility convertToDAGPlan(LocalResourceVisibility visibility) {
+    switch (visibility) {
+      case PUBLIC:
+        return PlanLocalResourceVisibility.PUBLIC;
+      case PRIVATE:
+        return PlanLocalResourceVisibility.PRIVATE;
+      case APPLICATION:
+        return PlanLocalResourceVisibility.APPLICATION;
+      default:
+        throw new RuntimeException("unknown 'visibility': " + visibility);
     }
   }
-  
+
   public static List<PlanLocalResource> convertToDAGPlan(Map<String, LocalResource> lrs) {
     List<PlanLocalResource> planLrs = Lists.newArrayListWithCapacity(lrs.size());
     for (Entry<String, LocalResource> entry : lrs.entrySet()) {
@@ -128,101 +132,137 @@ public class DagTypeConverters {
     return planLrs;
   }
 
-  public static LocalResourceVisibility convertFromDAGPlan(PlanLocalResourceVisibility visibility){
-    switch(visibility){
-      case PUBLIC : return LocalResourceVisibility.PUBLIC;
-      case PRIVATE : return LocalResourceVisibility.PRIVATE;
-      case APPLICATION : return LocalResourceVisibility.APPLICATION;
-      default : throw new RuntimeException("unknown 'visibility': " + visibility);
+  public static LocalResourceVisibility convertFromDAGPlan(PlanLocalResourceVisibility visibility) {
+    switch (visibility) {
+      case PUBLIC:
+        return LocalResourceVisibility.PUBLIC;
+      case PRIVATE:
+        return LocalResourceVisibility.PRIVATE;
+      case APPLICATION:
+        return LocalResourceVisibility.APPLICATION;
+      default:
+        throw new RuntimeException("unknown 'visibility': " + visibility);
     }
   }
 
-  public static PlanEdgeDataSourceType convertToDAGPlan(DataSourceType sourceType){
-    switch(sourceType){
-      case PERSISTED : return PlanEdgeDataSourceType.PERSISTED;
-      case PERSISTED_RELIABLE : return PlanEdgeDataSourceType.PERSISTED_RELIABLE;
-      case EPHEMERAL :  return PlanEdgeDataSourceType.EPHEMERAL;
-      default : throw new RuntimeException("unknown 'dataSourceType': " + sourceType);
+  public static PlanEdgeDataSourceType convertToDAGPlan(DataSourceType sourceType) {
+    switch (sourceType) {
+      case PERSISTED:
+        return PlanEdgeDataSourceType.PERSISTED;
+      case PERSISTED_RELIABLE:
+        return PlanEdgeDataSourceType.PERSISTED_RELIABLE;
+      case EPHEMERAL:
+        return PlanEdgeDataSourceType.EPHEMERAL;
+      default:
+        throw new RuntimeException("unknown 'dataSourceType': " + sourceType);
     }
   }
 
-  public static DataSourceType convertFromDAGPlan(PlanEdgeDataSourceType sourceType){
-    switch(sourceType){
-      case PERSISTED : return DataSourceType.PERSISTED;
-      case PERSISTED_RELIABLE : return DataSourceType.PERSISTED_RELIABLE;
-      case EPHEMERAL :  return DataSourceType.EPHEMERAL;
-      default : throw new RuntimeException("unknown 'dataSourceType': " + sourceType);
+  public static DataSourceType convertFromDAGPlan(PlanEdgeDataSourceType sourceType) {
+    switch (sourceType) {
+      case PERSISTED:
+        return DataSourceType.PERSISTED;
+      case PERSISTED_RELIABLE:
+        return DataSourceType.PERSISTED_RELIABLE;
+      case EPHEMERAL:
+        return DataSourceType.EPHEMERAL;
+      default:
+        throw new RuntimeException("unknown 'dataSourceType': " + sourceType);
     }
   }
 
-  public static PlanEdgeDataMovementType convertToDAGPlan(DataMovementType type){
-    switch(type){
-      case ONE_TO_ONE : return PlanEdgeDataMovementType.ONE_TO_ONE;
-      case BROADCAST : return PlanEdgeDataMovementType.BROADCAST;
-      case SCATTER_GATHER : return PlanEdgeDataMovementType.SCATTER_GATHER;
-      case CUSTOM: return PlanEdgeDataMovementType.CUSTOM;
-      default : throw new RuntimeException("unknown 'dataMovementType': " + type);
+  public static PlanEdgeDataMovementType convertToDAGPlan(DataMovementType type) {
+    switch (type) {
+      case ONE_TO_ONE:
+        return PlanEdgeDataMovementType.ONE_TO_ONE;
+      case BROADCAST:
+        return PlanEdgeDataMovementType.BROADCAST;
+      case SCATTER_GATHER:
+        return PlanEdgeDataMovementType.SCATTER_GATHER;
+      case CUSTOM:
+        return PlanEdgeDataMovementType.CUSTOM;
+      default:
+        throw new RuntimeException("unknown 'dataMovementType': " + type);
     }
   }
 
-  public static DataMovementType convertFromDAGPlan(PlanEdgeDataMovementType type){
-    switch(type){
-      case ONE_TO_ONE : return DataMovementType.ONE_TO_ONE;
-      case BROADCAST : return DataMovementType.BROADCAST;
-      case SCATTER_GATHER : return DataMovementType.SCATTER_GATHER;
-      case CUSTOM : return DataMovementType.CUSTOM;
-      default : throw new IllegalArgumentException("unknown 'dataMovementType': " + type);
+  public static DataMovementType convertFromDAGPlan(PlanEdgeDataMovementType type) {
+    switch (type) {
+      case ONE_TO_ONE:
+        return DataMovementType.ONE_TO_ONE;
+      case BROADCAST:
+        return DataMovementType.BROADCAST;
+      case SCATTER_GATHER:
+        return DataMovementType.SCATTER_GATHER;
+      case CUSTOM:
+        return DataMovementType.CUSTOM;
+      default:
+        throw new IllegalArgumentException("unknown 'dataMovementType': " + type);
     }
   }
 
-  public static PlanEdgeSchedulingType convertToDAGPlan(SchedulingType type){
-    switch(type){
-      case SEQUENTIAL : return PlanEdgeSchedulingType.SEQUENTIAL;
-      case CONCURRENT : return PlanEdgeSchedulingType.CONCURRENT;
-      default : throw new RuntimeException("unknown 'SchedulingType': " + type);
+  public static PlanEdgeSchedulingType convertToDAGPlan(SchedulingType type) {
+    switch (type) {
+      case SEQUENTIAL:
+        return PlanEdgeSchedulingType.SEQUENTIAL;
+      case CONCURRENT:
+        return PlanEdgeSchedulingType.CONCURRENT;
+      default:
+        throw new RuntimeException("unknown 'SchedulingType': " + type);
     }
   }
 
-  public static SchedulingType convertFromDAGPlan(PlanEdgeSchedulingType type){
-    switch(type){
-      case SEQUENTIAL : return SchedulingType.SEQUENTIAL;
-      case CONCURRENT : return SchedulingType.CONCURRENT;
-      default : throw new IllegalArgumentException("unknown 'SchedulingType': " + type);
+  public static SchedulingType convertFromDAGPlan(PlanEdgeSchedulingType type) {
+    switch (type) {
+      case SEQUENTIAL:
+        return SchedulingType.SEQUENTIAL;
+      case CONCURRENT:
+        return SchedulingType.CONCURRENT;
+      default:
+        throw new IllegalArgumentException("unknown 'SchedulingType': " + type);
     }
   }
 
   public static PlanLocalResourceType convertToDAGPlan(LocalResourceType type) {
-    switch(type){
-    case ARCHIVE : return PlanLocalResourceType.ARCHIVE;
-    case FILE : return PlanLocalResourceType.FILE;
-    case PATTERN : return PlanLocalResourceType.PATTERN;
-    default : throw new IllegalArgumentException("unknown 'type': " + type);
+    switch (type) {
+      case ARCHIVE:
+        return PlanLocalResourceType.ARCHIVE;
+      case FILE:
+        return PlanLocalResourceType.FILE;
+      case PATTERN:
+        return PlanLocalResourceType.PATTERN;
+      default:
+        throw new IllegalArgumentException("unknown 'type': " + type);
     }
   }
 
   public static LocalResourceType convertFromDAGPlan(PlanLocalResourceType type) {
-    switch(type){
-    case ARCHIVE : return LocalResourceType.ARCHIVE;
-    case FILE : return LocalResourceType.FILE;
-    case PATTERN : return LocalResourceType.PATTERN;
-    default : throw new IllegalArgumentException("unknown 'type': " + type);
+    switch (type) {
+      case ARCHIVE:
+        return LocalResourceType.ARCHIVE;
+      case FILE:
+        return LocalResourceType.FILE;
+      case PATTERN:
+        return LocalResourceType.PATTERN;
+      default:
+        throw new IllegalArgumentException("unknown 'type': " + type);
     }
   }
 
   public static VertexLocationHint convertFromDAGPlan(
-      List<PlanTaskLocationHint> locationHints) {
+    List<PlanTaskLocationHint> locationHints) {
 
     List<TaskLocationHint> outputList = new ArrayList<TaskLocationHint>();
 
-    for(PlanTaskLocationHint inputHint : locationHints){
+    for (PlanTaskLocationHint inputHint : locationHints) {
       TaskLocationHint outputHint = TaskLocationHint.createTaskLocationHint(
-          new HashSet<String>(inputHint.getHostList()),
-          new HashSet<String>(inputHint.getRackList()));
+        new HashSet<String>(inputHint.getHostList()),
+        new HashSet<String>(inputHint.getRackList()));
       outputList.add(outputHint);
     }
     return VertexLocationHint.create(outputList);
   }
-  
+
   public static String convertToDAGPlan(URL resource) {
     Path p;
     try {
@@ -240,14 +280,14 @@ public class DagTypeConverters {
   }
 
   public static Map<String, LocalResource> createLocalResourceMapFromDAGPlan(
-      List<PlanLocalResource> localResourcesList) {
+    List<PlanLocalResource> localResourcesList) {
     Map<String, LocalResource> map = new HashMap<String, LocalResource>();
-    for(PlanLocalResource res : localResourcesList){
+    for (PlanLocalResource res : localResourcesList) {
       LocalResource r = new LocalResourcePBImpl();
 
       //NOTE: have to check every optional field in protobuf generated classes for existence before accessing
       //else we will receive a default value back, eg ""
-      if(res.hasPattern()){
+      if (res.hasPattern()) {
         r.setPattern(res.getPattern());
       }
       r.setResource(convertToYarnURL(res.getUri()));
@@ -261,25 +301,25 @@ public class DagTypeConverters {
   }
 
   public static Map<String, String> createEnvironmentMapFromDAGPlan(
-      List<PlanKeyValuePair> environmentSettingList) {
+    List<PlanKeyValuePair> environmentSettingList) {
 
     Map<String, String> map = new HashMap<String, String>();
-    for(PlanKeyValuePair setting : environmentSettingList){
+    for (PlanKeyValuePair setting : environmentSettingList) {
       map.put(setting.getKey(), setting.getValue());
     }
 
     return map;
   }
 
-  public static Map<String, EdgePlan> createEdgePlanMapFromDAGPlan(List<EdgePlan> edgeList){
+  public static Map<String, EdgePlan> createEdgePlanMapFromDAGPlan(List<EdgePlan> edgeList) {
     Map<String, EdgePlan> edgePlanMap =
-        new HashMap<String, EdgePlan>();
-    for(EdgePlan edgePlanItem : edgeList){
+      new HashMap<String, EdgePlan>();
+    for (EdgePlan edgePlanItem : edgeList) {
       edgePlanMap.put(edgePlanItem.getId(), edgePlanItem);
     }
     return edgePlanMap;
   }
-  
+
   public static PlanEdgeProperty convertToProto(EdgeProperty prop) {
     PlanEdgeProperty.Builder edgePropBuilder = PlanEdgeProperty.newBuilder();
     edgePropBuilder.setDataMovementType(convertToDAGPlan(prop.getDataMovementType()));
@@ -287,67 +327,67 @@ public class DagTypeConverters {
     edgePropBuilder.setSchedulingType(convertToDAGPlan(prop.getSchedulingType()));
     edgePropBuilder.setEdgeSource(DagTypeConverters.convertToDAGPlan(prop.getEdgeSource()));
     edgePropBuilder
-        .setEdgeDestination(DagTypeConverters.convertToDAGPlan(prop.getEdgeDestination()));
+      .setEdgeDestination(DagTypeConverters.convertToDAGPlan(prop.getEdgeDestination()));
     if (prop.getEdgeManagerDescriptor() != null) {
       edgePropBuilder.setEdgeManager(DagTypeConverters.convertToDAGPlan(prop
-          .getEdgeManagerDescriptor()));
+        .getEdgeManagerDescriptor()));
     }
-    
+
     return edgePropBuilder.build();
   }
-  
+
   public static EdgeProperty convertFromProto(PlanEdgeProperty edge) {
-      return EdgeProperty.create(
-          (edge.hasEdgeManager() ?
-              convertEdgeManagerPluginDescriptorFromDAGPlan(edge.getEdgeManager()) : null),
-          convertFromDAGPlan(edge.getDataMovementType()),
-          convertFromDAGPlan(edge.getDataSourceType()),
-          convertFromDAGPlan(edge.getSchedulingType()),
-          convertOutputDescriptorFromDAGPlan(edge.getEdgeSource()),
-          convertInputDescriptorFromDAGPlan(edge.getEdgeDestination())
-      );
+    return EdgeProperty.create(
+      (edge.hasEdgeManager() ?
+        convertEdgeManagerPluginDescriptorFromDAGPlan(edge.getEdgeManager()) : null),
+      convertFromDAGPlan(edge.getDataMovementType()),
+      convertFromDAGPlan(edge.getDataSourceType()),
+      convertFromDAGPlan(edge.getSchedulingType()),
+      convertOutputDescriptorFromDAGPlan(edge.getEdgeSource()),
+      convertInputDescriptorFromDAGPlan(edge.getEdgeDestination())
+    );
   }
 
   public static EdgeProperty createEdgePropertyMapFromDAGPlan(EdgePlan edge) {
     if (edge.getDataMovementType() == PlanEdgeDataMovementType.CUSTOM) {
       return EdgeProperty.create(
-          (edge.hasEdgeManager() ?
-              convertEdgeManagerPluginDescriptorFromDAGPlan(edge.getEdgeManager()) : null),
-          convertFromDAGPlan(edge.getDataSourceType()),
-          convertFromDAGPlan(edge.getSchedulingType()),
-          convertOutputDescriptorFromDAGPlan(edge.getEdgeSource()),
-          convertInputDescriptorFromDAGPlan(edge.getEdgeDestination())
+        (edge.hasEdgeManager() ?
+          convertEdgeManagerPluginDescriptorFromDAGPlan(edge.getEdgeManager()) : null),
+        convertFromDAGPlan(edge.getDataSourceType()),
+        convertFromDAGPlan(edge.getSchedulingType()),
+        convertOutputDescriptorFromDAGPlan(edge.getEdgeSource()),
+        convertInputDescriptorFromDAGPlan(edge.getEdgeDestination())
       );
     } else {
       return EdgeProperty.create(
-          convertFromDAGPlan(edge.getDataMovementType()),
-          convertFromDAGPlan(edge.getDataSourceType()),
-          convertFromDAGPlan(edge.getSchedulingType()),
-          convertOutputDescriptorFromDAGPlan(edge.getEdgeSource()),
-          convertInputDescriptorFromDAGPlan(edge.getEdgeDestination())
+        convertFromDAGPlan(edge.getDataMovementType()),
+        convertFromDAGPlan(edge.getDataSourceType()),
+        convertFromDAGPlan(edge.getSchedulingType()),
+        convertOutputDescriptorFromDAGPlan(edge.getEdgeSource()),
+        convertInputDescriptorFromDAGPlan(edge.getEdgeDestination())
       );
     }
   }
 
   public static Resource createResourceRequestFromTaskConfig(
-      PlanTaskConfiguration taskConfig) {
+    PlanTaskConfiguration taskConfig) {
     return Resource.newInstance(taskConfig.getMemoryMb(), taskConfig.getVirtualCores());
   }
 
   public static Map<String, String> convertConfFromProto(
-      ConfigurationProto confProto) {
+    ConfigurationProto confProto) {
     List<PlanKeyValuePair> settingList = confProto.getConfKeyValuesList();
     Map<String, String> map = new HashMap<String, String>();
-    for(PlanKeyValuePair setting: settingList){
+    for (PlanKeyValuePair setting : settingList) {
       map.put(setting.getKey(), setting.getValue());
     }
     return map;
   }
 
   public static TezEntityDescriptorProto convertToDAGPlan(
-      EntityDescriptor<?> descriptor) {
+    EntityDescriptor<?> descriptor) {
     TezEntityDescriptorProto.Builder builder = TezEntityDescriptorProto
-        .newBuilder();
+      .newBuilder();
     builder.setClassName(descriptor.getClassName());
 
     UserPayload userPayload = descriptor.getUserPayload();
@@ -362,7 +402,7 @@ public class DagTypeConverters {
     if (descriptor.getHistoryText() != null) {
       try {
         builder.setHistoryText(TezCommonUtils.compressByteArrayToByteString(
-            descriptor.getHistoryText().getBytes("UTF-8")));
+          descriptor.getHistoryText().getBytes("UTF-8")));
       } catch (IOException e) {
         throw new TezUncheckedException(e);
       }
@@ -376,16 +416,14 @@ public class DagTypeConverters {
     }
     try {
       return new String(TezCommonUtils.decompressByteStringToByteArray(proto.getHistoryText(), inflater),
-          "UTF-8");
+        "UTF-8");
     } catch (IOException e) {
       throw new TezUncheckedException(e);
     }
   }
 
-
-
   public static RootInputLeafOutputProto convertToDAGPlan(
-      RootInputLeafOutput<? extends EntityDescriptor<?>, ? extends EntityDescriptor<?>> rootIO) {
+    RootInputLeafOutput<? extends EntityDescriptor<?>, ? extends EntityDescriptor<?>> rootIO) {
     RootInputLeafOutputProto.Builder builder = RootInputLeafOutputProto.newBuilder();
     builder.setName(rootIO.getName());
     builder.setIODescriptor(convertToDAGPlan(rootIO.getIODescriptor()));
@@ -396,20 +434,19 @@ public class DagTypeConverters {
   }
 
   private static UserPayload convertTezUserPayloadFromDAGPlan(
-      TezEntityDescriptorProto proto) {
+    TezEntityDescriptorProto proto) {
     UserPayload userPayload = null;
     if (proto.hasTezUserPayload()) {
       if (proto.getTezUserPayload().hasUserPayload()) {
         userPayload =
-            UserPayload.create(proto.getTezUserPayload().getUserPayload().asReadOnlyByteBuffer(), proto.getTezUserPayload().getVersion());
+          UserPayload.create(proto.getTezUserPayload().getUserPayload().asReadOnlyByteBuffer(),
+            proto.getTezUserPayload().getVersion());
       } else {
         userPayload = UserPayload.create(null);
       }
     }
     return userPayload;
   }
-
-
 
   private static void setUserPayload(EntityDescriptor<?> entity, UserPayload payload) {
     if (payload != null) {
@@ -418,7 +455,7 @@ public class DagTypeConverters {
   }
 
   public static InputDescriptor convertInputDescriptorFromDAGPlan(
-      TezEntityDescriptorProto proto) {
+    TezEntityDescriptorProto proto) {
     String className = proto.getClassName();
     UserPayload payload = convertTezUserPayloadFromDAGPlan(proto);
     InputDescriptor id = InputDescriptor.create(className);
@@ -427,7 +464,7 @@ public class DagTypeConverters {
   }
 
   public static OutputDescriptor convertOutputDescriptorFromDAGPlan(
-      TezEntityDescriptorProto proto) {
+    TezEntityDescriptorProto proto) {
     String className = proto.getClassName();
     UserPayload payload = convertTezUserPayloadFromDAGPlan(proto);
     OutputDescriptor od = OutputDescriptor.create(className);
@@ -445,7 +482,7 @@ public class DagTypeConverters {
   }
 
   public static InputInitializerDescriptor convertInputInitializerDescriptorFromDAGPlan(
-      TezEntityDescriptorProto proto) {
+    TezEntityDescriptorProto proto) {
     String className = proto.getClassName();
     UserPayload payload = convertTezUserPayloadFromDAGPlan(proto);
     InputInitializerDescriptor iid = InputInitializerDescriptor.create(className);
@@ -454,7 +491,7 @@ public class DagTypeConverters {
   }
 
   public static OutputCommitterDescriptor convertOutputCommitterDescriptorFromDAGPlan(
-      TezEntityDescriptorProto proto) {
+    TezEntityDescriptorProto proto) {
     String className = proto.getClassName();
     UserPayload payload = convertTezUserPayloadFromDAGPlan(proto);
     OutputCommitterDescriptor ocd = OutputCommitterDescriptor.create(className);
@@ -463,7 +500,7 @@ public class DagTypeConverters {
   }
 
   public static VertexManagerPluginDescriptor convertVertexManagerPluginDescriptorFromDAGPlan(
-      TezEntityDescriptorProto proto) {
+    TezEntityDescriptorProto proto) {
     String className = proto.getClassName();
     UserPayload payload = convertTezUserPayloadFromDAGPlan(proto);
     VertexManagerPluginDescriptor vmpd = VertexManagerPluginDescriptor.create(className);
@@ -472,7 +509,7 @@ public class DagTypeConverters {
   }
 
   public static EdgeManagerPluginDescriptor convertEdgeManagerPluginDescriptorFromDAGPlan(
-      TezEntityDescriptorProto proto) {
+    TezEntityDescriptorProto proto) {
     String className = proto.getClassName();
     UserPayload payload = convertTezUserPayloadFromDAGPlan(proto);
     EdgeManagerPluginDescriptor empd = EdgeManagerPluginDescriptor.create(className);
@@ -481,7 +518,7 @@ public class DagTypeConverters {
   }
 
   public static ProcessorDescriptor convertProcessorDescriptorFromDAGPlan(
-      TezEntityDescriptorProto proto) {
+    TezEntityDescriptorProto proto) {
     String className = proto.getClassName();
     UserPayload payload = convertTezUserPayloadFromDAGPlan(proto);
     ProcessorDescriptor pd = ProcessorDescriptor.create(className);
@@ -490,37 +527,36 @@ public class DagTypeConverters {
   }
 
   public static TezAppMasterStatus convertTezAppMasterStatusFromProto(
-          TezAppMasterStatusProto proto) {
+    TezAppMasterStatusProto proto) {
     switch (proto) {
-    case INITIALIZING:
-      return TezAppMasterStatus.INITIALIZING;
-    case READY:
-      return TezAppMasterStatus.READY;
-    case RUNNING:
-      return TezAppMasterStatus.RUNNING;
-    case SHUTDOWN:
-      return TezAppMasterStatus.SHUTDOWN;
+      case INITIALIZING:
+        return TezAppMasterStatus.INITIALIZING;
+      case READY:
+        return TezAppMasterStatus.READY;
+      case RUNNING:
+        return TezAppMasterStatus.RUNNING;
+      case SHUTDOWN:
+        return TezAppMasterStatus.SHUTDOWN;
     }
     throw new TezUncheckedException("Could not convert to TezSessionStatus from"
-        + " proto");
+      + " proto");
   }
 
   public static TezAppMasterStatusProto convertTezAppMasterStatusToProto(
     TezAppMasterStatus status) {
     switch (status) {
-    case INITIALIZING:
-      return TezAppMasterStatusProto.INITIALIZING;
-    case READY:
-      return TezAppMasterStatusProto.READY;
-    case RUNNING:
-      return TezAppMasterStatusProto.RUNNING;
-    case SHUTDOWN:
-      return TezAppMasterStatusProto.SHUTDOWN;
+      case INITIALIZING:
+        return TezAppMasterStatusProto.INITIALIZING;
+      case READY:
+        return TezAppMasterStatusProto.READY;
+      case RUNNING:
+        return TezAppMasterStatusProto.RUNNING;
+      case SHUTDOWN:
+        return TezAppMasterStatusProto.SHUTDOWN;
     }
     throw new TezUncheckedException("Could not convert TezSessionStatus to"
-        + " proto");
+      + " proto");
   }
-
 
   public static PlanLocalResourcesProto convertFromLocalResources(
     Map<String, LocalResource> localResources) {
@@ -528,7 +564,7 @@ public class DagTypeConverters {
       PlanLocalResourcesProto.newBuilder();
     for (Map.Entry<String, LocalResource> entry : localResources.entrySet()) {
       PlanLocalResource plr = convertLocalResourceToPlanLocalResource(
-          entry.getKey(), entry.getValue());
+        entry.getKey(), entry.getValue());
       builder.addLocalResources(plr);
     }
     return builder.build();
@@ -569,13 +605,13 @@ public class DagTypeConverters {
   }
 
   public static LocalResource convertPlanLocalResourceToLocalResource(
-      PlanLocalResource plr) {
+    PlanLocalResource plr) {
     return LocalResource.newInstance(
-        ConverterUtils.getYarnUrlFromPath(new Path(plr.getUri())),
-        DagTypeConverters.convertFromDAGPlan(plr.getType()),
-        DagTypeConverters.convertFromDAGPlan(plr.getVisibility()),
-        plr.getSize(), plr.getTimeStamp(),
-        plr.hasPattern() ? plr.getPattern() : null);
+      ConverterUtils.getYarnUrlFromPath(new Path(plr.getUri())),
+      DagTypeConverters.convertFromDAGPlan(plr.getType()),
+      DagTypeConverters.convertFromDAGPlan(plr.getVisibility()),
+      plr.getSize(), plr.getTimeStamp(),
+      plr.hasPattern() ? plr.getPattern() : null);
   }
 
   public static TezCounters convertTezCountersFromProto(TezCountersProto proto) {
@@ -595,7 +631,7 @@ public class DagTypeConverters {
   }
 
   public static TezCountersProto convertTezCountersToProto(
-      TezCounters counters) {
+    TezCounters counters) {
     TezCountersProto.Builder builder = TezCountersProto.newBuilder();
     Iterator<CounterGroup> groupIterator = counters.iterator();
     int groupIndex = 0;
@@ -624,22 +660,22 @@ public class DagTypeConverters {
   }
 
   public static DAGProtos.StatusGetOptsProto convertStatusGetOptsToProto(
-      StatusGetOpts statusGetOpts) {
+    StatusGetOpts statusGetOpts) {
     switch (statusGetOpts) {
-    case GET_COUNTERS:
-      return DAGProtos.StatusGetOptsProto.GET_COUNTERS;
-    case GET_MEMORY_USAGE:
-      return DAGProtos.StatusGetOptsProto.GET_MEMORY_USAGE;
+      case GET_COUNTERS:
+        return DAGProtos.StatusGetOptsProto.GET_COUNTERS;
+      case GET_MEMORY_USAGE:
+        return DAGProtos.StatusGetOptsProto.GET_MEMORY_USAGE;
     }
     throw new TezUncheckedException("Could not convert StatusGetOpts to" + " proto");
   }
 
   public static StatusGetOpts convertStatusGetOptsFromProto(DAGProtos.StatusGetOptsProto proto) {
     switch (proto) {
-    case GET_COUNTERS:
-      return StatusGetOpts.GET_COUNTERS;
-    case GET_MEMORY_USAGE:
-      return StatusGetOpts.GET_MEMORY_USAGE;
+      case GET_COUNTERS:
+        return StatusGetOpts.GET_COUNTERS;
+      case GET_MEMORY_USAGE:
+        return StatusGetOpts.GET_MEMORY_USAGE;
     }
     throw new TezUncheckedException("Could not convert to StatusGetOpts from" + " proto");
   }
@@ -655,7 +691,7 @@ public class DagTypeConverters {
   }
 
   public static Set<StatusGetOpts> convertStatusGetOptsFromProto(
-      List<DAGProtos.StatusGetOptsProto> protoList) {
+    List<DAGProtos.StatusGetOptsProto> protoList) {
     Set<StatusGetOpts> opts = new TreeSet<StatusGetOpts>();
     for (DAGProtos.StatusGetOptsProto proto : protoList) {
       opts.add(convertStatusGetOptsFromProto(proto));
@@ -696,10 +732,10 @@ public class DagTypeConverters {
     VertexLocationHintProto proto) {
     List<TaskLocationHint> outputList = new ArrayList<TaskLocationHint>(
       proto.getTaskLocationHintsCount());
-    for(PlanTaskLocationHint inputHint : proto.getTaskLocationHintsList()){
+    for (PlanTaskLocationHint inputHint : proto.getTaskLocationHintsList()) {
       TaskLocationHint outputHint = TaskLocationHint.createTaskLocationHint(
-          new HashSet<String>(inputHint.getHostList()),
-          new HashSet<String>(inputHint.getRackList()));
+        new HashSet<String>(inputHint.getHostList()),
+        new HashSet<String>(inputHint.getRackList()));
       outputList.add(outputHint);
     }
 
@@ -707,7 +743,7 @@ public class DagTypeConverters {
   }
 
   public static VertexLocationHintProto convertVertexLocationHintToProto(
-      VertexLocationHint vertexLocationHint) {
+    VertexLocationHint vertexLocationHint) {
     VertexLocationHintProto.Builder builder =
       VertexLocationHintProto.newBuilder();
     if (vertexLocationHint.getTaskLocationHints() != null) {
@@ -740,12 +776,12 @@ public class DagTypeConverters {
   }
 
   public static VertexExecutionContextProto convertToProto(
-      VertexExecutionContext context) {
+    VertexExecutionContext context) {
     if (context == null) {
       return null;
     } else {
       VertexExecutionContextProto.Builder builder =
-          VertexExecutionContextProto.newBuilder();
+        VertexExecutionContextProto.newBuilder();
       builder.setExecuteInAm(context.shouldExecuteInAm());
       builder.setExecuteInContainers(context.shouldExecuteInContainers());
       if (context.getTaskSchedulerName() != null) {
@@ -762,34 +798,34 @@ public class DagTypeConverters {
   }
 
   public static VertexExecutionContext convertFromProto(
-      VertexExecutionContextProto proto) {
+    VertexExecutionContextProto proto) {
     if (proto == null) {
       return null;
     } else {
       if (proto.getExecuteInAm()) {
         VertexExecutionContext context =
-            VertexExecutionContext.createExecuteInAm(proto.getExecuteInAm());
+          VertexExecutionContext.createExecuteInAm(proto.getExecuteInAm());
         return context;
       } else if (proto.getExecuteInContainers()) {
         VertexExecutionContext context =
-            VertexExecutionContext.createExecuteInContainers(proto.getExecuteInContainers());
+          VertexExecutionContext.createExecuteInContainers(proto.getExecuteInContainers());
         return context;
       } else {
         String taskScheduler = proto.hasTaskSchedulerName() ? proto.getTaskSchedulerName() : null;
         String containerLauncher =
-            proto.hasContainerLauncherName() ? proto.getContainerLauncherName() : null;
+          proto.hasContainerLauncherName() ? proto.getContainerLauncherName() : null;
         String taskComm = proto.hasTaskCommName() ? proto.getTaskCommName() : null;
         VertexExecutionContext context =
-            VertexExecutionContext.create(taskScheduler, containerLauncher, taskComm);
+          VertexExecutionContext.create(taskScheduler, containerLauncher, taskComm);
         return context;
       }
     }
   }
 
   public static List<TezNamedEntityDescriptorProto> convertNamedEntityCollectionToProto(
-      NamedEntityDescriptor[] namedEntityDescriptors) {
+    NamedEntityDescriptor[] namedEntityDescriptors) {
     List<TezNamedEntityDescriptorProto> list =
-        Lists.newArrayListWithCapacity(namedEntityDescriptors.length);
+      Lists.newArrayListWithCapacity(namedEntityDescriptors.length);
     for (NamedEntityDescriptor namedEntity : namedEntityDescriptors) {
       TezNamedEntityDescriptorProto namedEntityProto = convertNamedEntityToProto(namedEntity);
       list.add(namedEntityProto);
@@ -798,45 +834,44 @@ public class DagTypeConverters {
   }
 
   public static TezNamedEntityDescriptorProto convertNamedEntityToProto(
-      NamedEntityDescriptor namedEntityDescriptor) {
+    NamedEntityDescriptor namedEntityDescriptor) {
     TezNamedEntityDescriptorProto.Builder builder = TezNamedEntityDescriptorProto.newBuilder();
     builder.setName(namedEntityDescriptor.getEntityName());
     DAGProtos.TezEntityDescriptorProto entityProto =
-        DagTypeConverters.convertToDAGPlan(namedEntityDescriptor);
+      DagTypeConverters.convertToDAGPlan(namedEntityDescriptor);
     builder.setEntityDescriptor(entityProto);
     return builder.build();
   }
 
   public static AMPluginDescriptorProto convertServicePluginDescriptorToProto(
-      ServicePluginsDescriptor servicePluginsDescriptor) {
+    ServicePluginsDescriptor servicePluginsDescriptor) {
     AMPluginDescriptorProto.Builder pluginDescriptorBuilder =
-        AMPluginDescriptorProto.newBuilder();
+      AMPluginDescriptorProto.newBuilder();
     if (servicePluginsDescriptor != null) {
 
       pluginDescriptorBuilder.setContainersEnabled(servicePluginsDescriptor.areContainersEnabled());
       pluginDescriptorBuilder.setUberEnabled(servicePluginsDescriptor.isUberEnabled());
 
       if (servicePluginsDescriptor.getTaskSchedulerDescriptors() != null &&
-          servicePluginsDescriptor.getTaskSchedulerDescriptors().length > 0) {
+        servicePluginsDescriptor.getTaskSchedulerDescriptors().length > 0) {
         List<TezNamedEntityDescriptorProto> namedEntityProtos = DagTypeConverters.convertNamedEntityCollectionToProto(
-            servicePluginsDescriptor.getTaskSchedulerDescriptors());
+          servicePluginsDescriptor.getTaskSchedulerDescriptors());
         pluginDescriptorBuilder.addAllTaskSchedulers(namedEntityProtos);
       }
 
       if (servicePluginsDescriptor.getContainerLauncherDescriptors() != null &&
-          servicePluginsDescriptor.getContainerLauncherDescriptors().length > 0) {
+        servicePluginsDescriptor.getContainerLauncherDescriptors().length > 0) {
         List<TezNamedEntityDescriptorProto> namedEntityProtos = DagTypeConverters.convertNamedEntityCollectionToProto(
-            servicePluginsDescriptor.getContainerLauncherDescriptors());
+          servicePluginsDescriptor.getContainerLauncherDescriptors());
         pluginDescriptorBuilder.addAllContainerLaunchers(namedEntityProtos);
       }
 
       if (servicePluginsDescriptor.getTaskCommunicatorDescriptors() != null &&
-          servicePluginsDescriptor.getTaskCommunicatorDescriptors().length > 0) {
+        servicePluginsDescriptor.getTaskCommunicatorDescriptors().length > 0) {
         List<TezNamedEntityDescriptorProto> namedEntityProtos = DagTypeConverters.convertNamedEntityCollectionToProto(
-            servicePluginsDescriptor.getTaskCommunicatorDescriptors());
+          servicePluginsDescriptor.getTaskCommunicatorDescriptors());
         pluginDescriptorBuilder.addAllTaskCommunicators(namedEntityProtos);
       }
-
     } else {
       pluginDescriptorBuilder.setContainersEnabled(true).setUberEnabled(false);
     }
@@ -860,7 +895,7 @@ public class DagTypeConverters {
 
   public static CallerContext convertCallerContextFromProto(CallerContextProto proto) {
     CallerContext callerContext = CallerContext.create(proto.getContext(),
-        (proto.hasBlob() ? proto.getBlob() : null));
+      (proto.hasBlob() ? proto.getBlob() : null));
     if (proto.hasCallerType() && proto.hasCallerId()) {
       callerContext.setCallerIdAndType(proto.getCallerId(), proto.getCallerType());
     }

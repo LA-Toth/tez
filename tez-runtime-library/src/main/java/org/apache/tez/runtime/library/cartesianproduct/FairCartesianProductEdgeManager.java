@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,17 +17,17 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import com.google.common.primitives.Ints;
+import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductCombination.fromTaskId;
+import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
+
+import javax.annotation.Nullable;
+
 import org.apache.tez.dag.api.EdgeManagerPluginContext;
 import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.CompositeEventRouteMetadata;
 import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.EventRouteMetadata;
 import org.apache.tez.runtime.library.utils.Grouper;
 
-import javax.annotation.Nullable;
-
-import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductCombination.fromTaskId;
-import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.*;
-
+import com.google.common.primitives.Ints;
 
 class FairCartesianProductEdgeManager extends CartesianProductEdgeManagerReal {
   private int numPartition;
@@ -90,7 +90,7 @@ class FairCartesianProductEdgeManager extends CartesianProductEdgeManagerReal {
     int chunkId = fromTaskId(numChunkPerSrc, destTaskId).getCombination().get(positionInSrc);
     if (grouper.isInGroup(itemId, chunkId)) {
       int idx = itemId - grouper.getFirstItemInGroup(chunkId) + getItemIdOffset(chunkId);
-      return EventRouteMetadata.create(1, new int[] {idx});
+      return EventRouteMetadata.create(1, new int[]{idx});
     }
     return null;
   }
@@ -103,7 +103,7 @@ class FairCartesianProductEdgeManager extends CartesianProductEdgeManagerReal {
     int chunkId = fromTaskId(numChunkPerSrc, destTaskId).getCombination().get(positionInSrc);
     int firstItemInChunk = grouper.getFirstItemInGroup(chunkId);
     int lastItemInChunk = grouper.getLastItemInGroup(chunkId);
-    int firstItemInSrcTask =  srcTaskId * numPartition;
+    int firstItemInSrcTask = srcTaskId * numPartition;
     int lastItemInSrcTask = firstItemInSrcTask + numPartition - 1;
     if (!(lastItemInChunk < firstItemInSrcTask || firstItemInChunk > lastItemInSrcTask)) {
       int firstItem = Math.max(firstItemInChunk, firstItemInSrcTask);

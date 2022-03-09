@@ -34,10 +34,10 @@ public interface TaskReporterInterface {
   boolean taskSucceeded(TezTaskAttemptID taskAttemptId) throws IOException, TezException;
 
   boolean taskFailed(TezTaskAttemptID taskAttemptId,
-                              TaskFailureType taskFailureType,
-                              Throwable cause,
-                              String diagnostics, EventMetaData srcMeta) throws IOException,
-      TezException;
+                     TaskFailureType taskFailureType,
+                     Throwable cause,
+                     String diagnostics, EventMetaData srcMeta) throws IOException,
+    TezException;
 
   boolean taskKilled(TezTaskAttemptID taskAttemtpId, Throwable cause, String diagnostics,
                      EventMetaData srcMeta) throws IOException, TezException;
@@ -47,5 +47,4 @@ public interface TaskReporterInterface {
   boolean canCommit(TezTaskAttemptID taskAttemptId) throws IOException;
 
   void shutdown();
-
 }

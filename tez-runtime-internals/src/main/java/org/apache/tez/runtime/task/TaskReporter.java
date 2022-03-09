@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -43,20 +43,18 @@ import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.RuntimeTask;
-import org.apache.tez.runtime.api.*;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.events.TaskAttemptCompletedEvent;
 import org.apache.tez.runtime.api.events.TaskAttemptFailedEvent;
 import org.apache.tez.runtime.api.events.TaskAttemptKilledEvent;
 import org.apache.tez.runtime.api.events.TaskStatusUpdateEvent;
 import org.apache.tez.runtime.api.impl.EventMetaData;
+import org.apache.tez.runtime.api.impl.EventMetaData.EventProducerConsumerType;
 import org.apache.tez.runtime.api.impl.TaskStatistics;
 import org.apache.tez.runtime.api.impl.TezEvent;
 import org.apache.tez.runtime.api.impl.TezHeartbeatRequest;
 import org.apache.tez.runtime.api.impl.TezHeartbeatResponse;
-import org.apache.tez.runtime.api.impl.EventMetaData.EventProducerConsumerType;
 import org.apache.tez.runtime.internals.api.TaskReporterInterface;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
@@ -66,12 +64,14 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Responsible for communication between tasks running in a Container and the ApplicationMaster.
  * Takes care of sending heartbeats (regular and OOB) to the AM - to send generated events, and to
  * retrieve events specific to this task.
- * 
+ *
  */
 public class TaskReporter implements TaskReporterInterface {
 
@@ -90,7 +90,7 @@ public class TaskReporter implements TaskReporterInterface {
   HeartbeatCallable currentCallable;
 
   public TaskReporter(TezTaskUmbilicalProtocol umbilical, long amPollInterval,
-      long sendCounterInterval, int maxEventsToGet, AtomicLong requestCounter, String containerIdStr) {
+                      long sendCounterInterval, int maxEventsToGet, AtomicLong requestCounter, String containerIdStr) {
     this.umbilical = umbilical;
     this.pollInterval = amPollInterval;
     this.sendCounterInterval = sendCounterInterval;
@@ -98,7 +98,7 @@ public class TaskReporter implements TaskReporterInterface {
     this.requestCounter = requestCounter;
     this.containerIdStr = containerIdStr;
     ExecutorService executor = Executors.newFixedThreadPool(1, new ThreadFactoryBuilder()
-        .setDaemon(true).setNameFormat("TaskHeartbeatThread").build());
+      .setDaemon(true).setNameFormat("TaskHeartbeatThread").build());
     heartbeatExecutor = MoreExecutors.listeningDecorator(executor);
   }
 
@@ -107,9 +107,9 @@ public class TaskReporter implements TaskReporterInterface {
    */
   @Override
   public synchronized void registerTask(RuntimeTask task,
-      ErrorReporter errorReporter) {
+                                        ErrorReporter errorReporter) {
     currentCallable = new HeartbeatCallable(task, umbilical, pollInterval, sendCounterInterval,
-        maxEventsToGet, requestCounter, containerIdStr);
+      maxEventsToGet, requestCounter, containerIdStr);
     ListenableFuture<Boolean> future = heartbeatExecutor.submit(currentCallable);
     Futures.addCallback(future, new HeartbeatCallback(errorReporter), GuavaShim.directExecutor());
   }
@@ -133,6 +133,42 @@ public class TaskReporter implements TaskReporterInterface {
     return ShutdownHookManager.get().isShutdownInProgress();
   }
 
+  @Override
+  public synchronized boolean taskSucceeded(TezTaskAttemptID taskAttemptID) throws IOException, TezException {
+    return currentCallable.taskSucceeded(taskAttemptID);
+  }
+
+  @Override
+  public synchronized boolean taskFailed(TezTaskAttemptID taskAttemptID,
+                                         TaskFailureType taskFailureType,
+                                         Throwable t, String diagnostics,
+                                         EventMetaData srcMeta) throws IOException,
+    TezException {
+    if (!isShuttingDown()) {
+      return currentCallable.taskTerminated(taskAttemptID, false, taskFailureType, t, diagnostics, srcMeta);
+    }
+    return false;
+  }
+
+  @Override
+  public boolean taskKilled(TezTaskAttemptID taskAttemptID, Throwable t, String diagnostics,
+                            EventMetaData srcMeta) throws IOException, TezException {
+    if (!isShuttingDown()) {
+      return currentCallable.taskTerminated(taskAttemptID, true, null, t, diagnostics, srcMeta);
+    }
+    return false;
+  }
+
+  @Override
+  public synchronized void addEvents(TezTaskAttemptID taskAttemptID, Collection<TezEvent> events) {
+    currentCallable.addEvents(taskAttemptID, events);
+  }
+
+  @Override
+  public boolean canCommit(TezTaskAttemptID taskAttemptID) throws IOException {
+    return umbilical.canCommit(taskAttemptID);
+  }
+
   @VisibleForTesting
   static class HeartbeatCallable implements Callable<Boolean> {
 
@@ -154,13 +190,10 @@ public class TaskReporter implements TaskReporterInterface {
 
     private final AtomicBoolean finalEventQueued = new AtomicBoolean(false);
     private final AtomicBoolean askedToDie = new AtomicBoolean(false);
-
-    private LinkedBlockingQueue<TezEvent> eventsToSend = new LinkedBlockingQueue<TezEvent>();
-
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition condition = lock.newCondition();
-
     private final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+    private LinkedBlockingQueue<TezEvent> eventsToSend = new LinkedBlockingQueue<TezEvent>();
     private long usedMemory = 0;
     private long heapMemoryUsageUpdatedTime = System.currentTimeMillis() - HEAP_MEMORY_USAGE_UPDATE_INTERVAL;
 
@@ -171,13 +204,13 @@ public class TaskReporter implements TaskReporterInterface {
     private AtomicInteger nonOobHeartbeatCounter = new AtomicInteger(0);
     private int nextHeartbeatNumToLog = 0;
     /*
-     * Tracks the last non-OOB heartbeat number at which counters were sent to the AM. 
+     * Tracks the last non-OOB heartbeat number at which counters were sent to the AM.
      */
     private int prevCounterSendHeartbeatNum = 0;
 
     public HeartbeatCallable(RuntimeTask task,
-        TezTaskUmbilicalProtocol umbilical, long amPollInterval, long sendCounterInterval,
-        int maxEventsToGet, AtomicLong requestCounter, String containerIdStr) {
+                             TezTaskUmbilicalProtocol umbilical, long amPollInterval, long sendCounterInterval,
+                             int maxEventsToGet, AtomicLong requestCounter, String containerIdStr) {
 
       this.pollInterval = amPollInterval;
       this.sendCounterInterval = sendCounterInterval;
@@ -188,11 +221,11 @@ public class TaskReporter implements TaskReporterInterface {
       this.task = task;
       this.umbilical = umbilical;
       this.updateEventMetadata = new EventMetaData(EventProducerConsumerType.SYSTEM,
-          task.getVertexName(), "", task.getTaskAttemptID());
+        task.getVertexName(), "", task.getTaskAttemptID());
 
       nextHeartbeatNumToLog = (Math.max(1,
-          (int) (LOG_COUNTER_START_INTERVAL / (amPollInterval == 0 ? 0.000001f
-              : (float) amPollInterval))));
+        (int) (LOG_COUNTER_START_INTERVAL / (amPollInterval == 0 ? 0.000001f
+          : (float) amPollInterval))));
     }
 
     @Override
@@ -239,7 +272,7 @@ public class TaskReporter implements TaskReporterInterface {
      *           indicates an exception somewhere in the AM.
      */
     private synchronized ResponseWrapper heartbeat(Collection<TezEvent> eventsArg) throws IOException,
-        TezException {
+      TezException {
 
       if (eventsArg != null) {
         eventsToSend.addAll(eventsArg);
@@ -270,7 +303,7 @@ public class TaskReporter implements TaskReporterInterface {
       int fromPreRoutedEventId = task.getNextPreRoutedEventId();
       int maxEvents = Math.min(maxEventsToGet, task.getMaxEventsToHandle());
       TezHeartbeatRequest request = new TezHeartbeatRequest(requestId, events, fromPreRoutedEventId,
-          containerIdStr, task.getTaskAttemptID(), fromEventId, maxEvents, getUsedMemory());
+        containerIdStr, task.getTaskAttemptID(), fromEventId, maxEvents, getUsedMemory());
       LOG.debug("Sending heartbeat to AM, request={}", request);
 
       maybeLogCounters();
@@ -285,7 +318,7 @@ public class TaskReporter implements TaskReporterInterface {
       }
       if (response.getLastRequestId() != requestId) {
         throw new TezException("AM and Task out of sync" + ", responseReqId="
-            + response.getLastRequestId() + ", expectedReqId=" + requestId);
+          + response.getLastRequestId() + ", expectedReqId=" + requestId);
       }
 
       // The same umbilical is used by multiple tasks. Problematic in the case where multiple tasks
@@ -294,16 +327,16 @@ public class TaskReporter implements TaskReporterInterface {
       if (task.isTaskDone() || task.wasErrorReported()) {
         if (response.getEvents() != null && !response.getEvents().isEmpty()) {
           LOG.info("Current task already complete, Ignoring all events in"
-              + " heartbeat response, eventCount=" + response.getEvents().size());
+            + " heartbeat response, eventCount=" + response.getEvents().size());
         }
       } else {
         task.setNextFromEventId(response.getNextFromEventId());
         task.setNextPreRoutedEventId(response.getNextPreRoutedEventId());
         if (response.getEvents() != null && !response.getEvents().isEmpty()) {
           LOG.info("Routing events from heartbeat response to task" + ", currentTaskAttemptId="
-              + task.getTaskAttemptID() + ", eventCount=" + response.getEvents().size()
-              + " fromEventId=" + fromEventId
-              + " nextFromEventId=" + response.getNextFromEventId());
+            + task.getTaskAttemptID() + ", eventCount=" + response.getEvents().size()
+            + " fromEventId=" + fromEventId
+            + " nextFromEventId=" + response.getNextFromEventId());
           // This should ideally happen in a separate thread
           numEventsReceived = response.getEvents().size();
           task.handleEvents(response.getEvents());
@@ -354,14 +387,14 @@ public class TaskReporter implements TaskReporterInterface {
       if (!finalEventQueued.getAndSet(true)) {
         TezEvent statusUpdateEvent = new TezEvent(getStatusUpdateEvent(true), updateEventMetadata);
         TezEvent taskCompletedEvent = new TezEvent(new TaskAttemptCompletedEvent(),
-            updateEventMetadata);
+          updateEventMetadata);
         return !heartbeat(Lists.newArrayList(statusUpdateEvent, taskCompletedEvent)).shouldDie;
       } else {
         LOG.warn("A final task state event has already been sent. Not sending again");
         return askedToDie.get();
       }
     }
-    
+
     @VisibleForTesting
     TaskStatusUpdateEvent getStatusUpdateEvent(boolean sendCounters) {
       TezCounters counters = null;
@@ -407,11 +440,11 @@ public class TaskReporter implements TaskReporterInterface {
         }
         if (isKilled) {
           tezEvents.add(new TezEvent(new TaskAttemptKilledEvent(diagnostics),
-              srcMeta == null ? updateEventMetadata : srcMeta));
+            srcMeta == null ? updateEventMetadata : srcMeta));
         } else {
           tezEvents.add(new TezEvent(new TaskAttemptFailedEvent(diagnostics,
-              taskFailureType),
-              srcMeta == null ? updateEventMetadata : srcMeta));
+            taskFailureType),
+            srcMeta == null ? updateEventMetadata : srcMeta));
         }
         try {
           tezEvents.add(new TezEvent(getStatusUpdateEvent(true), updateEventMetadata));
@@ -452,42 +485,6 @@ public class TaskReporter implements TaskReporterInterface {
     public void onFailure(Throwable t) {
       errorReporter.reportError(t);
     }
-  }
-
-  @Override
-  public synchronized boolean taskSucceeded(TezTaskAttemptID taskAttemptID) throws IOException, TezException {
-    return currentCallable.taskSucceeded(taskAttemptID);
-  }
-
-  @Override
-  public synchronized boolean taskFailed(TezTaskAttemptID taskAttemptID,
-                                                  TaskFailureType taskFailureType,
-                                                  Throwable t, String diagnostics,
-                                                  EventMetaData srcMeta) throws IOException,
-      TezException {
-    if(!isShuttingDown()) {
-      return currentCallable.taskTerminated(taskAttemptID, false, taskFailureType, t, diagnostics, srcMeta);
-    }
-    return false;
-  }
-
-  @Override
-  public boolean taskKilled(TezTaskAttemptID taskAttemptID, Throwable t, String diagnostics,
-                            EventMetaData srcMeta) throws IOException, TezException {
-    if(!isShuttingDown()) {
-      return currentCallable.taskTerminated(taskAttemptID, true, null, t, diagnostics, srcMeta);
-    }
-    return false;
-  }
-
-  @Override
-  public synchronized void addEvents(TezTaskAttemptID taskAttemptID, Collection<TezEvent> events) {
-    currentCallable.addEvents(taskAttemptID, events);
-  }
-
-  @Override
-  public boolean canCommit(TezTaskAttemptID taskAttemptID) throws IOException {
-    return umbilical.canCommit(taskAttemptID);
   }
 
   private static final class ResponseWrapper {

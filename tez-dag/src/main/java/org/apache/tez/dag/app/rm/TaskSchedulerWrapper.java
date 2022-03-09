@@ -53,13 +53,13 @@ public class TaskSchedulerWrapper {
 
   public void allocateTask(Object task, Resource capability, String[] hosts, String[] racks,
                            Priority priority, Object containerSignature, Object clientCookie) throws
-      Exception {
+    Exception {
     real.allocateTask(task, capability, hosts, racks, priority, containerSignature, clientCookie);
   }
 
   public void allocateTask(Object task, Resource capability, ContainerId containerId,
                            Priority priority, Object containerSignature, Object clientCookie) throws
-      Exception {
+    Exception {
     real.allocateTask(task, capability, containerId, priority, containerSignature, clientCookie);
   }
 

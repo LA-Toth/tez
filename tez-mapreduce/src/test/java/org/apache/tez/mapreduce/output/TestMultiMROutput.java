@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,6 +22,9 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.IOException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -37,72 +40,69 @@ import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.mapreduce.hadoop.MRConfig;
 import org.apache.tez.runtime.api.OutputContext;
 import org.apache.tez.runtime.api.OutputStatisticsReporter;
+
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-
-
 public class TestMultiMROutput {
   private static final File TEST_DIR = new File(System.getProperty("test.build.data"),
-      TestMultiMROutput.class.getName()).getAbsoluteFile();
+    TestMultiMROutput.class.getName()).getAbsoluteFile();
 
   @Test(timeout = 5000)
   public void testNewAPI_TextOutputFormat() throws Exception {
     validate(true, TextOutputFormat.class, true, FileOutputCommitter.class,
-        false);
+      false);
   }
 
   @Test(timeout = 5000)
   public void testOldAPI_TextOutputFormat() throws Exception {
     validate(false, org.apache.hadoop.mapred.TextOutputFormat.class, false,
-        org.apache.hadoop.mapred.FileOutputCommitter.class, false);
+      org.apache.hadoop.mapred.FileOutputCommitter.class, false);
   }
 
   @Test(timeout = 5000)
   public void testNewAPI_SequenceFileOutputFormat() throws Exception {
     validate(true, SequenceFileOutputFormat.class, false,
-        FileOutputCommitter.class, false);
+      FileOutputCommitter.class, false);
   }
 
   @Test(timeout = 5000)
   public void testOldAPI_SequenceFileOutputFormat() throws Exception {
     validate(false, org.apache.hadoop.mapred.SequenceFileOutputFormat.class,
-        false, org.apache.hadoop.mapred.FileOutputCommitter.class, false);
+      false, org.apache.hadoop.mapred.FileOutputCommitter.class, false);
   }
 
   @Test(timeout = 5000)
   public void testNewAPI_LazySequenceFileOutputFormat() throws Exception {
     validate(true, SequenceFileOutputFormat.class, false,
-        FileOutputCommitter.class, true);
+      FileOutputCommitter.class, true);
   }
 
   @Test(timeout = 5000)
   public void testOldAPI_LazySequenceFileOutputFormat() throws Exception {
     validate(false, org.apache.hadoop.mapred.SequenceFileOutputFormat.class,
-        false, org.apache.hadoop.mapred.FileOutputCommitter.class, true);
+      false, org.apache.hadoop.mapred.FileOutputCommitter.class, true);
   }
 
   @Test(timeout = 5000)
   public void testNewAPI_LazyTextOutputFormat() throws Exception {
     validate(true, TextOutputFormat.class, false,
-        FileOutputCommitter.class, true);
+      FileOutputCommitter.class, true);
   }
 
   @Test(timeout = 5000)
   public void testOldAPI_LazyTextOutputFormat() throws Exception {
     validate(false, org.apache.hadoop.mapred.TextOutputFormat.class, false,
-        org.apache.hadoop.mapred.FileOutputCommitter.class, true);
+      org.apache.hadoop.mapred.FileOutputCommitter.class, true);
   }
 
   @Test(timeout = 5000)
   public void testInvalidBasePath() throws Exception {
     MultiMROutput outputs = createMROutputs(SequenceFileOutputFormat.class,
-        false, true);
+      false, true);
     try {
       outputs.getWriter().write(new Text(Integer.toString(0)),
-          new Text("foo"), "/tmp");
+        new Text("foo"), "/tmp");
       Assert.assertTrue(false); // should not come here
     } catch (UnsupportedOperationException uoe) {
     }
@@ -113,7 +113,7 @@ public class TestMultiMROutput {
     JobConf payloadConf = new JobConf();
     payloadConf.set("local-key", "local-value");
     DataSinkDescriptor dataSink = MultiMROutput.createConfigBuilder(
-        payloadConf, SequenceFileOutputFormat.class, "/output", false).build();
+      payloadConf, SequenceFileOutputFormat.class, "/output", false).build();
 
     Configuration baseConf = new Configuration(false);
     baseConf.set("base-key", "base-value");
@@ -145,32 +145,32 @@ public class TestMultiMROutput {
     when(outputContext.getTaskAttemptNumber()).thenReturn(1);
     when(outputContext.getCounters()).thenReturn(new TezCounters());
     when(outputContext.getStatisticsReporter()).thenReturn(
-        mock(OutputStatisticsReporter.class));
+      mock(OutputStatisticsReporter.class));
     when(outputContext.getContainerConfiguration()).thenReturn(new Configuration(false));
     return outputContext;
   }
 
   private void validate(boolean expectedUseNewAPIValue, Class outputFormat,
-      boolean isMapper, Class committerClass, boolean useLazyOutputFormat)
-          throws InterruptedException, IOException {
+                        boolean isMapper, Class committerClass, boolean useLazyOutputFormat)
+    throws InterruptedException, IOException {
     MultiMROutput output = createMROutputs(outputFormat, isMapper,
-        useLazyOutputFormat);
+      useLazyOutputFormat);
 
     assertEquals(isMapper, output.isMapperOutput);
     assertEquals(expectedUseNewAPIValue, output.useNewApi);
     if (expectedUseNewAPIValue) {
       if (useLazyOutputFormat) {
         assertEquals(LazyOutputFormat.class,
-            output.newOutputFormat.getClass());
+          output.newOutputFormat.getClass());
       } else {
         assertEquals(outputFormat, output.newOutputFormat.getClass());
       }
       assertNotNull(output.newApiTaskAttemptContext);
       assertNull(output.oldOutputFormat);
       assertEquals(Text.class,
-          output.newApiTaskAttemptContext.getOutputValueClass());
+        output.newApiTaskAttemptContext.getOutputValueClass());
       assertEquals(Text.class,
-          output.newApiTaskAttemptContext.getOutputKeyClass());
+        output.newApiTaskAttemptContext.getOutputKeyClass());
       assertNull(output.oldApiTaskAttemptContext);
       assertNotNull(output.newRecordWriters);
       assertNull(output.oldRecordWriters);
@@ -179,24 +179,24 @@ public class TestMultiMROutput {
         assertEquals(outputFormat, output.oldOutputFormat.getClass());
       } else {
         assertEquals(org.apache.hadoop.mapred.lib.LazyOutputFormat.class,
-            output.oldOutputFormat.getClass());
+          output.oldOutputFormat.getClass());
       }
       assertNull(output.newOutputFormat);
       assertNotNull(output.oldApiTaskAttemptContext);
       assertNull(output.newApiTaskAttemptContext);
       assertEquals(Text.class,
-          output.oldApiTaskAttemptContext.getOutputValueClass());
+        output.oldApiTaskAttemptContext.getOutputValueClass());
       assertEquals(Text.class,
-          output.oldApiTaskAttemptContext.getOutputKeyClass());
+        output.oldApiTaskAttemptContext.getOutputKeyClass());
       assertNotNull(output.oldRecordWriters);
       assertNull(output.newRecordWriters);
     }
 
     assertEquals(committerClass, output.committer.getClass());
     int numOfUniqueKeys = 3;
-    for (int i=0; i<numOfUniqueKeys; i++) {
+    for (int i = 0; i < numOfUniqueKeys; i++) {
       output.getWriter().write(new Text(Integer.toString(i)),
-          new Text("foo"), Integer.toString(i));
+        new Text("foo"), Integer.toString(i));
     }
     output.close();
     if (expectedUseNewAPIValue) {
@@ -207,18 +207,18 @@ public class TestMultiMROutput {
   }
 
   private MultiMROutput createMROutputs(Class outputFormat,
-      boolean isMapper, boolean useLazyOutputFormat)
-          throws InterruptedException, IOException {
+                                        boolean isMapper, boolean useLazyOutputFormat)
+    throws InterruptedException, IOException {
     String outputPath = TEST_DIR.getAbsolutePath();
     JobConf conf = new JobConf();
     conf.setBoolean(MRConfig.IS_MAP_PROCESSOR, isMapper);
     conf.setOutputKeyClass(Text.class);
     conf.setOutputValueClass(Text.class);
     DataSinkDescriptor dataSink = MultiMROutput.createConfigBuilder(
-        conf, outputFormat, outputPath, useLazyOutputFormat).build();
+      conf, outputFormat, outputPath, useLazyOutputFormat).build();
 
     OutputContext outputContext = createMockOutputContext(
-        dataSink.getOutputDescriptor().getUserPayload());
+      dataSink.getOutputDescriptor().getUserPayload());
     MultiMROutput output = new MultiMROutput(outputContext, 2);
     output.initialize();
     return output;

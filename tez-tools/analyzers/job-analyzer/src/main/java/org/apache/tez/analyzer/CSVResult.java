@@ -19,10 +19,13 @@
 package org.apache.tez.analyzer;
 
 import com.google.common.base.Joiner;
+
 import org.apache.tez.common.Preconditions;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+
 import org.apache.tez.dag.api.TezException;
 
 import java.io.BufferedWriter;
@@ -60,7 +63,7 @@ public class CSVResult implements Result {
   public void addRecord(String[] record) {
     Objects.requireNonNull(record, "Record cannot be null");
     Preconditions.checkArgument(record.length == headers.length, "Record length" + record.length +
-        " does not match headers length " + headers.length);
+      " does not match headers length " + headers.length);
     recordsList.add(record);
   }
 
@@ -68,35 +71,38 @@ public class CSVResult implements Result {
     return Iterators.unmodifiableIterator(recordsList.iterator());
   }
 
-  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @SuppressWarnings({"rawtypes", "unchecked"})
   public void sort(Comparator comparator) {
     Collections.sort(recordsList, comparator);
+  }
+
+  @Override
+  public String toJson() throws TezException {
+    return "";
+  }
+
+  @Override
+  public String getComments() {
+    return comments;
   }
 
   public void setComments(String comments) {
     this.comments = comments;
   }
 
-  @Override public String toJson() throws TezException {
-    return "";
-  }
-
-  @Override public String getComments() {
-    return comments;
-  }
-
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "CSVResult{" +
-        "headers=" + Arrays.toString(headers) +
-        ", recordsList=" + recordsList +
-        '}';
+      "headers=" + Arrays.toString(headers) +
+      ", recordsList=" + recordsList +
+      '}';
   }
 
   //For testing
   public void dumpToFile(String fileName) throws IOException {
     OutputStreamWriter writer = new OutputStreamWriter(
-        new FileOutputStream(new File(fileName)),
-        Charset.forName("UTF-8").newEncoder());
+      new FileOutputStream(new File(fileName)),
+      Charset.forName("UTF-8").newEncoder());
     BufferedWriter bw = new BufferedWriter(writer);
     bw.write(Joiner.on(",").join(headers));
     bw.newLine();
@@ -107,7 +113,7 @@ public class CSVResult implements Result {
       }
 
       StringBuilder sb = new StringBuilder();
-      for(int i=0;i<record.length;i++) {
+      for (int i = 0; i < record.length; i++) {
         sb.append(!Strings.isNullOrEmpty(record[i]) ? record[i] : " ");
         if (i < record.length - 1) {
           sb.append(",");

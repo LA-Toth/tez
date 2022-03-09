@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,35 +22,29 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.NumberFormat;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.TimeUnit;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.Nullable;
 
+import org.apache.hadoop.classification.InterfaceAudience.Private;
+import org.apache.hadoop.classification.InterfaceAudience.Public;
+import org.apache.hadoop.classification.InterfaceStability.Evolving;
+import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.tez.common.JavaOptsChecker;
-import org.apache.tez.common.TezCommonUtils;
-import org.apache.tez.common.counters.Limits;
-import org.apache.tez.dag.api.TezConfigurationConstants;
-import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.hadoop.classification.InterfaceAudience.Private;
-import org.apache.hadoop.classification.InterfaceAudience.Public;
-import org.apache.hadoop.classification.InterfaceStability.Evolving;
-import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.security.Credentials;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.util.Time;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
 import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
@@ -59,8 +53,11 @@ import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.exceptions.ApplicationNotFoundException;
 import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.hadoop.util.Time;
+import org.apache.tez.common.JavaOptsChecker;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.ReflectionUtils;
+import org.apache.tez.common.TezCommonUtils;
+import org.apache.tez.common.counters.Limits;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.dag.api.DAG;
 import org.apache.tez.dag.api.DAGSubmissionTimedOut;
@@ -70,20 +67,23 @@ import org.apache.tez.dag.api.PreWarmVertex;
 import org.apache.tez.dag.api.SessionNotReady;
 import org.apache.tez.dag.api.SessionNotRunning;
 import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.dag.api.TezConfigurationConstants;
 import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.client.DAGClient;
+import org.apache.tez.dag.api.client.DAGClientImpl;
 import org.apache.tez.dag.api.client.rpc.DAGClientAMProtocolBlockingPB;
 import org.apache.tez.dag.api.client.rpc.DAGClientAMProtocolRPC.GetAMStatusRequestProto;
 import org.apache.tez.dag.api.client.rpc.DAGClientAMProtocolRPC.SubmitDAGRequestProto;
-import org.apache.tez.dag.api.client.DAGClientImpl;
 import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
+import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.protobuf.ServiceException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * TezClient is used to submit Tez DAGs for execution. DAG's are executed via a
@@ -105,58 +105,73 @@ import com.google.protobuf.ServiceException;
 @Public
 public class TezClient {
 
+  public static final String DAG = "dag";
+  @VisibleForTesting
+  static final String NO_CLUSTER_DIAGNOSTICS_MSG = "No cluster diagnostics found.";
+  static final ThreadLocal<NumberFormat> tezAppIdFormat = new ThreadLocal<NumberFormat>() {
+    @Override
+    public NumberFormat initialValue() {
+      NumberFormat fmt = NumberFormat.getInstance();
+      fmt.setGroupingUsed(false);
+      fmt.setMinimumIntegerDigits(4);
+      return fmt;
+    }
+  };
+  static final ThreadLocal<NumberFormat> tezDagIdFormat = new ThreadLocal<NumberFormat>() {
+    @Override
+    public NumberFormat initialValue() {
+      NumberFormat fmt = NumberFormat.getInstance();
+      fmt.setGroupingUsed(false);
+      fmt.setMinimumIntegerDigits(1);
+      return fmt;
+    }
+  };
   private static final Logger LOG = LoggerFactory.getLogger(TezClient.class);
-
   private static final String appIdStrPrefix = "application";
   private static final String APPLICATION_ID_PREFIX = appIdStrPrefix + '_';
   private static final long PREWARM_WAIT_MS = 500;
-  
-  @VisibleForTesting
-  static final String NO_CLUSTER_DIAGNOSTICS_MSG = "No cluster diagnostics found.";
-
+  private static final long SLEEP_FOR_READY = 500;
+  // DO NOT CHANGE THIS. This code is replicated from TezDAGID.java
+  private static final char SEPARATOR = '_';
   @VisibleForTesting
   final String clientName;
-  private ApplicationId sessionAppId;
-  private ApplicationId lastSubmittedAppId;
   @VisibleForTesting
   final AMConfiguration amConfig;
   @VisibleForTesting
-  FrameworkClient frameworkClient;
-  private String diagnostics;
-  @VisibleForTesting
   final boolean isSession;
-  private final AtomicBoolean sessionStarted = new AtomicBoolean(false);
-  private final AtomicBoolean sessionStopped = new AtomicBoolean(false);
-  /** Tokens which will be required for all DAGs submitted to this session. */
-  private Credentials sessionCredentials = new Credentials();
-  private long clientTimeout;
-  Map<String, LocalResource> cachedTezJarResources;
-  boolean usingTezArchiveDeploy = false;
-  private static final long SLEEP_FOR_READY = 500;
-  private JobTokenSecretManager jobTokenSecretManager =
-      new JobTokenSecretManager();
-  private final Map<String, LocalResource> additionalLocalResources = Maps.newHashMap();
   @VisibleForTesting
   final TezApiVersionInfo apiVersionInfo;
   @VisibleForTesting
   final ServicePluginsDescriptor servicePluginsDescriptor;
+  private final AtomicBoolean sessionStarted = new AtomicBoolean(false);
+  private final AtomicBoolean sessionStopped = new AtomicBoolean(false);
+  private final Map<String, LocalResource> additionalLocalResources = Maps.newHashMap();
+  private final Map<String, UserGroupInformation> ugiMap;
+  @VisibleForTesting
+  FrameworkClient frameworkClient;
+  Map<String, LocalResource> cachedTezJarResources;
+  boolean usingTezArchiveDeploy = false;
+  private ApplicationId sessionAppId;
+  private ApplicationId lastSubmittedAppId;
+  private String diagnostics;
+  /** Tokens which will be required for all DAGs submitted to this session. */
+  private Credentials sessionCredentials = new Credentials();
+  private long clientTimeout;
+  private JobTokenSecretManager jobTokenSecretManager =
+    new JobTokenSecretManager();
   private JavaOptsChecker javaOptsChecker = null;
   private DAGClient prewarmDagClient = null;
   private int preWarmDAGCounter = 0;
-
   /* max submitDAG request size through IPC; beyond this we transfer them in the same way we transfer local resource */
   private int maxSubmitDAGRequestSizeThroughIPC;
   /* this counter counts number of serialized DAGPlan and is used to give unique name to each serialized DAGPlan */
   private AtomicInteger serializedSubmitDAGPlanRequestCounter = new AtomicInteger(0);
   private FileSystem stagingFs = null;
-
   private ScheduledExecutorService amKeepAliveService;
-
-  private final Map<String, UserGroupInformation> ugiMap;
 
   private TezClient(String name, TezConfiguration tezConf) {
     this(name, tezConf, tezConf.getBoolean(
-        TezConfiguration.TEZ_AM_SESSION_MODE, TezConfiguration.TEZ_AM_SESSION_MODE_DEFAULT));
+      TezConfiguration.TEZ_AM_SESSION_MODE, TezConfiguration.TEZ_AM_SESSION_MODE_DEFAULT));
   }
 
   @Private
@@ -165,7 +180,7 @@ public class TezClient {
             @Nullable Credentials credentials) {
     this(name, tezConf, tezConf.getBoolean(
         TezConfiguration.TEZ_AM_SESSION_MODE, TezConfiguration.TEZ_AM_SESSION_MODE_DEFAULT),
-        localResources, credentials);
+      localResources, credentials);
   }
 
   private TezClient(String name, TezConfiguration tezConf, boolean isSession) {
@@ -181,8 +196,8 @@ public class TezClient {
 
   @Private
   protected TezClient(String name, TezConfiguration tezConf, boolean isSession,
-            @Nullable Map<String, LocalResource> localResources,
-            @Nullable Credentials credentials, ServicePluginsDescriptor servicePluginsDescriptor) {
+                      @Nullable Map<String, LocalResource> localResources,
+                      @Nullable Credentials credentials, ServicePluginsDescriptor servicePluginsDescriptor) {
     this.clientName = name;
     this.isSession = isSession;
     // Set in conf for local mode AM to figure out whether in session mode or not
@@ -202,14 +217,13 @@ public class TezClient {
     this.apiVersionInfo = new TezApiVersionInfo();
     this.servicePluginsDescriptor = servicePluginsDescriptor;
     this.maxSubmitDAGRequestSizeThroughIPC = tezConf.getInt(CommonConfigurationKeys.IPC_MAXIMUM_DATA_LENGTH,
-        CommonConfigurationKeys.IPC_MAXIMUM_DATA_LENGTH_DEFAULT) -
-        tezConf.getInt(TezConfiguration.TEZ_IPC_PAYLOAD_RESERVED_BYTES,
+      CommonConfigurationKeys.IPC_MAXIMUM_DATA_LENGTH_DEFAULT) -
+      tezConf.getInt(TezConfiguration.TEZ_IPC_PAYLOAD_RESERVED_BYTES,
         TezConfiguration.TEZ_IPC_PAYLOAD_RESERVED_BYTES_DEFAULT);
     Limits.setConfiguration(tezConf);
 
     LOG.info("Tez Client Version: " + apiVersionInfo.toString());
   }
-
 
   /**
    * Create a new TezClientBuilder. This can be used to setup additional parameters
@@ -303,8 +317,61 @@ public class TezClient {
     return new TezClient(name, tezConf, isSession, localFiles, credentials);
   }
 
+  @Private
+  static DAGClient getDAGClient(ApplicationId appId, TezConfiguration tezConf,
+                                FrameworkClient frameworkClient, UserGroupInformation ugi) throws IOException,
+    TezException {
+    return new DAGClientImpl(appId, getDefaultTezDAGID(appId), tezConf, frameworkClient, ugi);
+  }
+
+  @Private // Used only for MapReduce compatibility code
+  static DAGClient getDAGClient(ApplicationId appId, TezConfiguration tezConf,
+                                FrameworkClient frameworkClient) throws IOException, TezException {
+    UserGroupInformation ugi =
+      UserGroupInformation.createRemoteUser(UserGroupInformation.getCurrentUser().getUserName());
+    return getDAGClient(appId, tezConf, frameworkClient, ugi);
+  }
+
+  // Used only for MapReduce compatibility code
+  private static String getDefaultTezDAGID(ApplicationId applicationId) {
+    return (new StringBuilder(DAG)).append(SEPARATOR).
+      append(applicationId.getClusterTimestamp()).
+      append(SEPARATOR).
+      append(tezAppIdFormat.get().format(applicationId.getId())).
+      append(SEPARATOR).
+      append(tezDagIdFormat.get().format(1)).toString();
+  }
+
+  //Copied this helper method from
+  //org.apache.hadoop.yarn.api.records.ApplicationId in Hadoop 2.8+
+  //to simplify implementation on 2.7.x
+  @Public
+  @Unstable
+  public static ApplicationId appIdfromString(String appIdStr) {
+    if (!appIdStr.startsWith(APPLICATION_ID_PREFIX)) {
+      throw new IllegalArgumentException("Invalid ApplicationId prefix: "
+        + appIdStr + ". The valid ApplicationId should start with prefix "
+        + appIdStrPrefix);
+    }
+    try {
+      int pos1 = APPLICATION_ID_PREFIX.length() - 1;
+      int pos2 = appIdStr.indexOf('_', pos1 + 1);
+      if (pos2 < 0) {
+        throw new IllegalArgumentException("Invalid ApplicationId: "
+          + appIdStr);
+      }
+      long rmId = Long.parseLong(appIdStr.substring(pos1 + 1, pos2));
+      int appId = Integer.parseInt(appIdStr.substring(pos2 + 1));
+      ApplicationId applicationId = ApplicationId.newInstance(rmId, appId);
+      return applicationId;
+    } catch (NumberFormatException n) {
+      throw new IllegalArgumentException("Invalid ApplicationId: "
+        + appIdStr, n);
+    }
+  }
+
   /**
-   * Add local files for the DAG App Master. These may be files, archives, 
+   * Add local files for the DAG App Master. These may be files, archives,
    * jars etc.<br>
    * <p>
    * In non-session mode these will be added to the files of the App Master
@@ -322,7 +389,7 @@ public class TezClient {
    * accumulate across DAG submissions and are never removed from the classpath.
    * Only LocalResourceType.FILE is supported. All files will be treated as
    * private.
-   * 
+   *
    * @param localFiles the files to be made available in the AM
    */
   public synchronized void addAppMasterLocalFiles(Map<String, LocalResource> localFiles) {
@@ -332,7 +399,7 @@ public class TezClient {
     }
     amConfig.addAMLocalResources(localFiles);
   }
-  
+
   /**
    * If the next DAG App Master needs different local files, then use this
    * method to clear the local files and then add the new local files
@@ -342,7 +409,7 @@ public class TezClient {
   public synchronized void clearAppMasterLocalFiles() {
     amConfig.clearAMLocalResources();
   }
-  
+
   /**
    * Set security credentials to be used inside the app master, if needed. Tez App
    * Master needs credentials to access the staging directory and for most HDFS
@@ -352,13 +419,13 @@ public class TezClient {
    * credentials must be supplied by the user. These will be used by the App
    * Master for the next DAG. <br>In session mode, credentials, if needed, must be
    * set before calling start()
-   * 
+   *
    * @param credentials credentials
    */
   public synchronized void setAppMasterCredentials(Credentials credentials) {
     Preconditions
-        .checkState(!sessionStarted.get(),
-            "Credentials cannot be set after the session App Master has been started");
+      .checkState(!sessionStarted.get(),
+        "Credentials cannot be set after the session App Master has been started");
     amConfig.setCredentials(credentials);
   }
 
@@ -370,7 +437,7 @@ public class TezClient {
    */
   public synchronized void setHistoryLogLevel(HistoryLogLevel historyLogLevel) {
     amConfig.getTezConfiguration().setEnum(TezConfiguration.TEZ_HISTORY_LOGGING_LOGLEVEL,
-        historyLogLevel);
+      historyLogLevel);
   }
 
   /**
@@ -387,17 +454,17 @@ public class TezClient {
     if (isSession) {
       LOG.info("Session mode. Starting session.");
       TezClientUtils.processTezLocalCredentialsFile(sessionCredentials,
-          amConfig.getTezConfiguration());
-  
+        amConfig.getTezConfiguration());
+
       clientTimeout = amConfig.getTezConfiguration().getInt(
-          TezConfiguration.TEZ_SESSION_CLIENT_TIMEOUT_SECS,
-          TezConfiguration.TEZ_SESSION_CLIENT_TIMEOUT_SECS_DEFAULT);
-  
+        TezConfiguration.TEZ_SESSION_CLIENT_TIMEOUT_SECS,
+        TezConfiguration.TEZ_SESSION_CLIENT_TIMEOUT_SECS_DEFAULT);
+
       try {
         if (sessionAppId == null) {
           sessionAppId = createApplication();
         }
-  
+
         ApplicationSubmissionContext appContext = setupApplicationContext();
         frameworkClient.submitApplication(appContext);
         ApplicationReport appReport = frameworkClient.getApplicationReport(sessionAppId);
@@ -461,8 +528,8 @@ public class TezClient {
     LOG.info("Session mode. Reconnecting to session: " + sessionAppId.toString());
 
     clientTimeout = amConfig.getTezConfiguration().getInt(
-            TezConfiguration.TEZ_SESSION_CLIENT_TIMEOUT_SECS,
-            TezConfiguration.TEZ_SESSION_CLIENT_TIMEOUT_SECS_DEFAULT);
+      TezConfiguration.TEZ_SESSION_CLIENT_TIMEOUT_SECS,
+      TezConfiguration.TEZ_SESSION_CLIENT_TIMEOUT_SECS_DEFAULT);
 
     try {
       setupApplicationContext();
@@ -490,24 +557,24 @@ public class TezClient {
 
   private ApplicationSubmissionContext setupApplicationContext() throws IOException, YarnException {
     TezClientUtils.processTezLocalCredentialsFile(sessionCredentials,
-            amConfig.getTezConfiguration());
+      amConfig.getTezConfiguration());
 
     Map<String, LocalResource> tezJarResources = getTezJarResources(sessionCredentials);
     // Add session token for shuffle
     TezClientUtils.createSessionToken(sessionAppId.toString(),
-            jobTokenSecretManager, sessionCredentials);
+      jobTokenSecretManager, sessionCredentials);
 
     ApplicationSubmissionContext appContext =
-            TezClientUtils.createApplicationSubmissionContext(
-                    sessionAppId,
-                    null, clientName, amConfig,
-                    tezJarResources, sessionCredentials, usingTezArchiveDeploy, apiVersionInfo,
-                    servicePluginsDescriptor, javaOptsChecker);
+      TezClientUtils.createApplicationSubmissionContext(
+        sessionAppId,
+        null, clientName, amConfig,
+        tezJarResources, sessionCredentials, usingTezArchiveDeploy, apiVersionInfo,
+        servicePluginsDescriptor, javaOptsChecker);
 
     // Set Tez Sessions to not retry on AM crashes if recovery is disabled
     if (!amConfig.getTezConfiguration().getBoolean(
-            TezConfiguration.DAG_RECOVERY_ENABLED,
-            TezConfiguration.DAG_RECOVERY_ENABLED_DEFAULT)) {
+      TezConfiguration.DAG_RECOVERY_ENABLED,
+      TezConfiguration.DAG_RECOVERY_ENABLED_DEFAULT)) {
       appContext.setMaxAppAttempts(1);
     }
     return appContext;
@@ -515,41 +582,40 @@ public class TezClient {
 
   private void setupJavaOptsChecker() {
     if (this.amConfig.getTezConfiguration().getBoolean(
-            TezConfiguration.TEZ_CLIENT_JAVA_OPTS_CHECKER_ENABLED,
-            TezConfiguration.TEZ_CLIENT_JAVA_OPTS_CHECKER_ENABLED_DEFAULT)) {
+      TezConfiguration.TEZ_CLIENT_JAVA_OPTS_CHECKER_ENABLED,
+      TezConfiguration.TEZ_CLIENT_JAVA_OPTS_CHECKER_ENABLED_DEFAULT)) {
       String javaOptsCheckerClassName = this.amConfig.getTezConfiguration().get(
-              TezConfiguration.TEZ_CLIENT_JAVA_OPTS_CHECKER_CLASS, "");
+        TezConfiguration.TEZ_CLIENT_JAVA_OPTS_CHECKER_CLASS, "");
       if (!javaOptsCheckerClassName.isEmpty()) {
         try {
           javaOptsChecker = ReflectionUtils.createClazzInstance(javaOptsCheckerClassName);
         } catch (Exception e) {
           LOG.warn("Failed to initialize configured Java Opts Checker"
-                  + " (" + TezConfiguration.TEZ_CLIENT_JAVA_OPTS_CHECKER_CLASS
-                  + ") , checkerClass=" + javaOptsCheckerClassName
-                  + ". Disabling checker.", e);
+            + " (" + TezConfiguration.TEZ_CLIENT_JAVA_OPTS_CHECKER_CLASS
+            + ") , checkerClass=" + javaOptsCheckerClassName
+            + ". Disabling checker.", e);
           javaOptsChecker = null;
         }
       } else {
         javaOptsChecker = new JavaOptsChecker();
       }
-
     }
   }
 
   private void startClientHeartbeat() {
     long amClientKeepAliveTimeoutIntervalMillis =
-            TezCommonUtils.getAMClientHeartBeatTimeoutMillis(amConfig.getTezConfiguration());
+      TezCommonUtils.getAMClientHeartBeatTimeoutMillis(amConfig.getTezConfiguration());
     // Poll at minimum of 1 second interval
     long pollPeriod = TezCommonUtils.
-            getAMClientHeartBeatPollIntervalMillis(amConfig.getTezConfiguration(),
-                    amClientKeepAliveTimeoutIntervalMillis, 10);
+      getAMClientHeartBeatPollIntervalMillis(amConfig.getTezConfiguration(),
+        amClientKeepAliveTimeoutIntervalMillis, 10);
 
     boolean isLocal = amConfig.getTezConfiguration().getBoolean(
-            TezConfiguration.TEZ_LOCAL_MODE, TezConfiguration.TEZ_LOCAL_MODE_DEFAULT);
+      TezConfiguration.TEZ_LOCAL_MODE, TezConfiguration.TEZ_LOCAL_MODE_DEFAULT);
     if (!isLocal && amClientKeepAliveTimeoutIntervalMillis > 0) {
       amKeepAliveService = Executors.newSingleThreadScheduledExecutor(
-              new ThreadFactoryBuilder()
-                      .setDaemon(true).setNameFormat("AMKeepAliveThread #%d").build());
+        new ThreadFactoryBuilder()
+          .setDaemon(true).setNameFormat("AMKeepAliveThread #%d").build());
       amKeepAliveService.scheduleWithFixedDelay(new Runnable() {
 
         private DAGClientAMProtocolBlockingPB proxy;
@@ -571,7 +637,7 @@ public class TezClient {
       if (proxy == null) {
         try {
           proxy = frameworkClient.waitForProxy(clientTimeout, amConfig.getTezConfiguration(),
-              sessionAppId, getUgi());
+            sessionAppId, getUgi());
         } catch (InterruptedException e) {
           LOG.debug("Interrupted while trying to create a connection to the AM", e);
         } catch (SessionNotRunning e) {
@@ -586,9 +652,9 @@ public class TezClient {
       return proxy;
     } catch (Exception e) {
       LOG.info("Exception when sending heartbeat to AM for app {}: {}", sessionAppId,
-          e.getMessage());
+        e.getMessage());
       LOG.debug("Error when sending heartbeat ping to AM. Resetting AM proxy for app: {}"
-          + " due to exception :", sessionAppId, e);
+        + " due to exception :", sessionAppId, e);
       return null;
     }
   }
@@ -598,7 +664,7 @@ public class TezClient {
    * cluster.<br>In session mode, it submits the DAG to the session App Master. It
    * blocks until either the DAG is submitted to the session or configured
    * timeout period expires. Cleans up session if the submission timed out.
-   * 
+   *
    * @param dag
    *          DAG to be submitted to Session
    * @return DAGClient to monitor the DAG
@@ -606,7 +672,7 @@ public class TezClient {
    * @throws IOException
    * @throws DAGSubmissionTimedOut
    *           if submission timed out
-   */  
+   */
   public synchronized DAGClient submitDAG(DAG dag) throws TezException, IOException {
     DAGClient result = isSession ? submitDAGSession(dag) : submitDAGApplication(dag);
     if (result != null) {
@@ -625,8 +691,7 @@ public class TezClient {
         LOG.info("Waiting for prewarm DAG to shut down");
         prewarmDagClient.waitForCompletion(waitTimeMs);
       }
-    }
-    catch (Exception ex) {
+    } catch (Exception ex) {
       LOG.warn("Failed to shut down the prewarm DAG " + prewarmDagClient, ex);
     }
     closePrewarmDagClient();
@@ -643,12 +708,12 @@ public class TezClient {
     }
     prewarmDagClient = null;
   }
-  
+
   private DAGClient submitDAGSession(DAG dag) throws TezException, IOException {
-    Preconditions.checkState(isSession == true, 
-        "submitDAG with additional resources applies to only session mode. " + 
+    Preconditions.checkState(isSession == true,
+      "submitDAG with additional resources applies to only session mode. " +
         "In non-session mode please specify all resources in the initial configuration");
-    
+
     verifySessionStateForSubmission();
 
     String callerContextStr = "";
@@ -660,53 +725,54 @@ public class TezClient {
       + ", applicationId=" + sessionAppId
       + ", dagName=" + dag.getName()
       + callerContextStr);
-    
+
     if (!additionalLocalResources.isEmpty()) {
       for (LocalResource lr : additionalLocalResources.values()) {
         Preconditions.checkArgument(lr.getType() == LocalResourceType.FILE, "LocalResourceType: "
-            + lr.getType() + " is not supported, only " + LocalResourceType.FILE + " is supported");
+          + lr.getType() + " is not supported, only " + LocalResourceType.FILE + " is supported");
       }
     }
 
     Map<String, LocalResource> tezJarResources = getTezJarResources(sessionCredentials);
     DAGPlan dagPlan = TezClientUtils.prepareAndCreateDAGPlan(dag, amConfig, tezJarResources,
-        usingTezArchiveDeploy, sessionCredentials, servicePluginsDescriptor, javaOptsChecker);
+      usingTezArchiveDeploy, sessionCredentials, servicePluginsDescriptor, javaOptsChecker);
 
     SubmitDAGRequestProto.Builder requestBuilder = SubmitDAGRequestProto.newBuilder();
     requestBuilder.setDAGPlan(dagPlan);
     if (!additionalLocalResources.isEmpty()) {
       requestBuilder.setAdditionalAmResources(DagTypeConverters
-          .convertFromLocalResources(additionalLocalResources));
+        .convertFromLocalResources(additionalLocalResources));
     }
-    
+
     additionalLocalResources.clear();
 
     // if request size exceeds maxSubmitDAGRequestSizeThroughIPC, we serialize them to HDFS
     SubmitDAGRequestProto request = requestBuilder.build();
     if (request.getSerializedSize() > maxSubmitDAGRequestSizeThroughIPC) {
       Path dagPlanPath = new Path(TezCommonUtils.getTezSystemStagingPath(amConfig.getTezConfiguration(),
-          sessionAppId.toString()), TezConstants.TEZ_PB_PLAN_BINARY_NAME +
-          serializedSubmitDAGPlanRequestCounter.incrementAndGet());
+        sessionAppId.toString()), TezConstants.TEZ_PB_PLAN_BINARY_NAME +
+        serializedSubmitDAGPlanRequestCounter.incrementAndGet());
 
       try (FSDataOutputStream fsDataOutputStream = stagingFs.create(dagPlanPath, false)) {
         LOG.info("Send dag plan using YARN local resources since it's too large"
-            + ", dag plan size=" + request.getSerializedSize()
-            + ", max dag plan size through IPC=" + maxSubmitDAGRequestSizeThroughIPC
-            + ", max IPC message size= " + amConfig.getTezConfiguration().getInt(
-            CommonConfigurationKeys.IPC_MAXIMUM_DATA_LENGTH, CommonConfigurationKeys.IPC_MAXIMUM_DATA_LENGTH_DEFAULT));
+          + ", dag plan size=" + request.getSerializedSize()
+          + ", max dag plan size through IPC=" + maxSubmitDAGRequestSizeThroughIPC
+          + ", max IPC message size= " + amConfig.getTezConfiguration().getInt(
+          CommonConfigurationKeys.IPC_MAXIMUM_DATA_LENGTH, CommonConfigurationKeys.IPC_MAXIMUM_DATA_LENGTH_DEFAULT));
         request.writeTo(fsDataOutputStream);
-        request = requestBuilder.clear().setSerializedRequestPath(stagingFs.resolvePath(dagPlanPath).toString()).build();
+        request = requestBuilder.clear().setSerializedRequestPath(stagingFs.resolvePath(dagPlanPath).toString())
+          .build();
       }
     }
 
     return frameworkClient.submitDag(dag, request, clientName, sessionAppId, clientTimeout,
-        getUgi(), amConfig.getTezConfiguration());
+      getUgi(), amConfig.getTezConfiguration());
   }
 
   private UserGroupInformation getUgi() throws IOException {
     String userName = UserGroupInformation.getCurrentUser().getUserName();
     return ugiMap.computeIfAbsent(userName,
-        v -> UserGroupInformation.createRemoteUser(userName));
+      v -> UserGroupInformation.createRemoteUser(userName));
   }
 
   @VisibleForTesting
@@ -728,27 +794,27 @@ public class TezClient {
       }
       if (sessionStarted.get()) {
         LOG.info("Shutting down Tez Session"
-            + ", sessionName=" + clientName
-            + ", applicationId=" + sessionAppId);
+          + ", sessionName=" + clientName
+          + ", applicationId=" + sessionAppId);
         sessionStopped.set(true);
         boolean sessionShutdownSuccessful = false;
         try {
           sessionShutdownSuccessful = frameworkClient
-              .shutdownSession(amConfig.getTezConfiguration(), sessionAppId, getUgi());
+            .shutdownSession(amConfig.getTezConfiguration(), sessionAppId, getUgi());
           boolean asynchronousStop = amConfig.getTezConfiguration().getBoolean(
-              TezConfiguration.TEZ_CLIENT_ASYNCHRONOUS_STOP,
-              TezConfiguration.TEZ_CLIENT_ASYNCHRONOUS_STOP_DEFAULT);
+            TezConfiguration.TEZ_CLIENT_ASYNCHRONOUS_STOP,
+            TezConfiguration.TEZ_CLIENT_ASYNCHRONOUS_STOP_DEFAULT);
           if (!asynchronousStop && sessionShutdownSuccessful) {
             LOG.info("Waiting until application is in a final state");
             long currentTimeMillis = System.currentTimeMillis();
             long timeKillIssued = currentTimeMillis;
             long killTimeOut = amConfig.getTezConfiguration().getLong(
-                TezConfiguration.TEZ_CLIENT_HARD_KILL_TIMEOUT_MS,
-                TezConfiguration.TEZ_CLIENT_HARD_KILL_TIMEOUT_MS_DEFAULT);
+              TezConfiguration.TEZ_CLIENT_HARD_KILL_TIMEOUT_MS,
+              TezConfiguration.TEZ_CLIENT_HARD_KILL_TIMEOUT_MS_DEFAULT);
             ApplicationReport appReport = frameworkClient
-                .getApplicationReport(sessionAppId);
+              .getApplicationReport(sessionAppId);
             while ((currentTimeMillis < timeKillIssued + killTimeOut)
-                && !isJobInTerminalState(appReport.getYarnApplicationState())) {
+              && !isJobInTerminalState(appReport.getYarnApplicationState())) {
               try {
                 Thread.sleep(1000L);
               } catch (InterruptedException ie) {
@@ -774,8 +840,8 @@ public class TezClient {
         }
         if (!sessionShutdownSuccessful) {
           LOG.info("Could not connect to AM, killing session via YARN"
-              + ", sessionName=" + clientName
-              + ", applicationId=" + sessionAppId);
+            + ", sessionName=" + clientName
+            + ", applicationId=" + sessionAppId);
           try {
             frameworkClient.killApplication(sessionAppId);
           } catch (ApplicationNotFoundException e) {
@@ -791,10 +857,11 @@ public class TezClient {
       }
     }
   }
+
   private boolean isJobInTerminalState(YarnApplicationState yarnApplicationState) {
     return (yarnApplicationState == YarnApplicationState.FINISHED
-        || yarnApplicationState == YarnApplicationState.FAILED
-        || yarnApplicationState == YarnApplicationState.KILLED);
+      || yarnApplicationState == YarnApplicationState.FAILED
+      || yarnApplicationState == YarnApplicationState.KILLED);
   }
 
   /**
@@ -804,7 +871,7 @@ public class TezClient {
   public String getClientName() {
     return clientName;
   }
-  
+
   @Private
   @VisibleForTesting
   public synchronized ApplicationId getAppMasterApplicationId() {
@@ -817,16 +884,16 @@ public class TezClient {
 
   /**
    * Get the status of the App Master executing the DAG
-   * In non-session mode it returns the status of the last submitted DAG App Master 
+   * In non-session mode it returns the status of the last submitted DAG App Master
    * In session mode, it returns the status of the App Master hosting the session
-   * 
+   *
    * @return State of the session
    * @throws TezException
    * @throws IOException
    */
   public synchronized TezAppMasterStatus getAppMasterStatus() throws TezException, IOException {
-    // Supporting per-DAG app master case since user may choose to run the same 
-    // code in that mode and the code should continue to work. Its easy to provide 
+    // Supporting per-DAG app master case since user may choose to run the same
+    // code in that mode and the code should continue to work. Its easy to provide
     // the correct view for per-DAG app master too.
     ApplicationId appId = null;
     if (isSession) {
@@ -837,30 +904,30 @@ public class TezClient {
     Preconditions.checkState(appId != null, "Cannot get status without starting an application");
     try {
       ApplicationReport appReport = frameworkClient.getApplicationReport(
-          appId);
+        appId);
       switch (appReport.getYarnApplicationState()) {
-      case NEW:
-      case NEW_SAVING:
-      case ACCEPTED:
-      case SUBMITTED:
-        return TezAppMasterStatus.INITIALIZING;
-      case FAILED:
-      case KILLED:
-        diagnostics = appReport.getDiagnostics();
-        LOG.info("App did not succeed. Diagnostics: "
+        case NEW:
+        case NEW_SAVING:
+        case ACCEPTED:
+        case SUBMITTED:
+          return TezAppMasterStatus.INITIALIZING;
+        case FAILED:
+        case KILLED:
+          diagnostics = appReport.getDiagnostics();
+          LOG.info("App did not succeed. Diagnostics: "
             + (appReport.getDiagnostics() != null ? appReport.getDiagnostics()
-                : NO_CLUSTER_DIAGNOSTICS_MSG));
-        return TezAppMasterStatus.SHUTDOWN;
-      case FINISHED:
-        return TezAppMasterStatus.SHUTDOWN;
-      case RUNNING:
-        try {
-          return frameworkClient.getAMStatus(amConfig.getTezConfiguration(), appId, getUgi());
-        } catch (TezException e) {
-          LOG.info("Failed to retrieve AM Status via proxy", e);
-        } catch (ServiceException e) {
-          LOG.info("Failed to retrieve AM Status via proxy", e);
-        }
+            : NO_CLUSTER_DIAGNOSTICS_MSG));
+          return TezAppMasterStatus.SHUTDOWN;
+        case FINISHED:
+          return TezAppMasterStatus.SHUTDOWN;
+        case RUNNING:
+          try {
+            return frameworkClient.getAMStatus(amConfig.getTezConfiguration(), appId, getUgi());
+          } catch (TezException e) {
+            LOG.info("Failed to retrieve AM Status via proxy", e);
+          } catch (ServiceException e) {
+            LOG.info("Failed to retrieve AM Status via proxy", e);
+          }
       }
     } catch (ApplicationNotFoundException e) {
       return TezAppMasterStatus.SHUTDOWN;
@@ -869,21 +936,21 @@ public class TezClient {
     }
     return TezAppMasterStatus.INITIALIZING;
   }
-  
+
   /**
    * API to help pre-allocate containers in session mode. In non-session mode
-   * this is ignored. The pre-allocated containers may be re-used by subsequent 
-   * job DAGs to improve performance. 
+   * this is ignored. The pre-allocated containers may be re-used by subsequent
+   * job DAGs to improve performance.
    * The preWarm vertex should be configured and setup exactly
-   * like the other vertices in the job DAGs so that the pre-allocated containers 
+   * like the other vertices in the job DAGs so that the pre-allocated containers
    * may be re-used by the subsequent DAGs to improve performance.
    * The processor for the preWarmVertex may be used to pre-warm the containers
-   * by pre-loading classes etc. It should be short-running so that pre-warming 
+   * by pre-loading classes etc. It should be short-running so that pre-warming
    * does not block real execution. Users can specify their custom processors or
    * use the PreWarmProcessor from the runtime library.
    * The parallelism of the preWarmVertex will determine the number of preWarmed
    * containers.
-   * Pre-warming is best efforts and among other factors is limited by the free 
+   * Pre-warming is best efforts and among other factors is limited by the free
    * resources on the cluster.
    * @param preWarmVertex
    * @throws TezException
@@ -918,20 +985,20 @@ public class TezClient {
    */
   @Unstable
   public synchronized void preWarm(PreWarmVertex preWarmVertex,
-      long timeout, TimeUnit unit)
-      throws TezException, IOException {
+                                   long timeout, TimeUnit unit)
+    throws TezException, IOException {
     if (!isSession) {
       // do nothing for non session mode. This is there to let the code
       // work correctly in both modes
       LOG.warn("preWarm is not supported in non-session mode," +
-          "please use session-mode of TezClient");
+        "please use session-mode of TezClient");
       return;
     }
 
     verifySessionStateForSubmission();
-    
+
     DAG dag = org.apache.tez.dag.api.DAG.create(TezConstants.TEZ_PREWARM_DAG_NAME_PREFIX + "_"
-        + preWarmDAGCounter++);
+      + preWarmDAGCounter++);
     dag.addVertex(preWarmVertex);
 
     boolean isReady;
@@ -939,16 +1006,15 @@ public class TezClient {
       isReady = waitTillReady(timeout, unit);
     } catch (InterruptedException e) {
       throw new IOException("Interrupted while waiting for AM to become " +
-          "available", e);
+        "available", e);
     }
-    if(isReady) {
+    if (isReady) {
       prewarmDagClient = submitDAG(dag);
     } else {
       throw new SessionNotReady("Tez AM not ready, could not submit DAG");
     }
   }
 
-  
   /**
    * Wait till the DAG is ready to be submitted.
    * In non-session mode this is a no-op since the application can be immediately
@@ -956,7 +1022,7 @@ public class TezClient {
    * In session mode, this waits for the session host to be ready to accept a DAG
    * @throws IOException
    * @throws TezException
-   * @throws InterruptedException 
+   * @throws InterruptedException
    */
   @Evolving
   public synchronized void waitTillReady() throws IOException, TezException, InterruptedException {
@@ -978,7 +1044,7 @@ public class TezClient {
    */
   @Evolving
   public synchronized boolean waitTillReady(long timeout, TimeUnit unit)
-      throws IOException, TezException, InterruptedException {
+    throws IOException, TezException, InterruptedException {
     timeout = unit.toMillis(timeout);
     if (!isSession) {
       // nothing to wait for in non-session mode
@@ -992,7 +1058,7 @@ public class TezClient {
       TezAppMasterStatus status = getAppMasterStatus();
       if (status.equals(TezAppMasterStatus.SHUTDOWN)) {
         throw new SessionNotRunning("TezSession has already shutdown. "
-            + ((diagnostics != null) ? diagnostics : NO_CLUSTER_DIAGNOSTICS_MSG));
+          + ((diagnostics != null) ? diagnostics : NO_CLUSTER_DIAGNOSTICS_MSG));
       }
       if (status.equals(TezAppMasterStatus.READY)) {
         return true;
@@ -1017,7 +1083,7 @@ public class TezClient {
       TezAppMasterStatus status = getAppMasterStatus();
       // DAGClient will handle the AM SHUTDOWN case
       if (status.equals(TezAppMasterStatus.RUNNING)
-          || status.equals(TezAppMasterStatus.SHUTDOWN)) {
+        || status.equals(TezAppMasterStatus.SHUTDOWN)) {
         return;
       }
       try {
@@ -1027,6 +1093,7 @@ public class TezClient {
       }
     }
   }
+
   @VisibleForTesting
   // for testing
   @Private
@@ -1042,16 +1109,17 @@ public class TezClient {
       throw new SessionNotRunning("Session stopped by user");
     }
   }
-  
+
   private DAGClient submitDAGApplication(DAG dag)
-      throws TezException, IOException {
+    throws TezException, IOException {
     ApplicationId appId = createApplication();
     return submitDAGApplication(appId, dag);
   }
 
-  @Private // To be used only by YarnRunner
+  @Private
+    // To be used only by YarnRunner
   DAGClient submitDAGApplication(ApplicationId appId, DAG dag)
-          throws TezException, IOException {
+    throws TezException, IOException {
     LOG.info("Submitting DAG application with id: " + appId);
     try {
       // Use the AMCredentials object in client mode, since this won't be re-used.
@@ -1061,26 +1129,26 @@ public class TezClient {
         credentials = new Credentials();
       }
       TezClientUtils.processTezLocalCredentialsFile(credentials,
-          amConfig.getTezConfiguration());
+        amConfig.getTezConfiguration());
 
       // Add session token for shuffle
       TezClientUtils.createSessionToken(appId.toString(),
-          jobTokenSecretManager, credentials);
+        jobTokenSecretManager, credentials);
 
       // Add credentials for tez-local resources.
       Map<String, LocalResource> tezJarResources = getTezJarResources(credentials);
       ApplicationSubmissionContext appContext = TezClientUtils
-          .createApplicationSubmissionContext(
-              appId, dag, dag.getName(), amConfig, tezJarResources, credentials,
-              usingTezArchiveDeploy, apiVersionInfo, servicePluginsDescriptor, javaOptsChecker);
+        .createApplicationSubmissionContext(
+          appId, dag, dag.getName(), amConfig, tezJarResources, credentials,
+          usingTezArchiveDeploy, apiVersionInfo, servicePluginsDescriptor, javaOptsChecker);
       String callerContextStr = "";
       if (dag.getCallerContext() != null) {
         callerContextStr = ", callerContext=" + dag.getCallerContext().contextAsSimpleString();
       }
       LOG.info("Submitting DAG to YARN"
-          + ", applicationId=" + appId
-          + ", dagName=" + dag.getName()
-          + callerContextStr);
+        + ", applicationId=" + appId
+        + ", dagName=" + dag.getName()
+        + callerContextStr);
       TezCommonUtils.logCredentials(LOG, credentials, "appContext");
       frameworkClient.submitApplication(appContext);
       ApplicationReport appReport = frameworkClient.getApplicationReport(appId);
@@ -1097,67 +1165,20 @@ public class TezClient {
   private ApplicationId createApplication() throws TezException, IOException {
     try {
       return frameworkClient.createApplication().
-          getNewApplicationResponse().getApplicationId();
+        getNewApplicationResponse().getApplicationId();
     } catch (YarnException e) {
       throw new TezException(e);
     }
   }
 
   private synchronized Map<String, LocalResource> getTezJarResources(Credentials credentials)
-      throws IOException {
+    throws IOException {
     if (cachedTezJarResources == null) {
       cachedTezJarResources = new HashMap<String, LocalResource>();
       usingTezArchiveDeploy = TezClientUtils.setupTezJarsLocalResources(
-          amConfig.getTezConfiguration(), credentials, cachedTezJarResources);
+        amConfig.getTezConfiguration(), credentials, cachedTezJarResources);
     }
     return cachedTezJarResources;
-  }
-
-  @Private
-  static DAGClient getDAGClient(ApplicationId appId, TezConfiguration tezConf,
-      FrameworkClient frameworkClient, UserGroupInformation ugi) throws IOException, TezException {
-    return new DAGClientImpl(appId, getDefaultTezDAGID(appId), tezConf, frameworkClient, ugi);
-  }
-
-  @Private // Used only for MapReduce compatibility code
-  static DAGClient getDAGClient(ApplicationId appId, TezConfiguration tezConf,
-      FrameworkClient frameworkClient) throws IOException, TezException {
-    UserGroupInformation ugi =
-        UserGroupInformation.createRemoteUser(UserGroupInformation.getCurrentUser().getUserName());
-    return getDAGClient(appId, tezConf, frameworkClient, ugi);
-  }
-
-  // DO NOT CHANGE THIS. This code is replicated from TezDAGID.java
-  private static final char SEPARATOR = '_';
-  public static final String DAG = "dag";
-  static final ThreadLocal<NumberFormat> tezAppIdFormat = new ThreadLocal<NumberFormat>() {
-    @Override
-    public NumberFormat initialValue() {
-      NumberFormat fmt = NumberFormat.getInstance();
-      fmt.setGroupingUsed(false);
-      fmt.setMinimumIntegerDigits(4);
-      return fmt;
-    }
-  };
-
-  static final ThreadLocal<NumberFormat> tezDagIdFormat = new ThreadLocal<NumberFormat>() {
-    @Override
-    public NumberFormat initialValue() {
-      NumberFormat fmt = NumberFormat.getInstance();
-      fmt.setGroupingUsed(false);
-      fmt.setMinimumIntegerDigits(1);
-      return fmt;
-    }
-  };
-
-  // Used only for MapReduce compatibility code
-  private static String getDefaultTezDAGID(ApplicationId applicationId) {
-     return (new StringBuilder(DAG)).append(SEPARATOR).
-         append(applicationId.getClusterTimestamp()).
-         append(SEPARATOR).
-         append(tezAppIdFormat.get().format(applicationId.getId())).
-         append(SEPARATOR).
-         append(tezDagIdFormat.get().format(1)).toString();
   }
 
   @VisibleForTesting
@@ -1185,9 +1206,9 @@ public class TezClient {
     final String name;
     final TezConfiguration tezConf;
     boolean isSession;
+    ServicePluginsDescriptor servicePluginsDescriptor;
     private Map<String, LocalResource> localResourceMap;
     private Credentials credentials;
-    ServicePluginsDescriptor servicePluginsDescriptor;
 
     /**
      * Create an instance of a TezClientBuilder
@@ -1202,7 +1223,7 @@ public class TezClient {
       this.name = name;
       this.tezConf = tezConf;
       isSession = tezConf.getBoolean(
-          TezConfiguration.TEZ_AM_SESSION_MODE, TezConfiguration.TEZ_AM_SESSION_MODE_DEFAULT);
+        TezConfiguration.TEZ_AM_SESSION_MODE, TezConfiguration.TEZ_AM_SESSION_MODE_DEFAULT);
     }
 
     /**
@@ -1263,35 +1284,7 @@ public class TezClient {
      */
     public TezClient build() {
       return new TezClient(name, tezConf, isSession, localResourceMap, credentials,
-          servicePluginsDescriptor);
-    }
-  }
-
-  //Copied this helper method from 
-  //org.apache.hadoop.yarn.api.records.ApplicationId in Hadoop 2.8+
-  //to simplify implementation on 2.7.x
-  @Public
-  @Unstable
-  public static ApplicationId appIdfromString(String appIdStr) {
-    if (!appIdStr.startsWith(APPLICATION_ID_PREFIX)) {
-      throw new IllegalArgumentException("Invalid ApplicationId prefix: "
-              + appIdStr + ". The valid ApplicationId should start with prefix "
-              + appIdStrPrefix);
-    }
-    try {
-      int pos1 = APPLICATION_ID_PREFIX.length() - 1;
-      int pos2 = appIdStr.indexOf('_', pos1 + 1);
-      if (pos2 < 0) {
-        throw new IllegalArgumentException("Invalid ApplicationId: "
-                + appIdStr);
-      }
-      long rmId = Long.parseLong(appIdStr.substring(pos1 + 1, pos2));
-      int appId = Integer.parseInt(appIdStr.substring(pos2 + 1));
-      ApplicationId applicationId = ApplicationId.newInstance(rmId, appId);
-      return applicationId;
-    } catch (NumberFormatException n) {
-      throw new IllegalArgumentException("Invalid ApplicationId: "
-              + appIdStr, n);
+        servicePluginsDescriptor);
     }
   }
 }

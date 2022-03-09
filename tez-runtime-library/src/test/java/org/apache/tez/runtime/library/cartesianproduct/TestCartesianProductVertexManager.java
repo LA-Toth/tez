@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,16 +17,11 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import org.apache.tez.dag.api.EdgeManagerPluginDescriptor;
-import org.apache.tez.dag.api.EdgeProperty;
-import org.apache.tez.dag.api.EdgeProperty.DataMovementType;
-import org.apache.tez.dag.api.TezConfiguration;
-import org.apache.tez.dag.api.UserPayload;
-import org.apache.tez.dag.api.VertexManagerPluginContext;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.BROADCAST;
+import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.CUSTOM;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -34,11 +29,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.BROADCAST;
-import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.CUSTOM;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.tez.dag.api.EdgeManagerPluginDescriptor;
+import org.apache.tez.dag.api.EdgeProperty;
+import org.apache.tez.dag.api.EdgeProperty.DataMovementType;
+import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.dag.api.VertexManagerPluginContext;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class TestCartesianProductVertexManager {
   private CartesianProductVertexManager vertexManager;
@@ -79,7 +80,8 @@ public class TestCartesianProductVertexManager {
     try {
       vertexManager = new CartesianProductVertexManager(context);
       assertTrue(false);
-    } catch (Exception ignored){}
+    } catch (Exception ignored) {
+    }
   }
 
   @Test(timeout = 5000)
@@ -112,7 +114,8 @@ public class TestCartesianProductVertexManager {
     try {
       vertexManager.initialize();
       assertTrue(false);
-    } catch (Exception ignored) {}
+    } catch (Exception ignored) {
+    }
 
     // non-cartesian-product edge in dag but in config
     edgePropertyMap.put("v2", broadcastEdge);
@@ -120,20 +123,23 @@ public class TestCartesianProductVertexManager {
     try {
       vertexManager.initialize();
       assertTrue(false);
-    } catch (Exception ignored) {}
+    } catch (Exception ignored) {
+    }
 
     edgePropertyMap.put("v2", customEdge);
     try {
       vertexManager.initialize();
       assertTrue(false);
-    } catch (Exception ignored) {}
+    } catch (Exception ignored) {
+    }
 
     // edge in config but not in dag
     edgePropertyMap.remove("v2");
     try {
       vertexManager.initialize();
       assertTrue(false);
-    } catch (Exception ignored) {}
+    } catch (Exception ignored) {
+    }
   }
 
   @Test(timeout = 5000)
@@ -151,7 +157,8 @@ public class TestCartesianProductVertexManager {
     try {
       vertexManager.initialize();
       assertTrue(false);
-    } catch (Exception ignored) {}
+    } catch (Exception ignored) {
+    }
   }
 
   @Test(timeout = 5000)
@@ -162,7 +169,8 @@ public class TestCartesianProductVertexManager {
     try {
       vertexManager.initialize();
       assertTrue(false);
-    } catch (Exception ignored) {}
+    } catch (Exception ignored) {
+    }
 
     // broadcast edge should be allowed and other non-custom edge shouldn't be allowed
     for (DataMovementType type : DataMovementType.values()) {

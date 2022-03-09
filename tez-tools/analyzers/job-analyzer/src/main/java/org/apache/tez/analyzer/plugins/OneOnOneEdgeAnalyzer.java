@@ -20,6 +20,7 @@ package org.apache.tez.analyzer.plugins;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.tez.analyzer.Analyzer;
@@ -32,6 +33,7 @@ import org.apache.tez.history.parser.datamodel.EdgeInfo;
 import org.apache.tez.history.parser.datamodel.TaskAttemptInfo;
 import org.apache.tez.history.parser.datamodel.TaskInfo;
 import org.apache.tez.history.parser.datamodel.VertexInfo;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,17 +51,22 @@ import java.util.Map;
 public class OneOnOneEdgeAnalyzer extends TezAnalyzerBase implements Analyzer {
 
   private static final Logger LOG = LoggerFactory.getLogger(OneOnOneEdgeAnalyzer.class);
-
-  private final String[] headers = { "sourceVertex", "downstreamVertex", "srcTaskId",
-      "srcContainerHost", "destContainerHost" };
-
   // DataMovementType::ONE_TO_ONE
   private static final String ONE_TO_ONE = "ONE_TO_ONE";
+  private final String[] headers = {"sourceVertex", "downstreamVertex", "srcTaskId",
+    "srcContainerHost", "destContainerHost"};
   private final CSVResult csvResult;
 
   public OneOnOneEdgeAnalyzer(Configuration config) {
     super(config);
     csvResult = new CSVResult(headers);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration conf = new Configuration();
+    OneOnOneEdgeAnalyzer analyzer = new OneOnOneEdgeAnalyzer(conf);
+    int res = ToolRunner.run(conf, analyzer, args);
+    System.exit(res);
   }
 
   @Override
@@ -73,9 +80,9 @@ public class OneOnOneEdgeAnalyzer extends TezAnalyzerBase implements Analyzer {
           VertexInfo destinationVertex = e.getDestinationVertex();
 
           Map<Integer, String> sourceTaskToContainerMap =
-              getContainerMappingForVertex(sourceVertex);
+            getContainerMappingForVertex(sourceVertex);
           Map<Integer, String> downStreamTaskToContainerMap =
-              getContainerMappingForVertex(destinationVertex);
+            getContainerMappingForVertex(destinationVertex);
 
           int missedCounter = 0;
           List<String> result = Lists.newLinkedList();
@@ -87,9 +94,9 @@ public class OneOnOneEdgeAnalyzer extends TezAnalyzerBase implements Analyzer {
             String downstreamContainerHost = downStreamTaskToContainerMap.get(taskId);
             if (downstreamContainerHost != null) {
               if (!sourceContainerHost.equalsIgnoreCase(downstreamContainerHost)) {
-               // downstream task got scheduled on different machine than src
+                // downstream task got scheduled on different machine than src
                 LOG.info("TaskID: {}, source: {}, downStream:{}",
-                    taskId, sourceContainerHost, downstreamContainerHost);
+                  taskId, sourceContainerHost, downstreamContainerHost);
                 result.add(sourceVertex.getVertexName());
                 result.add(destinationVertex.getVertexName());
                 result.add(taskId + "");
@@ -100,7 +107,7 @@ public class OneOnOneEdgeAnalyzer extends TezAnalyzerBase implements Analyzer {
                 missedCounter++;
               }
             }
-           result.clear();
+            result.clear();
           }
           LOG.info("Total tasks:{}, miss: {}", sourceTaskToContainerMap.size(), missedCounter);
         }
@@ -116,7 +123,7 @@ public class OneOnOneEdgeAnalyzer extends TezAnalyzerBase implements Analyzer {
         TezTaskAttemptID id = TezTaskAttemptID.fromString(successfulAttempt.getTaskAttemptId());
         if (id != null) {
           taskToContainerMap
-              .put(id.getTaskID().getId(), successfulAttempt.getContainer().getHost());
+            .put(id.getTaskID().getId(), successfulAttempt.getContainer().getHost());
         }
       }
     }
@@ -137,12 +144,4 @@ public class OneOnOneEdgeAnalyzer extends TezAnalyzerBase implements Analyzer {
   public String getDescription() {
     return "To understand the locality miss in 1:1 edge";
   }
-
-  public static void main(String[] args) throws Exception {
-    Configuration conf = new Configuration();
-    OneOnOneEdgeAnalyzer analyzer = new OneOnOneEdgeAnalyzer(conf);
-    int res = ToolRunner.run(conf, analyzer, args);
-    System.exit(res);
-  }
 }
-

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.CompositeService;
@@ -34,10 +33,11 @@ import org.apache.hadoop.yarn.event.Event;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.hadoop.yarn.exceptions.YarnRuntimeException;
 import org.apache.tez.dag.api.TezConfiguration;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Maps;
 
 /**
  * Dispatches {@link Event}s in a separate thread. Currently only single thread
@@ -49,31 +49,25 @@ import com.google.common.collect.Maps;
 public class AsyncDispatcher extends CompositeService implements Dispatcher {
 
   private static final Logger LOG = LoggerFactory.getLogger(AsyncDispatcher.class);
-
+  protected final Map<Class<? extends Enum>, EventHandler> eventHandlers = Maps.newHashMap();
+  protected final Map<Class<? extends Enum>, AsyncDispatcher> eventDispatchers = Maps.newHashMap();
+  protected final Map<Class<? extends Enum>, AsyncDispatcherConcurrent> concurrentEventDispatchers =
+    Maps.newHashMap();
   private final String name;
   private final BlockingQueue<Event> eventQueue;
   private volatile boolean stopped = false;
-
   // Configuration flag for enabling/disabling draining dispatcher's events on
   // stop functionality.
   private volatile boolean drainEventsOnStop = false;
-
   // Indicates all the remaining dispatcher's events on stop have been drained
   // and processed.
   private volatile boolean drained = true;
   private Object waitForDrained = new Object();
-
   // For drainEventsOnStop enabled only, block newly coming events into the
   // queue while stopping.
   private volatile boolean blockNewEvents = false;
   private EventHandler handlerInstance = new GenericEventHandler();
-
   private Thread eventHandlingThread;
-  protected final Map<Class<? extends Enum>, EventHandler> eventHandlers = Maps.newHashMap();
-  protected final Map<Class<? extends Enum>, AsyncDispatcher> eventDispatchers = Maps.newHashMap();
-  protected final Map<Class<? extends Enum>, AsyncDispatcherConcurrent> concurrentEventDispatchers = 
-      Maps.newHashMap();
-  
   private boolean exitOnDispatchException = false;
 
   public AsyncDispatcher(String name) {
@@ -105,7 +99,7 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
           Event event;
           try {
             event = eventQueue.take();
-          } catch(InterruptedException ie) {
+          } catch (InterruptedException ie) {
             if (!stopped) {
               LOG.warn("AsyncDispatcher thread interrupted", ie);
             }
@@ -129,7 +123,7 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
     eventHandlingThread = new Thread(createThread());
     eventHandlingThread.setName("Dispatcher thread {" + name + "}");
     eventHandlingThread.start();
-    
+
     //start all the components
     super.serviceStart();
   }
@@ -144,15 +138,15 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
       blockNewEvents = true;
       LOG.info("AsyncDispatcher is draining to stop, ignoring any new events.");
       long endTime = System.currentTimeMillis() + getConfig()
-          .getInt(TezConfiguration.TEZ_AM_DISPATCHER_DRAIN_EVENTS_TIMEOUT,
-              TezConfiguration.TEZ_AM_DISPATCHER_DRAIN_EVENTS_TIMEOUT_DEFAULT);
+        .getInt(TezConfiguration.TEZ_AM_DISPATCHER_DRAIN_EVENTS_TIMEOUT,
+          TezConfiguration.TEZ_AM_DISPATCHER_DRAIN_EVENTS_TIMEOUT_DEFAULT);
 
       synchronized (waitForDrained) {
         while (!drained && eventHandlingThread.isAlive() && System.currentTimeMillis() < endTime) {
           waitForDrained.wait(1000);
           LOG.info(
-              "Waiting for AsyncDispatcher to drain. Current queue size: {}, handler thread state: {}",
-              eventQueue.size(), eventHandlingThread.getState());
+            "Waiting for AsyncDispatcher to drain. Current queue size: {}, handler thread state: {}",
+            eventQueue.size(), eventHandlingThread.getState());
         }
       }
     }
@@ -166,7 +160,7 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
          */
         if (eventHandlingThread.getState() == Thread.State.BLOCKED) {
           LOG.warn(
-              "eventHandlingThread is in BLOCKED state, let's not wait for it in order to prevent app hang");
+            "eventHandlingThread is in BLOCKED state, let's not wait for it in order to prevent app hang");
         } else {
           eventHandlingThread.join();
           LOG.info("joined event handling thread, state: {}", eventHandlingThread.getState());
@@ -184,14 +178,14 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
     //all events go thru this loop
     if (LOG.isDebugEnabled()) {
       LOG.debug("Dispatching the event " + event.getClass().getName() + "."
-          + event.toString());
+        + event.toString());
     }
 
     Class<? extends Enum> type = event.getType().getDeclaringClass();
 
-    try{
+    try {
       EventHandler handler = eventHandlers.get(type);
-      if(handler != null) {
+      if (handler != null) {
         handler.handle(event);
       } else {
         throw new Exception("No handler for registered for " + type);
@@ -204,33 +198,33 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
       LOG.error("Error in dispatcher thread", t);
       // If serviceStop is called, we should exit this thread gracefully.
       if (exitOnDispatchException
-          && (ShutdownHookManager.get().isShutdownInProgress()) == false
-          && stopped == false) {
+        && (ShutdownHookManager.get().isShutdownInProgress()) == false
+        && stopped == false) {
         Thread shutDownThread = new Thread(createShutDownThread());
         shutDownThread.setName("AsyncDispatcher ShutDown handler");
         shutDownThread.start();
       }
     }
   }
-  
+
   private void checkForExistingHandler(Class<? extends Enum> eventType) {
     EventHandler<Event> registeredHandler = (EventHandler<Event>) eventHandlers.get(eventType);
-    Preconditions.checkState(registeredHandler == null, 
-        "Cannot register same event on multiple dispatchers");
+    Preconditions.checkState(registeredHandler == null,
+      "Cannot register same event on multiple dispatchers");
   }
 
   private void checkForExistingDispatcher(Class<? extends Enum> eventType) {
     AsyncDispatcher registeredDispatcher = eventDispatchers.get(eventType);
-    Preconditions.checkState(registeredDispatcher == null, 
-        "Multiple dispatchers cannot be registered for: " + eventType.getName());
+    Preconditions.checkState(registeredDispatcher == null,
+      "Multiple dispatchers cannot be registered for: " + eventType.getName());
   }
 
   private void checkForExistingConcurrentDispatcher(Class<? extends Enum> eventType) {
     AsyncDispatcherConcurrent concurrentDispatcher = concurrentEventDispatchers.get(eventType);
     Preconditions.checkState(concurrentDispatcher == null,
-        "Multiple concurrent dispatchers cannot be registered for: " + eventType.getName());
+      "Multiple concurrent dispatchers cannot be registered for: " + eventType.getName());
   }
-  
+
   @VisibleForTesting
   protected void checkForExistingDispatchers(boolean checkHandler, Class<? extends Enum> eventType) {
     if (checkHandler) {
@@ -250,7 +244,7 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
    */
   @Override
   public void register(Class<? extends Enum> eventType,
-      EventHandler handler) {
+                       EventHandler handler) {
     Preconditions.checkState(getServiceState() == STATE.NOTINITED);
     /* check to see if we have a listener registered */
     EventHandler<Event> registeredHandler = (EventHandler<Event>) eventHandlers.get(eventType);
@@ -258,7 +252,7 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
     LOG.info("Registering " + eventType + " for " + handler.getClass());
     if (registeredHandler == null) {
       eventHandlers.put(eventType, handler);
-    } else if (!(registeredHandler instanceof MultiListenerHandler)){
+    } else if (!(registeredHandler instanceof MultiListenerHandler)) {
       /* for multiple listeners of an event add the multiple listener handler */
       MultiListenerHandler multiHandler = new MultiListenerHandler();
       multiHandler.addHandler(registeredHandler);
@@ -267,36 +261,37 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
     } else {
       /* already a multilistener, just add to it */
       MultiListenerHandler multiHandler
-      = (MultiListenerHandler) registeredHandler;
+        = (MultiListenerHandler) registeredHandler;
       multiHandler.addHandler(handler);
     }
   }
-  
+
   /**
    * Add an EventHandler for events handled in their own dispatchers with given name
    */
   public void registerAndCreateDispatcher(Class<? extends Enum> eventType,
-      EventHandler handler, String dispatcherName) {
+                                          EventHandler handler, String dispatcherName) {
     Preconditions.checkState(getServiceState() == STATE.NOTINITED);
-    
+
     /* check to see if we have a listener registered */
     checkForExistingDispatchers(true, eventType);
     LOG.info(
-          "Registering " + eventType + " for independent dispatch using: " + handler.getClass());
+      "Registering " + eventType + " for independent dispatch using: " + handler.getClass());
     AsyncDispatcher dispatcher = new AsyncDispatcher(dispatcherName);
     dispatcher.register(eventType, handler);
     eventDispatchers.put(eventType, dispatcher);
     addIfService(dispatcher);
   }
-  
+
   public AsyncDispatcherConcurrent registerAndCreateDispatcher(Class<? extends Enum> eventType,
-      EventHandler handler, String dispatcherName, int numThreads) {
+                                                               EventHandler handler, String dispatcherName,
+                                                               int numThreads) {
     Preconditions.checkState(getServiceState() == STATE.NOTINITED);
-    
+
     /* check to see if we have a listener registered */
     checkForExistingDispatchers(true, eventType);
     LOG.info(
-          "Registering " + eventType + " for concurrent dispatch using: " + handler.getClass());
+      "Registering " + eventType + " for concurrent dispatch using: " + handler.getClass());
     AsyncDispatcherConcurrent dispatcher = new AsyncDispatcherConcurrent(dispatcherName, numThreads);
     if (exitOnDispatchException) {
       dispatcher.enableExitOnDispatchException();
@@ -306,15 +301,15 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
     addIfService(dispatcher);
     return dispatcher;
   }
-  
+
   public void registerWithExistingDispatcher(Class<? extends Enum> eventType,
-      EventHandler handler, AsyncDispatcherConcurrent dispatcher) {
+                                             EventHandler handler, AsyncDispatcherConcurrent dispatcher) {
     Preconditions.checkState(getServiceState() == STATE.NOTINITED);
-    
+
     /* check to see if we have a listener registered */
     checkForExistingDispatchers(true, eventType);
     LOG.info("Registering " + eventType + " with existing concurrent dispatch using: "
-          + handler.getClass());
+      + handler.getClass());
     if (exitOnDispatchException) {
       dispatcher.enableExitOnDispatchException();
     }
@@ -325,6 +320,45 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
   @Override
   public EventHandler getEventHandler() {
     return handlerInstance;
+  }
+
+  Runnable createShutDownThread() {
+    return new Runnable() {
+      @Override
+      public void run() {
+        LOG.info("Exiting, bbye..");
+        System.exit(-1);
+      }
+    };
+  }
+
+  @Private
+  public int getQueueSize() {
+    return eventQueue.size();
+  }
+
+  /**
+   * Multiplexing an event. Sending it to different handlers that
+   * are interested in the event.
+   * @param <T> the type of event these multiple handlers are interested in.
+   */
+  static class MultiListenerHandler implements EventHandler<Event> {
+    List<EventHandler<Event>> listofHandlers;
+
+    public MultiListenerHandler() {
+      listofHandlers = new ArrayList<EventHandler<Event>>();
+    }
+
+    @Override
+    public void handle(Event event) {
+      for (EventHandler<Event> handler : listofHandlers) {
+        handler.handle(event);
+      }
+    }
+
+    void addHandler(EventHandler<Event> handler) {
+      listofHandlers.add(handler);
+    }
   }
 
   class GenericEventHandler implements EventHandler<Event> {
@@ -349,18 +383,18 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
         concurrentDispatcher.getEventHandler().handle(event);
         return;
       }
-      
+
       // no registered dispatcher. use internal dispatcher.
-      
+
       /* all this method does is enqueue all the events onto the queue */
       int qSize = eventQueue.size();
-      if (qSize !=0 && qSize %1000 == 0) {
+      if (qSize != 0 && qSize % 1000 == 0) {
         LOG.info("Size of event-queue is " + qSize);
       }
       int remCapacity = eventQueue.remainingCapacity();
       if (remCapacity < 1000) {
         LOG.warn("Very low remaining capacity in the event-queue: "
-            + remCapacity);
+          + remCapacity);
       }
       try {
         eventQueue.put(event);
@@ -370,46 +404,8 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
         }
         throw new YarnRuntimeException(e);
       }
-    };
-  }
-
-  /**
-   * Multiplexing an event. Sending it to different handlers that
-   * are interested in the event.
-   * @param <T> the type of event these multiple handlers are interested in.
-   */
-  static class MultiListenerHandler implements EventHandler<Event> {
-    List<EventHandler<Event>> listofHandlers;
-
-    public MultiListenerHandler() {
-      listofHandlers = new ArrayList<EventHandler<Event>>();
     }
 
-    @Override
-    public void handle(Event event) {
-      for (EventHandler<Event> handler: listofHandlers) {
-        handler.handle(event);
-      }
-    }
-
-    void addHandler(EventHandler<Event> handler) {
-      listofHandlers.add(handler);
-    }
-
-  }
-
-  Runnable createShutDownThread() {
-    return new Runnable() {
-      @Override
-      public void run() {
-        LOG.info("Exiting, bbye..");
-        System.exit(-1);
-      }
-    };
-  }
-
-  @Private
-  public int getQueueSize() {
-    return eventQueue.size();
+    ;
   }
 }

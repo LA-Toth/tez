@@ -27,9 +27,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.tez.common.ContainerSignatureMatcher;
-import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
 import org.apache.tez.dag.app.dag.DAG;
 import org.apache.tez.dag.app.rm.container.AMContainerMap;
+import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -42,7 +43,7 @@ public class TestTaskCommunicatorContextImpl {
     TaskCommunicatorManager tal = mock(TaskCommunicatorManager.class);
 
     AMContainerMap amContainerMap = new AMContainerMap(mock(ContainerHeartbeatHandler.class), tal, mock(
-        ContainerSignatureMatcher.class), appContext);
+      ContainerSignatureMatcher.class), appContext);
 
     doReturn(amContainerMap).when(appContext).getAllContainers();
 
@@ -100,7 +101,7 @@ public class TestTaskCommunicatorContextImpl {
     commContext.dag = dag;
 
     Assert.assertEquals("DAG config should be exposed via context.dag.getConf()",
-        commContext.getCurrentDagInfo().getConf().get("dagkey"), "dagvalue");
+      commContext.getCurrentDagInfo().getConf().get("dagkey"), "dagvalue");
 
     // TaskCommunicatorContextImpl.appContext.getCurrentDAG() is present
     AppContext appContext = mock(AppContext.class);
@@ -108,7 +109,7 @@ public class TestTaskCommunicatorContextImpl {
     commContext = new TaskCommunicatorContextImpl(appContext, null, null, 0);
 
     Assert.assertEquals(
-        "DAG config should be exposed via context.appContext.getCurrentDAG().getConf()",
-        commContext.getCurrentDagInfo().getConf().get("dagkey"), "dagvalue");
+      "DAG config should be exposed via context.appContext.getCurrentDAG().getConf()",
+      commContext.getCurrentDagInfo().getConf().get("dagkey"), "dagvalue");
   }
 }

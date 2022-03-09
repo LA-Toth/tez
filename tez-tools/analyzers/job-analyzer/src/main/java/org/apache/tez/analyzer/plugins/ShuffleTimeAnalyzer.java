@@ -35,14 +35,12 @@ import org.apache.tez.history.parser.datamodel.VertexInfo;
 import java.util.List;
 import java.util.Map;
 
-
 /**
  * Analyze the time taken by merge phase, shuffle phase, time taken to do realistic work etc in
  * tasks.
- *
+ * <p>
  * Just dump REDUCE_INPUT_GROUPS, REDUCE_INPUT_RECORDS, its ratio and SHUFFLE_BYTES for tasks
  * grouped by vertices. Provide time taken as well.  Just render it as a table for now.
- *
  */
 public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
 
@@ -58,24 +56,31 @@ public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
   private static final String MIN_SHUFFLE_RECORDS = "tez.shuffle-time-analyzer.shuffle.min.records";
   private static final long MIN_SHUFFLE_RECORDS_DEFAULT = 10000;
 
-  private static final String[] headers = { "vertexName", "taskAttemptId", "Node", "counterGroup",
-      "Comments", "REDUCE_INPUT_GROUPS", "REDUCE_INPUT_RECORDS", "ratio", "SHUFFLE_BYTES",
-      "TotalTime", "Time_taken_to_receive_all_events", "MERGE_PHASE_TIME", "SHUFFLE_PHASE_TIME",
-      "TimeTaken_For_Real_Task", "FIRST_EVENT_RECEIVED", "LAST_EVENT_RECEIVED",
-      "SHUFFLE_BYTES_DISK_DIRECT" };
+  private static final String[] headers = {"vertexName", "taskAttemptId", "Node", "counterGroup",
+    "Comments", "REDUCE_INPUT_GROUPS", "REDUCE_INPUT_RECORDS", "ratio", "SHUFFLE_BYTES",
+    "TotalTime", "Time_taken_to_receive_all_events", "MERGE_PHASE_TIME", "SHUFFLE_PHASE_TIME",
+    "TimeTaken_For_Real_Task", "FIRST_EVENT_RECEIVED", "LAST_EVENT_RECEIVED",
+    "SHUFFLE_BYTES_DISK_DIRECT"};
 
   private final CSVResult csvResult = new CSVResult(headers);
 
   private final float realWorkDoneRatio;
   private final long minShuffleRecords;
 
-
   public ShuffleTimeAnalyzer(Configuration config) {
     super(config);
 
     realWorkDoneRatio = config.getFloat
-        (REAL_WORK_DONE_RATIO, REAL_WORK_DONE_RATIO_DEFAULT);
+      (REAL_WORK_DONE_RATIO, REAL_WORK_DONE_RATIO_DEFAULT);
     minShuffleRecords = config.getLong(MIN_SHUFFLE_RECORDS, MIN_SHUFFLE_RECORDS_DEFAULT);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    ShuffleTimeAnalyzer analyzer = new ShuffleTimeAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -85,9 +90,9 @@ public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
       for (TaskAttemptInfo attemptInfo : vertexInfo.getTaskAttempts()) {
         //counter_group (basically source) --> counter
         Map<String, TezCounter> reduceInputGroups = attemptInfo.getCounter(TaskCounter
-            .REDUCE_INPUT_GROUPS.toString());
+          .REDUCE_INPUT_GROUPS.toString());
         Map<String, TezCounter> reduceInputRecords = attemptInfo.getCounter(TaskCounter
-            .REDUCE_INPUT_RECORDS.toString());
+          .REDUCE_INPUT_RECORDS.toString());
 
         if (reduceInputGroups == null) {
           continue;
@@ -97,7 +102,7 @@ public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
           String counterGroupName = entry.getKey();
           long reduceInputGroupsVal = entry.getValue().getValue();
           long reduceInputRecordsVal = (reduceInputRecords.get(counterGroupName) != null) ?
-          reduceInputRecords.get(counterGroupName).getValue() : 0;
+            reduceInputRecords.get(counterGroupName).getValue() : 0;
 
           if (reduceInputRecordsVal <= 0) {
             continue;
@@ -114,15 +119,15 @@ public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
             //Real work done in the task
             String comments = "";
             String mergePhaseTime = getCounterValue(TaskCounter.MERGE_PHASE_TIME,
-                counterGroupName, attemptInfo);
+              counterGroupName, attemptInfo);
             String timeTakenForRealWork = "";
             if (!Strings.isNullOrEmpty(mergePhaseTime)) {
               long realWorkDone = attemptInfo.getTimeTaken() - Long.parseLong(mergePhaseTime);
 
               if ((realWorkDone * 1.0f / attemptInfo.getTimeTaken()) < realWorkDoneRatio) {
                 comments = "Time taken in shuffle is more than the actual work being done in task. "
-                    + " Check if source/destination machine is a slow node. Check if merge phase "
-                    + "time is more to understand disk bottlenecks in this node.  Check for skew";
+                  + " Check if source/destination machine is a slow node. Check if merge phase "
+                  + "time is more to understand disk bottlenecks in this node.  Check for skew";
               }
 
               timeTakenForRealWork = Long.toString(realWorkDone);
@@ -152,7 +157,6 @@ public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
         }
       }
     }
-
   }
 
   /**
@@ -164,9 +168,9 @@ public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
    */
   private String getOverheadFromSourceTasks(String counterGroupName, TaskAttemptInfo attemptInfo) {
     String firstEventReceived = getCounterValue(TaskCounter.FIRST_EVENT_RECEIVED,
-        counterGroupName, attemptInfo);
+      counterGroupName, attemptInfo);
     String lastEventReceived = getCounterValue(TaskCounter.LAST_EVENT_RECEIVED,
-        counterGroupName, attemptInfo);
+      counterGroupName, attemptInfo);
 
     if (!Strings.isNullOrEmpty(firstEventReceived) && !Strings.isNullOrEmpty(lastEventReceived)) {
       return Long.toString(Long.parseLong(lastEventReceived) - Long.parseLong(firstEventReceived));
@@ -176,7 +180,7 @@ public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
   }
 
   private String getCounterValue(TaskCounter counter, String counterGroupName,
-      TaskAttemptInfo attemptInfo) {
+                                 TaskAttemptInfo attemptInfo) {
     Map<String, TezCounter> tezCounterMap = attemptInfo.getCounter(counter.toString());
     if (tezCounterMap != null) {
       for (Map.Entry<String, TezCounter> entry : tezCounterMap.entrySet()) {
@@ -203,14 +207,6 @@ public class ShuffleTimeAnalyzer extends TezAnalyzerBase implements Analyzer {
   @Override
   public String getDescription() {
     return "Analyze the time taken for shuffle, merge "
-        + "and the real work done in the task";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    ShuffleTimeAnalyzer analyzer = new ShuffleTimeAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
+      + "and the real work done in the task";
   }
 }

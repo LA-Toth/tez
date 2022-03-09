@@ -5,9 +5,9 @@
  * licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -26,94 +26,79 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
-
 import org.apache.commons.collections4.ListUtils;
-import org.apache.hadoop.yarn.event.Event;
-import org.apache.tez.Utils;
-import org.apache.tez.dag.api.NamedEntityDescriptor;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventSubmitted;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.apache.tez.runtime.api.events.TaskAttemptKilledEvent;
-import org.apache.tez.serviceplugins.api.DagInfo;
-import org.apache.tez.serviceplugins.api.ServicePluginError;
-import org.apache.tez.serviceplugins.api.TaskCommunicator;
-import org.apache.tez.dag.api.TezConstants;
-import org.apache.tez.dag.api.UserPayload;
-import org.apache.tez.dag.app.dag.event.DAGAppMasterEventType;
-import org.apache.tez.dag.app.dag.event.DAGAppMasterEventUserServiceFatalError;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventType;
-import org.apache.tez.serviceplugins.api.ContainerEndReason;
-import org.apache.tez.dag.app.dag.event.TaskAttemptEventStatusUpdate;
-import org.apache.tez.runtime.api.events.TaskAttemptFailedEvent;
-import org.apache.tez.runtime.api.events.TaskStatusUpdateEvent;
-import org.apache.tez.runtime.api.impl.EventMetaData;
-import org.apache.tez.runtime.api.impl.EventType;
-import org.apache.tez.dag.api.event.VertexStateUpdate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.service.AbstractService;
+import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.hadoop.yarn.event.Event;
+import org.apache.hadoop.yarn.util.ConverterUtils;
+import org.apache.tez.Utils;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.ReflectionUtils;
 import org.apache.tez.common.TezUtilsInternal;
-import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
-import org.apache.tez.serviceplugins.api.TaskHeartbeatResponse;
+import org.apache.tez.dag.api.NamedEntityDescriptor;
+import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.TezUncheckedException;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.util.ConverterUtils;
-import org.apache.tez.serviceplugins.api.TaskHeartbeatRequest;
+import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.dag.app.dag.DAG;
 import org.apache.tez.dag.app.dag.Task;
+import org.apache.tez.dag.app.dag.event.DAGAppMasterEventType;
+import org.apache.tez.dag.app.dag.event.DAGAppMasterEventUserServiceFatalError;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEvent;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventAttemptFailed;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventAttemptKilled;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventStartedRemotely;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventStatusUpdate;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventSubmitted;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventTezEventUpdate;
+import org.apache.tez.dag.app.dag.event.TaskAttemptEventType;
 import org.apache.tez.dag.app.dag.event.VertexEventRouteEvent;
 import org.apache.tez.dag.app.rm.container.AMContainerTask;
 import org.apache.tez.dag.records.TaskAttemptTerminationCause;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezVertexID;
+import org.apache.tez.runtime.api.TaskFailureType;
+import org.apache.tez.runtime.api.events.TaskAttemptFailedEvent;
+import org.apache.tez.runtime.api.events.TaskAttemptKilledEvent;
+import org.apache.tez.runtime.api.events.TaskStatusUpdateEvent;
+import org.apache.tez.runtime.api.impl.EventMetaData;
+import org.apache.tez.runtime.api.impl.EventType;
 import org.apache.tez.runtime.api.impl.TezEvent;
+import org.apache.tez.serviceplugins.api.ContainerEndReason;
+import org.apache.tez.serviceplugins.api.DagInfo;
+import org.apache.tez.serviceplugins.api.ServicePluginError;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+import org.apache.tez.serviceplugins.api.TaskCommunicator;
+import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
+import org.apache.tez.serviceplugins.api.TaskHeartbeatRequest;
+import org.apache.tez.serviceplugins.api.TaskHeartbeatResponse;
 
+import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unchecked")
 @InterfaceAudience.Private
 public class TaskCommunicatorManager extends AbstractService implements
-    TaskCommunicatorManagerInterface {
+  TaskCommunicatorManagerInterface {
 
   private static final Logger LOG = LoggerFactory
-      .getLogger(TaskCommunicatorManager.class);
-
+    .getLogger(TaskCommunicatorManager.class);
+  private static final ContainerInfo NULL_CONTAINER_INFO = new ContainerInfo(null);
+  protected final ServicePluginLifecycleAbstractService[] taskCommunicatorServiceWrappers;
+  protected final TaskHeartbeatHandler taskHeartbeatHandler;
+  protected final ContainerHeartbeatHandler containerHeartbeatHandler;
   private final AppContext context;
   private final TaskCommunicatorWrapper[] taskCommunicators;
   private final TaskCommunicatorContext[] taskCommunicatorContexts;
-  protected final ServicePluginLifecycleAbstractService []taskCommunicatorServiceWrappers;
-
-  protected final TaskHeartbeatHandler taskHeartbeatHandler;
-  protected final ContainerHeartbeatHandler containerHeartbeatHandler;
-
   private final TaskHeartbeatResponse RESPONSE_SHOULD_DIE = new TaskHeartbeatResponse(true, null, 0, 0);
-
   private final ConcurrentMap<TezTaskAttemptID, ContainerId> registeredAttempts =
-      new ConcurrentHashMap<TezTaskAttemptID, ContainerId>();
+    new ConcurrentHashMap<TezTaskAttemptID, ContainerId>();
   private final ConcurrentMap<ContainerId, ContainerInfo> registeredContainers =
-      new ConcurrentHashMap<ContainerId, ContainerInfo>();
-
-  // Defined primarily to work around ConcurrentMaps not accepting null values
-  private static final class ContainerInfo {
-    TezTaskAttemptID taskAttemptId;
-    ContainerInfo(TezTaskAttemptID taskAttemptId) {
-      this.taskAttemptId = taskAttemptId;
-    }
-  }
-
-  private static final ContainerInfo NULL_CONTAINER_INFO = new ContainerInfo(null);
-
+    new ConcurrentHashMap<ContainerId, ContainerInfo>();
 
   @VisibleForTesting
   @InterfaceAudience.Private
@@ -127,10 +112,10 @@ public class TaskCommunicatorManager extends AbstractService implements
     this.taskHeartbeatHandler = thh;
     this.containerHeartbeatHandler = chh;
     taskCommunicators =
-        new TaskCommunicatorWrapper[]{new TaskCommunicatorWrapper(taskCommunicator)};
+      new TaskCommunicatorWrapper[]{new TaskCommunicatorWrapper(taskCommunicator)};
     taskCommunicatorContexts = new TaskCommunicatorContext[]{taskCommunicator.getContext()};
     taskCommunicatorServiceWrappers = new ServicePluginLifecycleAbstractService[]{
-        new ServicePluginLifecycleAbstractService(taskCommunicator)};
+      new ServicePluginLifecycleAbstractService(taskCommunicator)};
   }
 
   public TaskCommunicatorManager(AppContext context,
@@ -145,13 +130,14 @@ public class TaskCommunicatorManager extends AbstractService implements
     }
     this.taskCommunicators = new TaskCommunicatorWrapper[taskCommunicatorDescriptors.size()];
     this.taskCommunicatorContexts = new TaskCommunicatorContext[taskCommunicatorDescriptors.size()];
-    this.taskCommunicatorServiceWrappers = new ServicePluginLifecycleAbstractService[taskCommunicatorDescriptors.size()];
-    for (int i = 0 ; i < taskCommunicatorDescriptors.size() ; i++) {
+    this.taskCommunicatorServiceWrappers =
+      new ServicePluginLifecycleAbstractService[taskCommunicatorDescriptors.size()];
+    for (int i = 0; i < taskCommunicatorDescriptors.size(); i++) {
       UserPayload userPayload = taskCommunicatorDescriptors.get(i).getUserPayload();
       taskCommunicatorContexts[i] = new TaskCommunicatorContextImpl(context, this, userPayload, i);
       taskCommunicators[i] = new TaskCommunicatorWrapper(createTaskCommunicator(taskCommunicatorDescriptors.get(i), i));
       taskCommunicatorServiceWrappers[i] =
-          new ServicePluginLifecycleAbstractService(taskCommunicators[i].getTaskCommunicator());
+        new ServicePluginLifecycleAbstractService(taskCommunicators[i].getTaskCommunicator());
     }
     // TODO TEZ-2118 Start using taskCommunicator indices properly
   }
@@ -159,7 +145,7 @@ public class TaskCommunicatorManager extends AbstractService implements
   @Override
   public void serviceStart() {
     // TODO Why is init tied to serviceStart
-    for (int i = 0 ; i < taskCommunicators.length ; i++) {
+    for (int i = 0; i < taskCommunicators.length; i++) {
       taskCommunicatorServiceWrappers[i].init(getConfig());
       taskCommunicatorServiceWrappers[i].start();
     }
@@ -167,7 +153,7 @@ public class TaskCommunicatorManager extends AbstractService implements
 
   @Override
   public void serviceStop() {
-    for (int i = 0 ; i < taskCommunicators.length ; i++) {
+    for (int i = 0; i < taskCommunicators.length; i++) {
       taskCommunicatorServiceWrappers[i].stop();
     }
   }
@@ -178,11 +164,11 @@ public class TaskCommunicatorManager extends AbstractService implements
     if (taskCommDescriptor.getEntityName().equals(TezConstants.getTezYarnServicePluginName())) {
       return createDefaultTaskCommunicator(taskCommunicatorContexts[taskCommIndex]);
     } else if (taskCommDescriptor.getEntityName()
-        .equals(TezConstants.getTezUberServicePluginName())) {
+      .equals(TezConstants.getTezUberServicePluginName())) {
       return createUberTaskCommunicator(taskCommunicatorContexts[taskCommIndex]);
     } else {
       return createCustomTaskCommunicator(taskCommunicatorContexts[taskCommIndex],
-          taskCommDescriptor);
+        taskCommDescriptor);
     }
   }
 
@@ -201,15 +187,15 @@ public class TaskCommunicatorManager extends AbstractService implements
   @VisibleForTesting
   TaskCommunicator createCustomTaskCommunicator(TaskCommunicatorContext taskCommunicatorContext,
                                                 NamedEntityDescriptor taskCommDescriptor)
-                                                    throws TezException {
+    throws TezException {
     LOG.info("Creating TaskCommunicator {}:{} " + taskCommDescriptor.getEntityName(),
-        taskCommDescriptor.getClassName());
+      taskCommDescriptor.getClassName());
     Class<? extends TaskCommunicator> taskCommClazz =
-        (Class<? extends TaskCommunicator>) ReflectionUtils
-            .getClazz(taskCommDescriptor.getClassName());
+      (Class<? extends TaskCommunicator>) ReflectionUtils
+        .getClazz(taskCommDescriptor.getClassName());
     try {
       Constructor<? extends TaskCommunicator> ctor =
-          taskCommClazz.getConstructor(TaskCommunicatorContext.class);
+        taskCommClazz.getConstructor(TaskCommunicatorContext.class);
       return ctor.newInstance(taskCommunicatorContext);
     } catch (NoSuchMethodException | InvocationTargetException | InstantiationException | IllegalAccessException e) {
       throw new TezUncheckedException(e);
@@ -217,14 +203,14 @@ public class TaskCommunicatorManager extends AbstractService implements
   }
 
   public TaskHeartbeatResponse heartbeat(TaskHeartbeatRequest request)
-      throws IOException, TezException {
+    throws IOException, TezException {
     ContainerId containerId = ConverterUtils.toContainerId(request
-        .getContainerIdentifier());
+      .getContainerIdentifier());
     LOG.debug("Received heartbeat from container, request={}", request);
 
     if (!registeredContainers.containsKey(containerId)) {
       LOG.warn("Received task heartbeat from unknown container with id: " + containerId +
-          ", asking it to die");
+        ", asking it to die");
       return RESPONSE_SHOULD_DIE;
     }
 
@@ -253,13 +239,15 @@ public class TaskCommunicatorManager extends AbstractService implements
       List<TezEvent> inEvents = request.getEvents();
       if (LOG.isDebugEnabled()) {
         LOG.debug("Ping from " + taskAttemptID.toString() +
-            " events: " + (inEvents != null ? inEvents.size() : -1));
+          " events: " + (inEvents != null ? inEvents.size() : -1));
       }
 
       long currTime = context.getClock().getTime();
       // taFinishedEvents - means the TaskAttemptFinishedEvent
-      // taGeneratedEvents - for recovery, means the events generated by this task attempt and is needed by its downstream vertices
-      // eventsForVertex - including all the taGeneratedEvents and other events such as INPUT_READ_ERROR_EVENT/INPUT_FAILED_EVENT
+      // taGeneratedEvents - for recovery, means the events generated by this task attempt and is needed by its
+      // downstream vertices
+      // eventsForVertex - including all the taGeneratedEvents and other events such as
+      // INPUT_READ_ERROR_EVENT/INPUT_FAILED_EVENT
       // taGeneratedEvents is routed both to TaskAttempt & Vertex. Route to Vertex is for performance consideration
       // taFinishedEvents must be routed before taGeneratedEvents
       List<TezEvent> taFinishedEvents = new ArrayList<TezEvent>();
@@ -275,10 +263,10 @@ public class TaskCommunicatorManager extends AbstractService implements
         if (eventType == EventType.TASK_STATUS_UPDATE_EVENT) {
           // send TA_STATUS_UPDATE before TA_DONE/TA_FAILED/TA_KILLED otherwise Status may be missed
           taskAttemptEvent = new TaskAttemptEventStatusUpdate(taskAttemptID,
-              (TaskStatusUpdateEvent) tezEvent.getEvent());
+            (TaskStatusUpdateEvent) tezEvent.getEvent());
         } else if (eventType == EventType.TASK_ATTEMPT_COMPLETED_EVENT
-           || eventType == EventType.TASK_ATTEMPT_FAILED_EVENT
-           || eventType == EventType.TASK_ATTEMPT_KILLED_EVENT) {
+          || eventType == EventType.TASK_ATTEMPT_FAILED_EVENT
+          || eventType == EventType.TASK_ATTEMPT_KILLED_EVENT) {
           taFinishedEvents.add(tezEvent);
         } else {
           if (eventType == EventType.INPUT_READ_ERROR_EVENT) {
@@ -306,62 +294,63 @@ public class TaskCommunicatorManager extends AbstractService implements
       for (TezEvent e : taFinishedEvents) {
         EventMetaData sourceMeta = e.getSourceInfo();
         switch (e.getEventType()) {
-        case TASK_ATTEMPT_FAILED_EVENT:
-        case TASK_ATTEMPT_KILLED_EVENT:
-          TaskAttemptTerminationCause errCause = null;
-          switch (sourceMeta.getEventGenerator()) {
-          case INPUT:
-            errCause = TaskAttemptTerminationCause.INPUT_READ_ERROR;
+          case TASK_ATTEMPT_FAILED_EVENT:
+          case TASK_ATTEMPT_KILLED_EVENT:
+            TaskAttemptTerminationCause errCause = null;
+            switch (sourceMeta.getEventGenerator()) {
+              case INPUT:
+                errCause = TaskAttemptTerminationCause.INPUT_READ_ERROR;
+                break;
+              case PROCESSOR:
+                errCause = TaskAttemptTerminationCause.APPLICATION_ERROR;
+                break;
+              case OUTPUT:
+                errCause = TaskAttemptTerminationCause.OUTPUT_WRITE_ERROR;
+                break;
+              case SYSTEM:
+                errCause = TaskAttemptTerminationCause.FRAMEWORK_ERROR;
+                break;
+              default:
+                throw new TezUncheckedException("Unknown EventProducerConsumerType: " +
+                  sourceMeta.getEventGenerator());
+            }
+            if (e.getEventType() == EventType.TASK_ATTEMPT_FAILED_EVENT) {
+              TaskAttemptFailedEvent taskFailedEvent = (TaskAttemptFailedEvent) e.getEvent();
+              sendEvent(
+                new TaskAttemptEventAttemptFailed(sourceMeta.getTaskAttemptID(),
+                  TaskAttemptEventType.TA_FAILED, taskFailedEvent.getTaskFailureType(),
+                  "Error: " + taskFailedEvent.getDiagnostics(),
+                  errCause));
+            } else { // Killed
+              TaskAttemptKilledEvent taskKilledEvent = (TaskAttemptKilledEvent) e.getEvent();
+              sendEvent(
+                new TaskAttemptEventAttemptKilled(sourceMeta.getTaskAttemptID(),
+                  "Error: " + taskKilledEvent.getDiagnostics(), errCause));
+            }
             break;
-          case PROCESSOR:
-            errCause = TaskAttemptTerminationCause.APPLICATION_ERROR;
-            break;
-          case OUTPUT:
-            errCause = TaskAttemptTerminationCause.OUTPUT_WRITE_ERROR;
-            break;
-          case SYSTEM:
-            errCause = TaskAttemptTerminationCause.FRAMEWORK_ERROR;
+          case TASK_ATTEMPT_COMPLETED_EVENT:
+            sendEvent(
+              new TaskAttemptEvent(sourceMeta.getTaskAttemptID(), TaskAttemptEventType.TA_DONE));
             break;
           default:
-            throw new TezUncheckedException("Unknown EventProducerConsumerType: " +
-                sourceMeta.getEventGenerator());
-          }
-          if (e.getEventType() == EventType.TASK_ATTEMPT_FAILED_EVENT) {
-            TaskAttemptFailedEvent taskFailedEvent = (TaskAttemptFailedEvent) e.getEvent();
-            sendEvent(
-                new TaskAttemptEventAttemptFailed(sourceMeta.getTaskAttemptID(),
-                    TaskAttemptEventType.TA_FAILED, taskFailedEvent.getTaskFailureType(),
-                    "Error: " + taskFailedEvent.getDiagnostics(),
-                    errCause));
-          } else { // Killed
-            TaskAttemptKilledEvent taskKilledEvent = (TaskAttemptKilledEvent) e.getEvent();
-            sendEvent(
-                new TaskAttemptEventAttemptKilled(sourceMeta.getTaskAttemptID(),
-                    "Error: " + taskKilledEvent.getDiagnostics(), errCause));
-          }
-          break;
-        case TASK_ATTEMPT_COMPLETED_EVENT:
-          sendEvent(
-              new TaskAttemptEvent(sourceMeta.getTaskAttemptID(), TaskAttemptEventType.TA_DONE));
-          break;
-        default:
-          throw new TezUncheckedException("Unhandled tez event type: "
-             + e.getEventType());
+            throw new TezUncheckedException("Unhandled tez event type: "
+              + e.getEventType());
         }
       }
       if (!eventsForVertex.isEmpty()) {
         TezVertexID vertexId = taskAttemptID.getVertexID();
         sendEvent(
-            new VertexEventRouteEvent(vertexId, Collections.unmodifiableList(eventsForVertex)));
+          new VertexEventRouteEvent(vertexId, Collections.unmodifiableList(eventsForVertex)));
       }
       taskHeartbeatHandler.pinged(taskAttemptID);
       eventInfo = context
-          .getCurrentDAG()
-          .getVertex(taskAttemptID.getVertexID())
-          .getTaskAttemptTezEvents(taskAttemptID, request.getStartIndex(), request.getPreRoutedStartIndex(),
-              request.getMaxEvents());
+        .getCurrentDAG()
+        .getVertex(taskAttemptID.getVertexID())
+        .getTaskAttemptTezEvents(taskAttemptID, request.getStartIndex(), request.getPreRoutedStartIndex(),
+          request.getMaxEvents());
     }
-    return new TaskHeartbeatResponse(false, eventInfo.getEvents(), eventInfo.getNextFromEventId(), eventInfo.getNextPreRoutedFromEventId());
+    return new TaskHeartbeatResponse(false, eventInfo.getEvents(), eventInfo.getNextFromEventId(),
+      eventInfo.getNextPreRoutedFromEventId());
   }
 
   public void taskAlive(TezTaskAttemptID taskAttemptId) {
@@ -389,8 +378,8 @@ public class TaskCommunicatorManager extends AbstractService implements
     // instead of waiting for the unregister to flow through the Container.
     // Fix along the same lines as TEZ-2124 by introducing an explict context.
     sendEvent(new TaskAttemptEventAttemptKilled(taskAttemptId,
-        diagnostics, TezUtilsInternal.fromTaskAttemptEndReason(
-        taskAttemptEndReason)));
+      diagnostics, TezUtilsInternal.fromTaskAttemptEndReason(
+      taskAttemptEndReason)));
   }
 
   public void taskFailed(TezTaskAttemptID taskAttemptId, TaskFailureType taskFailureType,
@@ -403,8 +392,8 @@ public class TaskCommunicatorManager extends AbstractService implements
     // Fix along the same lines as TEZ-2124 by introducing an explict context.
     //TODO-3183. Allow the FailureType to be specified
     sendEvent(new TaskAttemptEventAttemptFailed(taskAttemptId,
-        TaskAttemptEventType.TA_FAILED, taskFailureType, diagnostics, TezUtilsInternal.fromTaskAttemptEndReason(
-        taskAttemptEndReason)));
+      TaskAttemptEventType.TA_FAILED, taskFailureType, diagnostics, TezUtilsInternal.fromTaskAttemptEndReason(
+      taskAttemptEndReason)));
   }
 
   public void vertexStateUpdateNotificationReceived(VertexStateUpdate event, int taskCommIndex) {
@@ -412,17 +401,16 @@ public class TaskCommunicatorManager extends AbstractService implements
       taskCommunicators[taskCommIndex].onVertexStateUpdated(event);
     } catch (Exception e) {
       String msg = "Error in TaskCommunicator when handling vertex state update notification"
-          + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommIndex, context)
-          + ", vertexName=" + event.getVertexName()
-          + ", vertexState=" + event.getVertexState();
+        + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommIndex, context)
+        + ", vertexName=" + event.getVertexName()
+        + ", vertexState=" + event.getVertexState();
       LOG.error(msg, e);
       sendEvent(
-          new DAGAppMasterEventUserServiceFatalError(
-              DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
-              msg, e));
+        new DAGAppMasterEventUserServiceFatalError(
+          DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
+          msg, e));
     }
   }
-
 
   /**
    * Child checking whether it can commit.
@@ -442,8 +430,8 @@ public class TaskCommunicatorManager extends AbstractService implements
 
     DAG job = context.getCurrentDAG();
     Task task =
-        job.getVertex(taskAttemptId.getVertexID()).
-            getTask(taskAttemptId.getTaskID());
+      job.getVertex(taskAttemptId.getVertexID()).
+        getTask(taskAttemptId.getTaskID());
     return task.canCommit(taskAttemptId);
   }
 
@@ -459,22 +447,21 @@ public class TaskCommunicatorManager extends AbstractService implements
     // TODO TEZ-2336. Send a signal to containers indicating DAG completion.
 
     // Inform all communicators of the dagCompletion.
-    for (int i = 0 ; i < taskCommunicators.length ; i++) {
+    for (int i = 0; i < taskCommunicators.length; i++) {
       try {
         ((TaskCommunicatorContextImpl) taskCommunicatorContexts[i]).dagCompleteStart(dag);
         taskCommunicators[i].dagComplete(dag.getID().getId());
         ((TaskCommunicatorContextImpl) taskCommunicatorContexts[i]).dagCompleteEnd();
       } catch (Exception e) {
         String msg = "Error in TaskCommunicator when notifying for DAG completion"
-            + ", communicator=" + Utils.getTaskCommIdentifierString(i, context);
+          + ", communicator=" + Utils.getTaskCommIdentifierString(i, context);
         LOG.error(msg, e);
         sendEvent(
-            new DAGAppMasterEventUserServiceFatalError(
-                DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
-                msg, e));
+          new DAGAppMasterEventUserServiceFatalError(
+            DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
+            msg, e));
       }
     }
-
   }
 
   @Override
@@ -489,27 +476,28 @@ public class TaskCommunicatorManager extends AbstractService implements
     ContainerInfo oldInfo = registeredContainers.put(containerId, NULL_CONTAINER_INFO);
     if (oldInfo != null) {
       throw new TezUncheckedException(
-          "Multiple registrations for containerId: " + containerId);
+        "Multiple registrations for containerId: " + containerId);
     }
     NodeId nodeId = context.getAllContainers().get(containerId).getContainer().getNodeId();
     try {
       taskCommunicators[taskCommId].registerRunningContainer(containerId, nodeId.getHost(),
-          nodeId.getPort());
+        nodeId.getPort());
     } catch (Exception e) {
       String msg = "Error in TaskCommunicator when registering running Container"
-          + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
-          + ", containerId=" + containerId
-          + ", nodeId=" + nodeId;
+        + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
+        + ", containerId=" + containerId
+        + ", nodeId=" + nodeId;
       LOG.error(msg, e);
       sendEvent(
-          new DAGAppMasterEventUserServiceFatalError(
-              DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
-              msg, e));
+        new DAGAppMasterEventUserServiceFatalError(
+          DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
+          msg, e));
     }
   }
 
   @Override
-  public void unregisterRunningContainer(ContainerId containerId, int taskCommId, ContainerEndReason endReason, String diagnostics) {
+  public void unregisterRunningContainer(ContainerId containerId, int taskCommId, ContainerEndReason endReason,
+                                         String diagnostics) {
     LOG.debug("Unregistering Container from TaskAttemptListener: {}", containerId);
     ContainerInfo containerInfo = registeredContainers.remove(containerId);
     if (containerInfo.taskAttemptId != null) {
@@ -519,13 +507,13 @@ public class TaskCommunicatorManager extends AbstractService implements
       taskCommunicators[taskCommId].registerContainerEnd(containerId, endReason, diagnostics);
     } catch (Exception e) {
       String msg = "Error in TaskCommunicator when unregistering Container"
-          + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
-          + ", containerId=" + containerId;
+        + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
+        + ", containerId=" + containerId;
       LOG.error(msg, e);
       sendEvent(
-          new DAGAppMasterEventUserServiceFatalError(
-              DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
-              msg, e));
+        new DAGAppMasterEventUserServiceFatalError(
+          DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
+          msg, e));
     }
   }
 
@@ -535,44 +523,45 @@ public class TaskCommunicatorManager extends AbstractService implements
     ContainerInfo containerInfo = registeredContainers.get(containerId);
     if (containerInfo == null) {
       throw new TezUncheckedException("Registering task attempt: "
-          + amContainerTask.getTask().getTaskAttemptID() + " to unknown container: " + containerId);
+        + amContainerTask.getTask().getTaskAttemptID() + " to unknown container: " + containerId);
     }
     if (containerInfo.taskAttemptId != null) {
       throw new TezUncheckedException("Registering task attempt: "
-          + amContainerTask.getTask().getTaskAttemptID() + " to container: " + containerId
-          + " with existing assignment to: " +
-          containerInfo.taskAttemptId);
+        + amContainerTask.getTask().getTaskAttemptID() + " to container: " + containerId
+        + " with existing assignment to: " +
+        containerInfo.taskAttemptId);
     }
 
     // Explicitly putting in a new entry so that synchronization is not required on the existing element in the map.
     registeredContainers.put(containerId, new ContainerInfo(amContainerTask.getTask().getTaskAttemptID()));
 
     ContainerId containerIdFromMap = registeredAttempts.put(
-        amContainerTask.getTask().getTaskAttemptID(), containerId);
+      amContainerTask.getTask().getTaskAttemptID(), containerId);
     if (containerIdFromMap != null) {
       throw new TezUncheckedException("Registering task attempt: "
-          + amContainerTask.getTask().getTaskAttemptID() + " to container: " + containerId
-          + " when already assigned to: " + containerIdFromMap);
+        + amContainerTask.getTask().getTaskAttemptID() + " to container: " + containerId
+        + " when already assigned to: " + containerIdFromMap);
     }
     try {
       taskCommunicators[taskCommId].registerRunningTaskAttempt(containerId, amContainerTask.getTask(),
-          amContainerTask.getAdditionalResources(), amContainerTask.getCredentials(),
-          amContainerTask.haveCredentialsChanged(), amContainerTask.getPriority());
+        amContainerTask.getAdditionalResources(), amContainerTask.getCredentials(),
+        amContainerTask.haveCredentialsChanged(), amContainerTask.getPriority());
     } catch (Exception e) {
       String msg = "Error in TaskCommunicator when registering Task Attempt"
-          + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
-          + ", containerId=" + containerId
-          + ", taskId=" + amContainerTask.getTask().getTaskAttemptID();
+        + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
+        + ", containerId=" + containerId
+        + ", taskId=" + amContainerTask.getTask().getTaskAttemptID();
       LOG.error(msg, e);
       sendEvent(
-          new DAGAppMasterEventUserServiceFatalError(
-              DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
-              msg, e));
+        new DAGAppMasterEventUserServiceFatalError(
+          DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
+          msg, e));
     }
   }
 
   @Override
-  public void unregisterTaskAttempt(TezTaskAttemptID attemptId, int taskCommId, TaskAttemptEndReason endReason, String diagnostics) {
+  public void unregisterTaskAttempt(TezTaskAttemptID attemptId, int taskCommId, TaskAttemptEndReason endReason,
+                                    String diagnostics) {
     ContainerId containerId = registeredAttempts.remove(attemptId);
     if (containerId == null) {
       LOG.warn("Unregister task attempt: " + attemptId + " from unknown container");
@@ -581,7 +570,7 @@ public class TaskCommunicatorManager extends AbstractService implements
     ContainerInfo containerInfo = registeredContainers.get(containerId);
     if (containerInfo == null) {
       LOG.warn("Unregister task attempt: " + attemptId +
-          " from non-registered container: " + containerId);
+        " from non-registered container: " + containerId);
       return;
     }
     // Explicitly putting in a new entry so that synchronization is not required on the existing element in the map.
@@ -590,14 +579,14 @@ public class TaskCommunicatorManager extends AbstractService implements
       taskCommunicators[taskCommId].unregisterRunningTaskAttempt(attemptId, endReason, diagnostics);
     } catch (Exception e) {
       String msg = "Error in TaskCommunicator when unregistering Task Attempt"
-          + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
-          + ", containerId=" + containerId
-          + ", taskId=" + attemptId;
+        + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
+        + ", containerId=" + containerId
+        + ", taskId=" + attemptId;
       LOG.error(msg, e);
       sendEvent(
-          new DAGAppMasterEventUserServiceFatalError(
-              DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
-              msg, e));
+        new DAGAppMasterEventUserServiceFatalError(
+          DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
+          msg, e));
     }
   }
 
@@ -612,21 +601,21 @@ public class TaskCommunicatorManager extends AbstractService implements
                           DagInfo dagInfo) {
     if (servicePluginError.getErrorType() == ServicePluginError.ErrorType.PERMANENT) {
       String msg = "Fatal Error reported by TaskCommunicator"
-          + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommIndex, context)
-          + ", servicePluginError=" + servicePluginError
-          + ", diagnostics= " + (diagnostics == null ? "" : diagnostics);
+        + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommIndex, context)
+        + ", servicePluginError=" + servicePluginError
+        + ", diagnostics= " + (diagnostics == null ? "" : diagnostics);
       LOG.error(msg + ", Diagnostics=" + diagnostics);
       sendEvent(
-          new DAGAppMasterEventUserServiceFatalError(
-              DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
-              msg, null));
+        new DAGAppMasterEventUserServiceFatalError(
+          DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
+          msg, null));
     } else {
       Utils
-          .processNonFatalServiceErrorReport(
-              Utils.getTaskCommIdentifierString(taskCommIndex, context), servicePluginError,
-              diagnostics,
-              dagInfo, context,
-              "TaskCommunicator");
+        .processNonFatalServiceErrorReport(
+          Utils.getTaskCommIdentifierString(taskCommIndex, context), servicePluginError,
+          diagnostics,
+          dagInfo, context,
+          "TaskCommunicator");
     }
   }
 
@@ -640,7 +629,7 @@ public class TaskCommunicatorManager extends AbstractService implements
       containerHeartbeatHandler.pinged(containerId);
     } else {
       LOG.warn("Handling communication from attempt: " + taskAttemptId
-          + ", ContainerId not known for this attempt");
+        + ", ContainerId not known for this attempt");
     }
   }
 
@@ -660,8 +649,8 @@ public class TaskCommunicatorManager extends AbstractService implements
       return taskCommunicators[taskCommId].getInProgressLogsUrl(attemptID, containerNodeId);
     } catch (Exception e) {
       LOG.warn("Failed to retrieve InProgressLogsUrl from TaskCommunicator,"
-          + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
-          + ", attemptId=" + attemptID, e);
+        + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
+        + ", attemptId=" + attemptID, e);
     }
     return null;
   }
@@ -672,8 +661,8 @@ public class TaskCommunicatorManager extends AbstractService implements
       return taskCommunicators[taskCommId].getCompletedLogsUrl(attemptID, containerNodeId);
     } catch (Exception e) {
       LOG.warn("Failed to retrieve CompletedLogsUrl from TaskCommunicator,"
-          + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
-          + ", attemptId=" + attemptID, e);
+        + ", communicator=" + Utils.getTaskCommIdentifierString(taskCommId, context)
+        + ", attemptId=" + attemptID, e);
     }
     return null;
   }
@@ -685,5 +674,14 @@ public class TaskCommunicatorManager extends AbstractService implements
       totalUsedMemory += taskCommunicators[i].getTaskCommunicator().getTotalUsedMemory();
     }
     return totalUsedMemory;
+  }
+
+  // Defined primarily to work around ConcurrentMaps not accepting null values
+  private static final class ContainerInfo {
+    TezTaskAttemptID taskAttemptId;
+
+    ContainerInfo(TezTaskAttemptID taskAttemptId) {
+      this.taskAttemptId = taskAttemptId;
+    }
   }
 }

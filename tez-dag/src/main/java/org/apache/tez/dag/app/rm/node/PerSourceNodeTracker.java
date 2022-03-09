@@ -18,13 +18,14 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.event.Event;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.dag.app.AppContext;
 import org.apache.tez.dag.app.dag.DAG;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,9 +45,8 @@ public class PerSourceNodeTracker {
   private final boolean nodeBlacklistingEnabled;
   private final int blacklistDisablePercent;
   private final boolean nodeUpdatesRescheduleEnabled;
-
-  private int numClusterNodes;
   float currentIgnoreBlacklistingCountThreshold = 0;
+  private int numClusterNodes;
   private boolean ignoreBlacklisting = false;
 
   @SuppressWarnings("rawtypes")
@@ -66,12 +66,10 @@ public class PerSourceNodeTracker {
     this.nodeUpdatesRescheduleEnabled = nodeUpdatesRescheduleEnabled;
   }
 
-
-
   public void nodeSeen(NodeId nodeId) {
     if (nodeMap.putIfAbsent(nodeId, new AMNodeImpl(nodeId, sourceId, maxTaskFailuresPerNode,
-        eventHandler, nodeBlacklistingEnabled, nodeUpdatesRescheduleEnabled,
-        appContext)) == null) {
+      eventHandler, nodeBlacklistingEnabled, nodeUpdatesRescheduleEnabled,
+      appContext)) == null) {
       LOG.info("Adding new node {} to nodeTracker {}", nodeId, sourceId);
     }
   }
@@ -135,7 +133,7 @@ public class PerSourceNodeTracker {
   private void recomputeCurrentIgnoreBlacklistingThreshold() {
     if (nodeBlacklistingEnabled && blacklistDisablePercent != -1) {
       currentIgnoreBlacklistingCountThreshold =
-          (float) numClusterNodes * blacklistDisablePercent / 100;
+        (float) numClusterNodes * blacklistDisablePercent / 100;
     }
   }
 
@@ -153,14 +151,14 @@ public class PerSourceNodeTracker {
       if (ignoreBlacklisting == false) {
         ignoreBlacklisting = true;
         LOG.info("Ignore Blacklisting set to true. Known: " + numClusterNodes
-            + ", Blacklisted: " + blacklistMap.size());
+          + ", Blacklisted: " + blacklistMap.size());
         stateChanged = true;
       }
     } else {
       if (ignoreBlacklisting == true) {
         ignoreBlacklisting = false;
         LOG.info("Ignore blacklisting set to false. Known: "
-            + numClusterNodes + ", Blacklisted: " + blacklistMap.size());
+          + numClusterNodes + ", Blacklisted: " + blacklistMap.size());
         stateChanged = true;
       }
     }
@@ -185,8 +183,8 @@ public class PerSourceNodeTracker {
 
   private void sendIngoreBlacklistingStateToNodes() {
     AMNodeEventType eventType =
-        ignoreBlacklisting ? AMNodeEventType.N_IGNORE_BLACKLISTING_ENABLED
-            : AMNodeEventType.N_IGNORE_BLACKLISTING_DISABLED;
+      ignoreBlacklisting ? AMNodeEventType.N_IGNORE_BLACKLISTING_ENABLED
+        : AMNodeEventType.N_IGNORE_BLACKLISTING_DISABLED;
     for (NodeId nodeId : nodeMap.keySet()) {
       sendEvent(new AMNodeEvent(nodeId, sourceId, eventType));
     }

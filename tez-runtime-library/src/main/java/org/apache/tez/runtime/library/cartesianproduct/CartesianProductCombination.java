@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,12 +17,13 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import org.apache.tez.common.Preconditions;
-import com.google.common.primitives.Ints;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import org.apache.tez.common.Preconditions;
+
+import com.google.common.primitives.Ints;
 
 /**
  * Represent the combination of source chunks. A chunk is one or more source tasks or partitions.
@@ -44,13 +45,13 @@ import java.util.List;
  * chunk.
  */
 class CartesianProductCombination {
-  private int[] numChunk;
-  // which position (in source vertices array) we care about
-  private int positionId = -1;
   // The i-th element Ci represents chunk Ci of source vertex i.
   private final Integer[] combination;
   // helper array to computer task id: task id = (combination) dot-product (factor)
   private final Integer[] factor;
+  private int[] numChunk;
+  // which position (in source vertices array) we care about
+  private int positionId = -1;
 
   public CartesianProductCombination(int[] numChunk) {
     Preconditions.checkArgument(!Ints.contains(numChunk, 0),
@@ -58,15 +59,25 @@ class CartesianProductCombination {
     this.numChunk = Arrays.copyOf(numChunk, numChunk.length);
     combination = new Integer[numChunk.length];
     factor = new Integer[numChunk.length];
-    factor[factor.length-1] = 1;
-    for (int i = combination.length-2; i >= 0; i--) {
-      factor[i] = factor[i+1]* numChunk[i+1];
+    factor[factor.length - 1] = 1;
+    for (int i = combination.length - 2; i >= 0; i--) {
+      factor[i] = factor[i + 1] * numChunk[i + 1];
     }
   }
 
   public CartesianProductCombination(int[] numChunk, int positionId) {
     this(numChunk);
     this.positionId = positionId;
+  }
+
+  public static CartesianProductCombination fromTaskId(int[] numChunk,
+                                                       int taskId) {
+    CartesianProductCombination result = new CartesianProductCombination(numChunk);
+    for (int i = 0; i < result.combination.length; i++) {
+      result.combination[i] = taskId / result.factor[i];
+      taskId %= result.factor[i];
+    }
+    return result;
   }
 
   /**
@@ -93,8 +104,8 @@ class CartesianProductCombination {
   public boolean nextTaskWithFixedChunk() {
     Preconditions.checkArgument(positionId >= 0 && positionId < combination.length);
     int i;
-    for (i = combination.length-1; i >= 0; i--) {
-      if (i != positionId && combination[i] != numChunk[i]-1) {
+    for (i = combination.length - 1; i >= 0; i--) {
+      if (i != positionId && combination[i] != numChunk[i] - 1) {
         break;
       }
     }
@@ -127,8 +138,8 @@ class CartesianProductCombination {
    */
   public boolean nextTask() {
     int i;
-    for (i = combination.length-1; i >= 0; i--) {
-      if (combination[i] != numChunk[i]-1) {
+    for (i = combination.length - 1; i >= 0; i--) {
+      if (combination[i] != numChunk[i] - 1) {
         break;
       }
     }
@@ -138,7 +149,7 @@ class CartesianProductCombination {
     }
 
     combination[i]++;
-    Arrays.fill(combination, i+1, combination.length, 0);
+    Arrays.fill(combination, i + 1, combination.length, 0);
     return true;
   }
 
@@ -148,18 +159,8 @@ class CartesianProductCombination {
   public int getTaskId() {
     int chunkId = 0;
     for (int i = 0; i < combination.length; i++) {
-      chunkId += combination[i]*factor[i];
+      chunkId += combination[i] * factor[i];
     }
     return chunkId;
-  }
-
-  public static CartesianProductCombination fromTaskId(int[] numChunk,
-                                                       int taskId) {
-    CartesianProductCombination result = new CartesianProductCombination(numChunk);
-    for (int i = 0; i < result.combination.length; i++) {
-      result.combination[i] = taskId/result.factor[i];
-      taskId %= result.factor[i];
-    }
-    return result;
   }
 }

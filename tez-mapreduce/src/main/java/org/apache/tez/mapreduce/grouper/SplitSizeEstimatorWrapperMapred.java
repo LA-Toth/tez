@@ -28,8 +28,8 @@ public class SplitSizeEstimatorWrapperMapred implements SplitSizeEstimatorWrappe
 
   @Override
   public long getEstimatedSize(SplitContainer rawContainer) throws IOException,
-      InterruptedException {
-    MapredSplitContainer splitContainer = (MapredSplitContainer)rawContainer;
+    InterruptedException {
+    MapredSplitContainer splitContainer = (MapredSplitContainer) rawContainer;
     return estimator.getEstimatedSize(splitContainer.getRawSplit());
   }
 }

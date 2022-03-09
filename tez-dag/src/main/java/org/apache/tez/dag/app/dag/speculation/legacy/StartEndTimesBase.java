@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.app.dag.speculation.legacy;
 
@@ -40,17 +40,12 @@ import org.apache.tez.dag.records.TezTaskID;
 abstract class StartEndTimesBase implements TaskRuntimeEstimator {
   static final float MINIMUM_COMPLETE_PROPORTION_TO_SPECULATE = 0.05F;
   static final int MINIMUM_COMPLETE_NUMBER_TO_SPECULATE = 1;
-
-  protected Vertex vertex;
-
   protected final Map<TezTaskAttemptID, Long> startTimes
-      = new ConcurrentHashMap<TezTaskAttemptID, Long>();
-
+    = new ConcurrentHashMap<TezTaskAttemptID, Long>();
   protected final DataStatistics taskStatistics = new DataStatistics();
-
-  private float slowTaskRelativeThresholds;
-
   protected final Set<Task> doneTasks = new HashSet<Task>();
+  protected Vertex vertex;
+  private float slowTaskRelativeThresholds;
 
   @Override
   public void enrollAttempt(final TezTaskAttemptID id, final long timestamp) {
@@ -67,7 +62,7 @@ abstract class StartEndTimesBase implements TaskRuntimeEstimator {
   @Override
   public void contextualize(final Configuration conf, final Vertex vertexP) {
     slowTaskRelativeThresholds = conf.getFloat(
-        TezConfiguration.TEZ_AM_LEGACY_SPECULATIVE_SLOWTASK_THRESHOLD, 1.0f);
+      TezConfiguration.TEZ_AM_LEGACY_SPECULATIVE_SLOWTASK_THRESHOLD, 1.0f);
     this.vertex = vertexP;
   }
 
@@ -82,8 +77,8 @@ abstract class StartEndTimesBase implements TaskRuntimeEstimator {
     int totalTasks = vertex.getTotalTasks();
 
     if (completedTasks < MINIMUM_COMPLETE_NUMBER_TO_SPECULATE
-        || (((float) completedTasks) / totalTasks)
-        < MINIMUM_COMPLETE_PROPORTION_TO_SPECULATE) {
+      || (((float) completedTasks) / totalTasks)
+      < MINIMUM_COMPLETE_PROPORTION_TO_SPECULATE) {
       return Long.MAX_VALUE;
     }
 
@@ -98,8 +93,8 @@ abstract class StartEndTimesBase implements TaskRuntimeEstimator {
 
   @Override
   public void updateAttempt(final TezTaskAttemptID attemptID,
-      final TaskAttemptState state,
-      final long timestamp) {
+                            final TaskAttemptState state,
+                            final long timestamp) {
 
     Task task = vertex.getTask(attemptID.getTaskID());
 

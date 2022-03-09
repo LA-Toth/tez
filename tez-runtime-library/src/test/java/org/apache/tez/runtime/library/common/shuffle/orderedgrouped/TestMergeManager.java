@@ -34,11 +34,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-import com.google.common.collect.Sets;
-
-import org.apache.hadoop.io.serializer.WritableSerialization;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -46,6 +41,7 @@ import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.FileChunk;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.serializer.WritableSerialization;
 import org.apache.tez.common.TezRuntimeFrameworkConfigs;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.TezConfiguration;
@@ -55,13 +51,16 @@ import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
 import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
 import org.apache.tez.runtime.library.common.sort.impl.IFile;
 import org.apache.tez.runtime.library.common.sort.impl.TezIndexRecord;
+
+import com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestMergeManager {
-
 
   private static final Logger LOG = LoggerFactory.getLogger(TestMergeManager.class);
 
@@ -74,14 +73,23 @@ public class TestMergeManager {
       defaultConf.set("fs.defaultFS", "file:///");
       localFs = FileSystem.getLocal(defaultConf);
       workDir =
-          new Path(new Path(System.getProperty("test.build.data", "/tmp")),
-              TestMergeManager.class.getSimpleName());
+        new Path(new Path(System.getProperty("test.build.data", "/tmp")),
+          TestMergeManager.class.getSimpleName());
       workDir = localFs.makeQualified(workDir);
       localFs.mkdirs(workDir);
       LOG.info("Using workDir: " + workDir);
     } catch (IOException e) {
       throw new RuntimeException("init failure", e);
     }
+  }
+
+  // Copied from FetcherOrderedGrouped
+  private static MapOutput getMapOutputForDirectDiskFetch(InputAttemptIdentifier srcAttemptId,
+                                                          Path filename, TezIndexRecord indexRecord,
+                                                          MergeManager merger)
+    throws IOException {
+    return MapOutput.createLocalDiskMapOutput(srcAttemptId, merger, filename,
+      indexRecord.getStartOffset(), indexRecord.getPartLength(), true);
   }
 
   @Before
@@ -116,42 +124,42 @@ public class TestMergeManager {
       conf.setFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT, 2.4f);
       MergeManager.getInitialMemoryRequirement(conf, maxTaskMem);
       Assert.fail("Should have thrown wrong buffer percent configuration exception");
-    } catch(IllegalArgumentException ie) {
+    } catch (IllegalArgumentException ie) {
     }
 
     try {
       conf.setFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT, -2.4f);
       MergeManager.getInitialMemoryRequirement(conf, maxTaskMem);
       Assert.fail("Should have thrown wrong buffer percent configuration exception");
-    } catch(IllegalArgumentException ie) {
+    } catch (IllegalArgumentException ie) {
     }
 
     try {
       conf.setFloat(TezRuntimeConfiguration.TEZ_RUNTIME_INPUT_POST_MERGE_BUFFER_PERCENT, 1.4f);
       MergeManager.getInitialMemoryRequirement(conf, maxTaskMem);
       Assert.fail("Should have thrown wrong post merge buffer percent configuration exception");
-    } catch(IllegalArgumentException ie) {
+    } catch (IllegalArgumentException ie) {
     }
 
     try {
       conf.setFloat(TezRuntimeConfiguration.TEZ_RUNTIME_INPUT_POST_MERGE_BUFFER_PERCENT, -1.4f);
       MergeManager.getInitialMemoryRequirement(conf, maxTaskMem);
       Assert.fail("Should have thrown wrong post merge buffer percent configuration exception");
-    } catch(IllegalArgumentException ie) {
+    } catch (IllegalArgumentException ie) {
     }
 
     try {
       conf.setFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT, 1.4f);
       MergeManager.getInitialMemoryRequirement(conf, maxTaskMem);
       Assert.fail("Should have thrown wrong shuffle fetch buffer percent configuration exception");
-    } catch(IllegalArgumentException ie) {
+    } catch (IllegalArgumentException ie) {
     }
 
     try {
       conf.setFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT, -1.4f);
       MergeManager.getInitialMemoryRequirement(conf, maxTaskMem);
       Assert.fail("Should have thrown wrong shuffle fetch buffer percent configuration exception");
-    } catch(IllegalArgumentException ie) {
+    } catch (IllegalArgumentException ie) {
     }
 
     //test post merge mem limit
@@ -159,19 +167,19 @@ public class TestMergeManager {
     conf.setFloat(TezRuntimeConfiguration.TEZ_RUNTIME_INPUT_POST_MERGE_BUFFER_PERCENT, 0.8f);
     FileSystem localFs = FileSystem.getLocal(conf);
     LocalDirAllocator localDirAllocator =
-        new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
+      new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
     InputContext t0inputContext = createMockInputContext(UUID.randomUUID().toString(), maxTaskMem);
     ExceptionReporter t0exceptionReporter = mock(ExceptionReporter.class);
     long initialMemoryAvailable = (long) (maxTaskMem * 0.8);
     MergeManager mergeManager =
-        new MergeManager(conf, localFs, localDirAllocator, t0inputContext, null, null, null, null,
-            t0exceptionReporter, initialMemoryAvailable, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, t0inputContext, null, null, null, null,
+        t0exceptionReporter, initialMemoryAvailable, null, false, -1);
     Assert.assertTrue(mergeManager.postMergeMemLimit > Integer.MAX_VALUE);
 
     initialMemoryAvailable = 200 * 1024 * 1024l; //initial mem < memlimit
     mergeManager =
-        new MergeManager(conf, localFs, localDirAllocator, t0inputContext, null, null, null, null,
-            t0exceptionReporter, initialMemoryAvailable, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, t0inputContext, null, null, null, null,
+        t0exceptionReporter, initialMemoryAvailable, null, false, -1);
     Assert.assertTrue(mergeManager.postMergeMemLimit == initialMemoryAvailable);
   }
 
@@ -181,7 +189,7 @@ public class TestMergeManager {
     FileSystem localFs = FileSystem.getLocal(conf);
     InputContext inputContext = createMockInputContext(UUID.randomUUID().toString());
     MergeManager mergeManager =
-        new MergeManager(conf, localFs, null, inputContext, null, null, null, null,
+      new MergeManager(conf, localFs, null, inputContext, null, null, null, null,
         mock(ExceptionReporter.class), 2000000, null, false, -1);
     mergeManager.configureAndStart();
     assertEquals(0, mergeManager.getUsedMemory());
@@ -201,7 +209,7 @@ public class TestMergeManager {
     assertEquals(0, mergeManager.getCommitMemory());
   }
 
-  @Test(timeout=20000)
+  @Test(timeout = 20000)
   public void testIntermediateMemoryMergeAccounting() throws Exception {
     Configuration conf = new TezConfiguration(defaultConf);
     conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS, false);
@@ -219,14 +227,14 @@ public class TestMergeManager {
 
     FileSystem localFs = FileSystem.getLocal(conf);
     LocalDirAllocator localDirAllocator =
-        new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
+      new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
     InputContext inputContext = createMockInputContext(UUID.randomUUID().toString());
 
     ExceptionReporter exceptionReporter = mock(ExceptionReporter.class);
 
     MergeManager mergeManager =
-        new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
-            exceptionReporter, 2000000, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
+        exceptionReporter, 2000000, null, false, -1);
     mergeManager.configureAndStart();
 
     assertEquals(0, mergeManager.getUsedMemory());
@@ -267,7 +275,7 @@ public class TestMergeManager {
     conf.setStrings(TezRuntimeFrameworkConfigs.LOCAL_DIRS, localDir.toString());
 
     LocalDirAllocator localDirAllocator =
-            new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
+      new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
     InputContext inputContext = createMockInputContext(UUID.randomUUID().toString());
 
     // Create a mock compressor. We will check if it is used.
@@ -275,8 +283,8 @@ public class TestMergeManager {
     dummyCodec.setConf(conf);
 
     MergeManager mergeManager =
-            new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
-                    mock(ExceptionReporter.class), 2000, dummyCodec, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
+        mock(ExceptionReporter.class), 2000, dummyCodec, false, -1);
     mergeManager.configureAndStart();
 
     assertEquals(0, mergeManager.getUsedMemory());
@@ -332,14 +340,14 @@ public class TestMergeManager {
 
     FileSystem localFs = FileSystem.getLocal(conf);
     LocalDirAllocator localDirAllocator =
-        new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
+      new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
     InputContext inputContext = createMockInputContext(UUID.randomUUID().toString());
 
     ExceptionReporter exceptionReporter = mock(ExceptionReporter.class);
 
     MergeManager mergeManager =
-        new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
-            exceptionReporter, 2000000, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
+        exceptionReporter, 2000000, null, false, -1);
     mergeManager.configureAndStart();
 
     assertEquals(0, mergeManager.getUsedMemory());
@@ -351,10 +359,10 @@ public class TestMergeManager {
      * - After 3 segment commits, it would trigger mem-to-mem merge.
      * - All of them can be merged in memory.
      */
-    InputAttemptIdentifier inputAttemptIdentifier1 = new InputAttemptIdentifier(0,0);
-    InputAttemptIdentifier inputAttemptIdentifier2 = new InputAttemptIdentifier(1,0);
-    InputAttemptIdentifier inputAttemptIdentifier3 = new InputAttemptIdentifier(2,0);
-    InputAttemptIdentifier inputAttemptIdentifier4 = new InputAttemptIdentifier(3,0);
+    InputAttemptIdentifier inputAttemptIdentifier1 = new InputAttemptIdentifier(0, 0);
+    InputAttemptIdentifier inputAttemptIdentifier2 = new InputAttemptIdentifier(1, 0);
+    InputAttemptIdentifier inputAttemptIdentifier3 = new InputAttemptIdentifier(2, 0);
+    InputAttemptIdentifier inputAttemptIdentifier4 = new InputAttemptIdentifier(3, 0);
     byte[] data1 = generateDataBySize(conf, 10, inputAttemptIdentifier1);
     byte[] data2 = generateDataBySize(conf, 20, inputAttemptIdentifier2);
     byte[] data3 = generateDataBySize(conf, 200, inputAttemptIdentifier3);
@@ -373,8 +381,7 @@ public class TestMergeManager {
 
     //size should be ~20230.
     assertEquals(data1.length + data2.length + data3.length + data4.length,
-        mergeManager.getUsedMemory());
-
+      mergeManager.getUsedMemory());
 
     System.arraycopy(data1, 0, mo1.getMemory(), 0, data1.length);
     System.arraycopy(data2, 0, mo2.getMemory(), 0, data2.length);
@@ -395,7 +402,6 @@ public class TestMergeManager {
 
     mergeManager.close(true);
 
-
     /**
      * Test #2
      * - Have 4 segments where all of them can fit into memory, but one of
@@ -407,8 +413,8 @@ public class TestMergeManager {
      * merged.
      */
     mergeManager =
-        new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
-            exceptionReporter, 2000000, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
+        exceptionReporter, 2000000, null, false, -1);
     mergeManager.configureAndStart();
 
     //Single shuffle limit is 25% of 2000000
@@ -429,7 +435,7 @@ public class TestMergeManager {
     assertEquals(0, mergeManager.getCommitMemory());
 
     assertEquals(data1.length + data2.length + data3.length + data4.length,
-        mergeManager.getUsedMemory());
+      mergeManager.getUsedMemory());
 
     System.arraycopy(data1, 0, mo1.getMemory(), 0, data1.length);
     System.arraycopy(data2, 0, mo2.getMemory(), 0, data2.length);
@@ -465,8 +471,8 @@ public class TestMergeManager {
      * merging in memory.
      */
     mergeManager =
-        new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
-            exceptionReporter, 2000000, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
+        exceptionReporter, 2000000, null, false, -1);
     mergeManager.configureAndStart();
 
     //Single shuffle limit is 25% of 2000000
@@ -487,7 +493,7 @@ public class TestMergeManager {
     assertEquals(0, mergeManager.getCommitMemory());
 
     assertEquals(data1.length + data2.length + data3.length + data4.length,
-        mergeManager.getUsedMemory());
+      mergeManager.getUsedMemory());
 
     System.arraycopy(data1, 0, mo1.getMemory(), 0, data1.length);
     System.arraycopy(data2, 0, mo2.getMemory(), 0, data2.length);
@@ -521,8 +527,8 @@ public class TestMergeManager {
      */
     conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMTOMEM_SEGMENTS, 4);
     mergeManager =
-        new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
-            exceptionReporter, 2000000, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
+        exceptionReporter, 2000000, null, false, -1);
     mergeManager.configureAndStart();
 
     //Single shuffle limit is 25% of 2000000
@@ -545,7 +551,7 @@ public class TestMergeManager {
     assertEquals(0, mergeManager.getCommitMemory());
 
     assertEquals(data1.length + data2.length + data3.length + data4.length,
-        mergeManager.getUsedMemory());
+      mergeManager.getUsedMemory());
 
     System.arraycopy(data1, 0, mo1.getMemory(), 0, data1.length);
     System.arraycopy(data2, 0, mo2.getMemory(), 0, data2.length);
@@ -576,8 +582,8 @@ public class TestMergeManager {
      */
     conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMTOMEM_SEGMENTS, 4);
     mergeManager =
-        new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
-            exceptionReporter, 2000000, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
+        exceptionReporter, 2000000, null, false, -1);
     mergeManager.configureAndStart();
 
     //Single shuffle limit is 25% of 2000000
@@ -600,7 +606,7 @@ public class TestMergeManager {
     assertEquals(0, mergeManager.getCommitMemory());
 
     assertEquals(data1.length + data2.length + data3.length + data4.length,
-        mergeManager.getUsedMemory());
+      mergeManager.getUsedMemory());
 
     System.arraycopy(data1, 0, mo1.getMemory(), 0, data1.length);
     System.arraycopy(data2, 0, mo2.getMemory(), 0, data2.length);
@@ -631,9 +637,9 @@ public class TestMergeManager {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     FSDataOutputStream fsdos = new FSDataOutputStream(baos, null);
     IFile.Writer writer = new IFile.Writer(new WritableSerialization(), new WritableSerialization(),
-        fsdos, IntWritable.class, IntWritable.class, null, null, null);
+      fsdos, IntWritable.class, IntWritable.class, null, null, null);
     int i = 0;
-    while(true) {
+    while (true) {
       writer.append(new IntWritable(i), new IntWritable(i));
       i++;
       if (writer.getRawLength() > rawLen) {
@@ -641,11 +647,11 @@ public class TestMergeManager {
       }
     }
     writer.close();
-    int compressedLength = (int)writer.getCompressedLength();
-    int rawLength = (int)writer.getRawLength();
+    int compressedLength = (int) writer.getCompressedLength();
+    int rawLength = (int) writer.getRawLength();
     byte[] data = new byte[rawLength];
     ShuffleUtils.shuffleToMemory(data, new ByteArrayInputStream(baos.toByteArray()),
-        rawLength, compressedLength, null, false, 0, LOG, inputAttemptIdentifier);
+      rawLength, compressedLength, null, false, 0, LOG, inputAttemptIdentifier);
     return data;
   }
 
@@ -654,9 +660,9 @@ public class TestMergeManager {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     FSDataOutputStream fsdos = new FSDataOutputStream(baos, null);
     IFile.Writer writer = new IFile.Writer(new WritableSerialization(), new WritableSerialization(),
-        fsdos, IntWritable.class, IntWritable.class, null, null, null);
+      fsdos, IntWritable.class, IntWritable.class, null, null, null);
     int i = 0;
-    while(true) {
+    while (true) {
       writer.append(new IntWritable(i), new IntWritable(i));
       i++;
       if (writer.getRawLength() > rawLen) {
@@ -664,11 +670,11 @@ public class TestMergeManager {
       }
     }
     writer.close();
-    int compressedLength = (int)writer.getCompressedLength();
-    int rawLength = (int)writer.getRawLength();
+    int compressedLength = (int) writer.getCompressedLength();
+    int rawLength = (int) writer.getRawLength();
     byte[] data = new byte[rawLength];
     ShuffleUtils.shuffleToMemory(data, new ByteArrayInputStream(baos.toByteArray()),
-            rawLength, compressedLength, null, false, 0, LOG, inputAttemptIdentifier);
+      rawLength, compressedLength, null, false, 0, LOG, inputAttemptIdentifier);
     return baos.toByteArray();
   }
 
@@ -677,34 +683,17 @@ public class TestMergeManager {
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     FSDataOutputStream fsdos = new FSDataOutputStream(baos, null);
     IFile.Writer writer = new IFile.Writer(new WritableSerialization(), new WritableSerialization(),
-        fsdos, IntWritable.class, IntWritable.class, null, null, null);
+      fsdos, IntWritable.class, IntWritable.class, null, null, null);
     for (int i = 0; i < numEntries; ++i) {
       writer.append(new IntWritable(i), new IntWritable(i));
     }
     writer.close();
-    int compressedLength = (int)writer.getCompressedLength();
-    int rawLength = (int)writer.getRawLength();
+    int compressedLength = (int) writer.getCompressedLength();
+    int rawLength = (int) writer.getRawLength();
     byte[] data = new byte[rawLength];
     ShuffleUtils.shuffleToMemory(data, new ByteArrayInputStream(baos.toByteArray()),
-        rawLength, compressedLength, null, false, 0, LOG, inputAttemptIdentifier);
+      rawLength, compressedLength, null, false, 0, LOG, inputAttemptIdentifier);
     return data;
-  }
-
-  class InterruptingThread implements Runnable {
-
-    MergeManager.OnDiskMerger mergeThread;
-
-    public InterruptingThread(MergeManager.OnDiskMerger mergeThread) {
-      this.mergeThread = mergeThread;
-    }
-
-    @Override public void run() {
-        while(this.mergeThread.tmpDir == null) {
-          //this is tight loop
-        }
-
-        this.mergeThread.interrupt();
-    }
   }
 
   @Test(timeout = 10000)
@@ -730,36 +719,36 @@ public class TestMergeManager {
     FileSystem localFs = FileSystem.getLocal(conf);
 
     LocalDirAllocator localDirAllocator =
-        new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
+      new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
     InputContext inputContext = createMockInputContext(UUID.randomUUID().toString());
 
     ExceptionReporter exceptionReporter = mock(ExceptionReporter.class);
 
     MergeManager mergeManagerReal =
-        new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
-            exceptionReporter, 1 * 1024l * 1024l, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, inputContext, null, null, null, null,
+        exceptionReporter, 1 * 1024l * 1024l, null, false, -1);
     MergeManager mergeManager = spy(mergeManagerReal);
 
     // Partition 0 Keys 0-2, Partition 1 Keys 3-5
     SrcFileInfo file1Info =
-        createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src1.out"),
-            2, 3, 6);
+      createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src1.out"),
+        2, 3, 6);
 
     SrcFileInfo file2Info =
-        createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src2.out"),
-            2, 3, 0);
+      createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src2.out"),
+        2, 3, 0);
 
     InputAttemptIdentifier iIdentifier1 =
-        new InputAttemptIdentifier(0, 0, file1Info.path.getName());
+      new InputAttemptIdentifier(0, 0, file1Info.path.getName());
     InputAttemptIdentifier iIdentifier2 =
-        new InputAttemptIdentifier(1, 0, file2Info.path.getName());
+      new InputAttemptIdentifier(1, 0, file2Info.path.getName());
 
     MapOutput mapOutput1 =
-        getMapOutputForDirectDiskFetch(iIdentifier1, file1Info.path, file1Info.indexedRecords[0],
-            mergeManager);
+      getMapOutputForDirectDiskFetch(iIdentifier1, file1Info.path, file1Info.indexedRecords[0],
+        mergeManager);
     MapOutput mapOutput2 =
-        getMapOutputForDirectDiskFetch(iIdentifier2, file2Info.path, file2Info.indexedRecords[0],
-            mergeManager);
+      getMapOutputForDirectDiskFetch(iIdentifier2, file2Info.path, file2Info.indexedRecords[0],
+        mergeManager);
 
     mapOutput1.commit();
     mapOutput2.commit();
@@ -780,13 +769,13 @@ public class TestMergeManager {
     // Add another file. Make sure the filename is different, and does not get clobbered.
 
     SrcFileInfo file3Info =
-        createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src3.out"),
-            2, 22, 5);
+      createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src3.out"),
+        2, 22, 5);
     InputAttemptIdentifier iIdentifier3 =
-        new InputAttemptIdentifier(2, 0, file1Info.path.getName());
+      new InputAttemptIdentifier(2, 0, file1Info.path.getName());
     MapOutput mapOutput3 =
-        getMapOutputForDirectDiskFetch(iIdentifier3, file3Info.path, file3Info.indexedRecords[0],
-            mergeManager);
+      getMapOutputForDirectDiskFetch(iIdentifier3, file3Info.path, file3Info.indexedRecords[0],
+        mergeManager);
     mapOutput3.commit();
     verify(mergeManager).closeOnDiskFile(mapOutput3.getOutputPath());
 
@@ -804,13 +793,13 @@ public class TestMergeManager {
 
     // Add another file. This time add it to the head of the list.
     SrcFileInfo file4Info =
-        createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src4.out"),
-            2, 45, 35);
+      createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src4.out"),
+        2, 45, 35);
     InputAttemptIdentifier iIdentifier4 =
-        new InputAttemptIdentifier(3, 0, file4Info.path.getName());
+      new InputAttemptIdentifier(3, 0, file4Info.path.getName());
     MapOutput mapOutput4 =
-        getMapOutputForDirectDiskFetch(iIdentifier4, file4Info.path, file4Info.indexedRecords[0],
-            mergeManager);
+      getMapOutputForDirectDiskFetch(iIdentifier4, file4Info.path, file4Info.indexedRecords[0],
+        mergeManager);
     mapOutput4.commit();
     verify(mergeManager).closeOnDiskFile(mapOutput4.getOutputPath());
 
@@ -845,14 +834,12 @@ public class TestMergeManager {
     assertEquals(m1Prefix, m2Prefix);
     assertNotEquals(m1Prefix, m3Prefix);
     assertNotEquals(m2Prefix, m3Prefix);
-    
-    verify(inputContext, atLeastOnce()).notifyProgress();
 
+    verify(inputContext, atLeastOnce()).notifyProgress();
   }
 
-
   void testLocalDiskMergeMultipleTasks(final boolean interruptInMiddle)
-      throws IOException, InterruptedException {
+    throws IOException, InterruptedException {
     Configuration conf = new TezConfiguration(defaultConf);
     conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS, false);
     conf.set(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_CLASS, IntWritable.class.getName());
@@ -867,7 +854,7 @@ public class TestMergeManager {
 
     FileSystem localFs = FileSystem.getLocal(conf);
     LocalDirAllocator localDirAllocator =
-        new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
+      new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
     InputContext t0inputContext = createMockInputContext(UUID.randomUUID().toString());
     InputContext t1inputContext = createMockInputContext(UUID.randomUUID().toString());
 
@@ -875,69 +862,66 @@ public class TestMergeManager {
     ExceptionReporter t1exceptionReporter = mock(ExceptionReporter.class);
 
     MergeManager t0mergeManagerReal =
-        new MergeManager(conf, localFs, localDirAllocator, t0inputContext, null, null, null, null,
-            t0exceptionReporter, 2000000, null, false, -1) {
-          // override for interruptInMiddle testing
-          @Override
-          public synchronized void closeOnDiskFile(FileChunk file) {
-            if (interruptInMiddle) {
-              try {
-                Thread.sleep(2000);
-              } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-              }
+      new MergeManager(conf, localFs, localDirAllocator, t0inputContext, null, null, null, null,
+        t0exceptionReporter, 2000000, null, false, -1) {
+        // override for interruptInMiddle testing
+        @Override
+        public synchronized void closeOnDiskFile(FileChunk file) {
+          if (interruptInMiddle) {
+            try {
+              Thread.sleep(2000);
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+              return;
             }
-            super.closeOnDiskFile(file);
           }
-        };
+          super.closeOnDiskFile(file);
+        }
+      };
     MergeManager t0mergeManager = spy(t0mergeManagerReal);
     t0mergeManager.configureAndStart();
 
     MergeManager t1mergeManagerReal =
-        new MergeManager(conf, localFs, localDirAllocator, t1inputContext, null, null, null, null,
-            t1exceptionReporter, 2000000, null, false, -1);
+      new MergeManager(conf, localFs, localDirAllocator, t1inputContext, null, null, null, null,
+        t1exceptionReporter, 2000000, null, false, -1);
     MergeManager t1mergeManager = spy(t1mergeManagerReal);
 
     // Partition 0 Keys 0-2, Partition 1 Keys 3-5
     SrcFileInfo src1Info =
-        createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src1.out"),
-            2, 3, 0);
+      createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src1.out"),
+        2, 3, 0);
     // Partition 0 Keys 6-8, Partition 1 Keys 9-11
     SrcFileInfo src2Info =
-        createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src2.out"),
-            2, 3, 6);
-
+      createFile(conf, localFs, new Path(srcDir, InputAttemptIdentifier.PATH_PREFIX + "src2.out"),
+        2, 3, 6);
 
     // Simulating Task 0 fetches partition 0. (targetIndex = 0,1)
 
     // Simulating Task 1 fetches partition 1. (targetIndex = 0,1)
 
     InputAttemptIdentifier t0Identifier0 =
-        new InputAttemptIdentifier(0, 0, src1Info.path.getName());
+      new InputAttemptIdentifier(0, 0, src1Info.path.getName());
     InputAttemptIdentifier t0Identifier1 =
-        new InputAttemptIdentifier(1, 0, src2Info.path.getName());
+      new InputAttemptIdentifier(1, 0, src2Info.path.getName());
 
     InputAttemptIdentifier t1Identifier0 =
-        new InputAttemptIdentifier(0, 0, src1Info.path.getName());
+      new InputAttemptIdentifier(0, 0, src1Info.path.getName());
     InputAttemptIdentifier t1Identifier1 =
-        new InputAttemptIdentifier(1, 0, src2Info.path.getName());
-
+      new InputAttemptIdentifier(1, 0, src2Info.path.getName());
 
     MapOutput t0MapOutput0 =
-        getMapOutputForDirectDiskFetch(t0Identifier0, src1Info.path, src1Info.indexedRecords[0],
-            t0mergeManager);
+      getMapOutputForDirectDiskFetch(t0Identifier0, src1Info.path, src1Info.indexedRecords[0],
+        t0mergeManager);
     MapOutput t0MapOutput1 =
-        getMapOutputForDirectDiskFetch(t0Identifier1, src2Info.path, src2Info.indexedRecords[0],
-            t0mergeManager);
+      getMapOutputForDirectDiskFetch(t0Identifier1, src2Info.path, src2Info.indexedRecords[0],
+        t0mergeManager);
 
     MapOutput t1MapOutput0 =
-        getMapOutputForDirectDiskFetch(t1Identifier0, src1Info.path, src1Info.indexedRecords[1],
-            t1mergeManager);
+      getMapOutputForDirectDiskFetch(t1Identifier0, src1Info.path, src1Info.indexedRecords[1],
+        t1mergeManager);
     MapOutput t1MapOutput1 =
-        getMapOutputForDirectDiskFetch(t1Identifier1, src2Info.path, src2Info.indexedRecords[1],
-            t1mergeManager);
-
+      getMapOutputForDirectDiskFetch(t1Identifier1, src2Info.path, src2Info.indexedRecords[1],
+        t1mergeManager);
 
     t0MapOutput0.commit();
     t0MapOutput1.commit();
@@ -983,12 +967,12 @@ public class TestMergeManager {
       Assert.assertEquals(1, t1mergeManager.onDiskMapOutputs.size());
 
       Assert.assertNotEquals(t0mergeManager.onDiskMapOutputs.iterator().next().getPath(),
-          t1mergeManager.onDiskMapOutputs.iterator().next().getPath());
+        t1mergeManager.onDiskMapOutputs.iterator().next().getPath());
 
       Assert.assertTrue(t0mergeManager.onDiskMapOutputs.iterator().next().getPath().toString()
-          .contains(t0inputContext.getUniqueIdentifier()));
+        .contains(t0inputContext.getUniqueIdentifier()));
       Assert.assertTrue(t1mergeManager.onDiskMapOutputs.iterator().next().getPath().toString()
-          .contains(t1inputContext.getUniqueIdentifier()));
+        .contains(t1inputContext.getUniqueIdentifier()));
     }
   }
 
@@ -1015,32 +999,40 @@ public class TestMergeManager {
     for (int i = 0; i < numPartitions; i++) {
       long pos = outStream.getPos();
       IFile.Writer writer =
-          new IFile.Writer(new WritableSerialization(), new WritableSerialization(), outStream,
-              IntWritable.class, IntWritable.class, null, null, null);
+        new IFile.Writer(new WritableSerialization(), new WritableSerialization(), outStream,
+          IntWritable.class, IntWritable.class, null, null, null);
       for (int j = 0; j < numKeysPerPartition; j++) {
         writer.append(new IntWritable(currentKey), new IntWritable(currentKey));
         currentKey++;
       }
       writer.close();
       srcFileInfo.indexedRecords[i] =
-          new TezIndexRecord(pos, writer.getRawLength(), writer.getCompressedLength());
+        new TezIndexRecord(pos, writer.getRawLength(), writer.getCompressedLength());
     }
     outStream.close();
     return srcFileInfo;
+  }
+
+  class InterruptingThread implements Runnable {
+
+    MergeManager.OnDiskMerger mergeThread;
+
+    public InterruptingThread(MergeManager.OnDiskMerger mergeThread) {
+      this.mergeThread = mergeThread;
+    }
+
+    @Override
+    public void run() {
+      while (this.mergeThread.tmpDir == null) {
+        //this is tight loop
+      }
+
+      this.mergeThread.interrupt();
+    }
   }
 
   private class SrcFileInfo {
     private Path path;
     private TezIndexRecord[] indexedRecords;
   }
-
-  // Copied from FetcherOrderedGrouped
-  private static MapOutput getMapOutputForDirectDiskFetch(InputAttemptIdentifier srcAttemptId,
-                                                          Path filename, TezIndexRecord indexRecord,
-                                                          MergeManager merger)
-      throws IOException {
-    return MapOutput.createLocalDiskMapOutput(srcAttemptId, merger, filename,
-        indexRecord.getStartOffset(), indexRecord.getPartLength(), true);
-  }
-
 }

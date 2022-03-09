@@ -49,47 +49,10 @@ import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.api.InputStatisticsReporter;
 import org.apache.tez.runtime.api.events.InputDataInformationEvent;
+
 import org.junit.Test;
 
 public class TestMRInput {
-
-  @Test(timeout = 5000)
-  public void test0PhysicalInputs() throws IOException {
-    InputContext inputContext = mock(InputContext.class);
-
-    DataSourceDescriptor dsd = MRInput.createConfigBuilder(new Configuration(false),
-        FileInputFormat.class, "testPath").build();
-
-    ApplicationId applicationId = ApplicationId.newInstance(1000, 1);
-    doReturn(dsd.getInputDescriptor().getUserPayload()).when(inputContext).getUserPayload();
-    doReturn(applicationId).when(inputContext).getApplicationId();
-    doReturn("dagName").when(inputContext).getDAGName();
-    doReturn("vertexName").when(inputContext).getTaskVertexName();
-    doReturn("inputName").when(inputContext).getSourceVertexName();
-    doReturn("uniqueIdentifier").when(inputContext).getUniqueIdentifier();
-    doReturn(1).when(inputContext).getTaskIndex();
-    doReturn(1).when(inputContext).getTaskAttemptNumber();
-    doReturn(new TezCounters()).when(inputContext).getCounters();
-    doReturn(new JobConf(false)).when(inputContext).getContainerConfiguration();
-
-
-    MRInput mrInput = new MRInput(inputContext, 0);
-
-    mrInput.initialize();
-
-    mrInput.start();
-
-    assertFalse(mrInput.getReader().next());
-    verify(inputContext, times(1)).notifyProgress();
-
-    List<Event> events = new LinkedList<>();
-    try {
-      mrInput.handleEvents(events);
-      fail("HandleEvents should cause an input with 0 physical inputs to fail");
-    } catch (Exception e) {
-      assertTrue(e instanceof IllegalStateException);
-    }
-  }
 
   private static final String TEST_ATTRIBUTES_DAG_NAME = "dagName";
   private static final String TEST_ATTRIBUTES_VERTEX_NAME = "vertexName";
@@ -109,6 +72,43 @@ public class TestMRInput {
   private static final String TEST_ATTRIBUTES_TASK_ATTEMPT_ID_STRING = "attempt_0_0000_1000_2000_003000_4000";
 
   @Test(timeout = 5000)
+  public void test0PhysicalInputs() throws IOException {
+    InputContext inputContext = mock(InputContext.class);
+
+    DataSourceDescriptor dsd = MRInput.createConfigBuilder(new Configuration(false),
+      FileInputFormat.class, "testPath").build();
+
+    ApplicationId applicationId = ApplicationId.newInstance(1000, 1);
+    doReturn(dsd.getInputDescriptor().getUserPayload()).when(inputContext).getUserPayload();
+    doReturn(applicationId).when(inputContext).getApplicationId();
+    doReturn("dagName").when(inputContext).getDAGName();
+    doReturn("vertexName").when(inputContext).getTaskVertexName();
+    doReturn("inputName").when(inputContext).getSourceVertexName();
+    doReturn("uniqueIdentifier").when(inputContext).getUniqueIdentifier();
+    doReturn(1).when(inputContext).getTaskIndex();
+    doReturn(1).when(inputContext).getTaskAttemptNumber();
+    doReturn(new TezCounters()).when(inputContext).getCounters();
+    doReturn(new JobConf(false)).when(inputContext).getContainerConfiguration();
+
+    MRInput mrInput = new MRInput(inputContext, 0);
+
+    mrInput.initialize();
+
+    mrInput.start();
+
+    assertFalse(mrInput.getReader().next());
+    verify(inputContext, times(1)).notifyProgress();
+
+    List<Event> events = new LinkedList<>();
+    try {
+      mrInput.handleEvents(events);
+      fail("HandleEvents should cause an input with 0 physical inputs to fail");
+    } catch (Exception e) {
+      assertTrue(e instanceof IllegalStateException);
+    }
+  }
+
+  @Test(timeout = 5000)
   public void testAttributesInJobConf() throws Exception {
     InputContext inputContext = mock(InputContext.class);
     doReturn(TEST_ATTRIBUTES_DAG_INDEX).when(inputContext).getDagIdentifier();
@@ -124,28 +124,26 @@ public class TestMRInput {
     doReturn(TEST_ATTRIBUTES_UNIQUE_IDENTIFIER).when(inputContext).getUniqueIdentifier();
     doReturn(new Configuration(false)).when(inputContext).getContainerConfiguration();
 
-
     DataSourceDescriptor dsd = MRInput.createConfigBuilder(new Configuration(false),
-        TestInputFormat.class).groupSplits(false).build();
+      TestInputFormat.class).groupSplits(false).build();
 
     doReturn(dsd.getInputDescriptor().getUserPayload()).when(inputContext).getUserPayload();
     doReturn(new TezCounters()).when(inputContext).getCounters();
-
 
     MRInput mrInput = new MRInput(inputContext, 1);
     mrInput.initialize();
 
     MRRuntimeProtos.MRSplitProto splitProto =
-        MRRuntimeProtos.MRSplitProto.newBuilder().setSplitClassName(TestInputSplit.class.getName())
-            .build();
+      MRRuntimeProtos.MRSplitProto.newBuilder().setSplitClassName(TestInputSplit.class.getName())
+        .build();
     InputDataInformationEvent diEvent = InputDataInformationEvent
-        .createWithSerializedPayload(0, splitProto.toByteString().asReadOnlyByteBuffer());
+      .createWithSerializedPayload(0, splitProto.toByteString().asReadOnlyByteBuffer());
 
     List<Event> events = new LinkedList<>();
     events.add(diEvent);
     mrInput.handleEvents(events);
     TezCounter counter = mrInput.getContext().getCounters()
-        .findCounter(TaskCounter.INPUT_SPLIT_LENGTH_BYTES);
+      .findCounter(TaskCounter.INPUT_SPLIT_LENGTH_BYTES);
     assertEquals(counter.getValue(), TestInputSplit.length);
     assertTrue(TestInputFormat.invoked.get());
   }
@@ -161,7 +159,7 @@ public class TestMRInput {
     InputContext inputContext = mock(InputContext.class);
 
     DataSourceDescriptor dsd = MRInput.createConfigBuilder(jobConf,
-        TestInputFormat.class).groupSplits(false).build();
+      TestInputFormat.class).groupSplits(false).build();
 
     doReturn(dsd.getInputDescriptor().getUserPayload()).when(inputContext).getUserPayload();
     doReturn(TEST_ATTRIBUTES_DAG_INDEX).when(inputContext).getDagIdentifier();
@@ -211,7 +209,7 @@ public class TestMRInput {
 
     @Override
     public RecordReader getRecordReader(InputSplit split, JobConf job, Reporter reporter) throws
-        IOException {
+      IOException {
       assertEquals(TEST_ATTRIBUTES_DAG_NAME, MRInputHelpers.getDagName(job));
       assertEquals(TEST_ATTRIBUTES_VERTEX_NAME, MRInputHelpers.getVertexName(job));
       assertEquals(TEST_ATTRIBUTES_INPUT_NAME, MRInputHelpers.getInputName(job));

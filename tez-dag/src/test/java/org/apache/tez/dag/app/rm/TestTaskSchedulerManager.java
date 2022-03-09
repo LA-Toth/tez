@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,7 +34,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
@@ -47,6 +46,8 @@ import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
@@ -104,57 +105,20 @@ import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.serviceplugins.api.TaskScheduler;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
 import org.apache.tez.serviceplugins.api.TaskSchedulerDescriptor;
+
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
 import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
 @SuppressWarnings("rawtypes")
 public class TestTaskSchedulerManager {
-  
-  class TestEventHandler implements EventHandler{
-    List<Event> events = Lists.newLinkedList();
-    @Override
-    public void handle(Event event) {
-      events.add(event);
-    }
-  }
-  
-  class MockTaskSchedulerManager extends TaskSchedulerManager {
 
-    final AtomicBoolean notify = new AtomicBoolean(false);
-    
-    public MockTaskSchedulerManager(AppContext appContext,
-                                    DAGClientServer clientService, EventHandler eventHandler,
-                                    ContainerSignatureMatcher containerSignatureMatcher,
-                                    WebUIService webUI) {
-      super(appContext, clientService, eventHandler, containerSignatureMatcher, webUI,
-          Lists.newArrayList(new NamedEntityDescriptor("FakeDescriptor", null)), false,
-          new HadoopShimsLoader(appContext.getAMConf()).getHadoopShim());
-    }
-
-    @Override
-    protected void instantiateSchedulers(String host, int port, String trackingUrl,
-                                         AppContext appContext) {
-      taskSchedulers[0] = new TaskSchedulerWrapper(mockTaskScheduler);
-      taskSchedulerServiceWrappers[0] =
-          new ServicePluginLifecycleAbstractService<>(taskSchedulers[0].getTaskScheduler());
-    }
-    
-    @Override
-    protected void notifyForTest() {
-      synchronized (notify) {
-        notify.set(true);
-        notify.notifyAll();
-      }
-    }
-    
-  }
-
+  private static final String DAG_NAME = "dagName";
+  private static final int DAG_INDEX = 1;
   AppContext mockAppContext;
   DAGClientServer mockClientService;
   TestEventHandler mockEventHandler;
@@ -177,7 +141,7 @@ public class TestTaskSchedulerManager {
     when(mockAppContext.getAllContainers()).thenReturn(mockAMContainerMap);
     when(mockClientService.getBindAddress()).thenReturn(new InetSocketAddress(10000));
     schedulerHandler = new MockTaskSchedulerManager(
-        mockAppContext, mockClientService, mockEventHandler, mockSigMatcher, mockWebUIService);
+      mockAppContext, mockClientService, mockEventHandler, mockSigMatcher, mockWebUIService);
   }
 
   @Test(timeout = 5000)
@@ -192,8 +156,8 @@ public class TestTaskSchedulerManager {
     when(mockTaskAttempt.getTaskAttemptID()).thenReturn(mockAttemptId);
     Resource resource = Resource.newInstance(1024, 1);
     ContainerContext containerContext =
-        new ContainerContext(new HashMap<String, LocalResource>(), new Credentials(),
-            new HashMap<String, String>(), "");
+      new ContainerContext(new HashMap<String, LocalResource>(), new Credentials(),
+        new HashMap<String, String>(), "");
     int priority = 10;
     TaskLocationHint locHint = TaskLocationHint.createTaskLocationHint(new HashSet<String>(), null);
 
@@ -208,13 +172,13 @@ public class TestTaskSchedulerManager {
     when(mockAMContainerMap.get(mockCId)).thenReturn(mockAMContainer);
 
     AMSchedulerEventTALaunchRequest lr =
-        new AMSchedulerEventTALaunchRequest(mockAttemptId, resource, null, mockTaskAttempt, locHint,
-            priority, containerContext, 0, 0, 0);
+      new AMSchedulerEventTALaunchRequest(mockAttemptId, resource, null, mockTaskAttempt, locHint,
+        priority, containerContext, 0, 0, 0);
     schedulerHandler.taskAllocated(0, mockTaskAttempt, lr, container);
     assertEquals(1, mockEventHandler.events.size());
     assertTrue(mockEventHandler.events.get(0) instanceof AMContainerEventAssignTA);
     AMContainerEventAssignTA assignEvent =
-        (AMContainerEventAssignTA) mockEventHandler.events.get(0);
+      (AMContainerEventAssignTA) mockEventHandler.events.get(0);
     assertEquals(priority, assignEvent.getPriority());
     assertEquals(mockAttemptId, assignEvent.getTaskAttemptId());
   }
@@ -231,8 +195,8 @@ public class TestTaskSchedulerManager {
     when(mockTaskAttempt.getTaskAttemptID()).thenReturn(mockAttemptId);
     Resource resource = Resource.newInstance(1024, 1);
     ContainerContext containerContext =
-        new ContainerContext(new HashMap<String, LocalResource>(), new Credentials(),
-            new HashMap<String, String>(), "");
+      new ContainerContext(new HashMap<String, LocalResource>(), new Credentials(),
+        new HashMap<String, String>(), "");
     int priority = 10;
     TaskLocationHint locHint = TaskLocationHint.createTaskLocationHint(new HashSet<String>(), null);
 
@@ -248,13 +212,13 @@ public class TestTaskSchedulerManager {
     when(mockAMContainerMap.get(mockCId)).thenReturn(null);
 
     AMSchedulerEventTALaunchRequest lr =
-        new AMSchedulerEventTALaunchRequest(mockAttemptId, resource, null, mockTaskAttempt, locHint,
-            priority, containerContext, 0, 0, 0);
+      new AMSchedulerEventTALaunchRequest(mockAttemptId, resource, null, mockTaskAttempt, locHint,
+        priority, containerContext, 0, 0, 0);
     schedulerHandler.taskAllocated(0, mockTaskAttempt, lr, container);
     assertEquals(1, mockEventHandler.events.size());
     assertTrue(mockEventHandler.events.get(0) instanceof AMContainerEventAssignTA);
     AMContainerEventAssignTA assignEvent =
-        (AMContainerEventAssignTA) mockEventHandler.events.get(0);
+      (AMContainerEventAssignTA) mockEventHandler.events.get(0);
     assertEquals(priority, assignEvent.getPriority());
     assertEquals(mockAttemptId, assignEvent.getTaskAttemptId());
   }
@@ -283,16 +247,16 @@ public class TestTaskSchedulerManager {
     when(mockAMContainerMap.get(mockCId)).thenReturn(null);
 
     schedulerHandler.handleEvent(
-        new AMSchedulerEventTAEnded(
-            mockTaskAttempt, mockCId, TaskAttemptState.KILLED, null, null, 0));
+      new AMSchedulerEventTAEnded(
+        mockTaskAttempt, mockCId, TaskAttemptState.KILLED, null, null, 0));
     assertEquals(1, mockEventHandler.events.size());
     assertTrue(mockEventHandler.events.get(0) instanceof AMContainerEventStopRequest);
     AMContainerEventStopRequest stopEvent =
-        (AMContainerEventStopRequest) mockEventHandler.events.get(0);
+      (AMContainerEventStopRequest) mockEventHandler.events.get(0);
     assertEquals(mockCId, stopEvent.getContainerId());
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testTaskBasedAffinity() throws Exception {
     Configuration conf = new Configuration(false);
     schedulerHandler.init(conf);
@@ -314,7 +278,7 @@ public class TestTaskSchedulerManager {
     when(mockAppContext.getCurrentDAG().getVertex(affVertexName)).thenReturn(affVertex);
     Resource resource = Resource.newInstance(100, 1);
     AMSchedulerEventTALaunchRequest event = new AMSchedulerEventTALaunchRequest
-        (taId, resource, null, mockTaskAttempt, locHint, 3, null, 0, 0, 0);
+      (taId, resource, null, mockTaskAttempt, locHint, 3, null, 0, 0, 0);
     schedulerHandler.notify.set(false);
     schedulerHandler.handle(event);
     synchronized (schedulerHandler.notify) {
@@ -322,21 +286,21 @@ public class TestTaskSchedulerManager {
         schedulerHandler.notify.wait();
       }
     }
-    
+
     // verify mockTaskAttempt affinitized to expected affCId
     verify(mockTaskScheduler, times(1)).allocateTask(mockTaskAttempt, resource, affCId,
-        Priority.newInstance(3), null, event);
-    
+      Priority.newInstance(3), null, event);
+
     schedulerHandler.stop();
     schedulerHandler.close();
   }
-  
-  @Test (timeout = 5000)
+
+  @Test(timeout = 5000)
   public void testContainerPreempted() throws IOException {
     Configuration conf = new Configuration(false);
     schedulerHandler.init(conf);
     schedulerHandler.start();
-    
+
     String diagnostics = "Container preempted by RM.";
     TaskAttemptImpl mockTask = mock(TaskAttemptImpl.class);
     ContainerStatus mockStatus = mock(ContainerStatus.class);
@@ -354,17 +318,17 @@ public class TestTaskSchedulerManager {
     AMContainerEventCompleted completedEvent = (AMContainerEventCompleted) event;
     assertEquals(mockCId, completedEvent.getContainerId());
     assertEquals("Container preempted externally. Container preempted by RM.",
-        completedEvent.getDiagnostics());
+      completedEvent.getDiagnostics());
     assertTrue(completedEvent.isPreempted());
     assertEquals(TaskAttemptTerminationCause.EXTERNAL_PREEMPTION,
-        completedEvent.getTerminationCause());
+      completedEvent.getTerminationCause());
     Assert.assertFalse(completedEvent.isDiskFailed());
 
     schedulerHandler.stop();
     schedulerHandler.close();
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testContainerInternalPreempted() throws IOException, ServicePluginException {
     Configuration conf = new Configuration(false);
     schedulerHandler.init(conf);
@@ -388,7 +352,7 @@ public class TestTaskSchedulerManager {
     assertTrue(completedEvent.isPreempted());
     Assert.assertFalse(completedEvent.isDiskFailed());
     assertEquals(TaskAttemptTerminationCause.INTERNAL_PREEMPTION,
-        completedEvent.getTerminationCause());
+      completedEvent.getTerminationCause());
 
     schedulerHandler.stop();
     schedulerHandler.close();
@@ -419,18 +383,18 @@ public class TestTaskSchedulerManager {
     assertTrue(completedEvent.isPreempted());
     Assert.assertFalse(completedEvent.isDiskFailed());
     assertEquals(TaskAttemptTerminationCause.INTERNAL_PREEMPTION,
-        completedEvent.getTerminationCause());
+      completedEvent.getTerminationCause());
 
     schedulerHandler.stop();
     schedulerHandler.close();
   }
-  
-  @Test (timeout = 5000)
+
+  @Test(timeout = 5000)
   public void testContainerDiskFailed() throws IOException {
     Configuration conf = new Configuration(false);
     schedulerHandler.init(conf);
     schedulerHandler.start();
-    
+
     String diagnostics = "NM disk failed.";
     TaskAttemptImpl mockTask = mock(TaskAttemptImpl.class);
     ContainerStatus mockStatus = mock(ContainerStatus.class);
@@ -448,17 +412,17 @@ public class TestTaskSchedulerManager {
     AMContainerEventCompleted completedEvent = (AMContainerEventCompleted) event;
     assertEquals(mockCId, completedEvent.getContainerId());
     assertEquals("Container disk failed. NM disk failed.",
-        completedEvent.getDiagnostics());
+      completedEvent.getDiagnostics());
     Assert.assertFalse(completedEvent.isPreempted());
     assertTrue(completedEvent.isDiskFailed());
     assertEquals(TaskAttemptTerminationCause.NODE_DISK_ERROR,
-        completedEvent.getTerminationCause());
+      completedEvent.getTerminationCause());
 
     schedulerHandler.stop();
     schedulerHandler.close();
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testContainerExceededPMem() throws IOException {
     Configuration conf = new Configuration(false);
     schedulerHandler.init(conf);
@@ -483,17 +447,17 @@ public class TestTaskSchedulerManager {
     AMContainerEventCompleted completedEvent = (AMContainerEventCompleted) event;
     assertEquals(mockCId, completedEvent.getContainerId());
     assertEquals("Container failed, exitCode=-104. Exceeded Physical Memory",
-        completedEvent.getDiagnostics());
+      completedEvent.getDiagnostics());
     Assert.assertFalse(completedEvent.isPreempted());
     Assert.assertFalse(completedEvent.isDiskFailed());
     assertEquals(TaskAttemptTerminationCause.CONTAINER_EXITED,
-        completedEvent.getTerminationCause());
+      completedEvent.getTerminationCause());
 
     schedulerHandler.stop();
     schedulerHandler.close();
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testHistoryUrlConf() throws Exception {
     Configuration conf = schedulerHandler.appContext.getAMConf();
     final ApplicationId mockApplicationId = mock(ApplicationId.class);
@@ -503,33 +467,32 @@ public class TestTaskSchedulerManager {
     // ensure history url is empty when timeline server is not the logging class
     conf.set(TezConfiguration.TEZ_HISTORY_URL_BASE, "http://ui-host:9999");
     assertEquals("http://ui-host:9999/#/tez-app/TEST_APP_ID",
-        schedulerHandler.getHistoryUrl());
+      schedulerHandler.getHistoryUrl());
 
     // ensure the trailing / in history url is handled
     conf.set(TezConfiguration.TEZ_HISTORY_URL_BASE, "http://ui-host:9998/");
     assertEquals("http://ui-host:9998/#/tez-app/TEST_APP_ID",
-        schedulerHandler.getHistoryUrl());
+      schedulerHandler.getHistoryUrl());
 
     // ensure missing scheme in history url is handled
     conf.set(TezConfiguration.TEZ_HISTORY_URL_BASE, "ui-host:9998/");
     assertEquals("http://ui-host:9998/#/tez-app/TEST_APP_ID",
-        schedulerHandler.getHistoryUrl());
+      schedulerHandler.getHistoryUrl());
 
     // handle bad template ex without begining /
     conf.set(TezConfiguration.TEZ_AM_TEZ_UI_HISTORY_URL_TEMPLATE,
-        "__HISTORY_URL_BASE__#/somepath");
+      "__HISTORY_URL_BASE__#/somepath");
     assertEquals("http://ui-host:9998/#/somepath",
-        schedulerHandler.getHistoryUrl());
+      schedulerHandler.getHistoryUrl());
 
     conf.set(TezConfiguration.TEZ_AM_TEZ_UI_HISTORY_URL_TEMPLATE,
-        "__HISTORY_URL_BASE__?viewPath=tez-app/__APPLICATION_ID__");
+      "__HISTORY_URL_BASE__?viewPath=tez-app/__APPLICATION_ID__");
     conf.set(TezConfiguration.TEZ_HISTORY_URL_BASE, "http://localhost/ui/tez");
     assertEquals("http://localhost/ui/tez?viewPath=tez-app/TEST_APP_ID",
-        schedulerHandler.getHistoryUrl());
-
+      schedulerHandler.getHistoryUrl());
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testHistoryUrlWithoutScheme() throws Exception {
     Configuration conf = schedulerHandler.appContext.getAMConf();
     final ApplicationId mockApplicationId = mock(ApplicationId.class);
@@ -539,23 +502,23 @@ public class TestTaskSchedulerManager {
     conf.set(TezConfiguration.TEZ_HISTORY_URL_BASE, "/foo/bar/");
     conf.setBoolean(TezConfiguration.TEZ_AM_UI_HISTORY_URL_SCHEME_CHECK_ENABLED, false);
     assertEquals("/foo/bar/#/tez-app/TEST_APP_ID",
-        schedulerHandler.getHistoryUrl());
+      schedulerHandler.getHistoryUrl());
 
     conf.set(TezConfiguration.TEZ_HISTORY_URL_BASE, "ui-host:9998/foo/bar/");
     assertEquals("ui-host:9998/foo/bar/#/tez-app/TEST_APP_ID",
-        schedulerHandler.getHistoryUrl());
+      schedulerHandler.getHistoryUrl());
 
     conf.setBoolean(TezConfiguration.TEZ_AM_UI_HISTORY_URL_SCHEME_CHECK_ENABLED, true);
     conf.set(TezConfiguration.TEZ_HISTORY_URL_BASE, "ui-host:9998/foo/bar/");
     assertEquals("http://ui-host:9998/foo/bar/#/tez-app/TEST_APP_ID",
-        schedulerHandler.getHistoryUrl());
+      schedulerHandler.getHistoryUrl());
   }
 
   @Test(timeout = 5000)
   public void testNoSchedulerSpecified() throws IOException {
     try {
       new TSEHForMultipleSchedulersTest(mockAppContext, mockClientService, mockEventHandler,
-          mockSigMatcher, mockWebUIService, null, false);
+        mockSigMatcher, mockWebUIService, null, false);
       fail("Expecting an IllegalStateException with no schedulers specified");
     } catch (IllegalArgumentException e) {
     }
@@ -574,14 +537,14 @@ public class TestTaskSchedulerManager {
     bb.putInt(0, 3);
     UserPayload userPayload = UserPayload.create(bb);
     taskSchedulers.add(
-        new NamedEntityDescriptor(customSchedulerName, FakeTaskScheduler.class.getName())
-            .setUserPayload(userPayload));
+      new NamedEntityDescriptor(customSchedulerName, FakeTaskScheduler.class.getName())
+        .setUserPayload(userPayload));
     taskSchedulers.add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
-        .setUserPayload(defaultPayload));
+      .setUserPayload(defaultPayload));
 
     TSEHForMultipleSchedulersTest tseh =
-        new TSEHForMultipleSchedulersTest(mockAppContext, mockClientService, mockEventHandler,
-            mockSigMatcher, mockWebUIService, taskSchedulers, false);
+      new TSEHForMultipleSchedulersTest(mockAppContext, mockClientService, mockEventHandler,
+        mockSigMatcher, mockWebUIService, taskSchedulers, false);
 
     tseh.init(conf);
     tseh.start();
@@ -616,14 +579,14 @@ public class TestTaskSchedulerManager {
     bb.putInt(0, 3);
     UserPayload userPayload = UserPayload.create(bb);
     taskSchedulers.add(
-        new NamedEntityDescriptor(customSchedulerName, FakeTaskScheduler.class.getName())
-            .setUserPayload(userPayload));
+      new NamedEntityDescriptor(customSchedulerName, FakeTaskScheduler.class.getName())
+        .setUserPayload(userPayload));
     taskSchedulers.add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
-        .setUserPayload(defaultPayload));
+      .setUserPayload(defaultPayload));
 
     TSEHForMultipleSchedulersTest tseh =
-        new TSEHForMultipleSchedulersTest(mockAppContext, mockClientService, mockEventHandler,
-            mockSigMatcher, mockWebUIService, taskSchedulers, false);
+      new TSEHForMultipleSchedulersTest(mockAppContext, mockClientService, mockEventHandler,
+        mockSigMatcher, mockWebUIService, taskSchedulers, false);
 
     tseh.init(conf);
     tseh.start();
@@ -654,24 +617,24 @@ public class TestTaskSchedulerManager {
     TaskAttempt mockTaskAttempt2 = mock(TaskAttempt.class);
 
     AMSchedulerEventTALaunchRequest launchRequest1 =
-        new AMSchedulerEventTALaunchRequest(attemptId11, resource, mock(TaskSpec.class),
-            mockTaskAttempt1, mock(TaskLocationHint.class), 1, mock(ContainerContext.class), 0, 0,
-            0);
+      new AMSchedulerEventTALaunchRequest(attemptId11, resource, mock(TaskSpec.class),
+        mockTaskAttempt1, mock(TaskLocationHint.class), 1, mock(ContainerContext.class), 0, 0,
+        0);
 
     tseh.handle(launchRequest1);
 
     verify(tseh.getTestTaskScheduler(0)).allocateTask(eq(mockTaskAttempt1), eq(resource),
-        any(String[].class), any(String[].class), any(Priority.class), any(Object.class),
-        eq(launchRequest1));
+      any(String[].class), any(String[].class), any(Priority.class), any(Object.class),
+      eq(launchRequest1));
 
     AMSchedulerEventTALaunchRequest launchRequest2 =
-        new AMSchedulerEventTALaunchRequest(attemptId21, resource, mock(TaskSpec.class),
-            mockTaskAttempt2, mock(TaskLocationHint.class), 1, mock(ContainerContext.class), 1, 0,
-            0);
+      new AMSchedulerEventTALaunchRequest(attemptId21, resource, mock(TaskSpec.class),
+        mockTaskAttempt2, mock(TaskLocationHint.class), 1, mock(ContainerContext.class), 1, 0,
+        0);
     tseh.handle(launchRequest2);
     verify(tseh.getTestTaskScheduler(1)).allocateTask(eq(mockTaskAttempt2), eq(resource),
-        any(String[].class), any(String[].class), any(Priority.class), any(Object.class),
-        eq(launchRequest2));
+      any(String[].class), any(String[].class), any(Priority.class), any(Object.class),
+      eq(launchRequest2));
   }
 
   @SuppressWarnings("unchecked")
@@ -685,10 +648,10 @@ public class TestTaskSchedulerManager {
     list.add(null);
 
     TaskSchedulerManager taskSchedulerManager =
-        new TaskSchedulerManager(appContext, null, null,
-            null, null, list, false,null);
+      new TaskSchedulerManager(appContext, null, null,
+        null, null, list, false, null);
     assertFalse("Should not return true unless actually unregistered successfully",
-        taskSchedulerManager.hasUnregistered());
+      taskSchedulerManager.hasUnregistered());
   }
 
   @SuppressWarnings("unchecked")
@@ -715,20 +678,20 @@ public class TestTaskSchedulerManager {
     doReturn(dag).when(appContext).getCurrentDAG();
 
     NamedEntityDescriptor<TaskSchedulerDescriptor> namedEntityDescriptor =
-        new NamedEntityDescriptor<>(taskSchedulerName, TaskSchedulerForFailureTest.class.getName());
+      new NamedEntityDescriptor<>(taskSchedulerName, TaskSchedulerForFailureTest.class.getName());
     List<NamedEntityDescriptor> list = new LinkedList<>();
     list.add(namedEntityDescriptor);
 
     TaskSchedulerManager taskSchedulerManager =
-        new TaskSchedulerManager(appContext, dagClientServer, eventHandler,
-            mock(ContainerSignatureMatcher.class), mock(WebUIService.class), list, false,
-            new HadoopShimsLoader(appContext.getAMConf()).getHadoopShim()) {
-          @Override
-          TaskSchedulerContext wrapTaskSchedulerContext(TaskSchedulerContext rawContext) {
-            // Avoid wrapping in threads
-            return rawContext;
-          }
-        };
+      new TaskSchedulerManager(appContext, dagClientServer, eventHandler,
+        mock(ContainerSignatureMatcher.class), mock(WebUIService.class), list, false,
+        new HadoopShimsLoader(appContext.getAMConf()).getHadoopShim()) {
+        @Override
+        TaskSchedulerContext wrapTaskSchedulerContext(TaskSchedulerContext rawContext) {
+          // Avoid wrapping in threads
+          return rawContext;
+        }
+      };
     try {
       taskSchedulerManager.init(new TezConfiguration());
       taskSchedulerManager.start();
@@ -742,9 +705,8 @@ public class TestTaskSchedulerManager {
       DAGEventTerminateDag killEvent = (DAGEventTerminateDag) rawEvent;
       assertTrue(killEvent.getDiagnosticInfo().contains("ReportError"));
       assertTrue(killEvent.getDiagnosticInfo()
-          .contains(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE.name()));
+        .contains(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE.name()));
       assertTrue(killEvent.getDiagnosticInfo().contains(expIdentifier));
-
 
       reset(eventHandler);
       taskSchedulerManager.getAvailableResources(0);
@@ -755,13 +717,12 @@ public class TestTaskSchedulerManager {
 
       assertTrue(rawEvent instanceof DAGAppMasterEventUserServiceFatalError);
       DAGAppMasterEventUserServiceFatalError event =
-          (DAGAppMasterEventUserServiceFatalError) rawEvent;
+        (DAGAppMasterEventUserServiceFatalError) rawEvent;
       assertEquals(DAGAppMasterEventType.TASK_SCHEDULER_SERVICE_FATAL_ERROR, event.getType());
       assertTrue(event.getDiagnosticInfo().contains("ReportedFatalError"));
       assertTrue(
-          event.getDiagnosticInfo().contains(ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
+        event.getDiagnosticInfo().contains(ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
       assertTrue(event.getDiagnosticInfo().contains(expIdentifier));
-
     } finally {
       taskSchedulerManager.stop();
     }
@@ -785,14 +746,14 @@ public class TestTaskSchedulerManager {
     DAGClientServer mockClientService = mock(DAGClientServer.class);
     doReturn(address).when(mockClientService).getBindAddress();
     TaskSchedulerManager taskSchedulerManager =
-        new TaskSchedulerManager(taskScheduler, appContext, mock(ContainerSignatureMatcher.class),
-            mockClientService, Executors.newFixedThreadPool(1)) {
-          @Override
-          protected void instantiateSchedulers(String host, int port, String trackingUrl,
-                                               AppContext appContext) throws TezException {
-            // Stubbed out since these are setup up front in the constructor used for testing
-          }
-        };
+      new TaskSchedulerManager(taskScheduler, appContext, mock(ContainerSignatureMatcher.class),
+        mockClientService, Executors.newFixedThreadPool(1)) {
+        @Override
+        protected void instantiateSchedulers(String host, int port, String trackingUrl,
+                                             AppContext appContext) throws TezException {
+          // Stubbed out since these are setup up front in the constructor used for testing
+        }
+      };
 
     try {
       taskSchedulerManager.init(conf);
@@ -801,9 +762,9 @@ public class TestTaskSchedulerManager {
       // Invoking a couple of random methods
 
       AMSchedulerEventTALaunchRequest launchRequest =
-          new AMSchedulerEventTALaunchRequest(mock(TezTaskAttemptID.class), mock(Resource.class),
-              mock(TaskSpec.class), mock(TaskAttempt.class), mock(TaskLocationHint.class), 0,
-              mock(ContainerContext.class), 0, 0, 0);
+        new AMSchedulerEventTALaunchRequest(mock(TezTaskAttemptID.class), mock(Resource.class),
+          mock(TaskSpec.class), mock(TaskAttempt.class), mock(TaskLocationHint.class), 0,
+          mock(ContainerContext.class), 0, 0, 0);
       taskSchedulerManager.handleEvent(launchRequest);
 
       ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
@@ -813,13 +774,12 @@ public class TestTaskSchedulerManager {
       Event rawEvent = argumentCaptor.getValue();
       assertTrue(rawEvent instanceof DAGAppMasterEventUserServiceFatalError);
       DAGAppMasterEventUserServiceFatalError event =
-          (DAGAppMasterEventUserServiceFatalError) rawEvent;
+        (DAGAppMasterEventUserServiceFatalError) rawEvent;
 
       assertEquals(DAGAppMasterEventType.TASK_SCHEDULER_SERVICE_FATAL_ERROR, event.getType());
       assertTrue(event.getError().getMessage().contains("TestException_" + "allocateTask"));
       assertTrue(event.getDiagnosticInfo().contains("Task Allocation"));
       assertTrue(event.getDiagnosticInfo().contains(expectedId));
-
 
       taskSchedulerManager.dagCompleted();
       argumentCaptor = ArgumentCaptor.forClass(Event.class);
@@ -833,7 +793,6 @@ public class TestTaskSchedulerManager {
       assertTrue(event.getError().getMessage().contains("TestException_" + "dagComplete"));
       assertTrue(event.getDiagnosticInfo().contains("Dag Completion"));
       assertTrue(event.getDiagnosticInfo().contains(expectedId));
-
     } finally {
       taskSchedulerManager.stop();
     }
@@ -844,8 +803,8 @@ public class TestTaskSchedulerManager {
     public Object answer(InvocationOnMock invocation) throws Throwable {
       Method method = invocation.getMethod();
       if (method.getDeclaringClass().equals(TaskScheduler.class) &&
-          !method.getName().equals("getContext") && !method.getName().equals("initialize") &&
-          !method.getName().equals("start") && !method.getName().equals("shutdown")) {
+        !method.getName().equals("getContext") && !method.getName().equals("initialize") &&
+        !method.getName().equals("start") && !method.getName().equals("shutdown")) {
         throw new RuntimeException("TestException_" + method.getName());
       } else {
         return invocation.callRealMethod();
@@ -873,8 +832,8 @@ public class TestTaskSchedulerManager {
                                          List<NamedEntityDescriptor> schedulerDescriptors,
                                          boolean isPureLocalMode) {
       super(appContext, clientService, eventHandler, containerSignatureMatcher, webUI,
-          schedulerDescriptors, isPureLocalMode,
-          new HadoopShimsLoader(appContext.getAMConf()).getHadoopShim());
+        schedulerDescriptors, isPureLocalMode,
+        new HadoopShimsLoader(appContext.getAMConf()).getHadoopShim());
       yarnTaskScheduler = mock(TaskScheduler.class);
       uberTaskScheduler = mock(TaskScheduler.class);
     }
@@ -891,7 +850,7 @@ public class TestTaskSchedulerManager {
       assertTrue("Cannot add multiple schedulers with the same schedulerId", added);
       taskSchedulerNames.add(taskSchedulerDescriptor.getEntityName());
       return super.createTaskScheduler(host, port, trackingUrl, appContext, taskSchedulerDescriptor,
-          customAppIdIdentifier, schedulerId);
+        customAppIdIdentifier, schedulerId);
     }
 
     @Override
@@ -919,9 +878,10 @@ public class TestTaskSchedulerManager {
     @Override
     TaskScheduler createCustomTaskScheduler(TaskSchedulerContext taskSchedulerContext,
                                             NamedEntityDescriptor taskSchedulerDescriptor, int schedulerId)
-                                                throws TezException {
+      throws TezException {
       taskSchedulerContexts.add(taskSchedulerContext);
-      TaskScheduler taskScheduler = spy(super.createCustomTaskScheduler(taskSchedulerContext, taskSchedulerDescriptor, schedulerId));
+      TaskScheduler taskScheduler = spy(
+        super.createCustomTaskScheduler(taskSchedulerContext, taskSchedulerDescriptor, schedulerId));
       testTaskSchedulers.add(taskScheduler);
       return taskScheduler;
     }
@@ -960,7 +920,7 @@ public class TestTaskSchedulerManager {
   public static class FakeTaskScheduler extends TaskScheduler {
 
     public FakeTaskScheduler(
-        TaskSchedulerContext taskSchedulerContext) {
+      TaskSchedulerContext taskSchedulerContext) {
       super(taskSchedulerContext);
     }
 
@@ -1029,8 +989,6 @@ public class TestTaskSchedulerManager {
     }
   }
 
-  private static final String DAG_NAME = "dagName";
-  private static final int DAG_INDEX = 1;
   public static class TaskSchedulerForFailureTest extends TaskScheduler {
 
     public TaskSchedulerForFailureTest(TaskSchedulerContext taskSchedulerContext) {
@@ -1046,7 +1004,8 @@ public class TestTaskSchedulerManager {
     @Override
     public Resource getTotalResources() throws ServicePluginException {
       getContext()
-          .reportError(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE, "ReportError", new DagInfoImplForTest(DAG_INDEX, DAG_NAME));
+        .reportError(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE, "ReportError",
+          new DagInfoImplForTest(DAG_INDEX, DAG_NAME));
       return Resource.newInstance(1024, 1);
     }
 
@@ -1069,7 +1028,7 @@ public class TestTaskSchedulerManager {
     public void allocateTask(Object task, Resource capability, String[] hosts, String[] racks,
                              Priority priority, Object containerSignature,
                              Object clientCookie) throws
-        ServicePluginException {
+      ServicePluginException {
 
     }
 
@@ -1077,7 +1036,7 @@ public class TestTaskSchedulerManager {
     public void allocateTask(Object task, Resource capability, ContainerId containerId,
                              Priority priority, Object containerSignature,
                              Object clientCookie) throws
-        ServicePluginException {
+      ServicePluginException {
 
     }
 
@@ -1105,6 +1064,45 @@ public class TestTaskSchedulerManager {
 
     @Override
     public void dagComplete() throws ServicePluginException {
+    }
+  }
+
+  class TestEventHandler implements EventHandler {
+    List<Event> events = Lists.newLinkedList();
+
+    @Override
+    public void handle(Event event) {
+      events.add(event);
+    }
+  }
+
+  class MockTaskSchedulerManager extends TaskSchedulerManager {
+
+    final AtomicBoolean notify = new AtomicBoolean(false);
+
+    public MockTaskSchedulerManager(AppContext appContext,
+                                    DAGClientServer clientService, EventHandler eventHandler,
+                                    ContainerSignatureMatcher containerSignatureMatcher,
+                                    WebUIService webUI) {
+      super(appContext, clientService, eventHandler, containerSignatureMatcher, webUI,
+        Lists.newArrayList(new NamedEntityDescriptor("FakeDescriptor", null)), false,
+        new HadoopShimsLoader(appContext.getAMConf()).getHadoopShim());
+    }
+
+    @Override
+    protected void instantiateSchedulers(String host, int port, String trackingUrl,
+                                         AppContext appContext) {
+      taskSchedulers[0] = new TaskSchedulerWrapper(mockTaskScheduler);
+      taskSchedulerServiceWrappers[0] =
+        new ServicePluginLifecycleAbstractService<>(taskSchedulers[0].getTaskScheduler());
+    }
+
+    @Override
+    protected void notifyForTest() {
+      synchronized (notify) {
+        notify.set(true);
+        notify.notifyAll();
+      }
     }
   }
 }

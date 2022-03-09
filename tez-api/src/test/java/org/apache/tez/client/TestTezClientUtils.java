@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -75,66 +75,22 @@ import org.apache.tez.dag.api.Vertex;
 import org.apache.tez.dag.api.records.DAGProtos.ConfigurationProto;
 import org.apache.tez.dag.api.records.DAGProtos.PlanKeyValuePair;
 import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
+
 import org.junit.Assert;
 import org.junit.Test;
+
 /**
- * 
+ *
  */
 public class TestTezClientUtils {
-  private static String TEST_ROOT_DIR = "target" + Path.SEPARATOR
-      + TestTezClientUtils.class.getName() + "-tmpDir";
   private static final File STAGING_DIR = new File(System.getProperty("test.build.data", "target"),
-      TestTezClientUtils.class.getName()).getAbsoluteFile();
-  /**
-   * 
-   */
-  @Test (timeout=5000)
-  public void validateSetTezJarLocalResourcesNotDefined() throws Exception {
-
-    TezConfiguration conf = new TezConfiguration(false);
-    Credentials credentials = new Credentials();
-    try {
-      Map<String,LocalResource> resources = new HashMap<String, LocalResource>();
-      TezClientUtils.setupTezJarsLocalResources(conf, credentials, resources);
-      Assert.fail("Expected TezUncheckedException");
-    } catch (TezUncheckedException e) {
-      Assert.assertTrue(e.getMessage().contains("Invalid configuration of tez jars"));
-    }
-  }
-
-  @Test (timeout=5000)
-  public void validateSetTezJarLocalResourcesDefinedButEmpty() throws Exception {
-    File emptyDir = new File(TEST_ROOT_DIR, "emptyDir");
-    emptyDir.deleteOnExit();
-    Assert.assertTrue(emptyDir.mkdirs());
-    TezConfiguration conf = new TezConfiguration();
-    conf.set(TezConfiguration.TEZ_LIB_URIS, emptyDir.toURI().toURL().toString());
-    Credentials credentials = new Credentials();
-    try {
-      Map<String,LocalResource> resources = new HashMap<String, LocalResource>();
-      TezClientUtils.setupTezJarsLocalResources(conf, credentials, resources);
-      Assert.fail("Expected TezUncheckedException");
-    } catch (TezUncheckedException e) {
-      Assert.assertTrue(e.getMessage().contains("No files found in locations"));
-    }
-  }
-
-  /**
-   * 
-   */
-  @Test(expected=FileNotFoundException.class, timeout=5000)
-  public void validateSetTezJarLocalResourcesDefinedNonExistingDirectory() throws Exception {
-
-    TezConfiguration conf = new TezConfiguration();
-    conf.set(TezConfiguration.TEZ_LIB_URIS, "file:///foo");
-    Credentials credentials = new Credentials();
-    Map<String,LocalResource> resources = new HashMap<String, LocalResource>();
-    TezClientUtils.setupTezJarsLocalResources(conf, credentials, resources);
-  }
+    TestTezClientUtils.class.getName()).getAbsoluteFile();
+  private static String TEST_ROOT_DIR = "target" + Path.SEPARATOR
+    + TestTezClientUtils.class.getName() + "-tmpDir";
 
   private static List<URL> getDirAndFileURL() throws MalformedURLException {
     String[] classpaths = System.getProperty("java.class.path")
-        .split(System.getProperty("path.separator"));
+      .split(System.getProperty("path.separator"));
     List<URL> urls = new ArrayList<>(2);
     File lastFile = null;
     // Add one file and one directory.
@@ -152,7 +108,135 @@ public class TestTezClientUtils {
     return urls;
   }
 
-  @Test (timeout=20000)
+  // To run this test case see TestTezCommonUtils::testLocalResourceVisibility
+  // We do not have much control over the directory structure, cannot mock as the functions are
+  // static and do not want to spin up a minitez cluster just for this.
+  public static void testLocalResourceVisibility(DistributedFileSystem remoteFs, Configuration conf)
+    throws Exception {
+
+    Path topLevelDir = null;
+    try {
+      FsPermission publicDirPerms = new FsPermission((short) 0755);   // rwxr-xr-x
+      FsPermission privateDirPerms = new FsPermission((short) 0754);  // rwxr-xr--
+      FsPermission publicFilePerms = new FsPermission((short) 0554);  // r-xr-xr--
+      FsPermission privateFilePerms = new FsPermission((short) 0550); // r-xr-x---
+
+      String fsURI = remoteFs.getUri().toString();
+
+      topLevelDir = new Path(fsURI, "/testLRVisibility");
+      Assert.assertTrue(remoteFs.mkdirs(topLevelDir, publicDirPerms));
+
+      Path publicSubDir = new Path(topLevelDir, "public_sub_dir");
+      Assert.assertTrue(remoteFs.mkdirs(publicSubDir, publicDirPerms));
+
+      Path privateSubDir = new Path(topLevelDir, "private_sub_dir");
+      Assert.assertTrue(remoteFs.mkdirs(privateSubDir, privateDirPerms));
+
+      Path publicFile = new Path(publicSubDir, "public_file");
+      Assert.assertTrue(remoteFs.createNewFile(publicFile));
+      remoteFs.setPermission(publicFile, publicFilePerms);
+
+      Path privateFile = new Path(publicSubDir, "private_file");
+      Assert.assertTrue(remoteFs.createNewFile(privateFile));
+      remoteFs.setPermission(privateFile, privateFilePerms);
+
+      Path publicFileInPrivateSubdir = new Path(privateSubDir, "public_file_in_private_subdir");
+      Assert.assertTrue(remoteFs.createNewFile(publicFileInPrivateSubdir));
+      remoteFs.setPermission(publicFileInPrivateSubdir, publicFilePerms);
+
+      TezConfiguration tezConf = new TezConfiguration(conf);
+      String tmpTezLibUris = String.format("%s,%s,%s,%s", topLevelDir, publicSubDir, privateSubDir,
+        conf.get(TezConfiguration.TEZ_LIB_URIS, ""));
+      tezConf.set(TezConfiguration.TEZ_LIB_URIS, tmpTezLibUris);
+
+      Map<String, LocalResource> lrMap = new HashMap<String, LocalResource>();
+      TezClientUtils.setupTezJarsLocalResources(tezConf, new Credentials(), lrMap);
+
+      Assert.assertEquals(publicFile.getName(), LocalResourceVisibility.PUBLIC,
+        lrMap.get(publicFile.getName()).getVisibility());
+
+      Assert.assertEquals(privateFile.getName(), LocalResourceVisibility.PRIVATE,
+        lrMap.get(privateFile.getName()).getVisibility());
+
+      Assert.assertEquals(publicFileInPrivateSubdir.getName(), LocalResourceVisibility.PRIVATE,
+        lrMap.get(publicFileInPrivateSubdir.getName()).getVisibility());
+
+      // test tar.gz
+      tezConf = new TezConfiguration(conf);
+      Path tarFile = new Path(topLevelDir, "foo.tar.gz");
+      Assert.assertTrue(remoteFs.createNewFile(tarFile));
+
+      //public
+      remoteFs.setPermission(tarFile, publicFilePerms);
+      tezConf.set(TezConfiguration.TEZ_LIB_URIS, tarFile.toString());
+      lrMap.clear();
+      Assert.assertTrue(
+        TezClientUtils.setupTezJarsLocalResources(tezConf, new Credentials(), lrMap));
+
+      Assert.assertEquals(LocalResourceVisibility.PUBLIC,
+        lrMap.get(TezConstants.TEZ_TAR_LR_NAME).getVisibility());
+
+      //private
+      remoteFs.setPermission(tarFile, privateFilePerms);
+      lrMap.clear();
+      TezClientUtils.setupTezJarsLocalResources(tezConf, new Credentials(), lrMap);
+      Assert.assertEquals(LocalResourceVisibility.PRIVATE,
+        lrMap.get(TezConstants.TEZ_TAR_LR_NAME).getVisibility());
+    } finally {
+      if (topLevelDir != null) {
+        remoteFs.delete(topLevelDir, true);
+      }
+    }
+  }
+
+  /**
+   *
+   */
+  @Test(timeout = 5000)
+  public void validateSetTezJarLocalResourcesNotDefined() throws Exception {
+
+    TezConfiguration conf = new TezConfiguration(false);
+    Credentials credentials = new Credentials();
+    try {
+      Map<String, LocalResource> resources = new HashMap<String, LocalResource>();
+      TezClientUtils.setupTezJarsLocalResources(conf, credentials, resources);
+      Assert.fail("Expected TezUncheckedException");
+    } catch (TezUncheckedException e) {
+      Assert.assertTrue(e.getMessage().contains("Invalid configuration of tez jars"));
+    }
+  }
+
+  @Test(timeout = 5000)
+  public void validateSetTezJarLocalResourcesDefinedButEmpty() throws Exception {
+    File emptyDir = new File(TEST_ROOT_DIR, "emptyDir");
+    emptyDir.deleteOnExit();
+    Assert.assertTrue(emptyDir.mkdirs());
+    TezConfiguration conf = new TezConfiguration();
+    conf.set(TezConfiguration.TEZ_LIB_URIS, emptyDir.toURI().toURL().toString());
+    Credentials credentials = new Credentials();
+    try {
+      Map<String, LocalResource> resources = new HashMap<String, LocalResource>();
+      TezClientUtils.setupTezJarsLocalResources(conf, credentials, resources);
+      Assert.fail("Expected TezUncheckedException");
+    } catch (TezUncheckedException e) {
+      Assert.assertTrue(e.getMessage().contains("No files found in locations"));
+    }
+  }
+
+  /**
+   *
+   */
+  @Test(expected = FileNotFoundException.class, timeout = 5000)
+  public void validateSetTezJarLocalResourcesDefinedNonExistingDirectory() throws Exception {
+
+    TezConfiguration conf = new TezConfiguration();
+    conf.set(TezConfiguration.TEZ_LIB_URIS, "file:///foo");
+    Credentials credentials = new Credentials();
+    Map<String, LocalResource> resources = new HashMap<String, LocalResource>();
+    TezClientUtils.setupTezJarsLocalResources(conf, credentials, resources);
+  }
+
+  @Test(timeout = 20000)
   public void validateSetTezJarLocalResourcesDefinedExistingDirectory() throws Exception {
     List<URL> cp = getDirAndFileURL();
     StringBuffer buffer = new StringBuffer();
@@ -165,7 +249,7 @@ public class TestTezClientUtils {
     Credentials credentials = new Credentials();
     Map<String, LocalResource> localizedMap = new HashMap<String, LocalResource>();
     boolean usingArchive = TezClientUtils.setupTezJarsLocalResources(conf, credentials,
-        localizedMap);
+      localizedMap);
     Assert.assertFalse(usingArchive);
     Set<String> resourceNames = localizedMap.keySet();
     boolean assertedDir = false;
@@ -176,11 +260,11 @@ public class TestTezClientUtils {
         String[] firList = file.list();
         for (String fileNme : firList) {
           File innerFile = new File(file, fileNme);
-          if (!innerFile.isDirectory()){
+          if (!innerFile.isDirectory()) {
             assertTrue(resourceNames.contains(innerFile.getName()));
             assertedDir = true;
           }
-          // not supporting deep hierarchies 
+          // not supporting deep hierarchies
         }
       } else {
         assertTrue(resourceNames.contains(file.getName()));
@@ -192,10 +276,10 @@ public class TestTezClientUtils {
   }
 
   /**
-   * 
+   *
    * @throws Exception
    */
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void validateSetTezJarLocalResourcesDefinedExistingDirectoryIgnored() throws Exception {
     List<URL> cp = getDirAndFileURL();
     StringBuffer buffer = new StringBuffer();
@@ -213,10 +297,10 @@ public class TestTezClientUtils {
   }
 
   /**
-   * 
+   *
    * @throws Exception
    */
-  @Test (timeout=20000)
+  @Test(timeout = 20000)
   public void validateSetTezJarLocalResourcesDefinedExistingDirectoryIgnoredSetToFalse() throws Exception {
     List<URL> cp = getDirAndFileURL();
     StringBuffer buffer = new StringBuffer();
@@ -233,11 +317,10 @@ public class TestTezClientUtils {
     assertFalse(localizedMap.isEmpty());
   }
 
-
-    /**
+  /**
    *
    */
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void testTezDefaultFS() throws Exception {
     FileSystem localFs = FileSystem.getLocal(new Configuration());
     StringBuilder tezLibUris = new StringBuilder();
@@ -264,10 +347,10 @@ public class TestTezClientUtils {
     Assert.assertTrue(localFs.delete(topDir, true));
   }
 
-    /**
+  /**
    *
    */
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void validateSetTezJarLocalResourcesMultipleTarballs() throws Exception {
     FileSystem localFs = FileSystem.getLocal(new Configuration());
     StringBuilder tezLibUris = new StringBuilder();
@@ -299,16 +382,15 @@ public class TestTezClientUtils {
     Assert.assertFalse(resourceNames.contains("f1.tar.gz"));
     Assert.assertFalse(resourceNames.contains("f2.tar.gz"));
 
-
     Assert.assertTrue(localFs.delete(tarFile1, true));
     Assert.assertTrue(localFs.delete(tarFile2, true));
     Assert.assertTrue(localFs.delete(topDir, true));
   }
 
-    /**
+  /**
    *
    */
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void validateSetTezJarLocalResourcesMixTarballAndJar() throws Exception {
     FileSystem localFs = FileSystem.getLocal(new Configuration());
     StringBuilder tezLibUris = new StringBuilder();
@@ -359,42 +441,42 @@ public class TestTezClientUtils {
     ApplicationId appId = ApplicationId.newInstance(1000, 1);
     Credentials credentials = new Credentials();
     TezClientUtils.createSessionToken(appId.toString(),
-        new JobTokenSecretManager(), credentials);
+      new JobTokenSecretManager(), credentials);
     tezConf.setBoolean(TezConfiguration.TEZ_IGNORE_LIB_URIS, true);
     Map<String, LocalResource> m = new HashMap<String, LocalResource>();
     tezConf.setInt(TezConfiguration.TEZ_AM_APPLICATION_PRIORITY, testpriority);
     AMConfiguration amConf =
-        new AMConfiguration(tezConf, new HashMap<String, LocalResource>(), credentials);
+      new AMConfiguration(tezConf, new HashMap<String, LocalResource>(), credentials);
     ApplicationSubmissionContext appcontext;
     appcontext = TezClientUtils.createApplicationSubmissionContext(
-        appId, null, "dagname",
-        amConf, m,
-        credentials, false,
-        new TezApiVersionInfo(), null, null);
+      appId, null, "dagname",
+      amConf, m,
+      credentials, false,
+      new TezApiVersionInfo(), null, null);
     assertEquals(testpriority, appcontext.getPriority().getPriority());
   }
 
-  @Test(timeout=1000)
+  @Test(timeout = 1000)
   // when tez config property for app priority not set,
   // tez should not set app priority and let YARN deal with it.
   public void testSetApplicationPriority() {
     TezConfiguration conf = new TezConfiguration(false);
     AMConfiguration amconfig = new AMConfiguration(conf, null, null);
     ApplicationSubmissionContext appContext = Records
-        .newRecord(ApplicationSubmissionContext.class);
+      .newRecord(ApplicationSubmissionContext.class);
     TezClientUtils.setApplicationPriority(appContext, amconfig);
     assertNull(appContext.getPriority());
   }
 
-  @Test(timeout=1000)
+  @Test(timeout = 1000)
   public void testSetApplicationTags() {
     TezConfiguration conf = new TezConfiguration(false);
     conf.set(TezConfiguration.TEZ_APPLICATION_TAGS, "foo,bar");
     AMConfiguration amconfig = new AMConfiguration(conf, null, null);
     ApplicationSubmissionContext appContext = Records
-        .newRecord(ApplicationSubmissionContext.class);
+      .newRecord(ApplicationSubmissionContext.class);
     Collection<String> tagsFromConf =
-        amconfig.getTezConfiguration().getTrimmedStringCollection(
+      amconfig.getTezConfiguration().getTrimmedStringCollection(
         TezConfiguration.TEZ_APPLICATION_TAGS);
     appContext.setApplicationTags(new HashSet<String>(tagsFromConf));
     assertTrue(appContext.getApplicationTags().contains("foo"));
@@ -410,7 +492,7 @@ public class TestTezClientUtils {
     ApplicationId appId = ApplicationId.newInstance(1000, 1);
     DAG dag = DAG.create("testdag");
     dag.addVertex(Vertex.create("testVertex", ProcessorDescriptor.create("processorClassname"), 1)
-        .setTaskLaunchCmdOpts("initialLaunchOpts"));
+      .setTaskLaunchCmdOpts("initialLaunchOpts"));
 
     Credentials credentials = new Credentials();
     JobTokenSecretManager jobTokenSecretManager = new JobTokenSecretManager();
@@ -419,11 +501,11 @@ public class TestTezClientUtils {
     assertNotNull(jobToken);
 
     AMConfiguration amConf =
-        new AMConfiguration(tezConf, new HashMap<String, LocalResource>(), credentials);
+      new AMConfiguration(tezConf, new HashMap<String, LocalResource>(), credentials);
     ApplicationSubmissionContext appSubmissionContext =
-        TezClientUtils.createApplicationSubmissionContext(appId, dag, "amName", amConf,
-            new HashMap<String, LocalResource>(), credentials, false, new TezApiVersionInfo(),
-            null, null);
+      TezClientUtils.createApplicationSubmissionContext(appId, dag, "amName", amConf,
+        new HashMap<String, LocalResource>(), credentials, false, new TezApiVersionInfo(),
+        null, null);
 
     ContainerLaunchContext amClc = appSubmissionContext.getAMContainerSpec();
     Map<String, ByteBuffer> amServiceData = amClc.getServiceData();
@@ -451,21 +533,21 @@ public class TestTezClientUtils {
     TezClientUtils.createSessionToken(appId.toString(), jobTokenSecretManager, credentials);
     DAG dag = DAG.create("testdag");
     dag.addVertex(Vertex.create("testVertex", ProcessorDescriptor.create("processorClassname"), 1)
-        .setTaskLaunchCmdOpts("initialLaunchOpts"));
+      .setTaskLaunchCmdOpts("initialLaunchOpts"));
     AMConfiguration amConf =
-        new AMConfiguration(tezConf, new HashMap<String, LocalResource>(), credentials);
+      new AMConfiguration(tezConf, new HashMap<String, LocalResource>(), credentials);
     ApplicationSubmissionContext appSubmissionContext =
-        TezClientUtils.createApplicationSubmissionContext(appId, dag, "amName", amConf,
-            new HashMap<String, LocalResource>(), credentials, false, new TezApiVersionInfo(),
-            null, null);
+      TezClientUtils.createApplicationSubmissionContext(appId, dag, "amName", amConf,
+        new HashMap<String, LocalResource>(), credentials, false, new TezApiVersionInfo(),
+        null, null);
 
     List<String> expectedCommands = new LinkedList<String>();
     expectedCommands.add("-Dlog4j.configuratorClass=org.apache.tez.common.TezLog4jConfigurator");
     expectedCommands.add("-Dlog4j.configuration=" + TezConstants.TEZ_CONTAINER_LOG4J_PROPERTIES_FILE);
     expectedCommands.add("-D" + YarnConfiguration.YARN_APP_CONTAINER_LOG_DIR + "=" +
-        ApplicationConstants.LOG_DIR_EXPANSION_VAR);
+      ApplicationConstants.LOG_DIR_EXPANSION_VAR);
     expectedCommands.add("-D" + TezConstants.TEZ_ROOT_LOGGER_NAME + "=" + "WARN" + "," +
-        TezConstants.TEZ_CONTAINER_LOGGER_NAME);
+      TezConstants.TEZ_CONTAINER_LOGGER_NAME);
 
     List<String> commands = appSubmissionContext.getAMContainerSpec().getCommands();
     assertEquals(1, commands.size());
@@ -483,7 +565,7 @@ public class TestTezClientUtils {
 
     TezConfiguration tezConf = new TezConfiguration();
     tezConf.set(TezConfiguration.TEZ_AM_LOG_LEVEL,
-        "WARN;org.apache.hadoop.ipc=DEBUG;org.apache.hadoop.security=DEBUG");
+      "WARN;org.apache.hadoop.ipc=DEBUG;org.apache.hadoop.security=DEBUG");
     tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR, STAGING_DIR.getAbsolutePath());
 
     ApplicationId appId = ApplicationId.newInstance(1000, 1);
@@ -492,22 +574,22 @@ public class TestTezClientUtils {
     TezClientUtils.createSessionToken(appId.toString(), jobTokenSecretManager, credentials);
     DAG dag = DAG.create("testdag");
     dag.addVertex(Vertex.create("testVertex", ProcessorDescriptor.create("processorClassname"), 1)
-        .setTaskLaunchCmdOpts("initialLaunchOpts"));
+      .setTaskLaunchCmdOpts("initialLaunchOpts"));
     AMConfiguration amConf =
-        new AMConfiguration(tezConf, new HashMap<String, LocalResource>(), credentials);
+      new AMConfiguration(tezConf, new HashMap<String, LocalResource>(), credentials);
     ApplicationSubmissionContext appSubmissionContext =
-        TezClientUtils.createApplicationSubmissionContext(appId, dag, "amName", amConf,
-            new HashMap<String, LocalResource>(), credentials, false, new TezApiVersionInfo(),
-            null, null);
+      TezClientUtils.createApplicationSubmissionContext(appId, dag, "amName", amConf,
+        new HashMap<String, LocalResource>(), credentials, false, new TezApiVersionInfo(),
+        null, null);
 
     List<String> expectedCommands = new LinkedList<String>();
     expectedCommands.add("-Dlog4j.configuratorClass=org.apache.tez.common.TezLog4jConfigurator");
     expectedCommands.add(
-        "-Dlog4j.configuration=" + TezConstants.TEZ_CONTAINER_LOG4J_PROPERTIES_FILE);
+      "-Dlog4j.configuration=" + TezConstants.TEZ_CONTAINER_LOG4J_PROPERTIES_FILE);
     expectedCommands.add("-D" + YarnConfiguration.YARN_APP_CONTAINER_LOG_DIR + "=" +
-        ApplicationConstants.LOG_DIR_EXPANSION_VAR);
+      ApplicationConstants.LOG_DIR_EXPANSION_VAR);
     expectedCommands.add("-D" + TezConstants.TEZ_ROOT_LOGGER_NAME + "=" + "WARN" + "," +
-        TezConstants.TEZ_CONTAINER_LOGGER_NAME);
+      TezConstants.TEZ_CONTAINER_LOGGER_NAME);
 
     List<String> commands = appSubmissionContext.getAMContainerSpec().getCommands();
     assertEquals(1, commands.size());
@@ -523,7 +605,7 @@ public class TestTezClientUtils {
   @Test(timeout = 5000)
   public void testAMCommandOpts() {
     Path tmpDir = new Path(Environment.PWD.$(),
-        YarnConfiguration.DEFAULT_CONTAINER_TEMP_DIR);
+      YarnConfiguration.DEFAULT_CONTAINER_TEMP_DIR);
     String tmpOpts = "-Djava.io.tmpdir=" + tmpDir;
     TezConfiguration tezConf = new TezConfiguration();
     String amCommandOpts = "-Xmx 200m -Dtest.property";
@@ -531,39 +613,40 @@ public class TestTezClientUtils {
 
     // Test1: Rely on defaults for cluster-default opts
     String amOptsConstructed =
-        TezClientUtils.constructAMLaunchOpts(tezConf, Resource.newInstance(1024, 1));
+      TezClientUtils.constructAMLaunchOpts(tezConf, Resource.newInstance(1024, 1));
     assertEquals(tmpOpts + " "
         + TezConfiguration.TEZ_AM_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT + " "
         + amCommandOpts,
-        amOptsConstructed);
+      amOptsConstructed);
 
     // Test2: Setup cluster-default command opts explicitly
     String clusterDefaultCommandOpts =
-        "-server -Djava.net.preferIPv4Stack=true -XX:+PrintGCDetails -verbose:gc ";
+      "-server -Djava.net.preferIPv4Stack=true -XX:+PrintGCDetails -verbose:gc ";
     tezConf.set(TezConfiguration.TEZ_AM_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS, clusterDefaultCommandOpts);
     amOptsConstructed =
-        TezClientUtils.constructAMLaunchOpts(tezConf, Resource.newInstance(1024, 1));
+      TezClientUtils.constructAMLaunchOpts(tezConf, Resource.newInstance(1024, 1));
     assertEquals(tmpOpts + " " + clusterDefaultCommandOpts + " " + amCommandOpts, amOptsConstructed);
-
 
     // Test3: Don't setup Xmx explicitly
     final double factor = 0.8;
     amCommandOpts = "-Dtest.property";
     tezConf.set(TezConfiguration.TEZ_AM_LAUNCH_CMD_OPTS, amCommandOpts);
     amOptsConstructed =
-        TezClientUtils.constructAMLaunchOpts(tezConf, Resource.newInstance(1024, 1));
-    // It's OK for the Xmx value to show up before cluster default options, since Xmx will not be replaced if it already exists.
+      TezClientUtils.constructAMLaunchOpts(tezConf, Resource.newInstance(1024, 1));
+    // It's OK for the Xmx value to show up before cluster default options, since Xmx will not be replaced if it
+    // already exists.
     assertEquals(
-        " -Xmx" + ((int) (1024 * factor)) + "m" + " " + tmpOpts + " " + clusterDefaultCommandOpts + " " +
-            amCommandOpts,
-        amOptsConstructed);
+      " -Xmx" + ((int) (1024 * factor)) + "m" + " " + tmpOpts + " " + clusterDefaultCommandOpts + " " +
+        amCommandOpts,
+      amOptsConstructed);
 
-    // Test4: Ensure admin options with Xmx does not cause them to be overridden. This should almost never be done though.
+    // Test4: Ensure admin options with Xmx does not cause them to be overridden. This should almost never be done
+    // though.
     clusterDefaultCommandOpts =
-        "-server -Djava.net.preferIPv4Stack=true -XX:+PrintGCDetails -verbose:gc -Xmx200m";
+      "-server -Djava.net.preferIPv4Stack=true -XX:+PrintGCDetails -verbose:gc -Xmx200m";
     tezConf.set(TezConfiguration.TEZ_AM_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS, clusterDefaultCommandOpts);
     amOptsConstructed =
-        TezClientUtils.constructAMLaunchOpts(tezConf, Resource.newInstance(1024, 1));
+      TezClientUtils.constructAMLaunchOpts(tezConf, Resource.newInstance(1024, 1));
     assertEquals(tmpOpts + " " + clusterDefaultCommandOpts + " " + amCommandOpts, amOptsConstructed);
   }
 
@@ -577,109 +660,108 @@ public class TestTezClientUtils {
     // Test1: Rely on defaults for cluster default opts
     String taskOptsConstructed = TezClientUtils.addDefaultsToTaskLaunchCmdOpts("", tezConf);
     expected =
-        TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT + " " + taskCommandOpts;
+      TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT + " " + taskCommandOpts;
     assertTrue(
-        "Did not find Expected prefix: [" + expected + "] in string [" + taskOptsConstructed +
-            "]", taskOptsConstructed.startsWith(expected));
+      "Did not find Expected prefix: [" + expected + "] in string [" + taskOptsConstructed +
+        "]", taskOptsConstructed.startsWith(expected));
 
     // Test2: Setup cluster-default command opts explicitly
     String taskClusterDefaultCommandOpts =
-        "-server -Djava.net.preferIPv4Stack=true -XX:+PrintGCDetails -verbose:gc ";
+      "-server -Djava.net.preferIPv4Stack=true -XX:+PrintGCDetails -verbose:gc ";
     tezConf.set(TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS,
-        taskClusterDefaultCommandOpts);
+      taskClusterDefaultCommandOpts);
     taskOptsConstructed =
-        TezClientUtils.addDefaultsToTaskLaunchCmdOpts("", tezConf);
+      TezClientUtils.addDefaultsToTaskLaunchCmdOpts("", tezConf);
     expected = taskClusterDefaultCommandOpts + " " + taskCommandOpts;
     assertTrue(
-        "Did not find Expected prefix: [" + expected + "] in string [" + taskOptsConstructed +
-            "]", taskOptsConstructed.startsWith(expected));
+      "Did not find Expected prefix: [" + expected + "] in string [" + taskOptsConstructed +
+        "]", taskOptsConstructed.startsWith(expected));
 
     // Test3: Don't setup Xmx explicitly
     taskCommandOpts = "-Dtest.property";
     tezConf.set(TezConfiguration.TEZ_TASK_LAUNCH_CMD_OPTS, taskCommandOpts);
     taskOptsConstructed =
-        TezClientUtils.addDefaultsToTaskLaunchCmdOpts("", tezConf);
+      TezClientUtils.addDefaultsToTaskLaunchCmdOpts("", tezConf);
     expected = taskClusterDefaultCommandOpts + " " + taskCommandOpts;
     assertTrue(
-        "Did not find Expected prefix: [" + expected + "] in string [" + taskOptsConstructed +
-            "]", taskOptsConstructed.startsWith(expected));
+      "Did not find Expected prefix: [" + expected + "] in string [" + taskOptsConstructed +
+        "]", taskOptsConstructed.startsWith(expected));
 
     // Test4: Pass in a dag-configured value.
     String programmaticTaskOpts = "-Dset.programatically=true -Djava.net.preferIPv4Stack=false";
     taskOptsConstructed =
-        TezClientUtils.addDefaultsToTaskLaunchCmdOpts(programmaticTaskOpts, tezConf);
+      TezClientUtils.addDefaultsToTaskLaunchCmdOpts(programmaticTaskOpts, tezConf);
     // Container logging is always added at the end, if it's required.
     expected = taskClusterDefaultCommandOpts + " " + taskCommandOpts + " " + programmaticTaskOpts;
     assertTrue(
-        "Did not find Expected prefix: [" + expected + "] in string [" + taskOptsConstructed +
-            "]", taskOptsConstructed.startsWith(expected));
+      "Did not find Expected prefix: [" + expected + "] in string [" + taskOptsConstructed +
+        "]", taskOptsConstructed.startsWith(expected));
   }
 
-
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void testDefaultMemoryJavaOpts() {
     final double factor = 0.8;
     String origJavaOpts = "-Xmx";
     String javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(1000, 1), factor);
+      Resource.newInstance(1000, 1), factor);
     Assert.assertEquals(origJavaOpts, javaOpts);
 
     origJavaOpts = "";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(1000, 1), factor);
+      Resource.newInstance(1000, 1), factor);
     Assert.assertTrue(javaOpts.contains("-Xmx800m"));
 
     origJavaOpts = "";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(1, 1), factor);
+      Resource.newInstance(1, 1), factor);
     Assert.assertTrue(javaOpts.contains("-Xmx1m"));
 
     origJavaOpts = "";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(-1, 1), factor);
+      Resource.newInstance(-1, 1), factor);
     Assert.assertEquals(origJavaOpts, javaOpts);
 
     origJavaOpts = "";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(355, 1), factor);
+      Resource.newInstance(355, 1), factor);
     Assert.assertTrue(javaOpts.contains("-Xmx284m"));
 
     origJavaOpts = " -Xms100m ";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(355, 1), factor);
+      Resource.newInstance(355, 1), factor);
     Assert.assertFalse(javaOpts.contains("-Xmx284m"));
     Assert.assertTrue(javaOpts.contains("-Xms100m"));
 
     origJavaOpts = "";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(355, 1), 0);
+      Resource.newInstance(355, 1), 0);
     Assert.assertEquals(origJavaOpts, javaOpts);
 
     origJavaOpts = "";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(355, 1), 100);
+      Resource.newInstance(355, 1), 100);
     Assert.assertEquals(origJavaOpts, javaOpts);
 
     origJavaOpts = "";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(1000, 1), -1);
+      Resource.newInstance(1000, 1), -1);
     Assert.assertTrue(javaOpts.contains("-Xmx700m"));
 
     origJavaOpts = "";
     javaOpts = TezClientUtils.maybeAddDefaultMemoryJavaOpts(origJavaOpts,
-        Resource.newInstance(5000, 1), -1);
+      Resource.newInstance(5000, 1), -1);
     Assert.assertTrue(javaOpts.contains("-Xmx4000m"));
   }
 
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void testDefaultLoggingJavaOpts() {
     String origJavaOpts = null;
     String javaOpts = TezClientUtils.maybeAddDefaultLoggingJavaOpts("FOOBAR", origJavaOpts);
     Assert.assertNotNull(javaOpts);
     Assert.assertTrue(javaOpts.contains("-D" + TezConstants.TEZ_ROOT_LOGGER_NAME + "=FOOBAR")
-        && javaOpts.contains(TezConstants.TEZ_CONTAINER_LOG4J_PROPERTIES_FILE)
-        &&
-        javaOpts.contains("-Dlog4j.configuratorClass=org.apache.tez.common.TezLog4jConfigurator"));
+      && javaOpts.contains(TezConstants.TEZ_CONTAINER_LOG4J_PROPERTIES_FILE)
+      &&
+      javaOpts.contains("-Dlog4j.configuratorClass=org.apache.tez.common.TezLog4jConfigurator"));
   }
 
   @Test
@@ -689,12 +771,12 @@ public class TestTezClientUtils {
     Assert.assertNotNull(javaOpts);
     Assert.assertTrue(javaOpts.contains("-D" + TezConstants.TEZ_ROOT_LOGGER_NAME + "=FOOBAR"));
     Assert.assertTrue(javaOpts.contains(TezConstants.TEZ_CONTAINER_LOG4J_PROPERTIES_FILE)
-        && javaOpts.contains("-Dlog4j.configuratorClass=org.apache.tez.common.TezLog4jConfigurator"));
+      && javaOpts.contains("-Dlog4j.configuratorClass=org.apache.tez.common.TezLog4jConfigurator"));
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testConfSerializationForAm() {
-    Configuration conf =new Configuration(false);
+    Configuration conf = new Configuration(false);
     String val1 = "fixedProperty";
     String val2 = "parametrizedProperty/${user.name}";
     String expVal2 = "parametrizedProperty/" + System.getProperty("user.name");
@@ -712,88 +794,6 @@ public class TestTezClientUtils {
       assertEquals(v, kvPair.getValue());
     }
     assertTrue(expected.isEmpty());
-  }
-
-  // To run this test case see TestTezCommonUtils::testLocalResourceVisibility
-  // We do not have much control over the directory structure, cannot mock as the functions are
-  // static and do not want to spin up a minitez cluster just for this.
-  public static void testLocalResourceVisibility(DistributedFileSystem remoteFs, Configuration conf)
-      throws Exception {
-
-    Path topLevelDir = null;
-    try {
-      FsPermission publicDirPerms = new FsPermission((short) 0755);   // rwxr-xr-x
-      FsPermission privateDirPerms = new FsPermission((short) 0754);  // rwxr-xr--
-      FsPermission publicFilePerms = new FsPermission((short) 0554);  // r-xr-xr--
-      FsPermission privateFilePerms = new FsPermission((short) 0550); // r-xr-x---
-
-      String fsURI = remoteFs.getUri().toString();
-
-      topLevelDir = new Path(fsURI, "/testLRVisibility");
-      Assert.assertTrue(remoteFs.mkdirs(topLevelDir, publicDirPerms));
-
-      Path publicSubDir = new Path(topLevelDir, "public_sub_dir");
-      Assert.assertTrue(remoteFs.mkdirs(publicSubDir, publicDirPerms));
-
-      Path privateSubDir = new Path(topLevelDir, "private_sub_dir");
-      Assert.assertTrue(remoteFs.mkdirs(privateSubDir, privateDirPerms));
-
-      Path publicFile = new Path(publicSubDir, "public_file");
-      Assert.assertTrue(remoteFs.createNewFile(publicFile));
-      remoteFs.setPermission(publicFile, publicFilePerms);
-
-      Path privateFile = new Path(publicSubDir, "private_file");
-      Assert.assertTrue(remoteFs.createNewFile(privateFile));
-      remoteFs.setPermission(privateFile, privateFilePerms);
-
-      Path publicFileInPrivateSubdir = new Path(privateSubDir, "public_file_in_private_subdir");
-      Assert.assertTrue(remoteFs.createNewFile(publicFileInPrivateSubdir));
-      remoteFs.setPermission(publicFileInPrivateSubdir, publicFilePerms);
-
-      TezConfiguration tezConf = new TezConfiguration(conf);
-      String tmpTezLibUris = String.format("%s,%s,%s,%s", topLevelDir, publicSubDir, privateSubDir,
-          conf.get(TezConfiguration.TEZ_LIB_URIS, ""));
-      tezConf.set(TezConfiguration.TEZ_LIB_URIS, tmpTezLibUris);
-
-      Map<String, LocalResource> lrMap = new HashMap<String, LocalResource>();
-      TezClientUtils.setupTezJarsLocalResources(tezConf, new Credentials(), lrMap);
-
-      Assert.assertEquals(publicFile.getName(), LocalResourceVisibility.PUBLIC,
-          lrMap.get(publicFile.getName()).getVisibility());
-
-      Assert.assertEquals(privateFile.getName(), LocalResourceVisibility.PRIVATE,
-          lrMap.get(privateFile.getName()).getVisibility());
-
-      Assert.assertEquals(publicFileInPrivateSubdir.getName(), LocalResourceVisibility.PRIVATE,
-          lrMap.get(publicFileInPrivateSubdir.getName()).getVisibility());
-
-      // test tar.gz
-      tezConf = new TezConfiguration(conf);
-      Path tarFile = new Path(topLevelDir, "foo.tar.gz");
-      Assert.assertTrue(remoteFs.createNewFile(tarFile));
-
-      //public
-      remoteFs.setPermission(tarFile, publicFilePerms);
-      tezConf.set(TezConfiguration.TEZ_LIB_URIS, tarFile.toString());
-      lrMap.clear();
-      Assert.assertTrue(
-          TezClientUtils.setupTezJarsLocalResources(tezConf, new Credentials(), lrMap));
-
-      Assert.assertEquals(LocalResourceVisibility.PUBLIC,
-          lrMap.get(TezConstants.TEZ_TAR_LR_NAME).getVisibility());
-
-      //private
-      remoteFs.setPermission(tarFile, privateFilePerms);
-      lrMap.clear();
-      TezClientUtils.setupTezJarsLocalResources(tezConf, new Credentials(), lrMap);
-      Assert.assertEquals(LocalResourceVisibility.PRIVATE,
-          lrMap.get(TezConstants.TEZ_TAR_LR_NAME).getVisibility());
-
-    } finally {
-      if (topLevelDir != null) {
-        remoteFs.delete(topLevelDir, true);
-      }
-    }
   }
 
   @Test(timeout = 5000)
@@ -827,7 +827,7 @@ public class TestTezClientUtils {
     return fs.makeQualified(f1);
   }
 
-  @Test (timeout=5000)
+  @Test(timeout = 5000)
   public void validateSetTezAuxLocalResourcesWithFilesAndFolders() throws Exception {
     FileSystem localFs = FileSystem.getLocal(new Configuration());
     List<String> resources = new ArrayList<String>();
@@ -872,7 +872,7 @@ public class TestTezClientUtils {
     ServicePluginsDescriptor servicePluginsDescriptor = ServicePluginsDescriptor.create(true);
 
     ConfigurationProto confProto = TezClientUtils.createFinalConfProtoForApp(conf,
-        servicePluginsDescriptor);
+      servicePluginsDescriptor);
 
     assertTrue(confProto.hasAmPluginDescriptor());
     assertTrue(confProto.getAmPluginDescriptor().getUberEnabled());
@@ -885,23 +885,22 @@ public class TestTezClientUtils {
     String opts = TezClientUtils.addDefaultsToTaskLaunchCmdOpts(vOpts, conf);
 
     Assert.assertEquals(opts,
-        TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT + " "
-            + TezConfiguration.TEZ_TASK_LAUNCH_CMD_OPTS_DEFAULT + " " + vOpts);
+      TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT + " "
+        + TezConfiguration.TEZ_TASK_LAUNCH_CMD_OPTS_DEFAULT + " " + vOpts);
 
     vOpts = "foo";
     opts = TezClientUtils.addDefaultsToTaskLaunchCmdOpts(vOpts, conf);
 
     Assert.assertEquals(opts,
-        TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT + "  " + vOpts);
+      TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT + "  " + vOpts);
 
     String taskOpts = "taskOpts";
     conf.set(TezConfiguration.TEZ_TASK_LAUNCH_CMD_OPTS, taskOpts);
     opts = TezClientUtils.addDefaultsToTaskLaunchCmdOpts(vOpts, conf);
 
     Assert.assertEquals(opts,
-        TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT
-            + " " + taskOpts + " " + vOpts);
-
+      TezConfiguration.TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_CMD_OPTS_DEFAULT
+        + " " + taskOpts + " " + vOpts);
   }
 
   @Test(timeout = 5000)
@@ -914,8 +913,8 @@ public class TestTezClientUtils {
     String opts = TezClientUtils.addDefaultsToTaskLaunchCmdOpts(vOpts, conf);
 
     Assert.assertEquals(opts,
-        adminOpts + " "
-            + TezConfiguration.TEZ_TASK_LAUNCH_CMD_OPTS_DEFAULT + " " + vOpts);
+      adminOpts + " "
+        + TezConfiguration.TEZ_TASK_LAUNCH_CMD_OPTS_DEFAULT + " " + vOpts);
 
     vOpts = "foo";
     opts = TezClientUtils.addDefaultsToTaskLaunchCmdOpts(vOpts, conf);
@@ -927,7 +926,6 @@ public class TestTezClientUtils {
     opts = TezClientUtils.addDefaultsToTaskLaunchCmdOpts(vOpts, conf);
 
     Assert.assertEquals(opts, adminOpts + " " + taskOpts + " " + vOpts);
-
   }
 
   @Test
@@ -939,17 +937,17 @@ public class TestTezClientUtils {
 
     Credentials amConfigCredentials = new Credentials();
     amConfigCredentials.addToken(tokenType,
-        new Token<>("id1".getBytes(), null, tokenKind, tokenService));
+      new Token<>("id1".getBytes(), null, tokenKind, tokenService));
 
     Credentials sessionCredentials = new Credentials();
     Token<TokenIdentifier> sessionToken =
-        new Token<>("id2".getBytes(), null, tokenKind, tokenService);
+      new Token<>("id2".getBytes(), null, tokenKind, tokenService);
     sessionCredentials.addToken(tokenType, sessionToken);
 
     AMConfiguration amConfig = new AMConfiguration(conf, null, amConfigCredentials);
 
     Credentials amLaunchCredentials =
-        TezClientUtils.prepareAmLaunchCredentials(amConfig, sessionCredentials, conf, null);
+      TezClientUtils.prepareAmLaunchCredentials(amConfig, sessionCredentials, conf, null);
 
     // if there is another token in am conf creds of the same token type,
     // session token should be applied while creating ContainerLaunchContext

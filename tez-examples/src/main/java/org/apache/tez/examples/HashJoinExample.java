@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -33,6 +31,7 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.tez.client.TezClient;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.dag.api.DAG;
 import org.apache.tez.dag.api.Edge;
 import org.apache.tez.dag.api.EdgeProperty;
@@ -53,7 +52,8 @@ import org.apache.tez.runtime.library.conf.UnorderedPartitionedKVEdgeConfig;
 import org.apache.tez.runtime.library.partitioner.HashPartitioner;
 import org.apache.tez.runtime.library.processor.SimpleProcessor;
 
-import org.apache.tez.common.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple example of joining 2 data sets using <a
@@ -91,16 +91,16 @@ public class HashJoinExample extends TezExampleBase {
   @Override
   protected void printUsage() {
     System.err.println("Usage: "
-        + "hashjoin <file1> <file2> <numPartitions> <outPath> ["
-        + broadcastOption + "(default false)]");
+      + "hashjoin <file1> <file2> <numPartitions> <outPath> ["
+      + broadcastOption + "(default false)]");
   }
 
   @Override
   protected int runJob(String[] args, TezConfiguration tezConf,
-      TezClient tezClient) throws Exception {
+                       TezClient tezClient) throws Exception {
 
     boolean doBroadcast =
-        args.length == 5 && args[4].equals(broadcastOption) ? true : false;
+      args.length == 5 && args[4].equals(broadcastOption) ? true : false;
     LOG.info("Running HashJoinExample" + (doBroadcast ? "-WithBroadcast" : ""));
 
     String streamInputDir = args[0];
@@ -125,8 +125,8 @@ public class HashJoinExample extends TezExampleBase {
     }
 
     DAG dag =
-        createDag(tezConf, streamInputPath, hashInputPath, outputPath,
-            numPartitions, doBroadcast);
+      createDag(tezConf, streamInputPath, hashInputPath, outputPath,
+        numPartitions, doBroadcast);
 
     return runDag(dag, isCountersLog(), LOG);
   }
@@ -140,8 +140,8 @@ public class HashJoinExample extends TezExampleBase {
   }
 
   private DAG createDag(TezConfiguration tezConf, Path streamPath,
-      Path hashPath, Path outPath, int numPartitions, boolean doBroadcast)
-      throws IOException {
+                        Path hashPath, Path outPath, int numPartitions, boolean doBroadcast)
+    throws IOException {
     DAG dag = DAG.create("HashJoinExample" + (doBroadcast ? "-WithBroadcast" : ""));
 
     /**
@@ -151,15 +151,15 @@ public class HashJoinExample extends TezExampleBase {
      * downstream as is.
      */
     Vertex hashFileVertex =
-        Vertex.create(hashSide,
-            ProcessorDescriptor.create(ForwardingProcessor.class.getName()))
-            .addDataSource(
-                inputFile,
-                MRInput
-                    .createConfigBuilder(new Configuration(tezConf),
-                        TextInputFormat.class, hashPath.toUri().toString())
-                    .groupSplits(!isDisableSplitGrouping())
-                    .generateSplitsInAM(!isGenerateSplitInClient()).build());
+      Vertex.create(hashSide,
+          ProcessorDescriptor.create(ForwardingProcessor.class.getName()))
+        .addDataSource(
+          inputFile,
+          MRInput
+            .createConfigBuilder(new Configuration(tezConf),
+              TextInputFormat.class, hashPath.toUri().toString())
+            .groupSplits(!isDisableSplitGrouping())
+            .generateSplitsInAM(!isGenerateSplitInClient()).build());
 
     /**
      * This vertex represents that side of the data that will be streamed and
@@ -168,15 +168,15 @@ public class HashJoinExample extends TezExampleBase {
      * simply forwards the data downstream as is.
      */
     Vertex streamFileVertex =
-        Vertex.create(streamingSide,
-            ProcessorDescriptor.create(ForwardingProcessor.class.getName()))
-            .addDataSource(
-                inputFile,
-                MRInput
-                    .createConfigBuilder(new Configuration(tezConf),
-                        TextInputFormat.class, streamPath.toUri().toString())
-                    .groupSplits(!isDisableSplitGrouping())
-                    .generateSplitsInAM(!isGenerateSplitInClient()).build());
+      Vertex.create(streamingSide,
+          ProcessorDescriptor.create(ForwardingProcessor.class.getName()))
+        .addDataSource(
+          inputFile,
+          MRInput
+            .createConfigBuilder(new Configuration(tezConf),
+              TextInputFormat.class, streamPath.toUri().toString())
+            .groupSplits(!isDisableSplitGrouping())
+            .generateSplitsInAM(!isGenerateSplitInClient()).build());
 
     /**
      * This vertex represents the join operation. It writes the join output as
@@ -185,12 +185,12 @@ public class HashJoinExample extends TezExampleBase {
      * across numPartitions
      */
     Vertex joinVertex =
-        Vertex.create(joiner,
-            ProcessorDescriptor.create(HashJoinProcessor.class.getName()),
-            numPartitions).addDataSink(
-            joinOutput,
-            MROutput.createConfigBuilder(new Configuration(tezConf),
-                TextOutputFormat.class, outPath.toUri().toString()).build());
+      Vertex.create(joiner,
+        ProcessorDescriptor.create(HashJoinProcessor.class.getName()),
+        numPartitions).addDataSink(
+        joinOutput,
+        MROutput.createConfigBuilder(new Configuration(tezConf),
+          TextOutputFormat.class, outPath.toUri().toString()).build());
 
     /**
      * The streamed side will be partitioned into fragments with the same keys
@@ -202,18 +202,18 @@ public class HashJoinExample extends TezExampleBase {
      * options with command line parameters.
      */
     UnorderedPartitionedKVEdgeConfig streamConf =
-        UnorderedPartitionedKVEdgeConfig
-            .newBuilder(Text.class.getName(), NullWritable.class.getName(),
-                HashPartitioner.class.getName())
-            .setFromConfiguration(tezConf)
-            .build();
+      UnorderedPartitionedKVEdgeConfig
+        .newBuilder(Text.class.getName(), NullWritable.class.getName(),
+          HashPartitioner.class.getName())
+        .setFromConfiguration(tezConf)
+        .build();
 
     /**
      * Connect the join vertex with the stream side
      */
     Edge e1 =
-        Edge.create(streamFileVertex, joinVertex,
-            streamConf.createDefaultEdgeProperty());
+      Edge.create(streamFileVertex, joinVertex,
+        streamConf.createDefaultEdgeProperty());
 
     EdgeProperty hashSideEdgeProperty = null;
     if (doBroadcast) {
@@ -232,10 +232,10 @@ public class HashJoinExample extends TezExampleBase {
        * parameters.
        */
       UnorderedKVEdgeConfig broadcastConf =
-          UnorderedKVEdgeConfig
-              .newBuilder(Text.class.getName(), NullWritable.class.getName())
-              .setFromConfiguration(tezConf)
-              .build();
+        UnorderedKVEdgeConfig
+          .newBuilder(Text.class.getName(), NullWritable.class.getName())
+          .setFromConfiguration(tezConf)
+          .build();
       hashSideEdgeProperty = broadcastConf.createDefaultBroadcastEdgeProperty();
     } else {
       /**
@@ -258,7 +258,7 @@ public class HashJoinExample extends TezExampleBase {
      * Connect everything up by adding them to the DAG
      */
     dag.addVertex(streamFileVertex).addVertex(hashFileVertex)
-        .addVertex(joinVertex).addEdge(e1).addEdge(e2);
+      .addVertex(joinVertex).addEdge(e1).addEdge(e2);
     return dag;
   }
 

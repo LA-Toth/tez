@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,22 +17,24 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import com.google.common.primitives.Ints;
-import org.apache.tez.common.ReflectionUtils;
-import org.apache.tez.dag.api.EdgeManagerPluginContext;
-import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.EventRouteMetadata;
-import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.CompositeEventRouteMetadata;
-import org.apache.tez.dag.api.TezReflectionException;
-import org.apache.tez.dag.api.UserPayload;
+import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
 
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.*;
+import javax.annotation.Nullable;
+
+import org.apache.tez.common.ReflectionUtils;
+import org.apache.tez.dag.api.EdgeManagerPluginContext;
+import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.CompositeEventRouteMetadata;
+import org.apache.tez.dag.api.EdgeManagerPluginOnDemand.EventRouteMetadata;
+import org.apache.tez.dag.api.TezReflectionException;
+import org.apache.tez.dag.api.UserPayload;
+
+import com.google.common.primitives.Ints;
 
 class CartesianProductEdgeManagerPartitioned extends CartesianProductEdgeManagerReal {
   private int positionId;
@@ -81,7 +83,7 @@ class CartesianProductEdgeManagerPartitioned extends CartesianProductEdgeManager
   @Nullable
   @Override
   public CompositeEventRouteMetadata routeCompositeDataMovementEventToDestination(int srcTaskId,
-                                                                         int destTaskId)
+                                                                                  int destTaskId)
     throws Exception {
     int partition = CartesianProductCombination.fromTaskId(numPartitions,
       getIdealTaskId(destTaskId)).getCombination().get(positionId);

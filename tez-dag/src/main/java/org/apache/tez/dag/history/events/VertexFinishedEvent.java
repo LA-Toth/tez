@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,23 +22,24 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
-import org.apache.tez.dag.app.dag.impl.ServicePluginInfo;
-import org.apache.tez.dag.records.VertexIDAware;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.app.dag.VertexState;
+import org.apache.tez.dag.app.dag.impl.ServicePluginInfo;
 import org.apache.tez.dag.app.dag.impl.VertexStats;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.history.SummaryEvent;
 import org.apache.tez.dag.records.TezVertexID;
+import org.apache.tez.dag.records.VertexIDAware;
 import org.apache.tez.dag.recovery.records.RecoveryProtos;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.SummaryEventProto;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.VertexFinishStateProto;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.VertexFinishedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VertexFinishedEvent implements HistoryEvent, SummaryEvent, VertexIDAware {
 
@@ -103,10 +104,10 @@ public class VertexFinishedEvent implements HistoryEvent, SummaryEvent, VertexID
   public VertexFinishedProto toProto() {
     VertexFinishedProto.Builder builder = VertexFinishedProto.newBuilder();
     builder.setVertexName(vertexName)
-        .setVertexId(vertexID.toString())
-        .setNumTasks(numTasks)
-        .setState(state.ordinal())
-        .setFinishTime(finishTime);
+      .setVertexId(vertexID.toString())
+      .setNumTasks(numTasks)
+      .setState(state.ordinal())
+      .setFinishTime(finishTime);
     if (diagnostics != null) {
       builder.setDiagnostics(diagnostics);
     }
@@ -119,7 +120,7 @@ public class VertexFinishedEvent implements HistoryEvent, SummaryEvent, VertexID
     this.numTasks = proto.getNumTasks();
     this.finishTime = proto.getFinishTime();
     this.state = VertexState.values()[proto.getState()];
-    if (proto.hasDiagnostics())  {
+    if (proto.hasDiagnostics()) {
       this.diagnostics = proto.getDiagnostics();
     }
   }
@@ -141,21 +142,21 @@ public class VertexFinishedEvent implements HistoryEvent, SummaryEvent, VertexID
   @Override
   public String toString() {
     return "vertexName=" + vertexName
-        + ", vertexId=" + vertexID
-        + ", initRequestedTime=" + initRequestedTime
-        + ", initedTime=" + initedTime
-        + ", startRequestedTime=" + startRequestedTime
-        + ", startedTime=" + startTime
-        + ", finishTime=" + finishTime
-        + ", timeTaken=" + (finishTime - startTime)
-        + ", status=" + state.name()
-        + ", diagnostics=" + diagnostics
-        + ", counters=" + ( tezCounters == null ? "null" :
-          tezCounters.toString().replaceAll("\\n", ", ").replaceAll("\\s+", " "))
-        + ", vertexStats=" + (vertexStats == null ? "null" : vertexStats.toString())
-        + ", vertexTaskStats=" + (vertexTaskStats == null ? "null" : vertexTaskStats.toString())
-        + ", servicePluginInfo="
-        + (servicePluginInfo != null ? servicePluginInfo : "null");
+      + ", vertexId=" + vertexID
+      + ", initRequestedTime=" + initRequestedTime
+      + ", initedTime=" + initedTime
+      + ", startRequestedTime=" + startRequestedTime
+      + ", startedTime=" + startTime
+      + ", finishTime=" + finishTime
+      + ", timeTaken=" + (finishTime - startTime)
+      + ", status=" + state.name()
+      + ", diagnostics=" + diagnostics
+      + ", counters=" + (tezCounters == null ? "null" :
+      tezCounters.toString().replaceAll("\\n", ", ").replaceAll("\\s+", " "))
+      + ", vertexStats=" + (vertexStats == null ? "null" : vertexStats.toString())
+      + ", vertexTaskStats=" + (vertexTaskStats == null ? "null" : vertexTaskStats.toString())
+      + ", servicePluginInfo="
+      + (servicePluginInfo != null ? servicePluginInfo : "null");
   }
 
   @Override
@@ -202,25 +203,24 @@ public class VertexFinishedEvent implements HistoryEvent, SummaryEvent, VertexID
   @Override
   public void toSummaryProtoStream(OutputStream outputStream) throws IOException {
     VertexFinishStateProto finishStateProto =
-        VertexFinishStateProto.newBuilder()
-            .setState(state.ordinal())
-            .setVertexId(vertexID.toString())
-            .setNumTasks(numTasks)
-            .build();
+      VertexFinishStateProto.newBuilder()
+        .setState(state.ordinal())
+        .setVertexId(vertexID.toString())
+        .setNumTasks(numTasks)
+        .build();
 
     SummaryEventProto.Builder builder = RecoveryProtos.SummaryEventProto.newBuilder()
-        .setDagId(vertexID.getDAGID().toString())
-        .setTimestamp(finishTime)
-        .setEventType(getEventType().ordinal())
-        .setEventPayload(finishStateProto.toByteString());
+      .setDagId(vertexID.getDAGID().toString())
+      .setTimestamp(finishTime)
+      .setEventType(getEventType().ordinal())
+      .setEventPayload(finishStateProto.toByteString());
     builder.build().writeDelimitedTo(outputStream);
-
   }
 
   @Override
   public void fromSummaryProtoStream(SummaryEventProto proto) throws IOException {
     VertexFinishStateProto finishStateProto =
-        VertexFinishStateProto.parseFrom(proto.getEventPayload());
+      VertexFinishStateProto.parseFrom(proto.getEventPayload());
     this.vertexID = TezVertexID.fromString(finishStateProto.getVertexId());
     this.state = VertexState.values()[finishStateProto.getState()];
     this.numTasks = finishStateProto.getNumTasks();
@@ -240,5 +240,4 @@ public class VertexFinishedEvent implements HistoryEvent, SummaryEvent, VertexID
   public ServicePluginInfo getServicePluginInfo() {
     return servicePluginInfo;
   }
-
 }

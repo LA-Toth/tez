@@ -33,8 +33,8 @@ import com.google.protobuf.MessageLite;
 import com.google.protobuf.Parser;
 
 public class ProtoMessageWritable<T extends MessageLite> implements Writable {
-  private T message;
   private final Parser<T> parser;
+  private T message;
   private DataOutputStream dos;
   private CodedOutputStream cos;
   private DataInputStream din;
@@ -52,19 +52,6 @@ public class ProtoMessageWritable<T extends MessageLite> implements Writable {
     this.message = message;
   }
 
-  private static class DataOutputStream extends OutputStream {
-    DataOutput out;
-    @Override
-    public void write(int b) throws IOException {
-      out.write(b);
-    }
-
-    @Override
-    public void write(byte b[], int off, int len) throws IOException {
-      out.write(b, off, len);
-    }
-  }
-
   @Override
   public void write(DataOutput out) throws IOException {
     if (dos == null) {
@@ -76,18 +63,6 @@ public class ProtoMessageWritable<T extends MessageLite> implements Writable {
     cos.flush();
   }
 
-  private static class DataInputStream extends InputStream {
-    DataInput in;
-    @Override
-    public int read() throws IOException {
-      try {
-        return in.readUnsignedByte();
-      } catch (EOFException e) {
-        return -1;
-      }
-    }
-  }
-
   @Override
   public void readFields(DataInput in) throws IOException {
     if (din == null) {
@@ -97,5 +72,32 @@ public class ProtoMessageWritable<T extends MessageLite> implements Writable {
     }
     din.in = in;
     message = cin.readMessage(parser, null);
+  }
+
+  private static class DataOutputStream extends OutputStream {
+    DataOutput out;
+
+    @Override
+    public void write(int b) throws IOException {
+      out.write(b);
+    }
+
+    @Override
+    public void write(byte b[], int off, int len) throws IOException {
+      out.write(b, off, len);
+    }
+  }
+
+  private static class DataInputStream extends InputStream {
+    DataInput in;
+
+    @Override
+    public int read() throws IOException {
+      try {
+        return in.readUnsignedByte();
+      } catch (EOFException e) {
+        return -1;
+      }
+    }
   }
 }

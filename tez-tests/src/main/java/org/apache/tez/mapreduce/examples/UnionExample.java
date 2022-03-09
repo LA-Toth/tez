@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,17 +37,18 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.tez.client.TezClient;
+import org.apache.tez.common.Preconditions;
+import org.apache.tez.dag.api.DAG;
 import org.apache.tez.dag.api.DataSinkDescriptor;
 import org.apache.tez.dag.api.DataSourceDescriptor;
-import org.apache.tez.dag.api.GroupInputEdge;
-import org.apache.tez.dag.api.VertexGroup;
-import org.apache.tez.dag.api.DAG;
 import org.apache.tez.dag.api.Edge;
+import org.apache.tez.dag.api.GroupInputEdge;
 import org.apache.tez.dag.api.InputDescriptor;
 import org.apache.tez.dag.api.ProcessorDescriptor;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.api.Vertex;
+import org.apache.tez.dag.api.VertexGroup;
 import org.apache.tez.dag.api.client.DAGClient;
 import org.apache.tez.dag.api.client.DAGStatus;
 import org.apache.tez.dag.api.client.StatusGetOpts;
@@ -64,10 +65,145 @@ import org.apache.tez.runtime.library.conf.OrderedPartitionedKVEdgeConfig;
 import org.apache.tez.runtime.library.input.ConcatenatedMergedKeyValuesInput;
 import org.apache.tez.runtime.library.partitioner.HashPartitioner;
 
-import org.apache.tez.common.Preconditions;
 import com.google.common.collect.Maps;
 
 public class UnionExample {
+
+  private static void printUsage() {
+    System.err.println("Usage: " + " unionexample <in1> <out1>");
+  }
+
+  public static void main(String[] args) throws Exception {
+    if (args.length != 2) {
+      printUsage();
+      System.exit(2);
+    }
+    UnionExample job = new UnionExample();
+    job.run(args[0], args[1], null);
+  }
+
+  private DAG createDAG(FileSystem fs, TezConfiguration tezConf,
+                        Map<String, LocalResource> localResources, Path stagingDir,
+                        String inputPath, String outputPath) throws IOException {
+    DAG dag = DAG.create("UnionExample");
+
+    int numMaps = -1;
+    Configuration inputConf = new Configuration(tezConf);
+    inputConf.setBoolean("mapred.mapper.new-api", false);
+    inputConf.set("mapred.input.format.class", TextInputFormat.class.getName());
+    inputConf.set(FileInputFormat.INPUT_DIR, inputPath);
+    MRInput.MRInputConfigBuilder configurer = MRInput.createConfigBuilder(inputConf, null);
+    DataSourceDescriptor dataSource = configurer.generateSplitsInAM(false).build();
+
+    Vertex mapVertex1 = Vertex.create("map1", ProcessorDescriptor.create(
+      TokenProcessor.class.getName()), numMaps).addDataSource("MRInput", dataSource);
+
+    Vertex mapVertex2 = Vertex.create("map2", ProcessorDescriptor.create(
+      TokenProcessor.class.getName()), numMaps).addDataSource("MRInput", dataSource);
+
+    Vertex mapVertex3 = Vertex.create("map3", ProcessorDescriptor.create(
+      TokenProcessor.class.getName()), numMaps).addDataSource("MRInput", dataSource);
+
+    Vertex checkerVertex = Vertex.create("checker", ProcessorDescriptor.create(
+      UnionProcessor.class.getName()), 1);
+
+    Configuration outputConf = new Configuration(tezConf);
+    outputConf.setBoolean("mapred.reducer.new-api", false);
+    outputConf.set("mapred.output.format.class", TextOutputFormat.class.getName());
+    outputConf.set(FileOutputFormat.OUTDIR, outputPath);
+    DataSinkDescriptor od = MROutput.createConfigBuilder(outputConf, null).build();
+    checkerVertex.addDataSink("union", od);
+
+    Configuration allPartsConf = new Configuration(tezConf);
+    DataSinkDescriptor od2 = MROutput.createConfigBuilder(allPartsConf,
+      TextOutputFormat.class, outputPath + "-all-parts").build();
+    checkerVertex.addDataSink("all-parts", od2);
+
+    Configuration partsConf = new Configuration(tezConf);
+    DataSinkDescriptor od1 = MROutput.createConfigBuilder(partsConf,
+      TextOutputFormat.class, outputPath + "-parts").build();
+    VertexGroup unionVertex = dag.createVertexGroup("union", mapVertex1, mapVertex2);
+    unionVertex.addDataSink("parts", od1);
+
+    OrderedPartitionedKVEdgeConfig edgeConf = OrderedPartitionedKVEdgeConfig
+      .newBuilder(Text.class.getName(), IntWritable.class.getName(),
+        HashPartitioner.class.getName()).build();
+
+    dag.addVertex(mapVertex1)
+      .addVertex(mapVertex2)
+      .addVertex(mapVertex3)
+      .addVertex(checkerVertex)
+      .addEdge(
+        Edge.create(mapVertex3, checkerVertex, edgeConf.createDefaultEdgeProperty()))
+      .addEdge(
+        GroupInputEdge.create(unionVertex, checkerVertex, edgeConf.createDefaultEdgeProperty(),
+          InputDescriptor.create(
+            ConcatenatedMergedKeyValuesInput.class.getName())));
+    return dag;
+  }
+
+  public boolean run(String inputPath, String outputPath, Configuration conf) throws Exception {
+    System.out.println("Running UnionExample");
+    // conf and UGI
+    TezConfiguration tezConf;
+    if (conf != null) {
+      tezConf = new TezConfiguration(conf);
+    } else {
+      tezConf = new TezConfiguration();
+    }
+    UserGroupInformation.setConfiguration(tezConf);
+    String user = UserGroupInformation.getCurrentUser().getShortUserName();
+
+    // staging dir
+    FileSystem fs = FileSystem.get(tezConf);
+    String stagingDirStr = Path.SEPARATOR + "user" + Path.SEPARATOR
+      + user + Path.SEPARATOR + ".staging" + Path.SEPARATOR
+      + Path.SEPARATOR + Long.toString(System.currentTimeMillis());
+    Path stagingDir = new Path(stagingDirStr);
+    tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR, stagingDirStr);
+    stagingDir = fs.makeQualified(stagingDir);
+
+    // No need to add jar containing this class as assumed to be part of
+    // the tez jars.
+
+    // TEZ-674 Obtain tokens based on the Input / Output paths. For now assuming staging dir
+    // is the same filesystem as the one used for Input/Output.
+
+    TezClient tezSession = TezClient.create("UnionExampleSession", tezConf);
+    tezSession.start();
+
+    DAGClient dagClient = null;
+
+    try {
+      Path outputPathAsPath = new Path(outputPath);
+      FileSystem outputFs = outputPathAsPath.getFileSystem(tezConf);
+      outputPathAsPath = outputFs.makeQualified(outputPathAsPath);
+      if (outputFs.exists(outputPathAsPath)) {
+        throw new FileAlreadyExistsException("Output directory "
+          + outputPath + " already exists");
+      }
+
+      Map<String, LocalResource> localResources =
+        new TreeMap<String, LocalResource>();
+
+      DAG dag = createDAG(fs, tezConf, localResources,
+        stagingDir, inputPath, outputPath);
+
+      tezSession.waitTillReady();
+      dagClient = tezSession.submitDAG(dag);
+
+      // monitoring
+      DAGStatus dagStatus = dagClient.waitForCompletionWithStatusUpdates(EnumSet.of(StatusGetOpts.GET_COUNTERS));
+      if (dagStatus.getState() != DAGStatus.State.SUCCEEDED) {
+        System.out.println("DAG diagnostics: " + dagStatus.getDiagnostics());
+        return false;
+      }
+      return true;
+    } finally {
+      fs.delete(stagingDir, true);
+      tezSession.stop();
+    }
+  }
 
   public static class TokenProcessor extends SimpleMRProcessor {
     IntWritable one = new IntWritable(1);
@@ -88,7 +224,7 @@ public class UnionExample {
       Preconditions.checkArgument(getOutputs().containsKey("checker"));
       MRInput input = (MRInput) getInputs().values().iterator().next();
       KeyValueReader kvReader = input.getReader();
-      Output output =  getOutputs().get("checker");
+      Output output = getOutputs().get("checker");
       KeyValueWriter kvWriter = (KeyValueWriter) output.getWriter();
       MROutput parts = null;
       KeyValueWriter partsWriter = null;
@@ -107,7 +243,6 @@ public class UnionExample {
         }
       }
     }
-
   }
 
   public static class UnionProcessor extends SimpleMRProcessor {
@@ -160,144 +295,5 @@ public class UnionExample {
       }
       kvWriter.write("Union", new IntWritable(unionKv.size()));
     }
-
-  }
-
-  private DAG createDAG(FileSystem fs, TezConfiguration tezConf,
-      Map<String, LocalResource> localResources, Path stagingDir,
-      String inputPath, String outputPath) throws IOException {
-    DAG dag = DAG.create("UnionExample");
-    
-    int numMaps = -1;
-    Configuration inputConf = new Configuration(tezConf);
-    inputConf.setBoolean("mapred.mapper.new-api", false);
-    inputConf.set("mapred.input.format.class", TextInputFormat.class.getName());
-    inputConf.set(FileInputFormat.INPUT_DIR, inputPath);
-    MRInput.MRInputConfigBuilder configurer = MRInput.createConfigBuilder(inputConf, null);
-    DataSourceDescriptor dataSource = configurer.generateSplitsInAM(false).build();
-
-    Vertex mapVertex1 = Vertex.create("map1", ProcessorDescriptor.create(
-        TokenProcessor.class.getName()), numMaps).addDataSource("MRInput", dataSource);
-
-    Vertex mapVertex2 = Vertex.create("map2", ProcessorDescriptor.create(
-        TokenProcessor.class.getName()), numMaps).addDataSource("MRInput", dataSource);
-
-    Vertex mapVertex3 = Vertex.create("map3", ProcessorDescriptor.create(
-        TokenProcessor.class.getName()), numMaps).addDataSource("MRInput", dataSource);
-
-    Vertex checkerVertex = Vertex.create("checker", ProcessorDescriptor.create(
-        UnionProcessor.class.getName()), 1);
-
-    Configuration outputConf = new Configuration(tezConf);
-    outputConf.setBoolean("mapred.reducer.new-api", false);
-    outputConf.set("mapred.output.format.class", TextOutputFormat.class.getName());
-    outputConf.set(FileOutputFormat.OUTDIR, outputPath);
-    DataSinkDescriptor od = MROutput.createConfigBuilder(outputConf, null).build();
-    checkerVertex.addDataSink("union", od);
-    
-
-    Configuration allPartsConf = new Configuration(tezConf);
-    DataSinkDescriptor od2 = MROutput.createConfigBuilder(allPartsConf,
-        TextOutputFormat.class, outputPath + "-all-parts").build();
-    checkerVertex.addDataSink("all-parts", od2);
-
-    Configuration partsConf = new Configuration(tezConf);    
-    DataSinkDescriptor od1 = MROutput.createConfigBuilder(partsConf,
-        TextOutputFormat.class, outputPath + "-parts").build();
-    VertexGroup unionVertex = dag.createVertexGroup("union", mapVertex1, mapVertex2);
-    unionVertex.addDataSink("parts", od1);
-
-    OrderedPartitionedKVEdgeConfig edgeConf = OrderedPartitionedKVEdgeConfig
-        .newBuilder(Text.class.getName(), IntWritable.class.getName(),
-            HashPartitioner.class.getName()).build();
-
-    dag.addVertex(mapVertex1)
-        .addVertex(mapVertex2)
-        .addVertex(mapVertex3)
-        .addVertex(checkerVertex)
-        .addEdge(
-            Edge.create(mapVertex3, checkerVertex, edgeConf.createDefaultEdgeProperty()))
-        .addEdge(
-            GroupInputEdge.create(unionVertex, checkerVertex, edgeConf.createDefaultEdgeProperty(),
-                InputDescriptor.create(
-                    ConcatenatedMergedKeyValuesInput.class.getName())));
-    return dag;  
-  }
-
-  private static void printUsage() {
-    System.err.println("Usage: " + " unionexample <in1> <out1>");
-  }
-
-  public boolean run(String inputPath, String outputPath, Configuration conf) throws Exception {
-    System.out.println("Running UnionExample");
-    // conf and UGI
-    TezConfiguration tezConf;
-    if (conf != null) {
-      tezConf = new TezConfiguration(conf);
-    } else {
-      tezConf = new TezConfiguration();
-    }
-    UserGroupInformation.setConfiguration(tezConf);
-    String user = UserGroupInformation.getCurrentUser().getShortUserName();
-
-    // staging dir
-    FileSystem fs = FileSystem.get(tezConf);
-    String stagingDirStr = Path.SEPARATOR + "user" + Path.SEPARATOR
-        + user + Path.SEPARATOR+ ".staging" + Path.SEPARATOR
-        + Path.SEPARATOR + Long.toString(System.currentTimeMillis());    
-    Path stagingDir = new Path(stagingDirStr);
-    tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR, stagingDirStr);
-    stagingDir = fs.makeQualified(stagingDir);
-    
-
-    // No need to add jar containing this class as assumed to be part of
-    // the tez jars.
-
-    // TEZ-674 Obtain tokens based on the Input / Output paths. For now assuming staging dir
-    // is the same filesystem as the one used for Input/Output.
-    
-    TezClient tezSession = TezClient.create("UnionExampleSession", tezConf);
-    tezSession.start();
-
-    DAGClient dagClient = null;
-
-    try {
-        Path outputPathAsPath = new Path(outputPath);
-      FileSystem outputFs = outputPathAsPath.getFileSystem(tezConf);
-      outputPathAsPath = outputFs.makeQualified(outputPathAsPath);
-        if (outputFs.exists(outputPathAsPath)) {
-          throw new FileAlreadyExistsException("Output directory "
-              + outputPath + " already exists");
-        }
-        
-        Map<String, LocalResource> localResources =
-          new TreeMap<String, LocalResource>();
-        
-        DAG dag = createDAG(fs, tezConf, localResources,
-            stagingDir, inputPath, outputPath);
-
-        tezSession.waitTillReady();
-        dagClient = tezSession.submitDAG(dag);
-
-        // monitoring
-        DAGStatus dagStatus = dagClient.waitForCompletionWithStatusUpdates(EnumSet.of(StatusGetOpts.GET_COUNTERS));
-        if (dagStatus.getState() != DAGStatus.State.SUCCEEDED) {
-          System.out.println("DAG diagnostics: " + dagStatus.getDiagnostics());
-          return false;
-        }
-        return true;
-    } finally {
-      fs.delete(stagingDir, true);
-      tezSession.stop();
-    }
-  }
-
-  public static void main(String[] args) throws Exception {
-    if (args.length != 2) {
-      printUsage();
-      System.exit(2);
-    }
-    UnionExample job = new UnionExample();
-    job.run(args[0], args[1], null);
   }
 }

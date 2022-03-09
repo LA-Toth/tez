@@ -12,21 +12,21 @@
  * limitations under the License.
  */
 
-
 package org.apache.tez.runtime.task;
 
-import com.google.common.base.Preconditions;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.runtime.api.OutputContext;
 import org.apache.tez.runtime.api.impl.TezEvent;
 import org.apache.tez.runtime.api.impl.TezOutputContextImpl;
 import org.apache.tez.runtime.api.impl.TezUmbilical;
 import org.apache.tez.runtime.internals.api.TezTrapEvent;
+
+import com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Class that handles the events after the trap has been activated. At
@@ -39,7 +39,7 @@ public class TezTrapEventHandler implements EventHandler<TezTrapEvent> {
    * logger.
    */
   private static final Logger
-      LOG = LoggerFactory.getLogger(TezOutputContextImpl.class);
+    LOG = LoggerFactory.getLogger(TezOutputContextImpl.class);
 
   /**
    * Output context that will report the events.
@@ -52,39 +52,40 @@ public class TezTrapEventHandler implements EventHandler<TezTrapEvent> {
   private final TezUmbilical tezUmbilical;
 
   /**
-   * @param output context that will report the events.
+   * @param output    context that will report the events.
    * @param umbilical used to send the events to the AM.
    */
   TezTrapEventHandler(final OutputContext output,
-      final TezUmbilical umbilical) {
+                      final TezUmbilical umbilical) {
     this.outputContext = output;
     this.tezUmbilical = umbilical;
   }
 
   /**
    * Decide what to do with the events.
+   *
    * @param tezTrapEvent event holding the tez events.
    */
   @Override
   public final void handle(final TezTrapEvent tezTrapEvent) {
     Preconditions.checkArgument(tezTrapEvent.getTezEvents() != null);
     List<TezEvent> tezEvents = new ArrayList<TezEvent>(
-        tezTrapEvent.getTezEvents().size());
-    for (TezEvent tezEvent: tezTrapEvent.getTezEvents()) {
+      tezTrapEvent.getTezEvents().size());
+    for (TezEvent tezEvent : tezTrapEvent.getTezEvents()) {
       switch (tezEvent.getEventType()) {
-      case COMPOSITE_DATA_MOVEMENT_EVENT:
-      case DATA_MOVEMENT_EVENT:
-        String errorMsg = "Some events won't be sent to the AM because all"
+        case COMPOSITE_DATA_MOVEMENT_EVENT:
+        case DATA_MOVEMENT_EVENT:
+          String errorMsg = "Some events won't be sent to the AM because all"
             + " the events should have been sent at this point. Most likely"
             + " this would result in a bug. "
             + " event:" + tezEvent.toString();
-        Throwable throwable = new Throwable(errorMsg);
-        LOG.error(errorMsg, throwable);
-        break;
-      default:
-        LOG.info("Event of type " + tezEvent.getEventType() + " will be sent"
+          Throwable throwable = new Throwable(errorMsg);
+          LOG.error(errorMsg, throwable);
+          break;
+        default:
+          LOG.info("Event of type " + tezEvent.getEventType() + " will be sent"
             + " to the AM after the task was closed ");
-        tezEvents.add(tezEvent);
+          tezEvents.add(tezEvent);
       }
     }
     tezUmbilical.addEvents(tezEvents);

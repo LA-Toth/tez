@@ -34,9 +34,9 @@ import org.apache.hadoop.util.StringInterner;
 @InterfaceAudience.Private
 public class GenericCounter extends AbstractCounter {
 
+  private final AtomicLong value = new AtomicLong(0);
   private String name;
   private String displayName;
-  private final AtomicLong value = new AtomicLong(0);
 
   public GenericCounter() {
     // mostly for readFields
@@ -52,11 +52,6 @@ public class GenericCounter extends AbstractCounter {
     this.value.set(value);
   }
 
-  @Override @Deprecated
-  public synchronized void setDisplayName(String displayName) {
-    this.displayName = displayName;
-  }
-
   @Override
   public synchronized void readFields(DataInput in) throws IOException {
     name = StringInterner.weakIntern(Text.readString(in));
@@ -70,7 +65,7 @@ public class GenericCounter extends AbstractCounter {
   @Override
   public synchronized void write(DataOutput out) throws IOException {
     Text.writeString(out, name);
-    boolean distinctDisplayName = ! name.equals(displayName);
+    boolean distinctDisplayName = !name.equals(displayName);
     out.writeBoolean(distinctDisplayName);
     if (distinctDisplayName) {
       Text.writeString(out, displayName);
@@ -86,6 +81,12 @@ public class GenericCounter extends AbstractCounter {
   @Override
   public synchronized String getDisplayName() {
     return displayName;
+  }
+
+  @Override
+  @Deprecated
+  public synchronized void setDisplayName(String displayName) {
+    this.displayName = displayName;
   }
 
   @Override

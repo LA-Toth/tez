@@ -40,12 +40,12 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.google.common.collect.Sets;
-
 
 public class TestTimelineCachePluginImpl {
 
@@ -120,7 +120,7 @@ public class TestTimelineCachePluginImpl {
     for (Entry<String, String> entry : typeIdMap1.entrySet()) {
       NameValuePair primaryFilter = new NameValuePair(entry.getKey(), entry.getValue());
       Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_APPLICATION.name(),
-          primaryFilter, null));
+        primaryFilter, null));
       Set<TimelineEntityGroupId> groupIds = plugin.getTimelineEntityGroupId(entry.getKey(), primaryFilter, null);
       if (entry.getKey().equals(EntityTypes.TEZ_DAG_ID.name())) {
         Assert.assertNull(groupIds);
@@ -227,7 +227,7 @@ public class TestTimelineCachePluginImpl {
         TimelineEntityGroupId groupId = iter.next();
         Assert.assertEquals(appId2, groupId.getApplicationId());
         Assert.assertTrue(
-            getGroupIds(dagID2, 100, 25, 50).contains(groupId.getTimelineEntityGroupId()));
+          getGroupIds(dagID2, 100, 25, 50).contains(groupId.getTimelineEntityGroupId()));
       }
     }
   }
@@ -259,7 +259,7 @@ public class TestTimelineCachePluginImpl {
       entityIds.add(entry.getValue());
       entityIds.add(typeIdMap2.get(entry.getKey()));
       Set<TimelineEntityGroupId> groupIds = plugin.getTimelineEntityGroupId(entry.getKey(),
-          entityIds, null);
+        entityIds, null);
       if (entry.getKey().equals(EntityTypes.TEZ_DAG_ID.name())) {
         Assert.assertNull(groupIds);
         continue;
@@ -295,13 +295,13 @@ public class TestTimelineCachePluginImpl {
   public void testInvalidIds() {
     TimelineCachePluginImpl plugin = createPlugin(-1, null);
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_DAG_ID.name(),
-        vertexID1.toString()));
+      vertexID1.toString()));
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_VERTEX_ID.name(),
-        taskID1.toString()));
+      taskID1.toString()));
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_TASK_ID.name(),
-        attemptID1.toString()));
+      attemptID1.toString()));
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_TASK_ATTEMPT_ID.name(),
-        dagID1.toString()));
+      dagID1.toString()));
     Assert.assertNull(plugin.getTimelineEntityGroupId("", ""));
     Assert.assertNull(plugin.getTimelineEntityGroupId(null, null));
     Assert.assertNull(plugin.getTimelineEntityGroupId("adadasd", EntityTypes.TEZ_DAG_ID.name()));
@@ -311,17 +311,16 @@ public class TestTimelineCachePluginImpl {
   public void testInvalidTypeRequests() {
     TimelineCachePluginImpl plugin = createPlugin(-1, null);
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_APPLICATION.name(),
-        appId1.toString()));
+      appId1.toString()));
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_APPLICATION_ATTEMPT.name(),
-        appAttemptId1.toString()));
+      appAttemptId1.toString()));
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_CONTAINER_ID.name(),
-        appId1.toString()));
+      appId1.toString()));
 
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_TASK_ID.name(), null,
-        new HashSet<String>()));
+      new HashSet<String>()));
     Assert.assertNull(plugin.getTimelineEntityGroupId(EntityTypes.TEZ_TASK_ID.name(), null,
-        new HashSet<NameValuePair>()));
-
+      new HashSet<NameValuePair>()));
   }
 
   @Test
@@ -332,17 +331,17 @@ public class TestTimelineCachePluginImpl {
     entityIds.add("tez_" + cId1.toString());
     entityIds.add("tez_" + cId2.toString());
     Set<TimelineEntityGroupId> groupIds = plugin.getTimelineEntityGroupId(entityType,
-        entityIds, null);
+      entityIds, null);
     Assert.assertEquals(2, groupIds.size());
     int found = 0;
     Iterator<TimelineEntityGroupId> iter = groupIds.iterator();
     while (iter.hasNext()) {
       TimelineEntityGroupId groupId = iter.next();
       if (groupId.getApplicationId().equals(appId1)
-          && groupId.getTimelineEntityGroupId().equals(appId1.toString())) {
+        && groupId.getTimelineEntityGroupId().equals(appId1.toString())) {
         ++found;
       } else if (groupId.getApplicationId().equals(appId2)
-          && groupId.getTimelineEntityGroupId().equals(appId2.toString())) {
+        && groupId.getTimelineEntityGroupId().equals(appId2.toString())) {
         ++found;
       }
     }
@@ -356,7 +355,7 @@ public class TestTimelineCachePluginImpl {
     while (iter.hasNext()) {
       TimelineEntityGroupId groupId = iter.next();
       if (groupId.getApplicationId().equals(appId1)
-          && groupId.getTimelineEntityGroupId().equals(appId1.toString())) {
+        && groupId.getTimelineEntityGroupId().equals(appId1.toString())) {
         ++found;
       }
     }
@@ -370,14 +369,14 @@ public class TestTimelineCachePluginImpl {
     while (iter.hasNext()) {
       TimelineEntityGroupId groupId = iter.next();
       if (groupId.getApplicationId().equals(appId2)
-          && groupId.getTimelineEntityGroupId().equals(appId2.toString())) {
+        && groupId.getTimelineEntityGroupId().equals(appId2.toString())) {
         ++found;
       }
     }
     Assert.assertEquals("All groupIds not returned", 1, found);
   }
 
-  private Set<String> getGroupIds(TezDAGID dagId, int ... allNumDagsPerGroup) {
+  private Set<String> getGroupIds(TezDAGID dagId, int... allNumDagsPerGroup) {
     HashSet<String> groupIds = Sets.newHashSet(dagId.toString());
     for (int numDagsPerGroup : allNumDagsPerGroup) {
       groupIds.add(dagId.getGroupId(numDagsPerGroup));

@@ -14,8 +14,8 @@
 
 package org.apache.tez.dag.app.launcher;
 
-import org.apache.tez.common.DagContainerLauncher;
 import org.apache.hadoop.yarn.api.records.NodeId;
+import org.apache.tez.common.DagContainerLauncher;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
@@ -45,7 +45,7 @@ public class ContainerLauncherWrapper {
 
   public void dagComplete(TezDAGID dag, JobTokenSecretManager jobTokenSecretManager) {
     if (real instanceof DagContainerLauncher) {
-      ((DagContainerLauncher)real).dagComplete(dag, jobTokenSecretManager);
+      ((DagContainerLauncher) real).dagComplete(dag, jobTokenSecretManager);
     }
   }
 

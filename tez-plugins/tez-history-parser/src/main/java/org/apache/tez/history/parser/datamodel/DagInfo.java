@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@
 package org.apache.tez.history.parser.datamodel;
 
 import org.apache.tez.common.Preconditions;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedHashMultimap;
@@ -28,6 +29,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Ordering;
+
 import org.apache.commons.collections4.BidiMap;
 import org.apache.commons.collections4.bidimap.DualHashBidiMap;
 import org.apache.commons.logging.Log;
@@ -36,6 +38,7 @@ import org.apache.tez.client.CallerContext;
 import org.apache.tez.dag.api.event.VertexState;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.util.StringInterner;
+
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -67,16 +70,13 @@ public class DagInfo extends BaseInfo {
   private final int numVertices;
   private final String status;
   private final String diagnostics;
+  //VertexID --> VertexName & vice versa
+  private final BidiMap<String, String> vertexNameIDMapping;
+  //edgeId to EdgeInfo mapping
+  private final Map<Integer, EdgeInfo> edgeInfoMap;
   private String userName;
   private VersionInfo versionInfo;
   private CallerContext callerContext;
-
-  //VertexID --> VertexName & vice versa
-  private final BidiMap<String, String> vertexNameIDMapping;
-
-  //edgeId to EdgeInfo mapping
-  private final Map<Integer, EdgeInfo> edgeInfoMap;
-
   //Only for internal parsing (vertexname mapping)
   private Map<String, BasicVertexInfo> basicVertexInfoMap;
 
@@ -98,7 +98,7 @@ public class DagInfo extends BaseInfo {
     containerMapping = LinkedHashMultimap.create();
 
     Preconditions.checkArgument(jsonObject.getString(Constants.ENTITY_TYPE).equalsIgnoreCase
-        (Constants.TEZ_DAG_ID));
+      (Constants.TEZ_DAG_ID));
 
     dagId = StringInterner.intern(jsonObject.getString(Constants.ENTITY));
 
@@ -106,30 +106,30 @@ public class DagInfo extends BaseInfo {
     JSONObject otherInfoNode = jsonObject.getJSONObject(Constants.OTHER_INFO);
 
     long sTime = otherInfoNode.optLong(Constants.START_TIME);
-    long eTime= otherInfoNode.optLong(Constants.FINISH_TIME);
+    long eTime = otherInfoNode.optLong(Constants.FINISH_TIME);
     userName = otherInfoNode.optString(Constants.USER);
     if (eTime < sTime) {
       LOG.warn("DAG has got wrong start/end values. "
-          + "startTime=" + sTime + ", endTime=" + eTime + ". Will check "
-          + "timestamps in DAG started/finished events");
+        + "startTime=" + sTime + ", endTime=" + eTime + ". Will check "
+        + "timestamps in DAG started/finished events");
 
       // Check if events DAG_STARTED, DAG_FINISHED can be made use of
-      for(Event event : eventList) {
+      for (Event event : eventList) {
         switch (HistoryEventType.valueOf(event.getType())) {
-        case DAG_STARTED:
-          sTime = event.getAbsoluteTime();
-          break;
-        case DAG_FINISHED:
-          eTime = event.getAbsoluteTime();
-          break;
-        default:
-          break;
+          case DAG_STARTED:
+            sTime = event.getAbsoluteTime();
+            break;
+          case DAG_FINISHED:
+            eTime = event.getAbsoluteTime();
+            break;
+          default:
+            break;
         }
       }
 
       if (eTime < sTime) {
         LOG.warn("DAG has got wrong start/end values in events as well. "
-            + "startTime=" + sTime + ", endTime=" + eTime);
+          + "startTime=" + sTime + ", endTime=" + eTime);
       }
     }
     startTime = sTime;
@@ -203,7 +203,6 @@ public class DagInfo extends BaseInfo {
     } else {
       LOG.info("No DAG Caller Context Id and Type available");
     }
-
   }
 
   private void parseBasicVertexInfo(JSONArray verticesInfo) throws JSONException {
@@ -218,7 +217,7 @@ public class DagInfo extends BaseInfo {
 
       JSONObject vJson = verticesInfo.getJSONObject(i);
       basicVertexInfo.vertexName =
-          vJson.optString(Constants.VERTEX_NAME);
+        vJson.optString(Constants.VERTEX_NAME);
       JSONArray inEdges = vJson.optJSONArray(Constants.IN_EDGE_IDS);
       if (inEdges != null) {
         String[] inEdgeIds = new String[inEdges.length()];
@@ -238,11 +237,11 @@ public class DagInfo extends BaseInfo {
       }
 
       JSONArray addInputsJson =
-          vJson.optJSONArray(Constants.ADDITIONAL_INPUTS);
+        vJson.optJSONArray(Constants.ADDITIONAL_INPUTS);
       basicVertexInfo.additionalInputs = parseAdditionalDetailsForVertex(addInputsJson);
 
       JSONArray addOutputsJson =
-          vJson.optJSONArray(Constants.ADDITIONAL_OUTPUTS);
+        vJson.optJSONArray(Constants.ADDITIONAL_OUTPUTS);
       basicVertexInfo.additionalOutputs = parseAdditionalDetailsForVertex(addOutputsJson);
 
       basicVertexInfoMap.put(basicVertexInfo.vertexName, basicVertexInfo);
@@ -257,23 +256,22 @@ public class DagInfo extends BaseInfo {
    * @throws JSONException
    */
   private AdditionalInputOutputDetails[] parseAdditionalDetailsForVertex(JSONArray jsonArray) throws
-      JSONException {
+    JSONException {
     if (jsonArray != null) {
       AdditionalInputOutputDetails[]
-          additionalInputOutputDetails = new AdditionalInputOutputDetails[jsonArray.length()];
+        additionalInputOutputDetails = new AdditionalInputOutputDetails[jsonArray.length()];
       for (int j = 0; j < jsonArray.length(); j++) {
         String name = jsonArray.getJSONObject(j).optString(
-            Constants.NAME);
+          Constants.NAME);
         String clazz = jsonArray.getJSONObject(j).optString(
-            Constants.CLASS);
+          Constants.CLASS);
         String initializer =
-            jsonArray.getJSONObject(j).optString(Constants.INITIALIZER);
+          jsonArray.getJSONObject(j).optString(Constants.INITIALIZER);
         String userPayloadText = jsonArray.getJSONObject(j).optString(
-            Constants.USER_PAYLOAD_TEXT);
+          Constants.USER_PAYLOAD_TEXT);
 
         additionalInputOutputDetails[j] =
-            new AdditionalInputOutputDetails(name, clazz, initializer, userPayloadText);
-
+          new AdditionalInputOutputDetails(name, clazz, initializer, userPayloadText);
       }
       return additionalInputOutputDetails;
     }
@@ -295,40 +293,32 @@ public class DagInfo extends BaseInfo {
       JSONObject edge = edgesArray.getJSONObject(i);
       Integer edgeId = edge.optInt(Constants.EDGE_ID);
       String inputVertexName =
-          edge.optString(Constants.INPUT_VERTEX_NAME);
+        edge.optString(Constants.INPUT_VERTEX_NAME);
       String outputVertexName =
-          edge.optString(Constants.OUTPUT_VERTEX_NAME);
+        edge.optString(Constants.OUTPUT_VERTEX_NAME);
       String dataMovementType =
-          edge.optString(Constants.DATA_MOVEMENT_TYPE);
+        edge.optString(Constants.DATA_MOVEMENT_TYPE);
       String edgeSourceClass =
-          edge.optString(Constants.EDGE_SOURCE_CLASS);
+        edge.optString(Constants.EDGE_SOURCE_CLASS);
       String edgeDestinationClass =
-          edge.optString(Constants.EDGE_DESTINATION_CLASS);
+        edge.optString(Constants.EDGE_DESTINATION_CLASS);
       String inputUserPayloadAsText =
-          edge.optString(Constants.INPUT_PAYLOAD_TEXT);
+        edge.optString(Constants.INPUT_PAYLOAD_TEXT);
       String outputUserPayloadAsText =
-          edge.optString(Constants.OUTPUT_PAYLOAD_TEXT);
+        edge.optString(Constants.OUTPUT_PAYLOAD_TEXT);
       EdgeInfo edgeInfo = new EdgeInfo(inputVertexName, outputVertexName,
-          dataMovementType, edgeSourceClass, edgeDestinationClass, inputUserPayloadAsText,
-          outputUserPayloadAsText);
+        dataMovementType, edgeSourceClass, edgeDestinationClass, inputUserPayloadAsText,
+        outputUserPayloadAsText);
       edgeInfoMap.put(edgeId, edgeInfo);
     }
-  }
-
-  static class BasicVertexInfo {
-    String vertexName;
-    String[] inEdgeIds;
-    String[] outEdgeIds;
-    AdditionalInputOutputDetails[] additionalInputs;
-    AdditionalInputOutputDetails[] additionalOutputs;
   }
 
   void addVertexInfo(VertexInfo vertexInfo) {
     BasicVertexInfo basicVertexInfo = basicVertexInfoMap.get(vertexInfo.getVertexName());
 
     Preconditions.checkArgument(basicVertexInfo != null,
-        "VertexName " + vertexInfo.getVertexName()
-            + " not present in DAG's vertices " + basicVertexInfoMap.entrySet());
+      "VertexName " + vertexInfo.getVertexName()
+        + " not present in DAG's vertices " + basicVertexInfoMap.entrySet());
 
     //populate additional information in VertexInfo
     if (basicVertexInfo.additionalInputs != null) {
@@ -358,16 +348,12 @@ public class DagInfo extends BaseInfo {
     vertexNameMap.put(vertexInfo.getVertexName(), vertexInfo);
   }
 
-  void setAppConfig(Map<String, String> config) {
-    this.config = config;
-  }
-
   public Map<String, String> getAppConfig() {
     return (config != null) ? Collections.unmodifiableMap(config) : null;
   }
 
-  void setVersionInfo(VersionInfo versionInfo) {
-    this.versionInfo = versionInfo;
+  void setAppConfig(Map<String, String> config) {
+    this.config = config;
   }
 
   void addContainerMapping(Container container, TaskAttemptInfo taskAttemptInfo) {
@@ -415,6 +401,10 @@ public class DagInfo extends BaseInfo {
     return versionInfo;
   }
 
+  void setVersionInfo(VersionInfo versionInfo) {
+    this.versionInfo = versionInfo;
+  }
+
   public final CallerContext getCallerContext() {
     return callerContext;
   }
@@ -455,7 +445,8 @@ public class DagInfo extends BaseInfo {
     if (dagEndTime < 0) {
       //probably dag is not complete or failed in middle. get the last task attempt time
       for (VertexInfo vertexInfo : getVertices()) {
-        dagEndTime = (vertexInfo.getFinishTimeInterval() > dagEndTime) ? vertexInfo.getFinishTimeInterval() : dagEndTime;
+        dagEndTime = (vertexInfo.getFinishTimeInterval() >
+          dagEndTime) ? vertexInfo.getFinishTimeInterval() : dagEndTime;
       }
     }
     return dagEndTime;
@@ -502,10 +493,11 @@ public class DagInfo extends BaseInfo {
     List<VertexInfo> vertices = Lists.newLinkedList(vertexNameMap.values());
     Collections.sort(vertices, new Comparator<VertexInfo>() {
 
-      @Override public int compare(VertexInfo o1, VertexInfo o2) {
+      @Override
+      public int compare(VertexInfo o1, VertexInfo o2) {
         return (o1.getStartTimeInterval() < o2.getStartTimeInterval()) ? -1 :
-            ((o1.getStartTimeInterval() == o2.getStartTimeInterval()) ?
-                0 : 1);
+          ((o1.getStartTimeInterval() == o2.getStartTimeInterval()) ?
+            0 : 1);
       }
     });
     return Collections.unmodifiableList(vertices);
@@ -546,13 +538,14 @@ public class DagInfo extends BaseInfo {
    */
   public final List<VertexInfo> getVertices(final VertexState state) {
     return Collections.unmodifiableList(Lists.newLinkedList(Iterables.filter(Lists.newLinkedList
-                    (vertexNameMap.values()), new Predicate<VertexInfo>() {
-                  @Override public boolean apply(VertexInfo input) {
-                    return input.getStatus() != null && input.getStatus().equals(state.toString());
-                  }
-                }
-            )
+            (vertexNameMap.values()), new Predicate<VertexInfo>() {
+            @Override
+            public boolean apply(VertexInfo input) {
+              return input.getStatus() != null && input.getStatus().equals(state.toString());
+            }
+          }
         )
+      )
     );
   }
 
@@ -562,10 +555,11 @@ public class DagInfo extends BaseInfo {
 
   private Ordering<VertexInfo> getVertexOrdering() {
     return Ordering.from(new Comparator<VertexInfo>() {
-      @Override public int compare(VertexInfo o1, VertexInfo o2) {
+      @Override
+      public int compare(VertexInfo o1, VertexInfo o2) {
         return (o1.getTimeTaken() < o2.getTimeTaken()) ? -1 :
-            ((o1.getTimeTaken() == o2.getTimeTaken()) ?
-                0 : 1);
+          ((o1.getTimeTaken() == o2.getTimeTaken()) ?
+            0 : 1);
       }
     });
   }
@@ -649,5 +643,13 @@ public class DagInfo extends BaseInfo {
 
   final void setUserName(String userName) {
     this.userName = userName;
+  }
+
+  static class BasicVertexInfo {
+    String vertexName;
+    String[] inEdgeIds;
+    String[] outEdgeIds;
+    AdditionalInputOutputDetails[] additionalInputs;
+    AdditionalInputOutputDetails[] additionalOutputs;
   }
 }

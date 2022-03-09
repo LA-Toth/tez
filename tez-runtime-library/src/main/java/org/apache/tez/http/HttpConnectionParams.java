@@ -29,8 +29,8 @@ public class HttpConnectionParams {
   private final SSLFactory sslFactory;
 
   public HttpConnectionParams(boolean keepAlive, int keepAliveMaxConnections, int
-      connectionTimeout, int readTimeout, int bufferSize, boolean sslShuffle, SSLFactory
-      sslFactory) {
+    connectionTimeout, int readTimeout, int bufferSize, boolean sslShuffle, SSLFactory
+                                sslFactory) {
     this.keepAlive = keepAlive;
     this.keepAliveMaxConnections = keepAliveMaxConnections;
     this.connectionTimeout = connectionTimeout;
@@ -67,7 +67,6 @@ public class HttpConnectionParams {
   public SSLFactory getSslFactory() {
     return sslFactory;
   }
-
 
   public String toString() {
     StringBuilder sb = new StringBuilder();

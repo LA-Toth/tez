@@ -22,6 +22,7 @@ import org.apache.tez.dag.api.oldrecords.TaskState;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -41,8 +42,8 @@ public class TestVertexStats {
     Assert.assertEquals(0, stats.getLongestDurationTasks().size());
 
     TezVertexID tezVertexID = TezVertexID.getInstance(
-        TezDAGID.getInstance(
-            ApplicationId.newInstance(100l, 1), 1), 1);
+      TezDAGID.getInstance(
+        ApplicationId.newInstance(100l, 1), 1), 1);
     TezTaskID tezTaskID1 = TezTaskID.getInstance(tezVertexID, 1);
     TezTaskID tezTaskID2 = TezTaskID.getInstance(tezVertexID, 2);
     TezTaskID tezTaskID3 = TezTaskID.getInstance(tezVertexID, 3);
@@ -51,7 +52,7 @@ public class TestVertexStats {
     TezTaskID tezTaskID6 = TezTaskID.getInstance(tezVertexID, 6);
 
     stats.updateStats(new TaskReportImpl(tezTaskID1,
-        TaskState.SUCCEEDED, 1, 100, 200));
+      TaskState.SUCCEEDED, 1, 100, 200));
     Assert.assertEquals(100, stats.firstTaskStartTime);
     Assert.assertEquals(200, stats.lastTaskFinishTime);
     Assert.assertEquals(100, stats.minTaskDuration);
@@ -67,7 +68,7 @@ public class TestVertexStats {
     Assert.assertEquals(1, stats.longestDurationTasks.size());
 
     stats.updateStats(new TaskReportImpl(tezTaskID2,
-        TaskState.FAILED, 1, 150, 300));
+      TaskState.FAILED, 1, 150, 300));
     Assert.assertEquals(100, stats.firstTaskStartTime);
     Assert.assertEquals(300, stats.lastTaskFinishTime);
     Assert.assertEquals(100, stats.minTaskDuration);
@@ -83,7 +84,7 @@ public class TestVertexStats {
     Assert.assertEquals(1, stats.longestDurationTasks.size());
 
     stats.updateStats(new TaskReportImpl(tezTaskID3,
-        TaskState.RUNNING, 1, 50, 550));
+      TaskState.RUNNING, 1, 50, 550));
     Assert.assertEquals(50, stats.firstTaskStartTime);
     Assert.assertEquals(550, stats.lastTaskFinishTime);
     Assert.assertEquals(100, stats.minTaskDuration);
@@ -99,7 +100,7 @@ public class TestVertexStats {
     Assert.assertEquals(1, stats.longestDurationTasks.size());
 
     stats.updateStats(new TaskReportImpl(tezTaskID4,
-        TaskState.SUCCEEDED, 1, 50, 450));
+      TaskState.SUCCEEDED, 1, 50, 450));
     Assert.assertEquals(50, stats.firstTaskStartTime);
     Assert.assertEquals(550, stats.lastTaskFinishTime);
     Assert.assertEquals(100, stats.minTaskDuration);
@@ -116,7 +117,7 @@ public class TestVertexStats {
     Assert.assertEquals(1, stats.longestDurationTasks.size());
 
     stats.updateStats(new TaskReportImpl(tezTaskID5,
-        TaskState.SUCCEEDED, 1, 50, 450));
+      TaskState.SUCCEEDED, 1, 50, 450));
     Assert.assertEquals(50, stats.firstTaskStartTime);
     Assert.assertEquals(550, stats.lastTaskFinishTime);
     Assert.assertEquals(100, stats.minTaskDuration);
@@ -135,7 +136,7 @@ public class TestVertexStats {
     Assert.assertEquals(2, stats.longestDurationTasks.size());
 
     stats.updateStats(new TaskReportImpl(tezTaskID6,
-        TaskState.SUCCEEDED, 1, 450, 550));
+      TaskState.SUCCEEDED, 1, 450, 550));
     Assert.assertEquals(50, stats.firstTaskStartTime);
     Assert.assertEquals(550, stats.lastTaskFinishTime);
     Assert.assertEquals(100, stats.minTaskDuration);
@@ -155,5 +156,4 @@ public class TestVertexStats {
     Assert.assertEquals(2, stats.shortestDurationTasks.size());
     Assert.assertEquals(2, stats.longestDurationTasks.size());
   }
-
 }

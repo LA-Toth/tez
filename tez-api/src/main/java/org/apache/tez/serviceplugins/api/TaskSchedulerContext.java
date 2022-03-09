@@ -43,35 +43,6 @@ import org.apache.tez.common.ContainerSignatureMatcher;
 @InterfaceStability.Unstable
 public interface TaskSchedulerContext extends ServicePluginContextBase {
 
-  class AppFinalStatus {
-    public final FinalApplicationStatus exitStatus;
-    public final String exitMessage;
-    public final String postCompletionTrackingUrl;
-
-    public AppFinalStatus(FinalApplicationStatus exitStatus,
-                          String exitMessage,
-                          String posCompletionTrackingUrl) {
-      this.exitStatus = exitStatus;
-      this.exitMessage = exitMessage;
-      this.postCompletionTrackingUrl = posCompletionTrackingUrl;
-    }
-  }
-
-  /**
-   * Indicates the state the AM is in.
-   */
-  enum AMState {
-    IDLE,
-    RUNNING_APP,
-    COMPLETED
-  }
-
-  // TODO TEZ-2003 (post) TEZ-2664. Remove references to YARN constructs like Container, ContainerStatus, NodeReport
-  // TODO TEZ-2003 (post) TEZ-2668 Enhancements to TaskScheduler interfaces
-  // - setApplicationRegistrationData may not be relevant to non YARN clusters
-  // - getAppFinalStatus may not be relevant to non YARN clusters
-
-
   /**
    * Indicate to the framework that a container is being assigned to a task.
    *
@@ -83,7 +54,6 @@ public interface TaskSchedulerContext extends ServicePluginContextBase {
   void taskAllocated(Object task,
                      Object appCookie,
                      Container container);
-
 
   /**
    * Indicate to the framework that a container has completed. This is typically used by sources
@@ -98,13 +68,17 @@ public interface TaskSchedulerContext extends ServicePluginContextBase {
   void containerCompleted(Object taskLastAllocated,
                           ContainerStatus containerStatus);
 
+  // TODO TEZ-2003 (post) TEZ-2664. Remove references to YARN constructs like Container, ContainerStatus, NodeReport
+  // TODO TEZ-2003 (post) TEZ-2668 Enhancements to TaskScheduler interfaces
+  // - setApplicationRegistrationData may not be relevant to non YARN clusters
+  // - getAppFinalStatus may not be relevant to non YARN clusters
+
   /**
    * Indicates to the framework that a container is being released.
    *
    * @param containerId the id of the container being released
    */
   void containerBeingReleased(ContainerId containerId);
-
 
   /**
    * Provide an update to the framework about the status of nodes available to this report
@@ -129,10 +103,10 @@ public interface TaskSchedulerContext extends ServicePluginContextBase {
    * @param clientAMSecretKey      a secret key provided by the source
    */
   void setApplicationRegistrationData(
-      Resource maxContainerCapability,
-      Map<ApplicationAccessType, String> appAcls,
-      ByteBuffer clientAMSecretKey,
-      String queueName
+    Resource maxContainerCapability,
+    Map<ApplicationAccessType, String> appAcls,
+    ByteBuffer clientAMSecretKey,
+    String queueName
   );
 
   /**
@@ -152,9 +126,6 @@ public interface TaskSchedulerContext extends ServicePluginContextBase {
    */
   AppFinalStatus getFinalAppStatus();
 
-
-  // Getters
-
   /**
    * Get the tracking URL for the application. Primarily relevant to YARN
    *
@@ -168,6 +139,8 @@ public interface TaskSchedulerContext extends ServicePluginContextBase {
    * @return progress
    */
   float getProgress();
+
+  // Getters
 
   /**
    * A custom cluster identifier allocated to schedulers to generate an AppId, if not making
@@ -221,4 +194,27 @@ public interface TaskSchedulerContext extends ServicePluginContextBase {
   AMState getAMState();
 
   int getVertexIndexForTask(Object task);
+
+  /**
+   * Indicates the state the AM is in.
+   */
+  enum AMState {
+    IDLE,
+    RUNNING_APP,
+    COMPLETED
+  }
+
+  class AppFinalStatus {
+    public final FinalApplicationStatus exitStatus;
+    public final String exitMessage;
+    public final String postCompletionTrackingUrl;
+
+    public AppFinalStatus(FinalApplicationStatus exitStatus,
+                          String exitMessage,
+                          String posCompletionTrackingUrl) {
+      this.exitStatus = exitStatus;
+      this.exitMessage = exitMessage;
+      this.postCompletionTrackingUrl = posCompletionTrackingUrl;
+    }
+  }
 }

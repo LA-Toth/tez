@@ -5,9 +5,9 @@
  * licenses this file to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
@@ -17,12 +17,12 @@
 
 package org.apache.tez.dag.records;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
+
 import org.junit.Assert;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestTezIds {
 
@@ -30,29 +30,29 @@ public class TestTezIds {
 
   private void verifyDagInfo(String[] splits, TezDAGID dagId) {
     Assert.assertEquals(dagId.getApplicationId().getClusterTimestamp(),
-        Long.valueOf(splits[1]).longValue());
+      Long.valueOf(splits[1]).longValue());
     Assert.assertEquals(dagId.getApplicationId().getId(),
-        Integer.valueOf(splits[2]).intValue());
+      Integer.valueOf(splits[2]).intValue());
     Assert.assertEquals(dagId.getId(),
-        Integer.valueOf(splits[3]).intValue());
+      Integer.valueOf(splits[3]).intValue());
   }
 
   private void verifyVertexInfo(String[] splits, TezVertexID vId) {
     verifyDagInfo(splits, vId.getDAGID());
     Assert.assertEquals(vId.getId(),
-        Integer.valueOf(splits[4]).intValue());
+      Integer.valueOf(splits[4]).intValue());
   }
 
   private void verifyTaskInfo(String[] splits, TezTaskID tId) {
     verifyVertexInfo(splits, tId.getVertexID());
     Assert.assertEquals(tId.getId(),
-        Integer.valueOf(splits[5]).intValue());
+      Integer.valueOf(splits[5]).intValue());
   }
 
   private void verifyAttemptInfo(String[] splits, TezTaskAttemptID taId) {
     verifyTaskInfo(splits, taId.getTaskID());
     Assert.assertEquals(taId.getId(),
-        Integer.valueOf(splits[6]).intValue());
+      Integer.valueOf(splits[6]).intValue());
   }
 
   private void verifyDagId(String dagIdStr, TezDAGID dagId) {
@@ -108,7 +108,7 @@ public class TestTezIds {
     verifyAttemptId(taIdStr, taId);
   }
 
-  @Test(timeout=5000)
+  @Test(timeout = 5000)
   public void testInvalidDagIds() {
     String dagIdStr = "aaa_111_1_1";
     TezDAGID dagId;
@@ -142,9 +142,7 @@ public class TestTezIds {
     } catch (IllegalArgumentException e) {
       Assert.assertTrue(e.getMessage().contains("Error while parsing"));
     }
-
   }
-
 
   public void testGetGroupIds() {
     ApplicationId appId = ApplicationId.newInstance(0, 1);
@@ -159,7 +157,7 @@ public class TestTezIds {
 
     // Assert different id across groups.
     Assert.assertNotEquals(
-        TezDAGID.getInstance(appId, numDagsPerGroup + 1).getGroupId(numDagsPerGroup), groupId1);
+      TezDAGID.getInstance(appId, numDagsPerGroup + 1).getGroupId(numDagsPerGroup), groupId1);
 
     // Invalid values -1, 0, 1 should throw IllegalArgumentException.
     for (int i = -1; i < 2; ++i) {
@@ -170,5 +168,4 @@ public class TestTezIds {
       }
     }
   }
-
 }

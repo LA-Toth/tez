@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,9 @@
  * limitations under the License.
  */
 package org.apache.tez.mapreduce;
+
+import java.io.IOException;
+import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -29,34 +32,31 @@ import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.runtime.api.InputInitializerContext;
 
-import java.io.IOException;
-import java.util.Set;
-
 public class TezTestUtils {
 
   public static TezTaskAttemptID getMockTaskAttemptId(
-      int jobId, int vertexId, int taskId, int taskAttemptId) {
+    int jobId, int vertexId, int taskId, int taskAttemptId) {
     return TezTaskAttemptID.getInstance(
-        TezTaskID.getInstance(
-            TezVertexID.getInstance(
-                TezDAGID.getInstance(
-                    ApplicationId.newInstance(0, jobId), jobId),
-                    vertexId),
-                    taskId)
-        , taskAttemptId);
+      TezTaskID.getInstance(
+        TezVertexID.getInstance(
+          TezDAGID.getInstance(
+            ApplicationId.newInstance(0, jobId), jobId),
+          vertexId),
+        taskId)
+      , taskAttemptId);
   }
-  
+
   public static TezTaskID getMockTaskId(int jobId,
-      int vertexId, int taskId) {
+                                        int vertexId, int taskId) {
     return TezTaskID.getInstance(
-        TezVertexID.getInstance(TezDAGID.getInstance(
-            ApplicationId.newInstance(0, jobId),
-            jobId), vertexId),
-            taskId);
+      TezVertexID.getInstance(TezDAGID.getInstance(
+        ApplicationId.newInstance(0, jobId),
+        jobId), vertexId),
+      taskId);
   }
 
   public static class TezRootInputInitializerContextForTest implements
-      InputInitializerContext {
+    InputInitializerContext {
 
     private final ApplicationId appId;
     private final UserPayload payload;
@@ -137,7 +137,5 @@ public class TezTestUtils {
     public UserPayload getUserPayload() {
       throw new UnsupportedOperationException("getUserPayload not implemented in this mock");
     }
-
   }
-
 }

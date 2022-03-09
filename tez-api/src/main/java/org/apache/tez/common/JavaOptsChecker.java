@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.tez.dag.api.TezException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,7 @@ public class JavaOptsChecker {
         continue;
       }
 
-      int val = ( matcher.group(2).equals("+") ? 1 : -1 );
+      int val = (matcher.group(2).equals("+") ? 1 : -1);
       if (gcOpts.contains(opt)) {
         val += 1;
       }
@@ -76,9 +77,7 @@ public class JavaOptsChecker {
       LOG.debug("Found clashing GC opts, conflicting GC Values={}", gcOpts);
 
       throw new TezException("Invalid/conflicting GC options found,"
-          + " cmdOpts=\"" + opts + "\"");
+        + " cmdOpts=\"" + opts + "\"");
     }
-
   }
-
 }

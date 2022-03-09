@@ -33,20 +33,27 @@ import org.apache.tez.history.parser.datamodel.VertexInfo;
 
 import java.util.List;
 
-
 /**
  * Get container reuse information at a per vertex level basis.
  */
 public class ContainerReuseAnalyzer extends TezAnalyzerBase implements Analyzer {
 
   private static final String[] headers =
-      { "vertexName", "taskAttempts", "node", "containerId", "reuseCount" };
+    {"vertexName", "taskAttempts", "node", "containerId", "reuseCount"};
 
   private final CSVResult csvResult;
 
   public ContainerReuseAnalyzer(Configuration config) {
     super(config);
     this.csvResult = new CSVResult(headers);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    ContainerReuseAnalyzer analyzer = new ContainerReuseAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -78,13 +85,5 @@ public class ContainerReuseAnalyzer extends TezAnalyzerBase implements Analyzer 
   @Override
   public String getDescription() {
     return "Get details on container reuse analysis";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    ContainerReuseAnalyzer analyzer = new ContainerReuseAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

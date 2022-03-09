@@ -35,13 +35,21 @@ import java.util.Map;
  * Get the Task assignments on different nodes of the cluster.
  */
 public class TaskAssignmentAnalyzer extends TezAnalyzerBase
-    implements Analyzer {
-  private final String[] headers = { "vertex", "node", "numTaskAttempts", "load" };
+  implements Analyzer {
+  private final String[] headers = {"vertex", "node", "numTaskAttempts", "load"};
   private final CSVResult csvResult;
 
   public TaskAssignmentAnalyzer(Configuration config) {
     super(config);
     csvResult = new CSVResult(headers);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    TaskAssignmentAnalyzer analyzer = new TaskAssignmentAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -56,13 +64,13 @@ public class TaskAssignmentAnalyzer extends TezAnalyzerBase
       double mean = vertex.getTaskAttempts().size() / Math.max(1.0, taskAttemptsPerNode.size());
       for (Map.Entry<String, Integer> assignment : taskAttemptsPerNode.entrySet()) {
         addARecord(vertex.getVertexName(), assignment.getKey(), assignment.getValue(),
-            assignment.getValue() * 100 / mean);
+          assignment.getValue() * 100 / mean);
       }
     }
   }
 
   private void addARecord(String vertexName, String node, int numTasks,
-      double load) {
+                          double load) {
     String[] record = new String[4];
     record[0] = vertexName;
     record[1] = node;
@@ -84,13 +92,5 @@ public class TaskAssignmentAnalyzer extends TezAnalyzerBase
   @Override
   public String getDescription() {
     return "Get the Task assignments on different nodes of the cluster";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    TaskAssignmentAnalyzer analyzer = new TaskAssignmentAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

@@ -14,10 +14,6 @@
 
 package org.apache.tez.dag.app;
 
-import org.apache.hadoop.yarn.util.MonotonicClock;
-import org.apache.tez.dag.app.dag.DAGState;
-import org.apache.tez.dag.app.dag.Vertex;
-import org.apache.tez.dag.records.TezVertexID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -40,12 +36,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.tez.common.Preconditions;
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -60,8 +50,10 @@ import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.util.MonotonicClock;
 import org.apache.hadoop.yarn.util.SystemClock;
 import org.apache.tez.client.TezApiVersionInfo;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezCommonUtils;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.security.JobTokenIdentifier;
@@ -78,9 +70,17 @@ import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
 import org.apache.tez.dag.api.records.DAGProtos.PlanLocalResourcesProto;
 import org.apache.tez.dag.api.records.DAGProtos.TezNamedEntityDescriptorProto;
 import org.apache.tez.dag.api.records.DAGProtos.TezUserPayloadProto;
+import org.apache.tez.dag.app.dag.DAGState;
+import org.apache.tez.dag.app.dag.Vertex;
 import org.apache.tez.dag.app.dag.impl.DAGImpl;
 import org.apache.tez.dag.app.rm.TaskSchedulerManager;
 import org.apache.tez.dag.records.TezDAGID;
+import org.apache.tez.dag.records.TezVertexID;
+
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -95,7 +95,26 @@ public class TestDAGAppMaster {
   private static final String TC_NAME = "TC";
   private static final String CLASS_SUFFIX = "_CLASS";
   private static final File TEST_DIR = new File(System.getProperty("test.build.data"),
-      TestDAGAppMaster.class.getName()).getAbsoluteFile();
+    TestDAGAppMaster.class.getName()).getAbsoluteFile();
+
+  private static void compareTestTokens(
+    Token<? extends TokenIdentifier> expected,
+    Token<? extends TokenIdentifier> actual) throws IOException {
+    TestTokenIdentifier expectedId = getTestTokenIdentifier(expected);
+    TestTokenIdentifier actualId = getTestTokenIdentifier(actual);
+    assertEquals("Token id not preserved", expectedId.getTestId(),
+      actualId.getTestId());
+  }
+
+  private static TestTokenIdentifier getTestTokenIdentifier(
+    Token<? extends TokenIdentifier> token) throws IOException {
+    ByteArrayInputStream buf = new ByteArrayInputStream(token.getIdentifier());
+    DataInputStream in = new DataInputStream(buf);
+    TestTokenIdentifier tokenId = new TestTokenIdentifier();
+    tokenId.readFields(in);
+    in.close();
+    return tokenId;
+  }
 
   @Before
   public void setup() {
@@ -153,7 +172,7 @@ public class TestDAGAppMaster {
     assertTrue(pluginMap.containsKey(TezConstants.getTezYarnServicePluginName()));
     assertTrue(0 == pluginMap.get(TezConstants.getTezYarnServicePluginName()));
     assertEquals("testval",
-        TezUtils.createConfFromUserPayload(entities.get(0).getUserPayload()).get("testkey"));
+      TezUtils.createConfFromUserPayload(entities.get(0).getUserPayload()).get("testkey"));
 
     // Test empty descriptor list, uber enabled
     pluginMap.clear();
@@ -164,7 +183,7 @@ public class TestDAGAppMaster {
     assertTrue(pluginMap.containsKey(TezConstants.getTezUberServicePluginName()));
     assertTrue(0 == pluginMap.get(TezConstants.getTezUberServicePluginName()));
     assertEquals("testval",
-        TezUtils.createConfFromUserPayload(entities.get(0).getUserPayload()).get("testkey"));
+      TezUtils.createConfFromUserPayload(entities.get(0).getUserPayload()).get("testkey"));
 
     // Test empty descriptor list, yarn enabled, uber enabled
     pluginMap.clear();
@@ -177,16 +196,15 @@ public class TestDAGAppMaster {
     assertTrue(pluginMap.containsKey(TezConstants.getTezUberServicePluginName()));
     assertTrue(1 == pluginMap.get(TezConstants.getTezUberServicePluginName()));
 
-
     String pluginName = "d1";
     ByteBuffer bb = ByteBuffer.allocate(4);
     bb.putInt(0, 3);
     TezNamedEntityDescriptorProto d1 =
-        TezNamedEntityDescriptorProto.newBuilder().setName(pluginName).setEntityDescriptor(
-            DAGProtos.TezEntityDescriptorProto.newBuilder().setClassName("d1Class")
-                .setTezUserPayload(
-                    TezUserPayloadProto.newBuilder()
-                        .setUserPayload(ByteString.copyFrom(bb)))).build();
+      TezNamedEntityDescriptorProto.newBuilder().setName(pluginName).setEntityDescriptor(
+        DAGProtos.TezEntityDescriptorProto.newBuilder().setClassName("d1Class")
+          .setTezUserPayload(
+            TezUserPayloadProto.newBuilder()
+              .setUserPayload(ByteString.copyFrom(bb)))).build();
     entityDescriptors.add(d1);
 
     // Test descriptor, no yarn, no uber
@@ -213,7 +231,6 @@ public class TestDAGAppMaster {
     entityDescriptors.clear();
   }
 
-
   @Test(timeout = 5000)
   public void testParseAllPluginsNoneSpecified() throws IOException {
     Configuration conf = new Configuration(false);
@@ -227,7 +244,6 @@ public class TestDAGAppMaster {
     List<NamedEntityDescriptor> tcDescriptors;
     BiMap<String, Integer> tcMap;
 
-
     // No plugins. Non local
     tsDescriptors = Lists.newLinkedList();
     tsMap = HashBiMap.create();
@@ -236,7 +252,7 @@ public class TestDAGAppMaster {
     tcDescriptors = Lists.newLinkedList();
     tcMap = HashBiMap.create();
     DAGAppMaster.parseAllPlugins(tsDescriptors, tsMap, clDescriptors, clMap, tcDescriptors, tcMap,
-        null, false, defaultPayload);
+      null, false, defaultPayload);
     verifyDescAndMap(tsDescriptors, tsMap, 1, true, TezConstants.getTezYarnServicePluginName());
     verifyDescAndMap(clDescriptors, clMap, 1, true, TezConstants.getTezYarnServicePluginName());
     verifyDescAndMap(tcDescriptors, tcMap, 1, true, TezConstants.getTezYarnServicePluginName());
@@ -249,7 +265,7 @@ public class TestDAGAppMaster {
     tcDescriptors = Lists.newLinkedList();
     tcMap = HashBiMap.create();
     DAGAppMaster.parseAllPlugins(tsDescriptors, tsMap, clDescriptors, clMap, tcDescriptors, tcMap,
-        null, true, defaultPayload);
+      null, true, defaultPayload);
     verifyDescAndMap(tsDescriptors, tsMap, 1, true, TezConstants.getTezUberServicePluginName());
     verifyDescAndMap(clDescriptors, clMap, 1, true, TezConstants.getTezUberServicePluginName());
     verifyDescAndMap(tcDescriptors, tcMap, 1, true, TezConstants.getTezUberServicePluginName());
@@ -261,7 +277,7 @@ public class TestDAGAppMaster {
     conf.set(TEST_KEY, TEST_VAL);
     UserPayload defaultPayload = TezUtils.createUserPayloadFromConf(conf);
     TezUserPayloadProto payloadProto = TezUserPayloadProto.newBuilder()
-        .setUserPayload(ByteString.copyFrom(defaultPayload.getPayload())).build();
+      .setUserPayload(ByteString.copyFrom(defaultPayload.getPayload())).build();
 
     AMPluginDescriptorProto proto = createAmPluginDescriptor(false, false, true, payloadProto);
 
@@ -272,7 +288,6 @@ public class TestDAGAppMaster {
     List<NamedEntityDescriptor> tcDescriptors;
     BiMap<String, Integer> tcMap;
 
-
     // Only plugin, Yarn.
     tsDescriptors = Lists.newLinkedList();
     tsMap = HashBiMap.create();
@@ -281,9 +296,9 @@ public class TestDAGAppMaster {
     tcDescriptors = Lists.newLinkedList();
     tcMap = HashBiMap.create();
     DAGAppMaster.parseAllPlugins(tsDescriptors, tsMap, clDescriptors, clMap, tcDescriptors, tcMap,
-        proto, false, defaultPayload);
+      proto, false, defaultPayload);
     verifyDescAndMap(tsDescriptors, tsMap, 2, true, TS_NAME,
-        TezConstants.getTezYarnServicePluginName());
+      TezConstants.getTezYarnServicePluginName());
     verifyDescAndMap(clDescriptors, clMap, 1, true, CL_NAME);
     verifyDescAndMap(tcDescriptors, tcMap, 1, true, TC_NAME);
     assertEquals(TS_NAME + CLASS_SUFFIX, tsDescriptors.get(0).getClassName());
@@ -297,7 +312,7 @@ public class TestDAGAppMaster {
     conf.set(TEST_KEY, TEST_VAL);
     UserPayload defaultPayload = TezUtils.createUserPayloadFromConf(conf);
     TezUserPayloadProto payloadProto = TezUserPayloadProto.newBuilder()
-        .setUserPayload(ByteString.copyFrom(defaultPayload.getPayload())).build();
+      .setUserPayload(ByteString.copyFrom(defaultPayload.getPayload())).build();
 
     AMPluginDescriptorProto proto = createAmPluginDescriptor(true, false, true, payloadProto);
 
@@ -308,7 +323,6 @@ public class TestDAGAppMaster {
     List<NamedEntityDescriptor> tcDescriptors;
     BiMap<String, Integer> tcMap;
 
-
     // Only plugin, Yarn.
     tsDescriptors = Lists.newLinkedList();
     tsMap = HashBiMap.create();
@@ -317,13 +331,13 @@ public class TestDAGAppMaster {
     tcDescriptors = Lists.newLinkedList();
     tcMap = HashBiMap.create();
     DAGAppMaster.parseAllPlugins(tsDescriptors, tsMap, clDescriptors, clMap, tcDescriptors, tcMap,
-        proto, false, defaultPayload);
+      proto, false, defaultPayload);
     verifyDescAndMap(tsDescriptors, tsMap, 2, true, TezConstants.getTezYarnServicePluginName(),
-        TS_NAME);
+      TS_NAME);
     verifyDescAndMap(clDescriptors, clMap, 2, true, TezConstants.getTezYarnServicePluginName(),
-        CL_NAME);
+      CL_NAME);
     verifyDescAndMap(tcDescriptors, tcMap, 2, true, TezConstants.getTezYarnServicePluginName(),
-        TC_NAME);
+      TC_NAME);
     assertNull(tsDescriptors.get(0).getClassName());
     assertNull(clDescriptors.get(0).getClassName());
     assertNull(tcDescriptors.get(0).getClassName());
@@ -335,7 +349,7 @@ public class TestDAGAppMaster {
   private void verifyDescAndMap(List<NamedEntityDescriptor> descriptors, BiMap<String, Integer> map,
                                 int numExpected, boolean verifyPayload,
                                 String... expectedNames) throws
-      IOException {
+    IOException {
     Preconditions.checkArgument(expectedNames.length == numExpected);
     assertEquals(numExpected, descriptors.size());
     assertEquals(numExpected, map.size());
@@ -343,7 +357,7 @@ public class TestDAGAppMaster {
       assertEquals(expectedNames[i], descriptors.get(i).getEntityName());
       if (verifyPayload) {
         assertEquals(TEST_VAL,
-            TezUtils.createConfFromUserPayload(descriptors.get(0).getUserPayload()).get(TEST_KEY));
+          TezUtils.createConfFromUserPayload(descriptors.get(0).getUserPayload()).get(TEST_KEY));
       }
       assertTrue(map.get(expectedNames[i]) == i);
       assertTrue(map.inverse().get(i) == expectedNames[i]);
@@ -354,34 +368,33 @@ public class TestDAGAppMaster {
                                                            boolean addCustom,
                                                            TezUserPayloadProto payloadProto) {
     AMPluginDescriptorProto.Builder builder = AMPluginDescriptorProto.newBuilder()
-        .setUberEnabled(enableUber)
-        .setContainersEnabled(enableYarn);
+      .setUberEnabled(enableUber)
+      .setContainersEnabled(enableYarn);
     if (addCustom) {
       builder.addTaskSchedulers(
           TezNamedEntityDescriptorProto.newBuilder()
-              .setName(TS_NAME)
-              .setEntityDescriptor(
-                  DAGProtos.TezEntityDescriptorProto.newBuilder()
-                      .setClassName(TS_NAME + CLASS_SUFFIX)
-                      .setTezUserPayload(payloadProto)))
-          .addContainerLaunchers(
-              TezNamedEntityDescriptorProto.newBuilder()
-                  .setName(CL_NAME)
-                  .setEntityDescriptor(
-                      DAGProtos.TezEntityDescriptorProto.newBuilder()
-                          .setClassName(CL_NAME + CLASS_SUFFIX)
-                          .setTezUserPayload(payloadProto)))
-          .addTaskCommunicators(
-              TezNamedEntityDescriptorProto.newBuilder()
-                  .setName(TC_NAME)
-                  .setEntityDescriptor(
-                      DAGProtos.TezEntityDescriptorProto.newBuilder()
-                          .setClassName(TC_NAME + CLASS_SUFFIX)
-                          .setTezUserPayload(payloadProto)));
+            .setName(TS_NAME)
+            .setEntityDescriptor(
+              DAGProtos.TezEntityDescriptorProto.newBuilder()
+                .setClassName(TS_NAME + CLASS_SUFFIX)
+                .setTezUserPayload(payloadProto)))
+        .addContainerLaunchers(
+          TezNamedEntityDescriptorProto.newBuilder()
+            .setName(CL_NAME)
+            .setEntityDescriptor(
+              DAGProtos.TezEntityDescriptorProto.newBuilder()
+                .setClassName(CL_NAME + CLASS_SUFFIX)
+                .setTezUserPayload(payloadProto)))
+        .addTaskCommunicators(
+          TezNamedEntityDescriptorProto.newBuilder()
+            .setName(TC_NAME)
+            .setEntityDescriptor(
+              DAGProtos.TezEntityDescriptorProto.newBuilder()
+                .setClassName(TC_NAME + CLASS_SUFFIX)
+                .setTezUserPayload(payloadProto)));
     }
     return builder.build();
   }
-
 
   @Test
   public void testDagCredentialsWithoutMerge() throws Exception {
@@ -406,48 +419,48 @@ public class TestDAGAppMaster {
     Credentials amCreds = new Credentials();
     JobTokenSecretManager jtsm = new JobTokenSecretManager();
     JobTokenIdentifier identifier = new JobTokenIdentifier(
-        new Text(appId.toString()));
+      new Text(appId.toString()));
     Token<JobTokenIdentifier> sessionToken =
-        new Token<JobTokenIdentifier>(identifier, jtsm);
+      new Token<JobTokenIdentifier>(identifier, jtsm);
     sessionToken.setService(identifier.getJobId());
     TokenCache.setSessionToken(sessionToken, amCreds);
     TestTokenSecretManager ttsm = new TestTokenSecretManager();
     Text tokenAlias1 = new Text("alias1");
     Token<TestTokenIdentifier> amToken1 = new Token<TestTokenIdentifier>(
-        new TestTokenIdentifier(new Text("amtoken1")), ttsm);
+      new TestTokenIdentifier(new Text("amtoken1")), ttsm);
     amCreds.addToken(tokenAlias1, amToken1);
 
     FileSystem fs = FileSystem.getLocal(conf);
     FSDataOutputStream sessionJarsPBOutStream =
-        TezCommonUtils.createFileForAM(fs, new Path(TEST_DIR.toString(),
-            TezConstants.TEZ_AM_LOCAL_RESOURCES_PB_FILE_NAME));
+      TezCommonUtils.createFileForAM(fs, new Path(TEST_DIR.toString(),
+        TezConstants.TEZ_AM_LOCAL_RESOURCES_PB_FILE_NAME));
     DAGProtos.PlanLocalResourcesProto.getDefaultInstance()
-        .writeDelimitedTo(sessionJarsPBOutStream);
+      .writeDelimitedTo(sessionJarsPBOutStream);
     sessionJarsPBOutStream.close();
     DAGAppMaster am = spy(new DAGAppMaster(attemptId,
-        ContainerId.newContainerId(attemptId, 1),
-        "127.0.0.1", 0, 0, new MonotonicClock(), 1, true,
-        TEST_DIR.toString(), new String[] {TEST_DIR.toString()},
-        new String[] {TEST_DIR.toString()},
-        new TezApiVersionInfo().getVersion(), amCreds,
-        "someuser", null));
+      ContainerId.newContainerId(attemptId, 1),
+      "127.0.0.1", 0, 0, new MonotonicClock(), 1, true,
+      TEST_DIR.toString(), new String[]{TEST_DIR.toString()},
+      new String[]{TEST_DIR.toString()},
+      new TezApiVersionInfo().getVersion(), amCreds,
+      "someuser", null));
     when(am.getState()).thenReturn(DAGAppMasterState.RUNNING);
     am.init(conf);
     am.start();
     Credentials dagCreds = new Credentials();
     Token<TestTokenIdentifier> dagToken1 = new Token<TestTokenIdentifier>(
-        new TestTokenIdentifier(new Text("dagtoken1")), ttsm);
+      new TestTokenIdentifier(new Text("dagtoken1")), ttsm);
     dagCreds.addToken(tokenAlias1, dagToken1);
     Text tokenAlias3 = new Text("alias3");
     Token<TestTokenIdentifier> dagToken2 = new Token<TestTokenIdentifier>(
-        new TestTokenIdentifier(new Text("dagtoken2")), ttsm);
+      new TestTokenIdentifier(new Text("dagtoken2")), ttsm);
     dagCreds.addToken(tokenAlias3, dagToken2);
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
     DAGPlan dagPlan = DAGPlan.newBuilder()
-        .setName("somedag")
-        .setCredentialsBinary(
-            DagTypeConverters.convertCredentialsToProto(dagCreds))
-        .build();
+      .setName("somedag")
+      .setCredentialsBinary(
+        DagTypeConverters.convertCredentialsToProto(dagCreds))
+      .build();
     DAGImpl dag = spy(am.createDAG(dagPlan, dagId));
     am.setCurrentDAG(dag);
     when(dag.getState()).thenReturn(DAGState.RUNNING);
@@ -459,19 +472,19 @@ public class TestDAGAppMaster {
     when(dag.getVertices()).thenReturn(map);
     when(dag.getTotalVertices()).thenReturn(1);
     Assert.assertEquals("Progress was NaN and should be reported as 0",
-        0, am.getProgress(), 0);
+      0, am.getProgress(), 0);
     when(mockVertex.getProgress()).thenReturn(-10f);
     Assert.assertEquals("Progress was negative and should be reported as 0",
-        0, am.getProgress(), 0);
+      0, am.getProgress(), 0);
     when(mockVertex.getProgress()).thenReturn(1.0000567f);
     Assert.assertEquals(
-        "Progress was greater than 1 by a small float precision "
-            + "1.0000567 and should be reported as 1",
-        1.0f, am.getProgress(), 0.0f);
+      "Progress was greater than 1 by a small float precision "
+        + "1.0000567 and should be reported as 1",
+      1.0f, am.getProgress(), 0.0f);
     when(mockVertex.getProgress()).thenReturn(10f);
     Assert.assertEquals(
-        "Progress was greater than 1 and should be reported as 1",
-        1.0f, am.getProgress(), 0.0f);
+      "Progress was greater than 1 and should be reported as 1",
+      1.0f, am.getProgress(), 0.0f);
   }
 
   @SuppressWarnings("deprecation")
@@ -487,60 +500,60 @@ public class TestDAGAppMaster {
     Credentials amCreds = new Credentials();
     JobTokenSecretManager jtsm = new JobTokenSecretManager();
     JobTokenIdentifier identifier = new JobTokenIdentifier(
-        new Text(appId.toString()));
+      new Text(appId.toString()));
     Token<JobTokenIdentifier> sessionToken =
-        new Token<JobTokenIdentifier>(identifier, jtsm);
+      new Token<JobTokenIdentifier>(identifier, jtsm);
     sessionToken.setService(identifier.getJobId());
     TokenCache.setSessionToken(sessionToken, amCreds);
     TestTokenSecretManager ttsm = new TestTokenSecretManager();
     Text tokenAlias1 = new Text("alias1");
     Token<TestTokenIdentifier> amToken1 = new Token<TestTokenIdentifier>(
-        new TestTokenIdentifier(new Text("amtoken1")), ttsm);
+      new TestTokenIdentifier(new Text("amtoken1")), ttsm);
     amCreds.addToken(tokenAlias1, amToken1);
     Text tokenAlias2 = new Text("alias2");
     Token<TestTokenIdentifier> amToken2 = new Token<TestTokenIdentifier>(
-        new TestTokenIdentifier(new Text("amtoken2")), ttsm);
+      new TestTokenIdentifier(new Text("amtoken2")), ttsm);
     amCreds.addToken(tokenAlias2, amToken2);
 
     FileSystem fs = FileSystem.getLocal(conf);
     FSDataOutputStream sessionJarsPBOutStream =
-        TezCommonUtils.createFileForAM(fs, new Path(TEST_DIR.toString(),
-            TezConstants.TEZ_AM_LOCAL_RESOURCES_PB_FILE_NAME));
+      TezCommonUtils.createFileForAM(fs, new Path(TEST_DIR.toString(),
+        TezConstants.TEZ_AM_LOCAL_RESOURCES_PB_FILE_NAME));
     DAGProtos.PlanLocalResourcesProto.getDefaultInstance()
-        .writeDelimitedTo(sessionJarsPBOutStream);
+      .writeDelimitedTo(sessionJarsPBOutStream);
     sessionJarsPBOutStream.close();
     DAGAppMaster am = new DAGAppMaster(attemptId,
-        ContainerId.newInstance(attemptId, 1),
-        "127.0.0.1", 0, 0, new SystemClock(), 1, true,
-        TEST_DIR.toString(), new String[] {TEST_DIR.toString()},
-        new String[] {TEST_DIR.toString()},
-        new TezApiVersionInfo().getVersion(), amCreds,
-        "someuser", null);
+      ContainerId.newInstance(attemptId, 1),
+      "127.0.0.1", 0, 0, new SystemClock(), 1, true,
+      TEST_DIR.toString(), new String[]{TEST_DIR.toString()},
+      new String[]{TEST_DIR.toString()},
+      new TezApiVersionInfo().getVersion(), amCreds,
+      "someuser", null);
     am.init(conf);
     am.start();
 
     // create some sample DAG credentials
     Credentials dagCreds = new Credentials();
     Token<TestTokenIdentifier> dagToken1 = new Token<TestTokenIdentifier>(
-        new TestTokenIdentifier(new Text("dagtoken1")), ttsm);
+      new TestTokenIdentifier(new Text("dagtoken1")), ttsm);
     dagCreds.addToken(tokenAlias2, dagToken1);
     Text tokenAlias3 = new Text("alias3");
     Token<TestTokenIdentifier> dagToken2 = new Token<TestTokenIdentifier>(
-        new TestTokenIdentifier(new Text("dagtoken2")), ttsm);
+      new TestTokenIdentifier(new Text("dagtoken2")), ttsm);
     dagCreds.addToken(tokenAlias3, dagToken2);
 
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
     DAGPlan dagPlan = DAGPlan.newBuilder()
-        .setName("somedag")
-        .setCredentialsBinary(
-            DagTypeConverters.convertCredentialsToProto(dagCreds))
-        .build();
+      .setName("somedag")
+      .setCredentialsBinary(
+        DagTypeConverters.convertCredentialsToProto(dagCreds))
+      .build();
     DAGImpl dag = am.createDAG(dagPlan, dagId);
     Credentials fetchedDagCreds = dag.getCredentials();
     am.stop();
 
     Token<? extends TokenIdentifier> fetchedToken1 =
-        fetchedDagCreds.getToken(tokenAlias1);
+      fetchedDagCreds.getToken(tokenAlias1);
     if (doMerge) {
       assertNotNull("AM creds missing from DAG creds", fetchedToken1);
       compareTestTokens(amToken1, fetchedDagCreds.getToken(tokenAlias1));
@@ -549,25 +562,6 @@ public class TestDAGAppMaster {
     }
     compareTestTokens(dagToken1, fetchedDagCreds.getToken(tokenAlias2));
     compareTestTokens(dagToken2, fetchedDagCreds.getToken(tokenAlias3));
-  }
-
-  private static void compareTestTokens(
-      Token<? extends TokenIdentifier> expected,
-      Token<? extends TokenIdentifier> actual) throws IOException {
-    TestTokenIdentifier expectedId = getTestTokenIdentifier(expected);
-    TestTokenIdentifier actualId = getTestTokenIdentifier(actual);
-    assertEquals("Token id not preserved", expectedId.getTestId(),
-        actualId.getTestId());
-  }
-
-  private static TestTokenIdentifier getTestTokenIdentifier(
-      Token<? extends TokenIdentifier> token) throws IOException {
-    ByteArrayInputStream buf = new ByteArrayInputStream(token.getIdentifier());
-    DataInputStream in = new DataInputStream(buf);
-    TestTokenIdentifier tokenId = new TestTokenIdentifier();
-    tokenId.readFields(in);
-    in.close();
-    return tokenId;
   }
 
   private static class TestTokenIdentifier extends TokenIdentifier {
@@ -609,7 +603,7 @@ public class TestDAGAppMaster {
   }
 
   private static class TestTokenSecretManager extends
-      SecretManager<TestTokenIdentifier> {
+    SecretManager<TestTokenIdentifier> {
     @Override
     public byte[] createPassword(TestTokenIdentifier id) {
       return id.getBytes();
@@ -617,7 +611,7 @@ public class TestDAGAppMaster {
 
     @Override
     public byte[] retrievePassword(TestTokenIdentifier id)
-        throws InvalidToken {
+      throws InvalidToken {
       return id.getBytes();
     }
 
@@ -633,9 +627,9 @@ public class TestDAGAppMaster {
 
     public DAGAppMasterForTest(ApplicationAttemptId attemptId, boolean isSession) {
       super(attemptId, ContainerId.newContainerId(attemptId, 1), "hostname", 12345, 12346,
-          new SystemClock(), 0, isSession, TEST_DIR.getAbsolutePath(),
-          new String[] { TEST_DIR.getAbsolutePath() }, new String[] { TEST_DIR.getAbsolutePath() },
-          new TezDagVersionInfo().getVersion(), createCredentials(), "jobname", null);
+        new SystemClock(), 0, isSession, TEST_DIR.getAbsolutePath(),
+        new String[]{TEST_DIR.getAbsolutePath()}, new String[]{TEST_DIR.getAbsolutePath()},
+        new TezDagVersionInfo().getVersion(), createCredentials(), "jobname", null);
     }
 
     public static Credentials createCredentials() {
@@ -671,7 +665,7 @@ public class TestDAGAppMaster {
 
     @Override
     protected TaskSchedulerManager createTaskSchedulerManager(
-        List<NamedEntityDescriptor> taskSchedulerDescriptors) {
+      List<NamedEntityDescriptor> taskSchedulerDescriptors) {
       return mockScheduler;
     }
   }

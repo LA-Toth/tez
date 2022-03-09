@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-
 /**
  * <p/>
  * Identify the skew (RECORD_INPUT_GROUPS / REDUCE_INPUT_RECORDS) ratio for all task attempts
@@ -64,24 +63,22 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
    * it would not be considered for analysis.
    */
   private static final String SHUFFLE_BYTES_PER_ATTEMPT_PER_SOURCE = "tez.skew-analyzer.shuffle"
-      + ".bytes.per.source";
+    + ".bytes.per.source";
   private static final long SHUFFLE_BYTES_PER_ATTEMPT_PER_SOURCE_DEFAULT = 900 * 1024 * 1024l;
 
   //Min reducer input group : reducer keys ratio for computation
   private static final String ATTEMPT_SHUFFLE_KEY_GROUP_MIN_RATIO = "tez.skew-analyzer.shuffle.key"
-      + ".group.min.ratio";
+    + ".group.min.ratio";
   private static final float ATTEMPT_SHUFFLE_KEY_GROUP_MIN_RATIO_DEFAULT = 0.2f;
 
   //Max reducer input group : reducer keys ratio for computation
   private static final String ATTEMPT_SHUFFLE_KEY_GROUP_MAX_RATIO = "tez.skew-analyzer.shuffle.key"
-      + ".group.max.ratio";
+    + ".group.max.ratio";
   private static final float ATTEMPT_SHUFFLE_KEY_GROUP_MAX_RATIO_DEFAULT = 0.4f;
 
-
-
-  private static final String[] headers = { "vertexName", "taskAttemptId", "counterGroup", "node",
-      "REDUCE_INPUT_GROUPS", "REDUCE_INPUT_RECORDS", "ratio", "SHUFFLE_BYTES", "timeTaken",
-      "observation" };
+  private static final String[] headers = {"vertexName", "taskAttemptId", "counterGroup", "node",
+    "REDUCE_INPUT_GROUPS", "REDUCE_INPUT_RECORDS", "ratio", "SHUFFLE_BYTES", "timeTaken",
+    "observation"};
 
   private final CSVResult csvResult = new CSVResult(headers);
 
@@ -92,11 +89,19 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
   public SkewAnalyzer(Configuration config) {
     super(config);
     maxRatio = config.getFloat(ATTEMPT_SHUFFLE_KEY_GROUP_MAX_RATIO,
-        ATTEMPT_SHUFFLE_KEY_GROUP_MAX_RATIO_DEFAULT);
+      ATTEMPT_SHUFFLE_KEY_GROUP_MAX_RATIO_DEFAULT);
     minRatio = config.getFloat(ATTEMPT_SHUFFLE_KEY_GROUP_MIN_RATIO,
-        ATTEMPT_SHUFFLE_KEY_GROUP_MIN_RATIO_DEFAULT);
+      ATTEMPT_SHUFFLE_KEY_GROUP_MIN_RATIO_DEFAULT);
     maxShuffleBytesPerSource = config.getLong(SHUFFLE_BYTES_PER_ATTEMPT_PER_SOURCE,
-        SHUFFLE_BYTES_PER_ATTEMPT_PER_SOURCE_DEFAULT);
+      SHUFFLE_BYTES_PER_ATTEMPT_PER_SOURCE_DEFAULT);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    SkewAnalyzer analyzer = new SkewAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -123,11 +128,10 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
 
     //counter_group (basically source) --> counter
     Map<String, TezCounter> reduceInputGroups = attemptInfo.getCounter(TaskCounter
-        .REDUCE_INPUT_GROUPS.toString());
+      .REDUCE_INPUT_GROUPS.toString());
     Map<String, TezCounter> reduceInputRecords = attemptInfo.getCounter(TaskCounter
-        .REDUCE_INPUT_RECORDS.toString());
+      .REDUCE_INPUT_RECORDS.toString());
     Map<String, TezCounter> shuffleBytes = attemptInfo.getCounter(TaskCounter.SHUFFLE_BYTES.toString());
-
 
     //tez counter for every source
     for (Map.Entry<String, TezCounter> entry : reduceInputGroups.entrySet()) {
@@ -140,9 +144,9 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
       String counterGroup = entry.getKey();
       long inputGroupsCount = entry.getValue().getValue();
       long inputRecordsCount = (reduceInputRecords.get(counterGroup) != null) ? reduceInputRecords
-          .get(counterGroup).getValue() : 0;
+        .get(counterGroup).getValue() : 0;
       long shuffleBytesPerSource = (shuffleBytes.get(counterGroup) != null) ? shuffleBytes.get
-          (counterGroup).getValue() : 0;
+        (counterGroup).getValue() : 0;
 
       float ratio = (inputGroupsCount * 1.0f / inputRecordsCount);
 
@@ -175,18 +179,17 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
   private void analyzeRecordSkewPerSource(TaskAttemptInfo attemptInfo) {
 
     Map<String, TezCounter> vertexLevelReduceInputRecords =
-        attemptInfo.getTaskInfo().getVertexInfo()
-            .getCounter(TaskCounter.REDUCE_INPUT_RECORDS.toString());
+      attemptInfo.getTaskInfo().getVertexInfo()
+        .getCounter(TaskCounter.REDUCE_INPUT_RECORDS.toString());
 
     int vertexNumTasks = attemptInfo.getTaskInfo().getVertexInfo().getNumTasks();
 
     //counter_group (basically source) --> counter
     Map<String, TezCounter> reduceInputGroups = attemptInfo.getCounter(TaskCounter
-        .REDUCE_INPUT_GROUPS.toString());
+      .REDUCE_INPUT_GROUPS.toString());
     Map<String, TezCounter> reduceInputRecords = attemptInfo.getCounter(TaskCounter
-        .REDUCE_INPUT_RECORDS.toString());
+      .REDUCE_INPUT_RECORDS.toString());
     Map<String, TezCounter> shuffleBytes = attemptInfo.getCounter(TaskCounter.SHUFFLE_BYTES.toString());
-
 
     //tez counter for every source
     for (Map.Entry<String, TezCounter> entry : reduceInputGroups.entrySet()) {
@@ -199,12 +202,12 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
       String counterGroup = entry.getKey();
       long inputGroupsCount = entry.getValue().getValue();
       long inputRecordsCount = (reduceInputRecords.get(counterGroup) != null) ? reduceInputRecords
-          .get(counterGroup).getValue() : 0;
-      long shuffleBytesPerSource = (shuffleBytes.get(counterGroup) != null) ?shuffleBytes.get
-          (counterGroup).getValue() : 0;
+        .get(counterGroup).getValue() : 0;
+      long shuffleBytesPerSource = (shuffleBytes.get(counterGroup) != null) ? shuffleBytes.get
+        (counterGroup).getValue() : 0;
       long vertexLevelInputRecordsCount = (vertexLevelReduceInputRecords.get(counterGroup) !=
-          null) ?
-          vertexLevelReduceInputRecords.get(counterGroup).getValue() : 0;
+        null) ?
+        vertexLevelReduceInputRecords.get(counterGroup).getValue() : 0;
 
       float ratio = (inputRecordsCount * 1.0f / vertexLevelInputRecordsCount);
 
@@ -223,10 +226,9 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
             result.add(shuffleBytesPerSource + "");
             result.add(attemptInfo.getTimeTaken() + "");
             result.add("Some task attempts are getting > 60% of reduce input records. "
-                + "Consider adjusting parallelism & check partition logic");
+              + "Consider adjusting parallelism & check partition logic");
 
             csvResult.addRecord(result.toArray(new String[result.size()]));
-
           }
         }
       }
@@ -242,9 +244,9 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
 
     //counter_group (basically source) --> counter
     Map<String, TezCounter> reduceInputGroups = attemptInfo.getCounter(TaskCounter
-        .REDUCE_INPUT_GROUPS.toString());
+      .REDUCE_INPUT_GROUPS.toString());
     Map<String, TezCounter> reduceInputRecords = attemptInfo.getCounter(TaskCounter
-        .REDUCE_INPUT_RECORDS.toString());
+      .REDUCE_INPUT_RECORDS.toString());
     Map<String, TezCounter> shuffleBytes = attemptInfo.getCounter(TaskCounter.SHUFFLE_BYTES.toString());
 
     //tez counter for every source
@@ -258,9 +260,9 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
       String counterGroup = entry.getKey();
       long inputGroupsCount = entry.getValue().getValue();
       long inputRecordsCount = (reduceInputRecords.get(counterGroup) != null) ? reduceInputRecords
-          .get(counterGroup).getValue() : 0;
+        .get(counterGroup).getValue() : 0;
       long shuffleBytesPerSource = (shuffleBytes.get(counterGroup) != null) ? shuffleBytes.get
-          (counterGroup).getValue() : 0;
+        (counterGroup).getValue() : 0;
 
       float ratio = (inputGroupsCount * 1.0f / inputRecordsCount);
 
@@ -285,10 +287,7 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
         }
       }
     }
-
-
   }
-
 
   @Override
   public CSVResult getResult() throws TezException {
@@ -303,13 +302,5 @@ public class SkewAnalyzer extends TezAnalyzerBase implements Analyzer {
   @Override
   public String getDescription() {
     return "Analyze reducer skews by mining reducer task counters";
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    SkewAnalyzer analyzer = new SkewAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

@@ -19,6 +19,7 @@
 package org.apache.tez.tools;
 
 import com.google.common.base.Objects;
+
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -36,6 +37,7 @@ import org.apache.pig.backend.hadoop.executionengine.mapReduceLayer.PigSplit;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.util.Utils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,13 +51,10 @@ import java.util.regex.Pattern;
 public class TFileLoader extends FileInputLoadFunc implements LoadMetadata {
 
   private static final Logger LOG = LoggerFactory.getLogger(TFileLoader.class);
-
-  protected TFileRecordReader recReader = null;
-
-  private Text currentKey;
   private final TupleFactory tupleFactory = TupleFactory.getInstance();
-
   private final Pattern PATTERN = Pattern.compile(":");
+  protected TFileRecordReader recReader = null;
+  private Text currentKey;
 
   @Override
   public Tuple getNext() throws IOException {
@@ -89,17 +88,6 @@ public class TFileLoader extends FileInputLoadFunc implements LoadMetadata {
     }
   }
 
-  public static class TFileInputFormat extends
-      PigFileInputFormat<Text, Text> {
-    @Override
-    public RecordReader<Text, Text> createRecordReader(InputSplit split,
-        TaskAttemptContext context) throws IOException,
-        InterruptedException {
-      return new TFileRecordReader();
-    }
-
-  }
-
   @Override
   public InputFormat getInputFormat() {
     return new TFileInputFormat();
@@ -122,19 +110,19 @@ public class TFileLoader extends FileInputLoadFunc implements LoadMetadata {
 
   @Override
   public String[] getPartitionKeys(String location, Job job)
-      throws IOException {
+    throws IOException {
     return null;
   }
 
   @Override
   public ResourceSchema getSchema(String location, Job job)
-      throws IOException {
+    throws IOException {
     return Utils.getSchema(this, location, true, job);
   }
 
   @Override
   public ResourceStatistics getStatistics(String location, Job job)
-      throws IOException {
+    throws IOException {
     return null;
   }
 
@@ -143,4 +131,13 @@ public class TFileLoader extends FileInputLoadFunc implements LoadMetadata {
     throw new UnsupportedOperationException("setPartitionFilter() not yet supported");
   }
 
+  public static class TFileInputFormat extends
+    PigFileInputFormat<Text, Text> {
+    @Override
+    public RecordReader<Text, Text> createRecordReader(InputSplit split,
+                                                       TaskAttemptContext context) throws IOException,
+      InterruptedException {
+      return new TFileRecordReader();
+    }
+  }
 }

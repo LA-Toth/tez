@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,26 +26,26 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 
-import org.apache.hadoop.yarn.api.protocolrecords.GetNewApplicationResponse;
-import org.apache.hadoop.yarn.api.records.ContainerId;
-import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
-import org.apache.hadoop.yarn.api.records.LocalResource;
-import org.apache.hadoop.yarn.client.api.YarnClientApplication;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
-import org.apache.hadoop.yarn.exceptions.YarnException;
-import org.apache.hadoop.yarn.util.Clock;
-import org.apache.hadoop.yarn.util.Records;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.yarn.api.records.ApplicationId;
-import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
+import org.apache.hadoop.yarn.api.protocolrecords.GetNewApplicationResponse;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
+import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
+import org.apache.hadoop.yarn.api.records.ApplicationSubmissionContext;
+import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.FinalApplicationStatus;
+import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
+import org.apache.hadoop.yarn.client.api.YarnClientApplication;
+import org.apache.hadoop.yarn.conf.YarnConfiguration;
+import org.apache.hadoop.yarn.exceptions.YarnException;
+import org.apache.hadoop.yarn.util.Clock;
+import org.apache.hadoop.yarn.util.Records;
 import org.apache.hadoop.yarn.util.SystemClock;
 import org.apache.tez.common.AsyncDispatcher;
 import org.apache.tez.common.TezCommonUtils;
@@ -67,29 +67,27 @@ import org.apache.tez.dag.app.DAGAppMaster;
 import org.apache.tez.dag.app.DAGAppMasterState;
 import org.apache.tez.dag.app.LocalDAGAppMaster;
 import org.apache.tez.dag.app.dag.DAG;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.protobuf.ServiceException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LocalClient extends FrameworkClient {
   public static final Logger LOG = LoggerFactory.getLogger(LocalClient.class);
-
+  private static final String localModeDAGSchedulerClassName =
+    "org.apache.tez.dag.app.dag.impl.DAGSchedulerNaturalOrderControlled";
+  private final long clusterTimeStamp = System.currentTimeMillis();
+  private final long TIME_OUT = 60 * 1000;
   private volatile DAGAppMaster dagAppMaster = null;
   private volatile DAGClientHandler clientHandler = null;
   private Thread dagAmThread;
   private Configuration conf;
-  private final long clusterTimeStamp = System.currentTimeMillis();
-  private final long TIME_OUT = 60 * 1000;
   private int appIdNumber = 1;
   private boolean isSession;
   private TezApiVersionInfo versionInfo = new TezApiVersionInfo();
   private volatile Throwable amFailException = null;
   private boolean isLocalWithoutNetwork;
-
-  private static final String localModeDAGSchedulerClassName =
-      "org.apache.tez.dag.app.dag.impl.DAGSchedulerNaturalOrderControlled";
 
   public LocalClient() {
   }
@@ -101,16 +99,15 @@ public class LocalClient extends FrameworkClient {
     this.conf.setBoolean(TezConfiguration.TEZ_IGNORE_LIB_URIS, true);
     this.conf.set(TezConfiguration.TEZ_AM_DAG_SCHEDULER_CLASS, localModeDAGSchedulerClassName);
     isSession = tezConf.getBoolean(TezConfiguration.TEZ_AM_SESSION_MODE,
-        TezConfiguration.TEZ_AM_SESSION_MODE_DEFAULT);
+      TezConfiguration.TEZ_AM_SESSION_MODE_DEFAULT);
 
     // disable web service for local mode.
     this.conf.setBoolean(TezConfiguration.TEZ_AM_WEBSERVICE_ENABLE, false);
 
     this.isLocalWithoutNetwork =
-        tezConf.getBoolean(TezConfiguration.TEZ_LOCAL_MODE_WITHOUT_NETWORK,
-            TezConfiguration.TEZ_LOCAL_MODE_WITHOUT_NETWORK_DEFAULT);
+      tezConf.getBoolean(TezConfiguration.TEZ_LOCAL_MODE_WITHOUT_NETWORK,
+        TezConfiguration.TEZ_LOCAL_MODE_WITHOUT_NETWORK_DEFAULT);
   }
-
 
   @Override
   public void start() {
@@ -157,7 +154,7 @@ public class LocalClient extends FrameworkClient {
   @Override
   public void killApplication(ApplicationId appId) {
     try {
-      if (clientHandler != null){
+      if (clientHandler != null) {
         clientHandler.shutdownAM();
       }
     } catch (TezException e) {
@@ -207,7 +204,7 @@ public class LocalClient extends FrameworkClient {
   }
 
   protected FinalApplicationStatus convertDAGAppMasterStateToFinalYARNState(
-      DAGAppMasterState dagAppMasterState) {
+    DAGAppMasterState dagAppMasterState) {
     switch (dagAppMasterState) {
       case NEW:
       case INITED:
@@ -230,23 +227,23 @@ public class LocalClient extends FrameworkClient {
 
   protected YarnApplicationState convertDAGAppMasterState(DAGAppMasterState dagAppMasterState) {
     switch (dagAppMasterState) {
-    case NEW:
-      return YarnApplicationState.NEW;
-    case INITED:
-    case RECOVERING:
-    case IDLE:
-    case RUNNING:
-      return YarnApplicationState.RUNNING;
-    case SUCCEEDED:
-      return YarnApplicationState.FINISHED;
-    case FAILED:
-      return YarnApplicationState.FAILED;
-    case KILLED:
-      return YarnApplicationState.KILLED;
-    case ERROR:
-      return YarnApplicationState.FAILED;
-    default:
-      return YarnApplicationState.SUBMITTED;
+      case NEW:
+        return YarnApplicationState.NEW;
+      case INITED:
+      case RECOVERING:
+      case IDLE:
+      case RUNNING:
+        return YarnApplicationState.RUNNING;
+      case SUCCEEDED:
+        return YarnApplicationState.FINISHED;
+      case FAILED:
+        return YarnApplicationState.FAILED;
+      case KILLED:
+        return YarnApplicationState.KILLED;
+      case ERROR:
+        return YarnApplicationState.FAILED;
+      default:
+        return YarnApplicationState.SUBMITTED;
     }
   }
 
@@ -353,13 +350,13 @@ public class LocalClient extends FrameworkClient {
           long appSubmitTime = System.currentTimeMillis();
 
           dagAppMaster =
-              createDAGAppMaster(applicationAttemptId, cId, currentHost, nmPort, nmHttpPort,
-                  SystemClock.getInstance(), appSubmitTime, isSession, userDir.toUri().getPath(),
-                  new String[] {localDir.toUri().getPath()}, new String[] {logDir.toUri().getPath()},
-                  amCredentials, UserGroupInformation.getCurrentUser().getShortUserName());
+            createDAGAppMaster(applicationAttemptId, cId, currentHost, nmPort, nmHttpPort,
+              SystemClock.getInstance(), appSubmitTime, isSession, userDir.toUri().getPath(),
+              new String[]{localDir.toUri().getPath()}, new String[]{logDir.toUri().getPath()},
+              amCredentials, UserGroupInformation.getCurrentUser().getShortUserName());
           DAGAppMaster.initAndStartAppMaster(dagAppMaster, conf);
           clientHandler = new DAGClientHandler(dagAppMaster);
-          ((AsyncDispatcher)dagAppMaster.getDispatcher()).setDrainEventsOnStop();
+          ((AsyncDispatcher) dagAppMaster.getDispatcher()).setDrainEventsOnStop();
         } catch (Throwable t) {
           LOG.error("Error starting DAGAppMaster", t);
           if (dagAppMaster != null) {
@@ -386,25 +383,25 @@ public class LocalClient extends FrameworkClient {
                                             String userDir,
                                             String[] localDirs, String[] logDirs,
                                             Credentials credentials, String jobUserName) throws
-      IOException {
+    IOException {
 
     // Read in additional information about external services
     AMPluginDescriptorProto amPluginDescriptorProto =
-        TezUtilsInternal.readUserSpecifiedTezConfiguration(userDir)
-            .getAmPluginDescriptor();
+      TezUtilsInternal.readUserSpecifiedTezConfiguration(userDir)
+        .getAmPluginDescriptor();
 
     return isLocalWithoutNetwork
       ? new LocalDAGAppMaster(applicationAttemptId, cId, currentHost, nmPort, nmHttpPort,
-          SystemClock.getInstance(), appSubmitTime, isSession, userDir, localDirs, logDirs,
-          versionInfo.getVersion(), credentials, jobUserName, amPluginDescriptorProto)
+      SystemClock.getInstance(), appSubmitTime, isSession, userDir, localDirs, logDirs,
+      versionInfo.getVersion(), credentials, jobUserName, amPluginDescriptorProto)
       : new DAGAppMaster(applicationAttemptId, cId, currentHost, nmPort, nmHttpPort,
-          SystemClock.getInstance(), appSubmitTime, isSession, userDir, localDirs, logDirs,
-          versionInfo.getVersion(), credentials, jobUserName, amPluginDescriptorProto);
+      SystemClock.getInstance(), appSubmitTime, isSession, userDir, localDirs, logDirs,
+      versionInfo.getVersion(), credentials, jobUserName, amPluginDescriptorProto);
   }
 
   @Override
   public TezAppMasterStatus getAMStatus(Configuration configuration, ApplicationId appId,
-      UserGroupInformation ugi) throws TezException, ServiceException, IOException {
+                                        UserGroupInformation ugi) throws TezException, ServiceException, IOException {
     if (isLocalWithoutNetwork) {
       if (clientHandler == null) {
         return TezAppMasterStatus.INITIALIZING;
@@ -416,37 +413,38 @@ public class LocalClient extends FrameworkClient {
 
   @Override
   public DAGClient submitDag(org.apache.tez.dag.api.DAG dag, SubmitDAGRequestProto request,
-      String clientName, ApplicationId sessionAppId, long clientTimeout, UserGroupInformation ugi,
-      TezConfiguration tezConf) throws IOException, TezException, DAGSubmissionTimedOut {
+                             String clientName, ApplicationId sessionAppId, long clientTimeout,
+                             UserGroupInformation ugi,
+                             TezConfiguration tezConf) throws IOException, TezException, DAGSubmissionTimedOut {
 
     Map<String, LocalResource> additionalResources = null;
     if (request.hasAdditionalAmResources()) {
       additionalResources =
-          DagTypeConverters.convertFromPlanLocalResources(request.getAdditionalAmResources());
+        DagTypeConverters.convertFromPlanLocalResources(request.getAdditionalAmResources());
     }
 
     String dagId = dagAppMaster.submitDAGToAppMaster(request.getDAGPlan(), additionalResources);
 
     return isLocalWithoutNetwork
       ? new DAGClientImplLocal(sessionAppId, dagId, tezConf, this,
-          ugi, new BiFunction<Set<StatusGetOpts>, Long, DAGStatus>() {
-            @Override
-            public DAGStatus apply(Set<StatusGetOpts> statusOpts, Long timeout) {
-              try {
-                return clientHandler.getDAGStatus(dagId, statusOpts, timeout);
-              } catch (TezException e) {
-                throw new RuntimeException(e);
-              }
-            }
-          })
+      ugi, new BiFunction<Set<StatusGetOpts>, Long, DAGStatus>() {
+      @Override
+      public DAGStatus apply(Set<StatusGetOpts> statusOpts, Long timeout) {
+        try {
+          return clientHandler.getDAGStatus(dagId, statusOpts, timeout);
+        } catch (TezException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    })
       : new DAGClientImpl(sessionAppId, dagId, tezConf, this, ugi);
   }
 
   @Override
   public boolean shutdownSession(Configuration configuration, ApplicationId sessionAppId,
-      UserGroupInformation ugi) throws TezException, IOException, ServiceException {
+                                 UserGroupInformation ugi) throws TezException, IOException, ServiceException {
     if (isLocalWithoutNetwork) {
-      if (clientHandler != null){
+      if (clientHandler != null) {
         clientHandler.shutdownAM();
       }
       return true;

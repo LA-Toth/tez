@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +18,6 @@
 
 package org.apache.tez.dag.app.launcher;
 
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -27,15 +26,16 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.tez.common.security.JobTokenSecretManager;
-import org.apache.tez.dag.records.TezDAGID;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.library.common.TezRuntimeUtils;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,10 +46,11 @@ public class DeletionTrackerImpl extends DeletionTracker {
 
   public DeletionTrackerImpl(Configuration conf) {
     super(conf);
-    this.dagCleanupService = new ThreadPoolExecutor(0, conf.getInt(TezConfiguration.TEZ_AM_DAG_CLEANUP_THREAD_COUNT_LIMIT,
+    this.dagCleanupService = new ThreadPoolExecutor(0,
+      conf.getInt(TezConfiguration.TEZ_AM_DAG_CLEANUP_THREAD_COUNT_LIMIT,
         TezConfiguration.TEZ_AM_DAG_CLEANUP_THREAD_COUNT_LIMIT_DEFAULT), 10,
-        TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
-        new ThreadFactoryBuilder().setDaemon(true).setNameFormat("ShuffleDeleteTracker #%d").build());
+      TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(),
+      new ThreadFactoryBuilder().setDaemon(true).setNameFormat("ShuffleDeleteTracker #%d").build());
   }
 
   @Override
@@ -61,7 +62,7 @@ public class DeletionTrackerImpl extends DeletionTracker {
       //TODO: add check for healthy node
       if (shufflePort != TezRuntimeUtils.INVALID_PORT) {
         DagDeleteRunnable dagDeleteRunnable = new DagDeleteRunnable(nodeId, shufflePort, dag,
-            TezRuntimeUtils.getHttpConnectionParams(conf), jobTokenSecretManager);
+          TezRuntimeUtils.getHttpConnectionParams(conf), jobTokenSecretManager);
         try {
           dagCleanupService.submit(dagDeleteRunnable);
         } catch (RejectedExecutionException rejectedException) {
@@ -82,7 +83,7 @@ public class DeletionTrackerImpl extends DeletionTracker {
     int shufflePort = nodeIdShufflePortMap.get(nodeId);
     if (shufflePort != TezRuntimeUtils.INVALID_PORT) {
       TaskAttemptFailedRunnable taskAttemptFailedRunnable = new TaskAttemptFailedRunnable(nodeId, shufflePort,
-          taskAttemptID, TezRuntimeUtils.getHttpConnectionParams(conf), jobTokenSecretManager);
+        taskAttemptID, TezRuntimeUtils.getHttpConnectionParams(conf), jobTokenSecretManager);
       try {
         dagCleanupService.submit(taskAttemptFailedRunnable);
       } catch (RejectedExecutionException rejectedException) {
@@ -94,7 +95,7 @@ public class DeletionTrackerImpl extends DeletionTracker {
   @Override
   public void addNodeShufflePort(NodeId nodeId, int port) {
     if (port != TezRuntimeUtils.INVALID_PORT) {
-      if(nodeIdShufflePortMap.get(nodeId) == null) {
+      if (nodeIdShufflePortMap.get(nodeId) == null) {
         nodeIdShufflePortMap.put(nodeId, port);
       }
     }

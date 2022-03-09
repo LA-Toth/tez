@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -60,7 +60,7 @@ public class ACLManager {
     this.users = new HashMap<ACLType, Set<String>>();
     this.groups = new HashMap<ACLType, Set<String>>();
     aclsEnabled = conf.getBoolean(TezConfiguration.TEZ_AM_ACLS_ENABLED,
-        TezConfiguration.TEZ_AM_ACLS_ENABLED_DEFAULT);
+      TezConfiguration.TEZ_AM_ACLS_ENABLED_DEFAULT);
     if (!aclsEnabled) {
       return;
     }
@@ -84,20 +84,34 @@ public class ACLManager {
     }
     if (aclInfo.getUsersWithViewAccessCount() > 0) {
       this.users.put(ACLType.DAG_VIEW_ACL,
-          Sets.newLinkedHashSet(aclInfo.getUsersWithViewAccessList()));
+        Sets.newLinkedHashSet(aclInfo.getUsersWithViewAccessList()));
     }
     if (aclInfo.getUsersWithModifyAccessCount() > 0) {
       this.users.put(ACLType.DAG_MODIFY_ACL,
-          Sets.newLinkedHashSet(aclInfo.getUsersWithModifyAccessList()));
+        Sets.newLinkedHashSet(aclInfo.getUsersWithModifyAccessList()));
     }
     if (aclInfo.getGroupsWithViewAccessCount() > 0) {
       this.groups.put(ACLType.DAG_VIEW_ACL,
-          Sets.newLinkedHashSet(aclInfo.getGroupsWithViewAccessList()));
+        Sets.newLinkedHashSet(aclInfo.getGroupsWithViewAccessList()));
     }
     if (aclInfo.getGroupsWithModifyAccessCount() > 0) {
       this.groups.put(ACLType.DAG_MODIFY_ACL,
-          Sets.newLinkedHashSet(aclInfo.getGroupsWithModifyAccessList()));
+        Sets.newLinkedHashSet(aclInfo.getGroupsWithModifyAccessList()));
     }
+  }
+
+  public static String toCommaSeparatedString(Collection<String> collection) {
+    StringBuilder sb = new StringBuilder();
+    boolean first = true;
+    for (String s : collection) {
+      if (!first) {
+        sb.append(",");
+      } else {
+        first = false;
+      }
+      sb.append(s);
+    }
+    return sb.toString();
   }
 
   public boolean isAclsEnabled() {
@@ -134,7 +148,7 @@ public class ACLManager {
 
     Collection<String> userGroups = Arrays.asList(ugi.getGroupNames());
     if (userGroups != null && !userGroups.isEmpty()
-        && groups != null && !groups.isEmpty()) {
+      && groups != null && !groups.isEmpty()) {
       Set<String> set = groups.get(aclType);
       if (set != null) {
         for (String userGrp : userGroups) {
@@ -149,24 +163,24 @@ public class ACLManager {
 
   public boolean checkAMViewAccess(UserGroupInformation ugi) {
     return checkAccess(ugi, ACLType.AM_VIEW_ACL)
-        || checkAccess(ugi, ACLType.YARN_ADMIN_ACL);
+      || checkAccess(ugi, ACLType.YARN_ADMIN_ACL);
   }
 
   public boolean checkAMModifyAccess(UserGroupInformation ugi) {
     return checkAccess(ugi, ACLType.AM_MODIFY_ACL)
-        || checkAccess(ugi, ACLType.YARN_ADMIN_ACL);
+      || checkAccess(ugi, ACLType.YARN_ADMIN_ACL);
   }
 
   public boolean checkDAGViewAccess(UserGroupInformation ugi) {
     return checkAccess(ugi, ACLType.AM_VIEW_ACL)
-        || checkAccess(ugi, ACLType.DAG_VIEW_ACL)
-        || checkAccess(ugi, ACLType.YARN_ADMIN_ACL);
+      || checkAccess(ugi, ACLType.DAG_VIEW_ACL)
+      || checkAccess(ugi, ACLType.YARN_ADMIN_ACL);
   }
 
   public boolean checkDAGModifyAccess(UserGroupInformation ugi) {
     return checkAccess(ugi, ACLType.AM_MODIFY_ACL)
-        || checkAccess(ugi, ACLType.DAG_MODIFY_ACL)
-        || checkAccess(ugi, ACLType.YARN_ADMIN_ACL);
+      || checkAccess(ugi, ACLType.DAG_MODIFY_ACL)
+      || checkAccess(ugi, ACLType.YARN_ADMIN_ACL);
   }
 
   public Map<ApplicationAccessType, String> toYARNACls() {
@@ -217,14 +231,14 @@ public class ACLManager {
           && !viewAclsWildCard && !entry.getValue().isEmpty()) {
           // Append groups only if wild card not set
           String aclsStr = acls.containsKey(ApplicationAccessType.VIEW_APP) ?
-              acls.get(ApplicationAccessType.VIEW_APP) : "";
+            acls.get(ApplicationAccessType.VIEW_APP) : "";
           aclsStr += " " + toCommaSeparatedString(entry.getValue());
           acls.put(ApplicationAccessType.VIEW_APP, aclsStr);
         } else if (entry.getKey().equals(ACLType.AM_MODIFY_ACL)
-            && !modifyAclsWildCard && !entry.getValue().isEmpty()) {
+          && !modifyAclsWildCard && !entry.getValue().isEmpty()) {
           // Append groups only if wild card not set
           String aclsStr = acls.containsKey(ApplicationAccessType.MODIFY_APP) ?
-              acls.get(ApplicationAccessType.MODIFY_APP) : "";
+            acls.get(ApplicationAccessType.MODIFY_APP) : "";
           aclsStr += " " + toCommaSeparatedString(entry.getValue());
           acls.put(ApplicationAccessType.MODIFY_APP, aclsStr);
         }
@@ -232,20 +246,4 @@ public class ACLManager {
     }
     return acls;
   }
-
-  public static String toCommaSeparatedString(Collection<String> collection) {
-    StringBuilder sb = new StringBuilder();
-    boolean first = true;
-    for (String s : collection) {
-      if (!first) {
-        sb.append(",");
-      } else {
-        first = false;
-      }
-      sb.append(s);
-    }
-    return sb.toString();
-  }
 }
-
-

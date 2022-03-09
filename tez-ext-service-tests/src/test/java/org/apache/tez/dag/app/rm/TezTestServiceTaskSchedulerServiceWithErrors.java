@@ -14,9 +14,9 @@
 
 package org.apache.tez.dag.app.rm;
 
-import javax.annotation.Nullable;
-
 import java.io.IOException;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
@@ -32,7 +32,7 @@ public class TezTestServiceTaskSchedulerServiceWithErrors extends TaskScheduler 
   private final ErrorPluginConfiguration conf;
 
   public TezTestServiceTaskSchedulerServiceWithErrors(
-      TaskSchedulerContext taskSchedulerContext) throws IOException, ClassNotFoundException {
+    TaskSchedulerContext taskSchedulerContext) throws IOException, ClassNotFoundException {
     super(taskSchedulerContext);
     conf = ErrorPluginConfiguration.toErrorPluginConfiguration(taskSchedulerContext.getInitialUserPayload());
   }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,8 +18,10 @@
 
 package org.apache.tez.runtime.library.common.serializer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.conf.Configuration;
@@ -32,9 +34,8 @@ import org.apache.hadoop.io.serializer.Serialization;
 import org.apache.hadoop.io.serializer.Serializer;
 import org.apache.hadoop.util.ReflectionUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <pre>
@@ -74,7 +75,7 @@ public class TezBytesWritableSerialization extends Configured implements Seriali
   }
 
   public static class TezBytesWritableDeserializer extends Configured
-      implements Deserializer<Writable> {
+    implements Deserializer<Writable> {
     private Class<?> writableClass;
     private DataInputBuffer dataIn;
 
@@ -96,7 +97,7 @@ public class TezBytesWritableSerialization extends Configured implements Seriali
       }
 
       writable.set(dataIn.getData(), dataIn.getPosition(), dataIn.getLength() - dataIn
-          .getPosition());
+        .getPosition());
       return writable;
     }
 
@@ -104,11 +105,10 @@ public class TezBytesWritableSerialization extends Configured implements Seriali
     public void close() throws IOException {
       dataIn.close();
     }
-
   }
 
   public static class TezBytesWritableSerializer extends Configured implements
-      Serializer<Writable> {
+    Serializer<Writable> {
 
     private OutputStream dataOut;
 
@@ -129,4 +129,3 @@ public class TezBytesWritableSerialization extends Configured implements Seriali
     }
   }
 }
-

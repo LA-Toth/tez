@@ -18,7 +18,6 @@
 
 package org.apache.tez.dag.app.dag.impl;
 
-
 public class ServicePluginInfo {
 
   private String containerLauncherName;
@@ -88,12 +87,12 @@ public class ServicePluginInfo {
   @Override
   public String toString() {
     return "ServicePluginInfo {" +
-        "containerLauncherName=" + containerLauncherName +
-        ", taskSchedulerName=" + taskSchedulerName +
-        ", taskCommunicatorName=" + taskCommunicatorName +
-        ", containerLauncherClassName=" + containerLauncherClassName +
-        ", taskSchedulerClassName=" + taskSchedulerClassName +
-        ", taskCommunicatorClassName=" + taskCommunicatorClassName +
-        " }";
+      "containerLauncherName=" + containerLauncherName +
+      ", taskSchedulerName=" + taskSchedulerName +
+      ", taskCommunicatorName=" + taskCommunicatorName +
+      ", containerLauncherClassName=" + containerLauncherClassName +
+      ", taskSchedulerClassName=" + taskSchedulerClassName +
+      ", taskCommunicatorClassName=" + taskCommunicatorClassName +
+      " }";
   }
 }

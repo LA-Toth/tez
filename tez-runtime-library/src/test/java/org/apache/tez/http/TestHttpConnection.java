@@ -18,12 +18,12 @@
 
 package org.apache.tez.http;
 
-import com.google.common.base.Throwables;
-import org.apache.tez.http.async.netty.AsyncHttpConnection;
-import org.apache.tez.common.security.JobTokenSecretManager;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -38,17 +38,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import org.apache.tez.common.security.JobTokenSecretManager;
+import org.apache.tez.http.async.netty.AsyncHttpConnection;
+
+import com.google.common.base.Throwables;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class TestHttpConnection {
-
-  private static int connTimeout = 5000;
-  private static int readTimeout = 5000;
 
   /**
    * Ref: https://en.wikipedia.org/wiki/Reserved_IP_addresses
@@ -57,7 +55,8 @@ public class TestHttpConnection {
    * networks (ref: http://linux.die.net/man/2/connect).  192.0.2.x can be considered as well.
    */
   private static final String NOT_HOSTED_URL = "http://240.0.0.1:10221";
-
+  private static int connTimeout = 5000;
+  private static int readTimeout = 5000;
   private static ExecutorService executorService;
   private static URL url;
   private static JobTokenSecretManager tokenSecretManager;
@@ -67,13 +66,13 @@ public class TestHttpConnection {
   @BeforeClass
   public static void setup() throws IOException, URISyntaxException {
     executorService = Executors.newFixedThreadPool(1,
-        new ThreadFactory() {
-          public Thread newThread(Runnable r) {
-            Thread t = Executors.defaultThreadFactory().newThread(r);
-            t.setDaemon(true);
-            return t;
-          }
-        });
+      new ThreadFactory() {
+        public Thread newThread(Runnable r) {
+          Thread t = Executors.defaultThreadFactory().newThread(r);
+          t.setDaemon(true);
+          return t;
+        }
+      });
     url = new URL(NOT_HOSTED_URL);
     tokenSecretManager = mock(JobTokenSecretManager.class);
     when(tokenSecretManager.computeHash(any())).thenReturn("1234".getBytes());
@@ -85,7 +84,7 @@ public class TestHttpConnection {
   }
 
   public void baseTest(Callable<Void> worker, CountDownLatch latch, String message) throws
-      InterruptedException {
+    InterruptedException {
     long startTime = System.currentTimeMillis();
     try {
       Future<Void> future = executorService.submit(worker);
@@ -95,7 +94,7 @@ public class TestHttpConnection {
       assertTrue(e.getMessage(), e.getMessage().contains(message));
       long elapsedTime = System.currentTimeMillis() - startTime;
       assertTrue("elapasedTime=" + elapsedTime + " should be greater than " + connTimeout,
-          elapsedTime > connTimeout);
+        elapsedTime > connTimeout);
     }
     assertTrue(latch.getCount() == 0);
   }
@@ -118,13 +117,13 @@ public class TestHttpConnection {
   @Test(timeout = 20000)
   //Should be interruptible
   public void testAsyncHttpConnectionInterrupt()
-      throws IOException, InterruptedException, ExecutionException {
+    throws IOException, InterruptedException, ExecutionException {
     CountDownLatch latch = new CountDownLatch(1);
     HttpConnectionParams params = getConnectionParams();
     AsyncHttpConnection asyncHttpConn = getAsyncHttpConnection(params);
     Future<Void> future = executorService.submit(new Worker(latch, asyncHttpConn, true));
 
-    while(currentThread == null) {
+    while (currentThread == null) {
       synchronized (this) {
         wait(100);
       }
@@ -179,13 +178,13 @@ public class TestHttpConnection {
         currentThread = Thread.currentThread();
         connection.connect();
         fail();
-      } catch(Throwable t) {
+      } catch (Throwable t) {
         if (expectingInterrupt) {
           if (t instanceof ConnectException) {
             //ClosedByInterruptException via NettyConnectListener.operationComplete()
             assertTrue("Expected ClosedByInterruptException, received "
-                    + Throwables.getStackTraceAsString(t.getCause()),
-                t.getCause() instanceof ClosedByInterruptException);
+                + Throwables.getStackTraceAsString(t.getCause()),
+              t.getCause() instanceof ClosedByInterruptException);
           } else {
             // InterruptedException if TezBodyDeferringAsyncHandler quits
             assertTrue(t instanceof InterruptedException);

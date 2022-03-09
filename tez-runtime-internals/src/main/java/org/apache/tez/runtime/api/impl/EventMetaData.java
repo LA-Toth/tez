@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,8 +17,6 @@
  */
 
 package org.apache.tez.runtime.api.impl;
-
-
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -38,29 +36,19 @@ import org.apache.tez.util.StringInterner;
  */
 public class EventMetaData implements Writable, TaskAttemptIDAware {
 
-  public static enum EventProducerConsumerType {
-    INPUT,
-    PROCESSOR,
-    OUTPUT,
-    SYSTEM
-  }
-
   /**
    * Producer Type ( one of Input/Output/Processor ) that generated the Event
    * or Consumer Type that will consume the Event.
    */
   private EventProducerConsumerType producerConsumerType;
-
   /**
    * Name of the vertex where the event was generated.
    */
   private String taskVertexName;
-
   /**
    * Name of the vertex to which the Input or Output is connected to.
    */
   private String edgeVertexName;
-
   /**
    * Task Attempt ID
    */
@@ -70,8 +58,8 @@ public class EventMetaData implements Writable, TaskAttemptIDAware {
   }
 
   public EventMetaData(EventProducerConsumerType generator,
-      String taskVertexName, @Nullable String edgeVertexName,
-      @Nullable TezTaskAttemptID taskAttemptID) {
+                       String taskVertexName, @Nullable String edgeVertexName,
+                       @Nullable TezTaskAttemptID taskAttemptID) {
     Objects.requireNonNull(generator, "generator is null");
     Objects.requireNonNull(taskVertexName, "taskVertexName is null");
     this.producerConsumerType = generator;
@@ -112,7 +100,7 @@ public class EventMetaData implements Writable, TaskAttemptIDAware {
     } else {
       out.writeBoolean(false);
     }
-    if(taskAttemptID != null) {
+    if (taskAttemptID != null) {
       out.writeBoolean(true);
       taskAttemptID.write(out);
     } else {
@@ -137,10 +125,10 @@ public class EventMetaData implements Writable, TaskAttemptIDAware {
   @Override
   public String toString() {
     return "{ producerConsumerType=" + producerConsumerType
-        + ", taskVertexName=" + taskVertexName
-        + ", edgeVertexName=" + edgeVertexName
-        + ", taskAttemptId=" + (taskAttemptID == null? "null" : taskAttemptID)
-        + " }";
+      + ", taskVertexName=" + taskVertexName
+      + ", edgeVertexName=" + edgeVertexName
+      + ", taskAttemptId=" + (taskAttemptID == null ? "null" : taskAttemptID)
+      + " }";
   }
 
   @Override
@@ -148,14 +136,14 @@ public class EventMetaData implements Writable, TaskAttemptIDAware {
     final int prime = 31;
     int result = 1;
     result = prime * result
-        + ((edgeVertexName == null) ? 0 : edgeVertexName.hashCode());
+      + ((edgeVertexName == null) ? 0 : edgeVertexName.hashCode());
     result = prime
-        * result
-        + ((producerConsumerType == null) ? 0 : producerConsumerType.hashCode());
+      * result
+      + ((producerConsumerType == null) ? 0 : producerConsumerType.hashCode());
     result = prime * result
-        + ((taskAttemptID == null) ? 0 : taskAttemptID.hashCode());
+      + ((taskAttemptID == null) ? 0 : taskAttemptID.hashCode());
     result = prime * result
-        + ((taskVertexName == null) ? 0 : taskVertexName.hashCode());
+      + ((taskVertexName == null) ? 0 : taskVertexName.hashCode());
     return result;
   }
 
@@ -188,4 +176,10 @@ public class EventMetaData implements Writable, TaskAttemptIDAware {
     return true;
   }
 
+  public static enum EventProducerConsumerType {
+    INPUT,
+    PROCESSOR,
+    OUTPUT,
+    SYSTEM
+  }
 }

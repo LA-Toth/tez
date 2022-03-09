@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,8 +17,11 @@
  */
 package org.apache.tez.mapreduce.output;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -28,7 +31,6 @@ import java.io.Writer;
 import java.util.HashMap;
 import java.util.List;
 
-import com.google.common.io.Files;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -67,22 +69,56 @@ import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.runtime.api.impl.TezUmbilical;
 import org.apache.tez.runtime.library.api.KeyValueWriter;
 import org.apache.tez.runtime.library.processor.SimpleProcessor;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
-
+import com.google.common.io.Files;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public class TestMROutput {
 
   static File tmpDir;
 
   @BeforeClass
-  public static void setupClass () {
+  public static void setupClass() {
     tmpDir = Files.createTempDir();
     tmpDir.deleteOnExit();
+  }
+
+  public static LogicalIOProcessorRuntimeTask createLogicalTask(
+    Configuration conf,
+    TezUmbilical umbilical, String dagName,
+    String vertexName, TezExecutors sharedExecutor) throws Exception {
+    ProcessorDescriptor procDesc = ProcessorDescriptor.create(TestProcessor.class.getName());
+    List<InputSpec> inputSpecs = Lists.newLinkedList();
+    List<OutputSpec> outputSpecs = Lists.newLinkedList();
+    outputSpecs.add(new OutputSpec("Null",
+      MROutput.createConfigBuilder(conf, TestOutputFormat.class).build().getOutputDescriptor(), 1));
+
+    TaskSpec taskSpec = new TaskSpec(
+      TezTestUtils.getMockTaskAttemptId(0, 0, 0, 0),
+      dagName, vertexName, -1,
+      procDesc,
+      inputSpecs,
+      outputSpecs, null, null);
+
+    FileSystem fs = FileSystem.getLocal(conf);
+    Path workDir =
+      new Path(new Path(System.getProperty("test.build.data", "/tmp")),
+        "TestMapOutput").makeQualified(fs.getUri(), fs.getWorkingDirectory());
+
+    return new LogicalIOProcessorRuntimeTask(
+      taskSpec,
+      0,
+      conf,
+      new String[]{workDir.toString()},
+      umbilical,
+      null,
+      new HashMap<String, String>(),
+      HashMultimap.<String, String>create(), null, "", new ExecutionContextImpl("localhost"),
+      Runtime.getRuntime().maxMemory(), true, new DefaultHadoopShim(), sharedExecutor);
   }
 
   @Test(timeout = 5000)
@@ -90,12 +126,12 @@ public class TestMROutput {
     Configuration conf = new Configuration();
     conf.setBoolean(MRConfig.IS_MAP_PROCESSOR, true);
     DataSinkDescriptor dataSink = MROutput
-        .createConfigBuilder(conf, TextOutputFormat.class,
-            tmpDir.getPath())
-        .build();
+      .createConfigBuilder(conf, TextOutputFormat.class,
+        tmpDir.getPath())
+      .build();
 
     OutputContext outputContext = createMockOutputContext(dataSink.getOutputDescriptor().getUserPayload(),
-        new Configuration(false));
+      new Configuration(false));
     MROutput output = new MROutput(outputContext, 2);
     output.initialize();
 
@@ -116,8 +152,8 @@ public class TestMROutput {
     Configuration localConf = new Configuration(false);
     localConf.set("local-key", "local-value");
     DataSinkDescriptor dataSink = MROutput
-        .createConfigBuilder(localConf, org.apache.hadoop.mapred.TextOutputFormat.class, outputPath)
-        .build();
+      .createConfigBuilder(localConf, org.apache.hadoop.mapred.TextOutputFormat.class, outputPath)
+      .build();
 
     Configuration baseConf = new Configuration(false);
     baseConf.set("base-key", "base-value");
@@ -136,13 +172,13 @@ public class TestMROutput {
     Configuration conf = new Configuration();
     conf.setBoolean(MRConfig.IS_MAP_PROCESSOR, false);
     DataSinkDescriptor dataSink = MROutput
-        .createConfigBuilder(conf,
-            org.apache.hadoop.mapred.TextOutputFormat.class,
-            tmpDir.getPath())
-        .build();
+      .createConfigBuilder(conf,
+        org.apache.hadoop.mapred.TextOutputFormat.class,
+        tmpDir.getPath())
+      .build();
 
     OutputContext outputContext = createMockOutputContext(dataSink.getOutputDescriptor().getUserPayload(),
-        new Configuration(false));
+      new Configuration(false));
     MROutput output = new MROutput(outputContext, 2);
     output.initialize();
 
@@ -163,12 +199,12 @@ public class TestMROutput {
     conf.setOutputKeyClass(NullWritable.class);
     conf.setOutputValueClass(Text.class);
     DataSinkDescriptor dataSink = MROutput
-        .createConfigBuilder(conf, SequenceFileOutputFormat.class,
-            tmpDir.getPath())
-        .build();
+      .createConfigBuilder(conf, SequenceFileOutputFormat.class,
+        tmpDir.getPath())
+      .build();
 
     OutputContext outputContext = createMockOutputContext(dataSink.getOutputDescriptor().getUserPayload(),
-        new Configuration(false));
+      new Configuration(false));
     MROutput output = new MROutput(outputContext, 2);
     output.initialize();
     assertEquals(true, output.useNewApi);
@@ -188,13 +224,13 @@ public class TestMROutput {
     conf.setOutputKeyClass(NullWritable.class);
     conf.setOutputValueClass(Text.class);
     DataSinkDescriptor dataSink = MROutput
-        .createConfigBuilder(conf,
-            org.apache.hadoop.mapred.SequenceFileOutputFormat.class,
-            tmpDir.getPath())
-        .build();
+      .createConfigBuilder(conf,
+        org.apache.hadoop.mapred.SequenceFileOutputFormat.class,
+        tmpDir.getPath())
+      .build();
 
     OutputContext outputContext = createMockOutputContext(dataSink.getOutputDescriptor().getUserPayload(),
-        new Configuration(false));
+      new Configuration(false));
     MROutput output = new MROutput(outputContext, 2);
     output.initialize();
     assertEquals(false, output.useNewApi);
@@ -216,11 +252,11 @@ public class TestMROutput {
     conf.setBoolean(MRConfig.IS_MAP_PROCESSOR, true);
     DataSinkDescriptor dataSink = MROutput
       .createConfigBuilder(conf, NewAPI_WorkOutputPathReadingOutputFormat.class,
-          tmpDir.getPath())
+        tmpDir.getPath())
       .build();
 
     OutputContext outputContext = createMockOutputContext(dataSink.getOutputDescriptor().getUserPayload(),
-        new Configuration(false));
+      new Configuration(false));
     MROutput output = new MROutput(outputContext, 2);
     output.initialize();
 
@@ -243,11 +279,11 @@ public class TestMROutput {
     conf.setBoolean(MRConfig.IS_MAP_PROCESSOR, false);
     DataSinkDescriptor dataSink = MROutput
       .createConfigBuilder(conf, OldAPI_WorkOutputPathReadingOutputFormat.class,
-          tmpDir.getPath())
+        tmpDir.getPath())
       .build();
 
     OutputContext outputContext = createMockOutputContext(dataSink.getOutputDescriptor().getUserPayload(),
-        new Configuration(false));
+      new Configuration(false));
     MROutput output = new MROutput(outputContext, 2);
     output.initialize();
 
@@ -273,39 +309,18 @@ public class TestMROutput {
     when(outputContext.getContainerConfiguration()).thenReturn(baseConf);
     return outputContext;
   }
-  
-  public static LogicalIOProcessorRuntimeTask createLogicalTask(
-      Configuration conf,
-      TezUmbilical umbilical, String dagName,
-      String vertexName, TezExecutors sharedExecutor) throws Exception {
-    ProcessorDescriptor procDesc = ProcessorDescriptor.create(TestProcessor.class.getName());
-    List<InputSpec> inputSpecs = Lists.newLinkedList();
-    List<OutputSpec> outputSpecs = Lists.newLinkedList();
-    outputSpecs.add(new OutputSpec("Null",
-        MROutput.createConfigBuilder(conf, TestOutputFormat.class).build().getOutputDescriptor(), 1));
-    
-    TaskSpec taskSpec = new TaskSpec(
-        TezTestUtils.getMockTaskAttemptId(0, 0, 0, 0),
-        dagName, vertexName, -1,
-        procDesc,
-        inputSpecs,
-        outputSpecs, null, null);
 
-    FileSystem fs = FileSystem.getLocal(conf);
-    Path workDir =
-        new Path(new Path(System.getProperty("test.build.data", "/tmp")),
-                 "TestMapOutput").makeQualified(fs.getUri(), fs.getWorkingDirectory());
-
-    return new LogicalIOProcessorRuntimeTask(
-        taskSpec,
-        0,
-        conf,
-        new String[] {workDir.toString()},
-        umbilical,
-        null,
-        new HashMap<String, String>(),
-        HashMultimap.<String, String>create(), null, "", new ExecutionContextImpl("localhost"),
-        Runtime.getRuntime().maxMemory(), true, new DefaultHadoopShim(), sharedExecutor);
+  @Ignore
+  @Test
+  public void testPerf() throws Exception {
+    Configuration conf = new Configuration();
+    TezSharedExecutor sharedExecutor = new TezSharedExecutor(conf);
+    LogicalIOProcessorRuntimeTask task = createLogicalTask(conf, new TestUmbilical(), "dag",
+      "vertex", sharedExecutor);
+    task.initialize();
+    task.run();
+    task.close();
+    sharedExecutor.shutdownNow();
   }
 
   public static class TestOutputCommitter extends OutputCommitter {
@@ -330,13 +345,29 @@ public class TestMROutput {
     @Override
     public void abortTask(TaskAttemptContext taskContext) throws IOException {
     }
-    
   }
-  
+
   public static class TestOutputFormat extends OutputFormat<String, String> {
+    @Override
+    public RecordWriter<String, String> getRecordWriter(TaskAttemptContext context)
+      throws IOException, InterruptedException {
+      return new TestRecordWriter(true);
+    }
+
+    @Override
+    public void checkOutputSpecs(JobContext context) throws IOException, InterruptedException {
+    }
+
+    @Override
+    public OutputCommitter getOutputCommitter(TaskAttemptContext context)
+      throws IOException, InterruptedException {
+      return new TestOutputCommitter();
+    }
+
     public static class TestRecordWriter extends RecordWriter<String, String> {
       Writer writer;
       boolean doWrite;
+
       TestRecordWriter(boolean write) throws IOException {
         this.doWrite = write;
         if (doWrite) {
@@ -345,7 +376,7 @@ public class TestMROutput {
           writer = new BufferedWriter(new FileWriter(f));
         }
       }
-      
+
       @Override
       public void write(String key, String value) throws IOException, InterruptedException {
         if (doWrite) {
@@ -358,36 +389,11 @@ public class TestMROutput {
       public void close(TaskAttemptContext context) throws IOException, InterruptedException {
         writer.close();
       }
-      
-    }
-    
-    @Override
-    public RecordWriter<String, String> getRecordWriter(TaskAttemptContext context)
-        throws IOException, InterruptedException {
-      return new TestRecordWriter(true);
-    }
-
-    @Override
-    public void checkOutputSpecs(JobContext context) throws IOException, InterruptedException {
-    }
-
-    @Override
-    public OutputCommitter getOutputCommitter(TaskAttemptContext context)
-        throws IOException, InterruptedException {
-      return new TestOutputCommitter();
     }
   }
 
   // OldAPI OutputFormat class that reads the workoutput path while creating recordWriters
   public static class OldAPI_WorkOutputPathReadingOutputFormat extends org.apache.hadoop.mapred.FileOutputFormat<String, String> {
-    public static class NoOpRecordWriter implements org.apache.hadoop.mapred.RecordWriter<String, String> {
-      @Override
-      public void write(String key, String value) throws IOException {}
-
-      @Override
-      public void close(Reporter reporter) throws IOException {}
-    }
-
     @Override
     public org.apache.hadoop.mapred.RecordWriter<String, String> getRecordWriter(
       FileSystem ignored, JobConf job, String name, Progressable progress) throws IOException {
@@ -396,10 +402,27 @@ public class TestMROutput {
       assertNotNull(workOutputPath);
       return new NoOpRecordWriter();
     }
+
+    public static class NoOpRecordWriter implements org.apache.hadoop.mapred.RecordWriter<String, String> {
+      @Override
+      public void write(String key, String value) throws IOException {}
+
+      @Override
+      public void close(Reporter reporter) throws IOException {}
+    }
   }
 
   // NewAPI OutputFormat class that reads the default work file while creating recordWriters
   public static class NewAPI_WorkOutputPathReadingOutputFormat extends FileOutputFormat<String, String> {
+    @Override
+    public RecordWriter<String, String> getRecordWriter(TaskAttemptContext job) throws IOException,
+      InterruptedException {
+      // check default work file is not null
+      Path workOutputPath = getDefaultWorkFile(job, ".foo");
+      assertNotNull(workOutputPath);
+      return new NoOpRecordWriter();
+    }
+
     public static class NoOpRecordWriter extends RecordWriter<String, String> {
       @Override
       public void write(String key, String value) throws IOException, InterruptedException {
@@ -408,14 +431,6 @@ public class TestMROutput {
       @Override
       public void close(TaskAttemptContext context) throws IOException, InterruptedException {
       }
-    }
-
-    @Override
-    public RecordWriter<String, String> getRecordWriter(TaskAttemptContext job) throws IOException, InterruptedException {
-      // check default work file is not null
-      Path workOutputPath = getDefaultWorkFile(job, ".foo");
-      assertNotNull(workOutputPath);
-      return new NoOpRecordWriter();
     }
   }
 
@@ -427,23 +442,9 @@ public class TestMROutput {
     @Override
     public void run() throws Exception {
       KeyValueWriter writer = (KeyValueWriter) getOutputs().values().iterator().next().getWriter();
-      for (int i=0; i<1000000; ++i) {
+      for (int i = 0; i < 1000000; ++i) {
         writer.write("key", "value");
       }
     }
-
-  }
-
-  @Ignore
-  @Test
-  public void testPerf() throws Exception {
-    Configuration conf = new Configuration();
-    TezSharedExecutor sharedExecutor = new TezSharedExecutor(conf);
-    LogicalIOProcessorRuntimeTask task = createLogicalTask(conf, new TestUmbilical(), "dag",
-        "vertex", sharedExecutor);
-    task.initialize();
-    task.run();
-    task.close();
-    sharedExecutor.shutdownNow();
   }
 }

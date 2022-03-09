@@ -32,8 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.collect.Lists;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationAccessType;
@@ -51,25 +49,27 @@ import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.UserPayload;
-import org.apache.tez.dag.app.dag.Vertex;
-import org.apache.tez.dag.records.TezDAGID;
-import org.apache.tez.dag.records.TezTaskID;
-import org.apache.tez.dag.records.TezVertexID;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.apache.tez.runtime.api.events.TaskAttemptFailedEvent;
-import org.apache.tez.runtime.api.impl.EventMetaData;
-import org.apache.tez.runtime.api.impl.TezEvent;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.dag.app.dag.DAG;
+import org.apache.tez.dag.app.dag.Vertex;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventAttemptFailed;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventAttemptKilled;
 import org.apache.tez.dag.app.rm.container.AMContainer;
 import org.apache.tez.dag.app.rm.container.AMContainerMap;
 import org.apache.tez.dag.app.rm.container.AMContainerTask;
 import org.apache.tez.dag.records.TaskAttemptTerminationCause;
+import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.dag.records.TezTaskID;
+import org.apache.tez.dag.records.TezVertexID;
+import org.apache.tez.runtime.api.TaskFailureType;
+import org.apache.tez.runtime.api.events.TaskAttemptFailedEvent;
+import org.apache.tez.runtime.api.impl.EventMetaData;
 import org.apache.tez.runtime.api.impl.TaskSpec;
+import org.apache.tez.runtime.api.impl.TezEvent;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.serviceplugins.api.TaskHeartbeatRequest;
+
+import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -96,22 +96,22 @@ public class TestTaskCommunicatorManager2 {
     wrapper.registerTaskAttempt(containerId2, amContainerTask2);
 
     wrapper.getTaskCommunicatorManager().taskFailed(amContainerTask1.getTask().getTaskAttemptID(),
-        TaskFailureType.NON_FATAL, TaskAttemptEndReason.COMMUNICATION_ERROR, "Diagnostics1");
+      TaskFailureType.NON_FATAL, TaskAttemptEndReason.COMMUNICATION_ERROR, "Diagnostics1");
     wrapper.getTaskCommunicatorManager().taskKilled(amContainerTask2.getTask().getTaskAttemptID(),
-        TaskAttemptEndReason.EXECUTOR_BUSY, "Diagnostics2");
+      TaskAttemptEndReason.EXECUTOR_BUSY, "Diagnostics2");
 
     ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
     verify(wrapper.getEventHandler(), times(2)).handle(argumentCaptor.capture());
     assertTrue(argumentCaptor.getAllValues().get(0) instanceof TaskAttemptEventAttemptFailed);
     assertTrue(argumentCaptor.getAllValues().get(1) instanceof TaskAttemptEventAttemptKilled);
     TaskAttemptEventAttemptFailed failedEvent =
-        (TaskAttemptEventAttemptFailed) argumentCaptor.getAllValues().get(0);
+      (TaskAttemptEventAttemptFailed) argumentCaptor.getAllValues().get(0);
     TaskAttemptEventAttemptKilled killedEvent =
-        (TaskAttemptEventAttemptKilled) argumentCaptor.getAllValues().get(1);
+      (TaskAttemptEventAttemptKilled) argumentCaptor.getAllValues().get(1);
 
     assertEquals("Diagnostics1", failedEvent.getDiagnosticInfo());
     assertEquals(TaskAttemptTerminationCause.COMMUNICATION_ERROR,
-        failedEvent.getTerminationCause());
+      failedEvent.getTerminationCause());
 
     assertEquals("Diagnostics2", killedEvent.getDiagnosticInfo());
     assertEquals(TaskAttemptTerminationCause.SERVICE_BUSY, killedEvent.getTerminationCause());
@@ -142,22 +142,22 @@ public class TestTaskCommunicatorManager2 {
     List<TezEvent> events = new LinkedList<>();
 
     EventMetaData sourceInfo1 =
-        new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, "testVertex", null,
-            taskSpec1.getTaskAttemptID());
+      new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, "testVertex", null,
+        taskSpec1.getTaskAttemptID());
     TaskAttemptFailedEvent failedEvent1 = new TaskAttemptFailedEvent("non-fatal test error",
-        TaskFailureType.NON_FATAL);
+      TaskFailureType.NON_FATAL);
     TezEvent failedEventT1 = new TezEvent(failedEvent1, sourceInfo1);
     events.add(failedEventT1);
     TaskHeartbeatRequest taskHeartbeatRequest1 =
-        new TaskHeartbeatRequest(containerId1.toString(), taskSpec1.getTaskAttemptID(), events, 0,
-            0, 0);
+      new TaskHeartbeatRequest(containerId1.toString(), taskSpec1.getTaskAttemptID(), events, 0,
+        0, 0);
     wrapper.getTaskCommunicatorManager().heartbeat(taskHeartbeatRequest1);
 
     ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
     verify(wrapper.getEventHandler(), times(1)).handle(argumentCaptor.capture());
     assertTrue(argumentCaptor.getAllValues().get(0) instanceof TaskAttemptEventAttemptFailed);
     TaskAttemptEventAttemptFailed failedEvent =
-        (TaskAttemptEventAttemptFailed) argumentCaptor.getAllValues().get(0);
+      (TaskAttemptEventAttemptFailed) argumentCaptor.getAllValues().get(0);
     assertEquals(TaskFailureType.NON_FATAL, failedEvent.getTaskFailureType());
     assertTrue(failedEvent.getDiagnosticInfo().contains("non-fatal"));
 
@@ -165,15 +165,15 @@ public class TestTaskCommunicatorManager2 {
     reset(wrapper.getEventHandler());
 
     EventMetaData sourceInfo2 =
-        new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, "testVertex", null,
-            taskSpec2.getTaskAttemptID());
+      new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, "testVertex", null,
+        taskSpec2.getTaskAttemptID());
     TaskAttemptFailedEvent failedEvent2 = new TaskAttemptFailedEvent("-fatal- test error",
-        TaskFailureType.FATAL);
+      TaskFailureType.FATAL);
     TezEvent failedEventT2 = new TezEvent(failedEvent2, sourceInfo2);
     events.add(failedEventT2);
     TaskHeartbeatRequest taskHeartbeatRequest2 =
-        new TaskHeartbeatRequest(containerId2.toString(), taskSpec2.getTaskAttemptID(), events, 0,
-            0, 0);
+      new TaskHeartbeatRequest(containerId2.toString(), taskSpec2.getTaskAttemptID(), events, 0,
+        0, 0);
     wrapper.getTaskCommunicatorManager().heartbeat(taskHeartbeatRequest2);
 
     argumentCaptor = ArgumentCaptor.forClass(Event.class);
@@ -204,16 +204,15 @@ public class TestTaskCommunicatorManager2 {
     wrapper.registerRunningContainer(containerId2);
     wrapper.registerTaskAttempt(containerId2, amContainerTask2);
 
-
     // non-fatal
     wrapper.getTaskCommunicatorManager()
-        .taskFailed(taskSpec1.getTaskAttemptID(), TaskFailureType.NON_FATAL,
-            TaskAttemptEndReason.CONTAINER_EXITED, "--non-fatal--");
+      .taskFailed(taskSpec1.getTaskAttemptID(), TaskFailureType.NON_FATAL,
+        TaskAttemptEndReason.CONTAINER_EXITED, "--non-fatal--");
     ArgumentCaptor<Event> argumentCaptor = ArgumentCaptor.forClass(Event.class);
     verify(wrapper.getEventHandler(), times(1)).handle(argumentCaptor.capture());
     assertTrue(argumentCaptor.getAllValues().get(0) instanceof TaskAttemptEventAttemptFailed);
     TaskAttemptEventAttemptFailed failedEvent =
-        (TaskAttemptEventAttemptFailed) argumentCaptor.getAllValues().get(0);
+      (TaskAttemptEventAttemptFailed) argumentCaptor.getAllValues().get(0);
     assertEquals(TaskFailureType.NON_FATAL, failedEvent.getTaskFailureType());
     assertTrue(failedEvent.getDiagnosticInfo().contains("--non-fatal--"));
 
@@ -221,8 +220,8 @@ public class TestTaskCommunicatorManager2 {
 
     // fatal
     wrapper.getTaskCommunicatorManager()
-        .taskFailed(taskSpec2.getTaskAttemptID(), TaskFailureType.FATAL, TaskAttemptEndReason.OTHER,
-            "--fatal--");
+      .taskFailed(taskSpec2.getTaskAttemptID(), TaskFailureType.FATAL, TaskAttemptEndReason.OTHER,
+        "--fatal--");
     argumentCaptor = ArgumentCaptor.forClass(Event.class);
     verify(wrapper.getEventHandler(), times(1)).handle(argumentCaptor.capture());
     assertTrue(argumentCaptor.getAllValues().get(0) instanceof TaskAttemptEventAttemptFailed);
@@ -256,7 +255,7 @@ public class TestTaskCommunicatorManager2 {
       doReturn(dag).when(appContext).getCurrentDAG();
       doReturn(vertex).when(dag).getVertex(eq(vertexId));
       doReturn(new TaskAttemptEventInfo(0, new LinkedList<TezEvent>(), 0)).when(vertex)
-          .getTaskAttemptTezEvents(any(TezTaskAttemptID.class), anyInt(), anyInt(), anyInt());
+        .getTaskAttemptTezEvents(any(TezTaskAttemptID.class), anyInt(), anyInt(), anyInt());
       doReturn(appAttemptId).when(appContext).getApplicationAttemptId();
       doReturn(credentials).when(appContext).getAppCredentials();
       doReturn(appAcls).when(appContext).getApplicationACLs();
@@ -273,11 +272,10 @@ public class TestTaskCommunicatorManager2 {
       userPayload = TezUtils.createUserPayloadFromConf(conf);
 
       taskCommunicatorManager =
-          new TaskCommunicatorManager(appContext, mock(TaskHeartbeatHandler.class),
-              mock(ContainerHeartbeatHandler.class), Lists.newArrayList(new NamedEntityDescriptor(
-              TezConstants.getTezYarnServicePluginName(), null).setUserPayload(userPayload)));
+        new TaskCommunicatorManager(appContext, mock(TaskHeartbeatHandler.class),
+          mock(ContainerHeartbeatHandler.class), Lists.newArrayList(new NamedEntityDescriptor(
+          TezConstants.getTezYarnServicePluginName(), null).setUserPayload(userPayload)));
     }
-
 
     TaskCommunicatorManager getTaskCommunicatorManager() {
       return taskCommunicatorManager;
@@ -303,13 +301,11 @@ public class TestTaskCommunicatorManager2 {
       return taskSpec;
     }
 
-
     @SuppressWarnings("deprecation")
     private ContainerId createContainerId(int id) {
       ApplicationAttemptId appAttemptId = ApplicationAttemptId.newInstance(appId, 1);
       ContainerId containerId = ContainerId.newInstance(appAttemptId, id);
       return containerId;
     }
-
   }
 }

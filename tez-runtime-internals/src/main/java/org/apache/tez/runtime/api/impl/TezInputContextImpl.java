@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,53 +37,35 @@ import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.InputReadyTracker;
 import org.apache.tez.runtime.LogicalIOProcessorRuntimeTask;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.apache.tez.runtime.api.ExecutionContext;
 import org.apache.tez.runtime.api.Event;
+import org.apache.tez.runtime.api.ExecutionContext;
+import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.api.InputStatisticsReporter;
 import org.apache.tez.runtime.api.LogicalInput;
-import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.api.ObjectRegistry;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.impl.EventMetaData.EventProducerConsumerType;
 import org.apache.tez.runtime.common.resources.MemoryDistributor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TezInputContextImpl extends TezTaskContextImpl
-    implements InputContext {
+  implements InputContext {
 
   private static final Logger LOG = LoggerFactory.getLogger(TezInputContextImpl.class);
-
-  private volatile UserPayload userPayload;
   private final String sourceVertexName;
   private final EventMetaData sourceInfo;
   private final int inputIndex;
   private final Map<String, LogicalInput> inputs;
-  private volatile InputReadyTracker inputReadyTracker;
   private final InputStatisticsReporterImpl statsReporter;
-  
-  class InputStatisticsReporterImpl implements InputStatisticsReporter {
-
-    @Override
-    public synchronized void reportDataSize(long size) {
-      // this is a concurrent map. Plus we are not adding/deleting entries
-      runtimeTask.getTaskStatistics().getIOStatistics().get(sourceVertexName)
-          .setDataSize(size);
-    }
-
-    @Override
-    public void reportItemsProcessed(long items) {
-      // this is a concurrent map. Plus we are not adding/deleting entries
-      runtimeTask.getTaskStatistics().getIOStatistics().get(sourceVertexName)
-          .setItemsProcessed(items);      
-    }
-    
-  }
+  private volatile UserPayload userPayload;
+  private volatile InputReadyTracker inputReadyTracker;
 
   @Private
   public TezInputContextImpl(Configuration conf, String[] workDirs,
                              int appAttemptNumber,
-                             TezUmbilical tezUmbilical, String dagName, 
+                             TezUmbilical tezUmbilical, String dagName,
                              String taskVertexName, String sourceVertexName,
                              int vertexParallelism, TezTaskAttemptID taskAttemptID,
                              int inputIndex, @Nullable UserPayload userPayload,
@@ -95,10 +77,10 @@ public class TezInputContextImpl extends TezTaskContextImpl
                              ExecutionContext ExecutionContext, long memAvailable,
                              TezExecutors sharedExecutor) {
     super(conf, workDirs, appAttemptNumber, dagName, taskVertexName,
-        vertexParallelism, taskAttemptID, wrapCounters(runtimeTask,
+      vertexParallelism, taskAttemptID, wrapCounters(runtimeTask,
         taskVertexName, sourceVertexName, conf), runtimeTask, tezUmbilical,
-        serviceConsumerMetadata, auxServiceEnv, memDist, inputDescriptor,
-        objectRegistry, ExecutionContext, memAvailable, sharedExecutor);
+      serviceConsumerMetadata, auxServiceEnv, memDist, inputDescriptor,
+      objectRegistry, ExecutionContext, memAvailable, sharedExecutor);
     Objects.requireNonNull(inputIndex, "inputIndex is null");
     Objects.requireNonNull(sourceVertexName, "sourceVertexName is null");
     Objects.requireNonNull(inputs, "input map is null");
@@ -107,8 +89,8 @@ public class TezInputContextImpl extends TezTaskContextImpl
     this.inputIndex = inputIndex;
     this.sourceVertexName = sourceVertexName;
     this.sourceInfo = new EventMetaData(
-        EventProducerConsumerType.INPUT, taskVertexName, sourceVertexName,
-        taskAttemptID);
+      EventProducerConsumerType.INPUT, taskVertexName, sourceVertexName,
+      taskAttemptID);
     this.inputs = inputs;
     this.inputReadyTracker = inputReadyTracker;
     runtimeTask.getTaskStatistics().addIO(sourceVertexName);
@@ -116,10 +98,10 @@ public class TezInputContextImpl extends TezTaskContextImpl
   }
 
   private static TezCounters wrapCounters(LogicalIOProcessorRuntimeTask task, String taskVertexName,
-      String edgeVertexName, Configuration conf) {
+                                          String edgeVertexName, Configuration conf) {
     TezCounters tezCounters = task.addAndGetTezCounter(edgeVertexName);
     if (conf.getBoolean(TezConfiguration.TEZ_TASK_GENERATE_COUNTERS_PER_IO,
-        TezConfiguration.TEZ_TASK_GENERATE_COUNTERS_PER_IO_DEFAULT)) {
+      TezConfiguration.TEZ_TASK_GENERATE_COUNTERS_PER_IO_DEFAULT)) {
       return new TezCountersDelegate(tezCounters, taskVertexName, edgeVertexName, "INPUT");
     } else {
       return tezCounters;
@@ -141,7 +123,7 @@ public class TezInputContextImpl extends TezTaskContextImpl
   public UserPayload getUserPayload() {
     return userPayload;
   }
-  
+
   @Override
   public int getInputIndex() {
     return inputIndex;
@@ -193,5 +175,22 @@ public class TezInputContextImpl extends TezTaskContextImpl
     this.userPayload = null;
     this.inputReadyTracker = null;
     LOG.debug("Cleared TezInputContextImpl related information");
+  }
+
+  class InputStatisticsReporterImpl implements InputStatisticsReporter {
+
+    @Override
+    public synchronized void reportDataSize(long size) {
+      // this is a concurrent map. Plus we are not adding/deleting entries
+      runtimeTask.getTaskStatistics().getIOStatistics().get(sourceVertexName)
+        .setDataSize(size);
+    }
+
+    @Override
+    public void reportItemsProcessed(long items) {
+      // this is a concurrent map. Plus we are not adding/deleting entries
+      runtimeTask.getTaskStatistics().getIOStatistics().get(sourceVertexName)
+        .setItemsProcessed(items);
+    }
   }
 }

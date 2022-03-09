@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,6 @@ package org.apache.tez.dag.history.events;
 
 import java.io.IOException;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.util.ConverterUtils;
@@ -30,6 +28,9 @@ import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.records.TaskAttemptIDAware;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.TaskAttemptStartedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class TaskAttemptStartedEvent implements HistoryEvent, TaskAttemptIDAware {
 
@@ -43,10 +44,10 @@ public class TaskAttemptStartedEvent implements HistoryEvent, TaskAttemptIDAware
   private String nodeHttpAddress;
 
   public TaskAttemptStartedEvent(TezTaskAttemptID taId,
-      String vertexName, long launchTime,
-      ContainerId containerId, NodeId nodeId,
-      String inProgressLogsUrl, String completedLogsUrl,
-      String nodeHttpAddress) {
+                                 String vertexName, long launchTime,
+                                 ContainerId containerId, NodeId nodeId,
+                                 String inProgressLogsUrl, String completedLogsUrl,
+                                 String nodeHttpAddress) {
     this.taskAttemptId = taId;
     this.vertexName = vertexName;
     this.launchTime = launchTime;
@@ -78,9 +79,9 @@ public class TaskAttemptStartedEvent implements HistoryEvent, TaskAttemptIDAware
   public TaskAttemptStartedProto toProto() {
     TaskAttemptStartedProto.Builder builder = TaskAttemptStartedProto.newBuilder();
     builder.setTaskAttemptId(taskAttemptId.toString())
-        .setStartTime(launchTime)
-        .setContainerId(containerId.toString())
-        .setNodeId(nodeId.toString());
+      .setStartTime(launchTime)
+      .setContainerId(containerId.toString())
+      .setNodeId(nodeId.toString());
     return builder.build();
   }
 
@@ -108,10 +109,10 @@ public class TaskAttemptStartedEvent implements HistoryEvent, TaskAttemptIDAware
   @Override
   public String toString() {
     return "vertexName=" + vertexName
-        + ", taskAttemptId=" + taskAttemptId
-        + ", startTime=" + launchTime
-        + ", containerId=" + containerId
-        + ", nodeId=" + nodeId;
+      + ", taskAttemptId=" + taskAttemptId
+      + ", startTime=" + launchTime
+      + ", containerId=" + containerId
+      + ", nodeId=" + nodeId;
   }
 
   @Override
@@ -122,7 +123,7 @@ public class TaskAttemptStartedEvent implements HistoryEvent, TaskAttemptIDAware
   public long getStartTime() {
     return launchTime;
   }
-  
+
   public ContainerId getContainerId() {
     return containerId;
   }
@@ -142,5 +143,4 @@ public class TaskAttemptStartedEvent implements HistoryEvent, TaskAttemptIDAware
   public String getNodeHttpAddress() {
     return nodeHttpAddress;
   }
-
 }

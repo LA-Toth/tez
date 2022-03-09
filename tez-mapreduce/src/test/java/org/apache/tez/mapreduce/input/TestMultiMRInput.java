@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +18,6 @@
 
 package org.apache.tez.mapreduce.input;
 
-import java.nio.ByteBuffer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -28,6 +27,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -37,8 +37,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -63,9 +61,12 @@ import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.api.events.InputDataInformationEvent;
 import org.apache.tez.runtime.library.api.KeyValueReader;
+
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestMultiMRInput {
 
@@ -85,6 +86,40 @@ public class TestMultiMRInput {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @AfterClass
+  public static void cleanUp() throws IOException {
+    localFs.delete(TEST_ROOT_DIR, true);
+  }
+
+  public static LinkedHashMap<LongWritable, Text> createInputData(FileSystem fs, Path workDir,
+                                                                  Configuration job, String filename, long startKey,
+                                                                  long numKeys, AtomicLong fileLength)
+    throws IOException {
+    LinkedHashMap<LongWritable, Text> data = new LinkedHashMap<LongWritable, Text>();
+    Path file = new Path(workDir, filename);
+    LOG.info("Generating data at path: " + file);
+    // create a file with length entries
+    @SuppressWarnings("deprecation")
+    SequenceFile.Writer writer = SequenceFile.createWriter(fs, job, file, LongWritable.class,
+      Text.class);
+    try {
+      Random r = new Random(System.currentTimeMillis());
+      LongWritable key = new LongWritable();
+      Text value = new Text();
+      for (long i = startKey; i < numKeys; i++) {
+        key.set(i);
+        value.set(Integer.toString(r.nextInt(10000)));
+        data.put(new LongWritable(key.get()), new Text(value.toString()));
+        writer.append(key, value);
+        LOG.info("<k, v> : <" + key.get() + ", " + value + ">");
+      }
+      fileLength.addAndGet(writer.getLength());
+    } finally {
+      writer.close();
+    }
+    return data;
   }
 
   @Before
@@ -157,14 +192,14 @@ public class TestMultiMRInput {
     LinkedHashMap<LongWritable, Text> data = createSplits(1, workDir, jobConf, inputLength);
 
     SequenceFileInputFormat<LongWritable, Text> format =
-        new SequenceFileInputFormat<LongWritable, Text>();
+      new SequenceFileInputFormat<LongWritable, Text>();
     InputSplit[] splits = format.getSplits(jobConf, 1);
     assertEquals(1, splits.length);
 
     MRSplitProto splitProto = MRInputHelpers.createSplitProto(splits[0]);
     InputDataInformationEvent event =
-        InputDataInformationEvent.createWithSerializedPayload(0,
-            splitProto.toByteString().asReadOnlyByteBuffer());
+      InputDataInformationEvent.createWithSerializedPayload(0,
+        splitProto.toByteString().asReadOnlyByteBuffer());
 
     List<Event> eventList = new ArrayList<Event>();
     eventList.add(event);
@@ -188,15 +223,15 @@ public class TestMultiMRInput {
 
     // Get split information.
     org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat<LongWritable, Text> format =
-        new org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat<>();
+      new org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat<>();
     List<org.apache.hadoop.mapreduce.InputSplit> splits = format.getSplits(job);
     assertEquals(1, splits.size());
 
     // Create the event.
     MRSplitProto splitProto =
-        MRInputHelpers.createSplitProto(splits.get(0), new SerializationFactory(conf));
+      MRInputHelpers.createSplitProto(splits.get(0), new SerializationFactory(conf));
     InputDataInformationEvent event = InputDataInformationEvent.createWithSerializedPayload(0,
-        splitProto.toByteString().asReadOnlyByteBuffer());
+      splitProto.toByteString().asReadOnlyByteBuffer());
 
     // Create input context.
     InputContext inputContext = createTezInputContext(conf, new Configuration(false));
@@ -226,19 +261,19 @@ public class TestMultiMRInput {
     LinkedHashMap<LongWritable, Text> data = createSplits(2, workDir, jobConf, inputLength);
 
     SequenceFileInputFormat<LongWritable, Text> format =
-        new SequenceFileInputFormat<LongWritable, Text>();
+      new SequenceFileInputFormat<LongWritable, Text>();
     InputSplit[] splits = format.getSplits(jobConf, 2);
     assertEquals(2, splits.length);
 
     MRSplitProto splitProto1 = MRInputHelpers.createSplitProto(splits[0]);
     InputDataInformationEvent event1 =
-        InputDataInformationEvent.createWithSerializedPayload(0,
-            splitProto1.toByteString().asReadOnlyByteBuffer());
+      InputDataInformationEvent.createWithSerializedPayload(0,
+        splitProto1.toByteString().asReadOnlyByteBuffer());
 
     MRSplitProto splitProto2 = MRInputHelpers.createSplitProto(splits[1]);
     InputDataInformationEvent event2 =
-        InputDataInformationEvent.createWithSerializedPayload(0,
-            splitProto2.toByteString().asReadOnlyByteBuffer());
+      InputDataInformationEvent.createWithSerializedPayload(0,
+        splitProto2.toByteString().asReadOnlyByteBuffer());
 
     List<Event> eventList = new ArrayList<Event>();
     eventList.add(event1);
@@ -249,7 +284,7 @@ public class TestMultiMRInput {
   }
 
   private void assertReaders(MultiMRInput input, LinkedHashMap<LongWritable, Text> data,
-      int expectedReaderCounts, long inputBytes) throws Exception {
+                             int expectedReaderCounts, long inputBytes) throws Exception {
     int readerCount = 0;
     int recordCount = 0;
     for (KeyValueReader reader : input.getKeyValueReaders()) {
@@ -267,12 +302,12 @@ public class TestMultiMRInput {
       try {
         reader.next(); //should throw exception
         fail();
-      } catch(IOException e) {
+      } catch (IOException e) {
         assertTrue(e.getMessage().contains("For usage, please refer to"));
       }
     }
     long counterValue = input.getContext().getCounters()
-        .findCounter(TaskCounter.INPUT_SPLIT_LENGTH_BYTES).getValue();
+      .findCounter(TaskCounter.INPUT_SPLIT_LENGTH_BYTES).getValue();
     assertEquals(inputBytes, counterValue);
     assertEquals(expectedReaderCounts, readerCount);
   }
@@ -292,17 +327,17 @@ public class TestMultiMRInput {
     createSplits(1, workDir, jobConf, new AtomicLong());
 
     SequenceFileInputFormat<LongWritable, Text> format =
-        new SequenceFileInputFormat<LongWritable, Text>();
+      new SequenceFileInputFormat<LongWritable, Text>();
     InputSplit[] splits = format.getSplits(jobConf, 1);
     assertEquals(1, splits.length);
 
     MRSplitProto splitProto = MRInputHelpers.createSplitProto(splits[0]);
     InputDataInformationEvent event1 =
-        InputDataInformationEvent.createWithSerializedPayload(0,
-            splitProto.toByteString().asReadOnlyByteBuffer());
+      InputDataInformationEvent.createWithSerializedPayload(0,
+        splitProto.toByteString().asReadOnlyByteBuffer());
     InputDataInformationEvent event2 =
-        InputDataInformationEvent.createWithSerializedPayload(1,
-            splitProto.toByteString().asReadOnlyByteBuffer());
+      InputDataInformationEvent.createWithSerializedPayload(1,
+        splitProto.toByteString().asReadOnlyByteBuffer());
 
     List<Event> eventList = new ArrayList<Event>();
     eventList.add(event1);
@@ -312,12 +347,12 @@ public class TestMultiMRInput {
       fail("Expecting Exception due to too many events");
     } catch (Exception e) {
       assertTrue(e.getMessage().contains(
-          "Unexpected event. All physical sources already initialized"));
+        "Unexpected event. All physical sources already initialized"));
     }
   }
 
   private LinkedHashMap<LongWritable, Text> createSplits(int splitCount, Path workDir,
-      Configuration conf, AtomicLong totalSize) throws Exception {
+                                                         Configuration conf, AtomicLong totalSize) throws Exception {
     LinkedHashMap<LongWritable, Text> data = new LinkedHashMap<LongWritable, Text>();
     for (int i = 0; i < splitCount; ++i) {
       int start = i * 10;
@@ -351,38 +386,5 @@ public class TestMultiMRInput {
     doReturn(UserPayload.create(ByteBuffer.wrap(payload))).when(inputContext).getUserPayload();
     doReturn(baseConf).when(inputContext).getContainerConfiguration();
     return inputContext;
-  }
-
-  @AfterClass
-  public static void cleanUp() throws IOException {
-    localFs.delete(TEST_ROOT_DIR, true);
-  }
-
-  public static LinkedHashMap<LongWritable, Text> createInputData(FileSystem fs, Path workDir,
-      Configuration job, String filename, long startKey, long numKeys, AtomicLong fileLength)
-          throws IOException {
-    LinkedHashMap<LongWritable, Text> data = new LinkedHashMap<LongWritable, Text>();
-    Path file = new Path(workDir, filename);
-    LOG.info("Generating data at path: " + file);
-    // create a file with length entries
-    @SuppressWarnings("deprecation")
-    SequenceFile.Writer writer = SequenceFile.createWriter(fs, job, file, LongWritable.class,
-        Text.class);
-    try {
-      Random r = new Random(System.currentTimeMillis());
-      LongWritable key = new LongWritable();
-      Text value = new Text();
-      for (long i = startKey; i < numKeys; i++) {
-        key.set(i);
-        value.set(Integer.toString(r.nextInt(10000)));
-        data.put(new LongWritable(key.get()), new Text(value.toString()));
-        writer.append(key, value);
-        LOG.info("<k, v> : <" + key.get() + ", " + value + ">");
-      }
-      fileLength.addAndGet(writer.getLength());
-    } finally {
-      writer.close();
-    }
-    return data;
   }
 }

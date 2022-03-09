@@ -14,9 +14,10 @@
 
 package org.apache.tez.serviceplugins.api;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Set;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -25,7 +26,6 @@ import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.event.VertexState;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.api.TaskFailureType;
-
 
 // Do not make calls into this from within a held lock.
 
@@ -41,8 +41,8 @@ public interface TaskCommunicatorContext extends ServicePluginContextBase {
   // - Report taskSuccess via a method instead of the heartbeat
   // - Add methods to signal container / task state changes
   // - Maybe add book-keeping as a helper library, instead of each impl tracking container to task etc.
-  // - Handling of containres / tasks which no longer exist in the system (formalized interface instead of a shouldDie notification)
-
+  // - Handling of containres / tasks which no longer exist in the system (formalized interface instead of a
+  // shouldDie notification)
 
   /**
    * Get the application attempt id for the running application. Relevant when running under YARN
@@ -127,7 +127,7 @@ public interface TaskCommunicatorContext extends ServicePluginContextBase {
 
   /**
    * Inform the framework that the task has started execution
-   *
+   * <p>
    * Use {@link #taskSubmitted(TezTaskAttemptID, ContainerId)}
    * and {@link #taskStartedRemotely(TezTaskAttemptID)} instead
    *
@@ -164,7 +164,8 @@ public interface TaskCommunicatorContext extends ServicePluginContextBase {
 
   /**
    * Register to get notifications on updates to the specified vertex. Notifications will be sent
-   * via {@link org.apache.tez.runtime.api.InputInitializer#onVertexStateUpdated(org.apache.tez.dag.api.event.VertexStateUpdate)}
+   * via
+   * {@link org.apache.tez.runtime.api.InputInitializer#onVertexStateUpdated(org.apache.tez.dag.api.event.VertexStateUpdate)}
    * </p>
    * <p/>
    * This method can only be invoked once. Duplicate invocations will result in an error.
@@ -176,6 +177,7 @@ public interface TaskCommunicatorContext extends ServicePluginContextBase {
 
   /**
    * Get an identifier for the executing context of the DAG.
+   *
    * @return a String identifier for the exeucting context.
    */
   String getCurrentAppIdentifier();

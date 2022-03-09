@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,6 +30,7 @@ import org.apache.hadoop.yarn.api.ApplicationConstants.Environment;
 import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -56,11 +57,11 @@ public class TestMRHelpers {
     Assert.assertFalse(opts.contains("fooReduceAdminOpts "));
     Assert.assertFalse(opts.contains(" fooReduceJavaOpts "));
     Assert.assertTrue(opts.indexOf("fooMapAdminOpts")
-        < opts.indexOf("fooMapJavaOpts"));
+      < opts.indexOf("fooMapJavaOpts"));
     Assert.assertTrue(opts.contains(" -D"
-        + TezConstants.TEZ_ROOT_LOGGER_NAME + "=FATAL"));
+      + TezConstants.TEZ_ROOT_LOGGER_NAME + "=FATAL"));
     Assert.assertFalse(opts.contains(" -D"
-        + TezConstants.TEZ_ROOT_LOGGER_NAME + "=TRACE"));
+      + TezConstants.TEZ_ROOT_LOGGER_NAME + "=TRACE"));
   }
 
   @Test(timeout = 5000)
@@ -73,11 +74,11 @@ public class TestMRHelpers {
     Assert.assertTrue(opts.contains("fooReduceAdminOpts"));
     Assert.assertTrue(opts.contains(" fooReduceJavaOpts "));
     Assert.assertTrue(opts.indexOf("fooReduceAdminOpts")
-        < opts.indexOf("fooReduceJavaOpts"));
+      < opts.indexOf("fooReduceJavaOpts"));
     Assert.assertFalse(opts.contains(" -D"
-        + TezConstants.TEZ_ROOT_LOGGER_NAME + "=FATAL"));
+      + TezConstants.TEZ_ROOT_LOGGER_NAME + "=FATAL"));
     Assert.assertTrue(opts.contains(" -D"
-        + TezConstants.TEZ_ROOT_LOGGER_NAME + "=TRACE"));
+      + TezConstants.TEZ_ROOT_LOGGER_NAME + "=TRACE"));
   }
 
   @Test(timeout = 5000)
@@ -87,13 +88,13 @@ public class TestMRHelpers {
     Resource reduceResource = MRHelpers.getResourceForMRReducer(conf);
 
     Assert.assertEquals(MRJobConfig.DEFAULT_MAP_CPU_VCORES,
-        mapResource.getVirtualCores());
+      mapResource.getVirtualCores());
     Assert.assertEquals(MRJobConfig.DEFAULT_MAP_MEMORY_MB,
-        mapResource.getMemory());
+      mapResource.getMemory());
     Assert.assertEquals(MRJobConfig.DEFAULT_REDUCE_CPU_VCORES,
-        reduceResource.getVirtualCores());
+      reduceResource.getVirtualCores());
     Assert.assertEquals(MRJobConfig.DEFAULT_REDUCE_MEMORY_MB,
-        reduceResource.getMemory());
+      reduceResource.getMemory());
 
     conf.setInt(MRJobConfig.MAP_CPU_VCORES, 2);
     conf.setInt(MRJobConfig.MAP_MEMORY_MB, 123);
@@ -116,8 +117,8 @@ public class TestMRHelpers {
     conf.set(MRJobConfig.MAP_LOG_LEVEL, "TRACE");
     conf.set(MRJobConfig.REDUCE_LOG_LEVEL, "FATAL");
     final String mapredAdminUserEnv = Shell.WINDOWS ?
-        "PATH=%PATH%" + File.pathSeparator + "%TEZ_ADMIN_ENV%\\bin":
-        "LD_LIBRARY_PATH=$TEZ_ADMIN_ENV_TEST/lib/native";
+      "PATH=%PATH%" + File.pathSeparator + "%TEZ_ADMIN_ENV%\\bin" :
+      "LD_LIBRARY_PATH=$TEZ_ADMIN_ENV_TEST/lib/native";
 
     conf.set(MRJobConfig.MAPRED_ADMIN_USER_ENV, mapredAdminUserEnv);
     return conf;
@@ -136,7 +137,7 @@ public class TestMRHelpers {
      */
     if (!Shell.WINDOWS) {
       Assert.assertEquals("$PWD:$TEZ_ADMIN_ENV_TEST/lib/native",
-          env.get(Environment.LD_LIBRARY_PATH.name()));
+        env.get(Environment.LD_LIBRARY_PATH.name()));
     } else {
       Assert.assertTrue(env.get(Environment.PATH.name()).contains(";%TEZ_ADMIN_ENV%\\bin"));
     }
@@ -184,7 +185,7 @@ public class TestMRHelpers {
     conf.set(MRJobConfig.MR_AM_ADMIN_USER_ENV, "foo=bar,admin1=foo1");
     conf.set(MRJobConfig.MR_AM_ENV, "foo=bar2,user=foo2");
     Map<String, String> env =
-        new HashMap<String, String>();
+      new HashMap<String, String>();
     MRHelpers.updateEnvBasedOnMRAMEnv(conf, env);
     Assert.assertEquals("foo1", env.get("admin1"));
     Assert.assertEquals("foo2", env.get("user"));
@@ -212,5 +213,4 @@ public class TestMRHelpers {
     Assert.assertNull(conf3.get(org.apache.tez.mapreduce.hadoop.MRJobConfig.IO_SORT_MB));
     Assert.assertEquals(500, conf3.getLong(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_MB, 0));
   }
-
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,10 +25,10 @@ import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.tez.dag.api.GroupInputEdge;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.runtime.api.Input;
+import org.apache.tez.runtime.api.MergedInputContext;
 import org.apache.tez.runtime.api.MergedLogicalInput;
 import org.apache.tez.runtime.api.ProgressFailedException;
 import org.apache.tez.runtime.api.Reader;
-import org.apache.tez.runtime.api.MergedInputContext;
 import org.apache.tez.runtime.library.api.KeyValueReader;
 
 /**
@@ -43,6 +43,30 @@ public class ConcatenatedMergedKeyValueInput extends MergedLogicalInput {
   public ConcatenatedMergedKeyValueInput(MergedInputContext context,
                                          List<Input> inputs) {
     super(context, inputs);
+  }
+
+  /**
+   * Provides a {@link KeyValueReader} that iterates over the
+   * concatenated input data
+   */
+  @Override
+  public KeyValueReader getReader() throws Exception {
+    concatenatedMergedKeyValueReader = new ConcatenatedMergedKeyValueReader();
+    return concatenatedMergedKeyValueReader;
+  }
+
+  @Override
+  public void setConstituentInputIsReady(Input input) {
+    informInputReady();
+  }
+
+  @Override
+  public float getProgress() throws ProgressFailedException, InterruptedException {
+    try {
+      return concatenatedMergedKeyValueReader.getProgress();
+    } catch (IOException e) {
+      throw new ProgressFailedException("getProgress encountered IOException ", e);
+    }
   }
 
   public class ConcatenatedMergedKeyValueReader extends KeyValueReader {
@@ -62,7 +86,7 @@ public class ConcatenatedMergedKeyValueInput extends MergedLogicalInput {
           Reader reader = getInputs().get(currentReaderIndex).getReader();
           if (!(reader instanceof KeyValueReader)) {
             throw new TezUncheckedException("Expected KeyValueReader. "
-                + "Got: " + reader.getClass().getName());
+              + "Got: " + reader.getClass().getName());
           }
           currentReader = (KeyValueReader) reader;
           currentReaderIndex++;
@@ -91,31 +115,7 @@ public class ConcatenatedMergedKeyValueInput extends MergedLogicalInput {
     }
 
     public float getProgress() throws IOException, InterruptedException {
-      return (1.0f)*(currentReaderIndex + 1)/getInputs().size();
-    }
-  }
-
-  /**
-   * Provides a {@link KeyValueReader} that iterates over the 
-   * concatenated input data
-   */
-  @Override
-  public KeyValueReader getReader() throws Exception {
-    concatenatedMergedKeyValueReader = new ConcatenatedMergedKeyValueReader();
-    return concatenatedMergedKeyValueReader;
-  }
-
-  @Override
-  public void setConstituentInputIsReady(Input input) {
-    informInputReady();
-  }
-
-  @Override
-  public float getProgress() throws ProgressFailedException, InterruptedException {
-    try {
-      return concatenatedMergedKeyValueReader.getProgress();
-    } catch (IOException e) {
-      throw new ProgressFailedException("getProgress encountered IOException ", e);
+      return (1.0f) * (currentReaderIndex + 1) / getInputs().size();
     }
   }
 }

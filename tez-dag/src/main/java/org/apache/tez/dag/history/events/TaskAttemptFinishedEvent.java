@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,25 +18,17 @@
 
 package org.apache.tez.dag.history.events;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
-import org.apache.tez.common.TezConverterUtils;
-import org.apache.tez.common.counters.CounterGroup;
-import org.apache.tez.common.counters.TezCounter;
-import org.apache.tez.dag.records.TaskAttemptIDAware;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.util.ConverterUtils;
+import org.apache.tez.common.TezConverterUtils;
+import org.apache.tez.common.counters.CounterGroup;
+import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.dag.api.DagTypeConverters;
 import org.apache.tez.dag.api.oldrecords.TaskAttemptState;
@@ -44,12 +36,20 @@ import org.apache.tez.dag.app.dag.impl.TaskAttemptImpl.DataEventDependencyInfo;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.history.utils.TezEventUtils;
+import org.apache.tez.dag.records.TaskAttemptIDAware;
 import org.apache.tez.dag.records.TaskAttemptTerminationCause;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.DataEventDependencyInfoProto;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.TaskAttemptFinishedProto;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.TezEventProto;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.impl.TezEvent;
+
+import com.google.common.collect.Lists;
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TaskAttemptFinishedEvent implements HistoryEvent, TaskAttemptIDAware {
 
@@ -76,23 +76,23 @@ public class TaskAttemptFinishedEvent implements HistoryEvent, TaskAttemptIDAwar
   private String nodeHttpAddress;
 
   public TaskAttemptFinishedEvent(TezTaskAttemptID taId,
-      String vertexName,
-      long startTime,
-      long finishTime,
-      TaskAttemptState state,
-      @Nullable TaskFailureType taskFailureType,
-      TaskAttemptTerminationCause error,
-      String diagnostics, TezCounters counters, 
-      List<DataEventDependencyInfo> dataEvents,
-      List<TezEvent> taGeneratedEvents,
-      long creationTime, 
-      TezTaskAttemptID creationCausalTA, 
-      long allocationTime,
-      ContainerId containerId,
-      NodeId nodeId,
-      String inProgressLogsUrl,
-      String completedLogsUrl,
-      String nodeHttpAddress) {
+                                  String vertexName,
+                                  long startTime,
+                                  long finishTime,
+                                  TaskAttemptState state,
+                                  @Nullable TaskFailureType taskFailureType,
+                                  TaskAttemptTerminationCause error,
+                                  String diagnostics, TezCounters counters,
+                                  List<DataEventDependencyInfo> dataEvents,
+                                  List<TezEvent> taGeneratedEvents,
+                                  long creationTime,
+                                  TezTaskAttemptID creationCausalTA,
+                                  long allocationTime,
+                                  ContainerId containerId,
+                                  NodeId nodeId,
+                                  String inProgressLogsUrl,
+                                  String completedLogsUrl,
+                                  String nodeHttpAddress) {
     this.taskAttemptId = taId;
     this.vertexName = vertexName;
     this.creationCausalTA = creationCausalTA;
@@ -131,20 +131,20 @@ public class TaskAttemptFinishedEvent implements HistoryEvent, TaskAttemptIDAwar
   public boolean isHistoryEvent() {
     return true;
   }
-  
+
   public List<DataEventDependencyInfo> getDataEvents() {
     return dataEvents;
   }
-  
+
   public TaskAttemptFinishedProto toProto() throws IOException {
     TaskAttemptFinishedProto.Builder builder =
-        TaskAttemptFinishedProto.newBuilder();
+      TaskAttemptFinishedProto.newBuilder();
     builder.setTaskAttemptId(taskAttemptId.toString())
-        .setState(state.ordinal())
-        .setCreationTime(creationTime)
-        .setAllocationTime(allocationTime)
-        .setStartTime(startTime)
-        .setFinishTime(finishTime);
+      .setState(state.ordinal())
+      .setCreationTime(creationTime)
+      .setAllocationTime(allocationTime)
+      .setStartTime(startTime)
+      .setFinishTime(finishTime);
     if (taskFailureType != null) {
       builder.setTaskFailureType(TezConverterUtils.failureTypeToProto(taskFailureType));
     }
@@ -300,7 +300,7 @@ public class TaskAttemptFinishedEvent implements HistoryEvent, TaskAttemptIDAwar
           for (TezCounter counter : group) {
             sb.append(", ");
             sb.append(counter.getDisplayName()).append("=")
-                .append(counter.getValue());
+              .append(counter.getValue());
           }
         }
       }
@@ -320,7 +320,7 @@ public class TaskAttemptFinishedEvent implements HistoryEvent, TaskAttemptIDAwar
   public String getDiagnostics() {
     return diagnostics;
   }
-  
+
   public TaskAttemptTerminationCause getTaskAttemptError() {
     return error;
   }
@@ -340,15 +340,15 @@ public class TaskAttemptFinishedEvent implements HistoryEvent, TaskAttemptIDAwar
   public long getStartTime() {
     return startTime;
   }
-  
+
   public long getCreationTime() {
     return creationTime;
   }
-  
+
   public long getAllocationTime() {
     return allocationTime;
   }
-  
+
   public TezTaskAttemptID getCreationCausalTA() {
     return creationCausalTA;
   }

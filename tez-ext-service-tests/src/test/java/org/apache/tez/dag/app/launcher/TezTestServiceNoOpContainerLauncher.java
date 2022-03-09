@@ -18,13 +18,13 @@ import org.apache.tez.serviceplugins.api.ContainerLaunchRequest;
 import org.apache.tez.serviceplugins.api.ContainerLauncher;
 import org.apache.tez.serviceplugins.api.ContainerLauncherContext;
 import org.apache.tez.serviceplugins.api.ContainerStopRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TezTestServiceNoOpContainerLauncher extends ContainerLauncher {
 
   static final Logger LOG = LoggerFactory.getLogger(TezTestServiceNoOpContainerLauncher.class);
-
 
   public TezTestServiceNoOpContainerLauncher(ContainerLauncherContext containerLauncherContext) {
     super(containerLauncherContext);
@@ -33,7 +33,7 @@ public class TezTestServiceNoOpContainerLauncher extends ContainerLauncher {
   @Override
   public void launchContainer(ContainerLaunchRequest launchRequest) {
     LOG.info("No-op launch for container {} succeeded on host: {}", launchRequest.getContainerId(),
-        launchRequest.getNodeId());
+      launchRequest.getNodeId());
     getContext().containerLaunched(launchRequest.getContainerId());
   }
 

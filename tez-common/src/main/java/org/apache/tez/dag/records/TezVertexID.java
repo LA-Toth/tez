@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,7 +25,6 @@ import java.util.Objects;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
-
 import org.apache.tez.util.FastNumberFormat;
 
 import com.google.common.collect.Interner;
@@ -63,6 +62,11 @@ public class TezVertexID extends TezID implements DAGIDAware {
   public TezVertexID() {
   }
 
+  private TezVertexID(TezDAGID dagId, int id) {
+    super(id);
+    this.dagId = dagId;
+  }
+
   /**
    * Constructs a TezVertexID object from given {@link TezDAGID}.
    * @param dagId TezDAGID object for this TezVertexID
@@ -74,9 +78,29 @@ public class TezVertexID extends TezID implements DAGIDAware {
     return tezVertexIDCache.intern(new TezVertexID(dagId, id));
   }
 
-  private TezVertexID(TezDAGID dagId, int id) {
-    super(id);
-    this.dagId = dagId;
+  public static TezVertexID readTezVertexID(DataInput in) throws IOException {
+    TezDAGID dagID = TezDAGID.readTezDAGID(in);
+    int vertexIdInt = TezID.readID(in);
+    return getInstance(dagID, vertexIdInt);
+  }
+
+  public static TezVertexID fromString(String vertexIdStr) {
+    try {
+      int pos1 = vertexIdStr.indexOf(SEPARATOR);
+      int pos2 = vertexIdStr.indexOf(SEPARATOR, pos1 + 1);
+      int pos3 = vertexIdStr.indexOf(SEPARATOR, pos2 + 1);
+      int pos4 = vertexIdStr.indexOf(SEPARATOR, pos3 + 1);
+      String rmId = vertexIdStr.substring(pos1 + 1, pos2);
+      int appId = Integer.parseInt(vertexIdStr.substring(pos2 + 1, pos3));
+      int dagId = Integer.parseInt(vertexIdStr.substring(pos3 + 1, pos4));
+      int id = Integer.parseInt(vertexIdStr.substring(pos4 + 1));
+      return TezVertexID.getInstance(
+        TezDAGID.getInstance(rmId, appId, dagId),
+        id);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null;
   }
 
   /** Returns the {@link TezDAGID} object that this tip belongs to */
@@ -90,14 +114,14 @@ public class TezVertexID extends TezID implements DAGIDAware {
     if (!super.equals(o))
       return false;
 
-    TezVertexID that = (TezVertexID)o;
+    TezVertexID that = (TezVertexID) o;
     return this.dagId.equals(that.dagId);
   }
 
   /**Compare TaskInProgressIds by first jobIds, then by tip numbers and type.*/
   @Override
   public int compareTo(TezID o) {
-    TezVertexID that = (TezVertexID)o;
+    TezVertexID that = (TezVertexID) o;
     return this.dagId.compareTo(that.dagId);
   }
 
@@ -112,12 +136,6 @@ public class TezVertexID extends TezID implements DAGIDAware {
   public void readFields(DataInput in) throws IOException {
     dagId = TezDAGID.readTezDAGID(in);
     super.readFields(in);
-  }
-  
-  public static TezVertexID readTezVertexID(DataInput in) throws IOException {
-    TezDAGID dagID = TezDAGID.readTezDAGID(in);
-    int vertexIdInt = TezID.readID(in);
-    return getInstance(dagID, vertexIdInt);
   }
 
   @Override
@@ -140,24 +158,5 @@ public class TezVertexID extends TezID implements DAGIDAware {
   @Override
   public int hashCode() {
     return dagId.hashCode() * 530017 + id;
-  }
-
-  public static TezVertexID fromString(String vertexIdStr) {
-    try {
-      int pos1 = vertexIdStr.indexOf(SEPARATOR);
-      int pos2 = vertexIdStr.indexOf(SEPARATOR, pos1 + 1);
-      int pos3 = vertexIdStr.indexOf(SEPARATOR, pos2 + 1);
-      int pos4 = vertexIdStr.indexOf(SEPARATOR, pos3 + 1);
-      String rmId = vertexIdStr.substring(pos1 + 1, pos2);
-      int appId = Integer.parseInt(vertexIdStr.substring(pos2 + 1, pos3));
-      int dagId = Integer.parseInt(vertexIdStr.substring(pos3 + 1, pos4));
-      int id = Integer.parseInt(vertexIdStr.substring(pos4 + 1));
-      return TezVertexID.getInstance(
-              TezDAGID.getInstance(rmId, appId, dagId),
-              id);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-    return null;
   }
 }

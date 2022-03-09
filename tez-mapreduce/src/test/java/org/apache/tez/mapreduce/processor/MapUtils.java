@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.mapreduce.processor;
 
@@ -25,10 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.apache.tez.dag.api.TezConfiguration;
-import org.apache.tez.hadoop.shim.DefaultHadoopShim;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -52,11 +48,13 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.util.DiskChecker.DiskErrorException;
 import org.apache.hadoop.yarn.util.AuxiliaryServiceHelper;
 import org.apache.tez.common.MRFrameworkConfigs;
-import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.TezRuntimeFrameworkConfigs;
 import org.apache.tez.common.TezSharedExecutor;
+import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.dag.api.ProcessorDescriptor;
+import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.hadoop.shim.DefaultHadoopShim;
 import org.apache.tez.mapreduce.TezTestUtils;
 import org.apache.tez.mapreduce.hadoop.MRJobConfig;
 import org.apache.tez.mapreduce.processor.map.MapProcessor;
@@ -69,14 +67,17 @@ import org.apache.tez.runtime.api.impl.TezUmbilical;
 import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
 
 import com.google.common.collect.HashMultimap;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MapUtils {
 
   private static final Logger LOG = LoggerFactory.getLogger(MapUtils.class);
-  
+  final private static FsPermission JOB_FILE_PERMISSION = FsPermission
+    .createImmutable((short) 0644); // rw-r--r--
+
   public static void configureLocalDirs(Configuration conf, String localDir)
-      throws IOException {
+    throws IOException {
     String[] localSysDirs = new String[1];
     localSysDirs[0] = localDir;
 
@@ -84,9 +85,9 @@ public class MapUtils {
     conf.set(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR, localDir);
 
     LOG.info(TezRuntimeFrameworkConfigs.LOCAL_DIRS + " for child: "
-        + conf.get(TezRuntimeFrameworkConfigs.LOCAL_DIRS));
+      + conf.get(TezRuntimeFrameworkConfigs.LOCAL_DIRS));
     LOG.info(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR + " for child: "
-        + conf.get(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR));
+      + conf.get(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR));
 
     LocalDirAllocator lDirAlloc = new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
     Path workDir = null;
@@ -118,18 +119,18 @@ public class MapUtils {
     }
     conf.set(MRFrameworkConfigs.JOB_LOCAL_DIR, workDir.toString());
   }
-  
-  private static InputSplit 
+
+  private static InputSplit
   createInputSplit(FileSystem fs, Path workDir, JobConf job, Path file, int numKVs)
-      throws IOException {
+    throws IOException {
     FileInputFormat.setInputPaths(job, workDir);
 
     LOG.info("Generating data at path: " + file);
     // create a file with length entries
     @SuppressWarnings("deprecation")
-    SequenceFile.Writer writer = 
-        SequenceFile.createWriter(fs, job, file, 
-            LongWritable.class, Text.class);
+    SequenceFile.Writer writer =
+      SequenceFile.createWriter(fs, job, file,
+        LongWritable.class, Text.class);
     try {
       Random r = new Random(System.currentTimeMillis());
       LongWritable key = new LongWritable();
@@ -143,30 +144,27 @@ public class MapUtils {
     } finally {
       writer.close();
     }
-    
-    SequenceFileInputFormat<LongWritable, Text> format = 
-        new SequenceFileInputFormat<LongWritable, Text>();
+
+    SequenceFileInputFormat<LongWritable, Text> format =
+      new SequenceFileInputFormat<LongWritable, Text>();
     InputSplit[] splits = format.getSplits(job, 1);
     System.err.println("#split = " + splits.length + " ; " +
-        "#locs = " + splits[0].getLocations().length + "; " +
-        "loc = " + splits[0].getLocations()[0] + "; " + 
-        "off = " + splits[0].getLength() + "; " +
-        "file = " + ((FileSplit)splits[0]).getPath());
+      "#locs = " + splits[0].getLocations().length + "; " +
+      "loc = " + splits[0].getLocations()[0] + "; " +
+      "off = " + splits[0].getLength() + "; " +
+      "file = " + ((FileSplit) splits[0]).getPath());
     return splits[0];
   }
-  
-  final private static FsPermission JOB_FILE_PERMISSION = FsPermission
-      .createImmutable((short) 0644); // rw-r--r--
 
   // Will write files to PWD, from where they are read.
-  
+
   private static void writeSplitFiles(FileSystem fs, JobConf conf,
-      InputSplit split) throws IOException {
+                                      InputSplit split) throws IOException {
     Path jobSplitFile = new Path(conf.get(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR,
-        MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR_DEFAULT), MRJobConfig.JOB_SPLIT);
+      MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR_DEFAULT), MRJobConfig.JOB_SPLIT);
     LOG.info("Writing split to: " + jobSplitFile);
     FSDataOutputStream out = FileSystem.create(fs, jobSplitFile,
-        new FsPermission(JOB_FILE_PERMISSION));
+      new FsPermission(JOB_FILE_PERMISSION));
 
     long offset = out.getPos();
     Text.writeString(out, split.getClass().getName());
@@ -179,11 +177,11 @@ public class MapUtils {
     info = new JobSplit.SplitMetaInfo(locations, offset, split.getLength());
 
     Path jobSplitMetaInfoFile = new Path(
-        conf.get(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR),
-        MRJobConfig.JOB_SPLIT_METAINFO);
+      conf.get(MRFrameworkConfigs.TASK_LOCAL_RESOURCE_DIR),
+      MRJobConfig.JOB_SPLIT_METAINFO);
 
     FSDataOutputStream outMeta = FileSystem.create(fs, jobSplitMetaInfoFile,
-        new FsPermission(JOB_FILE_PERMISSION));
+      new FsPermission(JOB_FILE_PERMISSION));
     outMeta.write(SplitMetaInfoReaderTez.META_SPLIT_FILE_HEADER);
     WritableUtils.writeVInt(outMeta, SplitMetaInfoReaderTez.META_SPLIT_VERSION);
     WritableUtils.writeVInt(outMeta, 1); // Only 1 split meta info being written
@@ -197,48 +195,49 @@ public class MapUtils {
     InputSplit split = createInputSplit(fs, workDir, jobConf, mapInput, numKVs);
     writeSplitFiles(fs, jobConf, split);
   }
-  
+
   public static LogicalIOProcessorRuntimeTask createLogicalTask(FileSystem fs, Path workDir,
-      JobConf jobConf, int mapId, Path mapInput,
-      TezUmbilical umbilical, String dagName,
-      String vertexName, List<InputSpec> inputSpecs,
-      List<OutputSpec> outputSpecs, TezSharedExecutor sharedExecutor) throws Exception {
+                                                                JobConf jobConf, int mapId, Path mapInput,
+                                                                TezUmbilical umbilical, String dagName,
+                                                                String vertexName, List<InputSpec> inputSpecs,
+                                                                List<OutputSpec> outputSpecs,
+                                                                TezSharedExecutor sharedExecutor) throws Exception {
     jobConf.setInputFormat(SequenceFileInputFormat.class);
 
     ProcessorDescriptor mapProcessorDesc = ProcessorDescriptor.create(
-        MapProcessor.class.getName()).setUserPayload(
-        TezUtils.createUserPayloadFromConf(jobConf));
-    
+      MapProcessor.class.getName()).setUserPayload(
+      TezUtils.createUserPayloadFromConf(jobConf));
+
     Token<JobTokenIdentifier> shuffleToken = new Token<JobTokenIdentifier>();
 
     TaskSpec taskSpec = new TaskSpec(
-        TezTestUtils.getMockTaskAttemptId(0, 0, mapId, 0),
-        dagName, vertexName, -1,
-        mapProcessorDesc,
-        inputSpecs,
-        outputSpecs, null, null);
+      TezTestUtils.getMockTaskAttemptId(0, 0, mapId, 0),
+      dagName, vertexName, -1,
+      mapProcessorDesc,
+      inputSpecs,
+      outputSpecs, null, null);
 
     Map<String, ByteBuffer> serviceConsumerMetadata = new HashMap<String, ByteBuffer>();
     String auxiliaryService = jobConf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
+      TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
     serviceConsumerMetadata.put(auxiliaryService,
-        ShuffleUtils.convertJobTokenToBytes(shuffleToken));
+      ShuffleUtils.convertJobTokenToBytes(shuffleToken));
     Map<String, String> envMap = new HashMap<String, String>();
     ByteBuffer shufflePortBb = ByteBuffer.allocate(4).putInt(0, 8000);
     AuxiliaryServiceHelper
-        .setServiceDataIntoEnv(auxiliaryService, shufflePortBb,
-            envMap);
+      .setServiceDataIntoEnv(auxiliaryService, shufflePortBb,
+        envMap);
 
     LogicalIOProcessorRuntimeTask task = new LogicalIOProcessorRuntimeTask(
-        taskSpec,
-        0,
-        jobConf,
-        new String[] {workDir.toString()},
-        umbilical,
-        serviceConsumerMetadata,
-        envMap,
-        HashMultimap.<String, String>create(), null, "", new ExecutionContextImpl("localhost"),
-        Runtime.getRuntime().maxMemory(), true, new DefaultHadoopShim(), sharedExecutor);
+      taskSpec,
+      0,
+      jobConf,
+      new String[]{workDir.toString()},
+      umbilical,
+      serviceConsumerMetadata,
+      envMap,
+      HashMultimap.<String, String>create(), null, "", new ExecutionContextImpl("localhost"),
+      Runtime.getRuntime().maxMemory(), true, new DefaultHadoopShim(), sharedExecutor);
     return task;
   }
 }

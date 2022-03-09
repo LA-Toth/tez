@@ -14,27 +14,30 @@
 
 package org.apache.tez.serviceplugins.api;
 
+import java.util.BitSet;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.Credentials;
-
-import java.util.BitSet;
 
 public interface DagInfo {
 
   /**
    * The index of the current dag
+   *
    * @return a numerical identifier for the DAG. This is unique within the currently running application.
    */
   int getIndex();
 
   /**
    * Get the name of the dag
+   *
    * @return the name of the dag
    */
   String getName();
 
   /**
    * Get credentials for the dag.
+   *
    * @return the credentials for the dag.
    */
   Credentials getCredentials();

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -51,6 +51,7 @@ import org.apache.hadoop.security.ssl.SSLFactory;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.mapreduce.examples.TestOrderedWordCount;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
+
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.X509Extensions;
@@ -76,7 +77,7 @@ public class TestSecureShuffle {
   private static FileSystem fs;
   private static Path inputLoc = new Path("/tmp/sample.txt");
   private static String TEST_ROOT_DIR = "target" + Path.SEPARATOR
-      + TestSecureShuffle.class.getName() + "-tmpDir";
+    + TestSecureShuffle.class.getName() + "-tmpDir";
   private static File keysStoresDir = new File(TEST_ROOT_DIR, "keystores");
 
   private boolean enableSSLInCluster; //To set ssl config in cluster
@@ -85,7 +86,7 @@ public class TestSecureShuffle {
   private boolean asyncHttp;
 
   public TestSecureShuffle(boolean sslInCluster, int resultWithTezSSL, int resultWithoutTezSSL,
-      boolean asyncHttp) {
+                           boolean asyncHttp) {
     this.enableSSLInCluster = sslInCluster;
     this.resultWithTezSSL = resultWithTezSSL;
     this.resultWithoutTezSSL = resultWithoutTezSSL;
@@ -93,19 +94,19 @@ public class TestSecureShuffle {
   }
 
   @Parameterized.Parameters(name = "test[sslInCluster:{0}, resultWithTezSSL:{1}, "
-      + "resultWithoutTezSSL:{2}, asyncHttp:{3}]")
+    + "resultWithoutTezSSL:{2}, asyncHttp:{3}]")
   public static Collection<Object[]> getParameters() {
     Collection<Object[]> parameters = new ArrayList<Object[]>();
     //enable ssl in cluster, succeed with tez-ssl enabled, fail with tez-ssl disabled
-    parameters.add(new Object[] { true, 0, 1, false });
+    parameters.add(new Object[]{true, 0, 1, false});
 
     //With asyncHttp
-    parameters.add(new Object[] { true, 0, 1, true });
-    parameters.add(new Object[] { false, 1, 0, true });
+    parameters.add(new Object[]{true, 0, 1, true});
+    parameters.add(new Object[]{false, 1, 0, true});
 
     //Negative testcase
     //disable ssl in cluster, fail with tez-ssl enabled, succeed with tez-ssl disabled
-    parameters.add(new Object[] { false, 1, 0, false });
+    parameters.add(new Object[]{false, 1, 0, false});
 
     return parameters;
   }
@@ -118,7 +119,7 @@ public class TestSecureShuffle {
     EditLogFileOutputStream.setShouldSkipFsyncForTesting(true);
     conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, TEST_ROOT_DIR);
     miniDFSCluster =
-        new MiniDFSCluster.Builder(conf).numDataNodes(1).format(true).build();
+      new MiniDFSCluster.Builder(conf).numDataNodes(1).format(true).build();
     fs = miniDFSCluster.getFileSystem();
     conf.set("fs.defaultFS", fs.getUri().toString());
     conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_OPTIMIZE_LOCAL_FETCH, false);
@@ -130,71 +131,6 @@ public class TestSecureShuffle {
       //shutdown
       miniDFSCluster.shutdown();
     }
-  }
-
-  @Before
-  public void setupTezCluster() throws Exception {
-    if (enableSSLInCluster) {
-      // Enable SSL debugging
-      System.setProperty("javax.net.debug", "all");
-      setupKeyStores();
-    }
-    conf.setBoolean(MRConfig.SHUFFLE_SSL_ENABLED_KEY, enableSSLInCluster);
-
-    // 3 seconds should be good enough in local machine
-    conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_CONNECT_TIMEOUT, 3 * 1000);
-    conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_READ_TIMEOUT, 3 * 1000);
-    //set to low value so that it can detect failures quickly
-    conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_FAILURES_LIMIT, 2);
-    //reduce the maximum number of failed attempts per task
-    conf.setInt(TezConfiguration.TEZ_AM_TASK_MAX_FAILED_ATTEMPTS, 1);
-
-    conf.setLong(TezConfiguration.TEZ_AM_SLEEP_TIME_BEFORE_EXIT_MILLIS, 500);
-    conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_USE_ASYNC_HTTP, asyncHttp);
-    String sslConf = conf.get(SSL_CLIENT_CONF_KEY, "ssl-client.xml");
-    conf.addResource(sslConf);
-
-    miniTezCluster = new MiniTezCluster(TestSecureShuffle.class.getName() + "-" +
-        (enableSSLInCluster ? "withssl" : "withoutssl"), 1, 1, 1);
-
-    miniTezCluster.init(conf);
-    miniTezCluster.start();
-    createSampleFile(inputLoc);
-  }
-
-  @After
-  public void shutdownTezCluster() throws IOException {
-    if (miniTezCluster != null) {
-      miniTezCluster.stop();
-    }
-  }
-
-  private void baseTest(int expectedResult) throws Exception {
-    Path outputLoc = new Path("/tmp/outPath_" + System.currentTimeMillis());
-    TestOrderedWordCount wordCount = new TestOrderedWordCount();
-    wordCount.setConf(new Configuration(miniTezCluster.getConfig()));
-
-    String[] args = new String[] { "-DUSE_MR_CONFIGS=false",
-        inputLoc.toString(), outputLoc.toString() };
-    assertEquals(expectedResult, wordCount.run(args));
-  }
-
-  /**
-   * Verify whether shuffle works in mini cluster
-   *
-   * @throws Exception
-   */
-  @Test(timeout = 500000)
-  public void testSecureShuffle() throws Exception {
-    //With tez-ssl setting
-    miniTezCluster.getConfig().setBoolean(
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_SSL, true);
-    baseTest(this.resultWithTezSSL);
-
-    //Without tez-ssl setting
-    miniTezCluster.getConfig().setBoolean(
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_SSL, false);
-    baseTest(this.resultWithoutTezSSL);
   }
 
   /**
@@ -239,7 +175,7 @@ public class TestSecureShuffle {
    * which fixes another issue.
    */
   public static void setupSSLConfig(String keystoresDir, String sslConfDir, Configuration config,
-      boolean useClientCert, boolean trustStore, String excludeCiphers) throws Exception {
+                                    boolean useClientCert, boolean trustStore, String excludeCiphers) throws Exception {
     String clientKS = keystoresDir + "/clientKS.jks";
     String clientPassword = "clientP";
     String serverKS = keystoresDir + "/serverKS.jks";
@@ -255,7 +191,7 @@ public class TestSecureShuffle {
     if (useClientCert) {
       KeyPair cKP = KeyStoreTestUtil.generateKeyPair("RSA");
       X509Certificate cCert =
-          generateCertificate("CN=localhost, O=client", cKP, 30, "SHA1withRSA");
+        generateCertificate("CN=localhost, O=client", cKP, 30, "SHA1withRSA");
       KeyStoreTestUtil.createKeyStore(clientKS, clientPassword, "client", cKP.getPrivate(), cCert);
       certs.put("client", cCert);
     }
@@ -263,7 +199,7 @@ public class TestSecureShuffle {
     String localhostName = InetAddress.getLocalHost().getHostName();
     KeyPair sKP = KeyStoreTestUtil.generateKeyPair("RSA");
     X509Certificate sCert =
-        generateCertificate("CN="+localhostName+", O=server", sKP, 30, "SHA1withRSA");
+      generateCertificate("CN=" + localhostName + ", O=server", sKP, 30, "SHA1withRSA");
     KeyStoreTestUtil.createKeyStore(serverKS, serverPassword, "server", sKP.getPrivate(), sCert);
     certs.put("server", sCert);
 
@@ -273,9 +209,9 @@ public class TestSecureShuffle {
     }
 
     Configuration clientSSLConf = KeyStoreTestUtil.createClientSSLConfig(clientKS, clientPassword,
-        clientPassword, trustKS, excludeCiphers);
+      clientPassword, trustKS, excludeCiphers);
     Configuration serverSSLConf = KeyStoreTestUtil.createServerSSLConfig(serverKS, serverPassword,
-        serverPassword, trustKS, excludeCiphers);
+      serverPassword, trustKS, excludeCiphers);
 
     KeyStoreTestUtil.saveConfig(sslClientConfFile, clientSSLConf);
     KeyStoreTestUtil.saveConfig(sslServerConfFile, serverSSLConf);
@@ -294,7 +230,7 @@ public class TestSecureShuffle {
    * Introduced by TEZ-4342.
    */
   public static X509Certificate generateCertificate(String dn, KeyPair pair, int days, String algorithm)
-      throws Exception {
+    throws Exception {
 
     Date from = new Date();
     Date to = new Date(from.getTime() + days * 86400000L);
@@ -305,11 +241,11 @@ public class TestSecureShuffle {
     String hostName = InetAddress.getLocalHost().getHostName();
     String hostAddress = InetAddress.getLocalHost().getHostAddress();
     certGen.addExtension(X509Extensions.SubjectAlternativeName, false,
-        new GeneralNames(new GeneralName[] {
-            new GeneralName(GeneralName.iPAddress, hostAddress),
-            new GeneralName(GeneralName.dNSName, hostName),
-            new GeneralName(GeneralName.dNSName, "localhost")
-        })
+      new GeneralNames(new GeneralName[]{
+        new GeneralName(GeneralName.iPAddress, hostAddress),
+        new GeneralName(GeneralName.dNSName, hostName),
+        new GeneralName(GeneralName.dNSName, "localhost")
+      })
     );
     X500Principal dnName = new X500Principal(dn);
 
@@ -323,5 +259,70 @@ public class TestSecureShuffle {
 
     X509Certificate cert = certGen.generate(pair.getPrivate());
     return cert;
+  }
+
+  @Before
+  public void setupTezCluster() throws Exception {
+    if (enableSSLInCluster) {
+      // Enable SSL debugging
+      System.setProperty("javax.net.debug", "all");
+      setupKeyStores();
+    }
+    conf.setBoolean(MRConfig.SHUFFLE_SSL_ENABLED_KEY, enableSSLInCluster);
+
+    // 3 seconds should be good enough in local machine
+    conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_CONNECT_TIMEOUT, 3 * 1000);
+    conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_READ_TIMEOUT, 3 * 1000);
+    //set to low value so that it can detect failures quickly
+    conf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_FAILURES_LIMIT, 2);
+    //reduce the maximum number of failed attempts per task
+    conf.setInt(TezConfiguration.TEZ_AM_TASK_MAX_FAILED_ATTEMPTS, 1);
+
+    conf.setLong(TezConfiguration.TEZ_AM_SLEEP_TIME_BEFORE_EXIT_MILLIS, 500);
+    conf.setBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_USE_ASYNC_HTTP, asyncHttp);
+    String sslConf = conf.get(SSL_CLIENT_CONF_KEY, "ssl-client.xml");
+    conf.addResource(sslConf);
+
+    miniTezCluster = new MiniTezCluster(TestSecureShuffle.class.getName() + "-" +
+      (enableSSLInCluster ? "withssl" : "withoutssl"), 1, 1, 1);
+
+    miniTezCluster.init(conf);
+    miniTezCluster.start();
+    createSampleFile(inputLoc);
+  }
+
+  @After
+  public void shutdownTezCluster() throws IOException {
+    if (miniTezCluster != null) {
+      miniTezCluster.stop();
+    }
+  }
+
+  private void baseTest(int expectedResult) throws Exception {
+    Path outputLoc = new Path("/tmp/outPath_" + System.currentTimeMillis());
+    TestOrderedWordCount wordCount = new TestOrderedWordCount();
+    wordCount.setConf(new Configuration(miniTezCluster.getConfig()));
+
+    String[] args = new String[]{"-DUSE_MR_CONFIGS=false",
+      inputLoc.toString(), outputLoc.toString()};
+    assertEquals(expectedResult, wordCount.run(args));
+  }
+
+  /**
+   * Verify whether shuffle works in mini cluster
+   *
+   * @throws Exception
+   */
+  @Test(timeout = 500000)
+  public void testSecureShuffle() throws Exception {
+    //With tez-ssl setting
+    miniTezCluster.getConfig().setBoolean(
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_SSL, true);
+    baseTest(this.resultWithTezSSL);
+
+    //Without tez-ssl setting
+    miniTezCluster.getConfig().setBoolean(
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ENABLE_SSL, false);
+    baseTest(this.resultWithoutTezSSL);
   }
 }

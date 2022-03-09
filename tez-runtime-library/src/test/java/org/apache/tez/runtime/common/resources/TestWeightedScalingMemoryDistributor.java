@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,38 +28,38 @@ import org.apache.tez.dag.api.OutputDescriptor;
 import org.apache.tez.dag.api.ProcessorDescriptor;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezException;
+import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.api.LogicalInput;
 import org.apache.tez.runtime.api.LogicalOutput;
 import org.apache.tez.runtime.api.MemoryUpdateCallback;
-import org.apache.tez.runtime.api.InputContext;
 import org.apache.tez.runtime.api.OutputContext;
 import org.apache.tez.runtime.api.ProcessorContext;
 import org.apache.tez.runtime.library.input.OrderedGroupedKVInput;
 import org.apache.tez.runtime.library.input.UnorderedKVInput;
 import org.apache.tez.runtime.library.output.OrderedPartitionedKVOutput;
 import org.apache.tez.runtime.library.resources.WeightedScalingMemoryDistributor;
-import org.junit.Test;
 
 import com.google.common.base.Joiner;
+import org.junit.Test;
 
 public class TestWeightedScalingMemoryDistributor extends TestMemoryDistributor {
-  
+
   @Override
   public void setup() {
     conf.setBoolean(TezConfiguration.TEZ_TASK_SCALE_MEMORY_ENABLED, true);
     conf.set(TezConfiguration.TEZ_TASK_SCALE_MEMORY_ALLOCATOR_CLASS,
-        WeightedScalingMemoryDistributor.class.getName());
+      WeightedScalingMemoryDistributor.class.getName());
     conf.setDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_RESERVE_FRACTION, 0.3d);
     conf.setDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_ADDITIONAL_RESERVATION_FRACTION_PER_IO, 0.0d);
   }
-  
+
   @Test(timeout = 5000)
   public void testSimpleWeightedScaling() throws TezException {
     Configuration conf = new Configuration(this.conf);
     conf.setStrings(TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS,
-        WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 1, 2, 3, 1, 1));
+      WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 1, 2, 3, 1, 1));
     System.err.println(Joiner.on(",").join(conf.getStringCollection(
-        TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS)));
+      TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS)));
 
     MemoryDistributor dist = new MemoryDistributor(2, 2, conf);
 
@@ -104,7 +104,7 @@ public class TestWeightedScalingMemoryDistributor extends TestMemoryDistributor 
   public void testAdditionalReserveFractionWeightedScaling() throws TezException {
     Configuration conf = new Configuration(this.conf);
     conf.setStrings(TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS,
-        WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 2, 3, 6, 1, 1));
+      WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 2, 3, 6, 1, 1));
     conf.setDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_ADDITIONAL_RESERVATION_FRACTION_PER_IO, 0.025d);
     conf.setDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_ADDITIONAL_RESERVATION_FRACTION_MAX, 0.2d);
 
@@ -146,7 +146,7 @@ public class TestWeightedScalingMemoryDistributor extends TestMemoryDistributor 
     assertEquals(500, e3Callback.assigned);
     assertEquals(1500, e4Callback.assigned);
   }
-  
+
   @Test(timeout = 5000)
   public void testWeightedScalingNonConcurrent() throws TezException {
     Configuration conf = new Configuration(this.conf);
@@ -154,9 +154,9 @@ public class TestWeightedScalingMemoryDistributor extends TestMemoryDistributor 
     conf.setBoolean(TezConfiguration.TEZ_TASK_SCALE_MEMORY_NON_CONCURRENT_INPUTS_ENABLED, true);
     conf.setDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_RESERVE_FRACTION, 0.2);
     conf.setStrings(TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS,
-        WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 1, 2, 3, 1, 1));
+      WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 1, 2, 3, 1, 1));
     System.err.println(Joiner.on(",").join(conf.getStringCollection(
-        TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS)));
+      TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS)));
 
     MemoryDistributor dist = new MemoryDistributor(2, 2, conf);
 
@@ -210,7 +210,7 @@ public class TestWeightedScalingMemoryDistributor extends TestMemoryDistributor 
     conf.setBoolean(TezConfiguration.TEZ_TASK_SCALE_MEMORY_INPUT_OUTPUT_CONCURRENT, false);
     conf.setBoolean(TezConfiguration.TEZ_TASK_SCALE_MEMORY_NON_CONCURRENT_INPUTS_ENABLED, true);
     conf.setStrings(TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS,
-        WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 2, 3, 6, 1, 1));
+      WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 2, 3, 6, 1, 1));
     conf.setDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_ADDITIONAL_RESERVATION_FRACTION_PER_IO, 0.025d);
     conf.setDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_ADDITIONAL_RESERVATION_FRACTION_MAX, 0.2d);
 
@@ -260,9 +260,9 @@ public class TestWeightedScalingMemoryDistributor extends TestMemoryDistributor 
     conf.setBoolean(TezConfiguration.TEZ_TASK_SCALE_MEMORY_NON_CONCURRENT_INPUTS_ENABLED, false);
     conf.setDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_RESERVE_FRACTION, 0.2);
     conf.setStrings(TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS,
-        WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 1, 2, 3, 1, 1));
+      WeightedScalingMemoryDistributor.generateWeightStrings(0, 0, 1, 2, 3, 1, 1));
     System.err.println(Joiner.on(",").join(conf.getStringCollection(
-        TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS)));
+      TezConfiguration.TEZ_TASK_SCALE_MEMORY_WEIGHTED_RATIOS)));
 
     MemoryDistributor dist = new MemoryDistributor(2, 2, conf);
 
@@ -310,16 +310,6 @@ public class TestWeightedScalingMemoryDistributor extends TestMemoryDistributor 
     assertEquals(1000, e5Callback.assigned);
   }
 
-  private static class MemoryUpdateCallbackForTest extends MemoryUpdateCallback {
-
-    long assigned = -1000;
-
-    @Override
-    public void memoryAssigned(long assignedSize) {
-      this.assigned = assignedSize;
-    }
-  }
-
   private InputDescriptor createTestInputDescriptor(Class<? extends LogicalInput> inputClazz) {
     InputDescriptor desc = mock(InputDescriptor.class);
     doReturn(inputClazz.getName()).when(desc).getClassName();
@@ -332,4 +322,13 @@ public class TestWeightedScalingMemoryDistributor extends TestMemoryDistributor 
     return desc;
   }
 
+  private static class MemoryUpdateCallbackForTest extends MemoryUpdateCallback {
+
+    long assigned = -1000;
+
+    @Override
+    public void memoryAssigned(long assignedSize) {
+      this.assigned = assignedSize;
+    }
+  }
 }

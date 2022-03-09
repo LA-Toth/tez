@@ -26,7 +26,8 @@ public class TaskHeartbeatResponse {
   private final int nextPreRoutedEventId;
   private final List<TezEvent> events;
 
-  public TaskHeartbeatResponse(boolean shouldDie, List<TezEvent> events, int nextFromEventId, int nextPreRoutedEventId) {
+  public TaskHeartbeatResponse(boolean shouldDie, List<TezEvent> events, int nextFromEventId,
+                               int nextPreRoutedEventId) {
     this.shouldDie = shouldDie;
     this.events = events;
     this.nextFromEventId = nextFromEventId;

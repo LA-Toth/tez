@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -47,6 +47,7 @@ import org.apache.hadoop.io.compress.ZStandardCodec;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.common.shuffle.orderedgrouped.DummyCompressionCodec;
 import org.apache.tez.runtime.library.common.sort.impl.IFileInputStream;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -59,7 +60,7 @@ public class TestCodecUtils {
   }
 
   private void testConcurrentDecompressorCreationWithModifiedBuffersizeOnCodec(
-      CompressionCodec codec) throws InterruptedException, ExecutionException {
+    CompressionCodec codec) throws InterruptedException, ExecutionException {
     int modifiedBufferSize = 1000;
     int numberOfThreads = 1000;
 
@@ -79,11 +80,11 @@ public class TestCodecUtils {
 
           Decompressor decompressor = CodecUtils.getDecompressor(codec);
           DecompressorStream stream =
-              (DecompressorStream) CodecUtils.getDecompressedInputStreamWithBufferSize(codec,
-                  Mockito.mock(IFileInputStream.class), decompressor, modifiedBufferSize);
+            (DecompressorStream) CodecUtils.getDecompressedInputStreamWithBufferSize(codec,
+              Mockito.mock(IFileInputStream.class), decompressor, modifiedBufferSize);
 
           Assert.assertEquals("stream buffer size is incorrect", modifiedBufferSize,
-              getBufferSize(stream));
+            getBufferSize(stream));
 
           CodecPool.returnDecompressor(decompressor);
         } catch (IOException e) {
@@ -104,7 +105,7 @@ public class TestCodecUtils {
   }
 
   private void testConcurrentCompressorDecompressorCreationOnCodec(CompressionCodec codec)
-      throws IOException, InterruptedException, ExecutionException {
+    throws IOException, InterruptedException, ExecutionException {
     int modifiedBufferSize = 1000;
     int numberOfThreads = 1000;
 
@@ -127,11 +128,11 @@ public class TestCodecUtils {
 
             Decompressor decompressor = CodecUtils.getDecompressor(codec);
             CompressionInputStream stream =
-                (CompressionInputStream) CodecUtils.getDecompressedInputStreamWithBufferSize(codec,
-                    Mockito.mock(IFileInputStream.class), decompressor, modifiedBufferSize);
+              (CompressionInputStream) CodecUtils.getDecompressedInputStreamWithBufferSize(codec,
+                Mockito.mock(IFileInputStream.class), decompressor, modifiedBufferSize);
 
             Assert.assertEquals("stream buffer size is incorrect", modifiedBufferSize,
-                getBufferSize(stream));
+              getBufferSize(stream));
 
             CodecPool.returnDecompressor(decompressor);
           } catch (IOException e) {
@@ -146,10 +147,10 @@ public class TestCodecUtils {
 
             Compressor compressor = CodecUtils.getCompressor(codec);
             CompressionOutputStream stream =
-                CodecUtils.createOutputStream(codec, Mockito.mock(OutputStream.class), compressor);
+              CodecUtils.createOutputStream(codec, Mockito.mock(OutputStream.class), compressor);
 
             Assert.assertEquals("stream buffer size is incorrect",
-                CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_DEFAULT, getBufferSize(stream));
+              CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_DEFAULT, getBufferSize(stream));
 
             CodecPool.returnCompressor(compressor);
           } catch (Exception e) {
@@ -164,10 +165,10 @@ public class TestCodecUtils {
 
             Decompressor decompressor = CodecUtils.getDecompressor(codec);
             CompressionInputStream stream =
-                CodecUtils.createInputStream(codec, Mockito.mock(InputStream.class), decompressor);
+              CodecUtils.createInputStream(codec, Mockito.mock(InputStream.class), decompressor);
 
             Assert.assertEquals("stream buffer size is incorrect",
-                CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_DEFAULT, getBufferSize(stream));
+              CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_DEFAULT, getBufferSize(stream));
 
             CodecPool.returnDecompressor(decompressor);
           } catch (Exception e) {
@@ -188,19 +189,19 @@ public class TestCodecUtils {
     Configuration conf = new Configuration(); // config with no buffersize set
 
     Assert.assertEquals(CodecUtils.DEFAULT_BUFFER_SIZE,
-        CodecUtils.getDefaultBufferSize(conf, new DummyCompressionCodec()));
+      CodecUtils.getDefaultBufferSize(conf, new DummyCompressionCodec()));
     Assert.assertEquals(CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_DEFAULT,
-        CodecUtils.getDefaultBufferSize(conf, new DefaultCodec()));
+      CodecUtils.getDefaultBufferSize(conf, new DefaultCodec()));
     Assert.assertEquals(CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_DEFAULT,
-        CodecUtils.getDefaultBufferSize(conf, new BZip2Codec()));
+      CodecUtils.getDefaultBufferSize(conf, new BZip2Codec()));
     Assert.assertEquals(CommonConfigurationKeysPublic.IO_FILE_BUFFER_SIZE_DEFAULT,
-        CodecUtils.getDefaultBufferSize(conf, new GzipCodec()));
+      CodecUtils.getDefaultBufferSize(conf, new GzipCodec()));
     Assert.assertEquals(CommonConfigurationKeys.IO_COMPRESSION_CODEC_SNAPPY_BUFFERSIZE_DEFAULT,
-        CodecUtils.getDefaultBufferSize(conf, new SnappyCodec()));
+      CodecUtils.getDefaultBufferSize(conf, new SnappyCodec()));
     Assert.assertEquals(CommonConfigurationKeys.IO_COMPRESSION_CODEC_ZSTD_BUFFER_SIZE_DEFAULT,
-        CodecUtils.getDefaultBufferSize(conf, new ZStandardCodec()));
+      CodecUtils.getDefaultBufferSize(conf, new ZStandardCodec()));
     Assert.assertEquals(CommonConfigurationKeys.IO_COMPRESSION_CODEC_LZ4_BUFFERSIZE_DEFAULT,
-        CodecUtils.getDefaultBufferSize(conf, new Lz4Codec()));
+      CodecUtils.getDefaultBufferSize(conf, new Lz4Codec()));
   }
 
   private void waitForLatch(CountDownLatch latch) {

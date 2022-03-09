@@ -20,11 +20,11 @@ package org.apache.tez.hadoop.shim;
 
 public class DummyShimProvider extends HadoopShimProvider {
 
-  public static class DummyShim extends HadoopShim {
-  }
-
   @Override
   public HadoopShim createHadoopShim(String hadoopVersion, int majorVersion, int minorVersion) {
     return new DummyShim();
+  }
+
+  public static class DummyShim extends HadoopShim {
   }
 }

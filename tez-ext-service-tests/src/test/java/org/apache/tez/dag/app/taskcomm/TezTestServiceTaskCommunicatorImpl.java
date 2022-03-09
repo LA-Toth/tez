@@ -21,40 +21,39 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.RejectedExecutionException;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.ServiceException;
 import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.ipc.RemoteException;
 import org.apache.hadoop.security.Credentials;
-import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.apache.tez.serviceplugins.api.ContainerEndReason;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
-import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
 import org.apache.tez.dag.app.TezTaskCommunicatorImpl;
 import org.apache.tez.dag.app.TezTestServiceCommunicator;
 import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.impl.TaskSpec;
+import org.apache.tez.serviceplugins.api.ContainerEndReason;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.SubmitWorkRequestProto;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.SubmitWorkResponseProto;
 import org.apache.tez.util.ProtoConverters;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl {
 
   private static final Logger
-      LOG = LoggerFactory.getLogger(TezTestServiceTaskCommunicatorImpl.class);
+    LOG = LoggerFactory.getLogger(TezTestServiceTaskCommunicatorImpl.class);
 
   private final TezTestServiceCommunicator communicator;
   private final SubmitWorkRequestProto BASE_SUBMIT_WORK_REQUEST;
   private final ConcurrentMap<String, ByteBuffer> credentialMap;
 
   public TezTestServiceTaskCommunicatorImpl(
-      TaskCommunicatorContext taskCommunicatorContext) {
+    TaskCommunicatorContext taskCommunicatorContext) {
     super(taskCommunicatorContext);
     // TODO Maybe make this configurable
     this.communicator = new TezTestServiceCommunicator(3);
@@ -63,9 +62,9 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
 
     baseBuilder.setUser(System.getProperty("user.name"));
     baseBuilder.setApplicationIdString(
-        taskCommunicatorContext.getApplicationAttemptId().getApplicationId().toString());
+      taskCommunicatorContext.getApplicationAttemptId().getApplicationId().toString());
     baseBuilder
-        .setAppAttemptNumber(taskCommunicatorContext.getApplicationAttemptId().getAttemptId());
+      .setAppAttemptNumber(taskCommunicatorContext.getApplicationAttemptId().getAttemptId());
     baseBuilder.setTokenIdentifier(getTokenIdentifier());
 
     BASE_SUBMIT_WORK_REQUEST = baseBuilder.build();
@@ -91,7 +90,6 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
     this.communicator.stop();
   }
 
-
   @Override
   public void registerRunningContainer(ContainerId containerId, String hostname, int port) {
     super.registerRunningContainer(containerId, hostname, port);
@@ -107,9 +105,9 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
                                          Map<String, LocalResource> additionalResources,
                                          Credentials credentials,
                                          boolean credentialsChanged,
-                                         int priority)  {
+                                         int priority) {
     super.registerRunningTaskAttempt(containerId, taskSpec, additionalResources, credentials,
-        credentialsChanged, priority);
+      credentialsChanged, priority);
     SubmitWorkRequestProto requestProto = null;
     try {
       requestProto = constructSubmitWorkRequest(containerId, taskSpec);
@@ -127,7 +125,7 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
     } else {
       // TODO Handle this properly
       throw new RuntimeException("ContainerInfo not found for container: " + containerId +
-          ", while trying to launch task: " + taskSpec.getTaskAttemptID());
+        ", while trying to launch task: " + taskSpec.getTaskAttemptID());
     }
     // Have to register this up front right now. Otherwise, it's possible for the task to start
     // sending out status/DONE/KILLED/FAILED messages before TAImpl knows how to handle them.
@@ -135,57 +133,58 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
     getContext().taskSubmitted(taskSpec.getTaskAttemptID(), containerId);
     getContext().taskStartedRemotely(taskSpec.getTaskAttemptID());
     communicator.submitWork(requestProto, host, port,
-        new TezTestServiceCommunicator.ExecuteRequestCallback<SubmitWorkResponseProto>() {
-          @Override
-          public void setResponse(SubmitWorkResponseProto response) {
-            LOG.info("Successfully launched task: " + taskSpec.getTaskAttemptID());
-          }
+      new TezTestServiceCommunicator.ExecuteRequestCallback<SubmitWorkResponseProto>() {
+        @Override
+        public void setResponse(SubmitWorkResponseProto response) {
+          LOG.info("Successfully launched task: " + taskSpec.getTaskAttemptID());
+        }
 
-          @Override
-          public void indicateError(Throwable t) {
-            // TODO Handle this error. This is where an API on the context to indicate failure / rejection comes in.
-            LOG.info("Failed to run task: " + taskSpec.getTaskAttemptID() + " on containerId: " +
-                containerId, t);
-            if (t instanceof ServiceException) {
-              ServiceException se = (ServiceException) t;
-              t = se.getCause();
-            }
-            if (t instanceof RemoteException) {
-              RemoteException re = (RemoteException) t;
-              String message = re.toString();
-              if (message.contains(RejectedExecutionException.class.getName())) {
-                getContext().taskKilled(taskSpec.getTaskAttemptID(),
-                    TaskAttemptEndReason.EXECUTOR_BUSY, "Service Busy");
-              } else {
-                getContext()
-                    .taskFailed(taskSpec.getTaskAttemptID(), TaskFailureType.NON_FATAL,
-                        TaskAttemptEndReason.OTHER, t.toString());
-              }
+        @Override
+        public void indicateError(Throwable t) {
+          // TODO Handle this error. This is where an API on the context to indicate failure / rejection comes in.
+          LOG.info("Failed to run task: " + taskSpec.getTaskAttemptID() + " on containerId: " +
+            containerId, t);
+          if (t instanceof ServiceException) {
+            ServiceException se = (ServiceException) t;
+            t = se.getCause();
+          }
+          if (t instanceof RemoteException) {
+            RemoteException re = (RemoteException) t;
+            String message = re.toString();
+            if (message.contains(RejectedExecutionException.class.getName())) {
+              getContext().taskKilled(taskSpec.getTaskAttemptID(),
+                TaskAttemptEndReason.EXECUTOR_BUSY, "Service Busy");
             } else {
-              if (t instanceof IOException) {
-                getContext().taskKilled(taskSpec.getTaskAttemptID(),
-                    TaskAttemptEndReason.COMMUNICATION_ERROR, "Communication Error");
-              } else {
-                getContext()
-                    .taskFailed(taskSpec.getTaskAttemptID(), TaskFailureType.NON_FATAL,
-                        TaskAttemptEndReason.OTHER, t.getMessage());
-              }
+              getContext()
+                .taskFailed(taskSpec.getTaskAttemptID(), TaskFailureType.NON_FATAL,
+                  TaskAttemptEndReason.OTHER, t.toString());
+            }
+          } else {
+            if (t instanceof IOException) {
+              getContext().taskKilled(taskSpec.getTaskAttemptID(),
+                TaskAttemptEndReason.COMMUNICATION_ERROR, "Communication Error");
+            } else {
+              getContext()
+                .taskFailed(taskSpec.getTaskAttemptID(), TaskFailureType.NON_FATAL,
+                  TaskAttemptEndReason.OTHER, t.getMessage());
             }
           }
-        });
+        }
+      });
   }
 
   @Override
-  public void unregisterRunningTaskAttempt(TezTaskAttemptID taskAttemptID, TaskAttemptEndReason endReason, String diagnostics) {
+  public void unregisterRunningTaskAttempt(TezTaskAttemptID taskAttemptID, TaskAttemptEndReason endReason,
+                                           String diagnostics) {
     super.unregisterRunningTaskAttempt(taskAttemptID, endReason, diagnostics);
     // Nothing else to do for now. The push API in the test does not support termination of a running task
   }
 
   private SubmitWorkRequestProto constructSubmitWorkRequest(ContainerId containerId,
                                                             TaskSpec taskSpec) throws
-      IOException {
+    IOException {
     SubmitWorkRequestProto.Builder builder =
-        SubmitWorkRequestProto.newBuilder(BASE_SUBMIT_WORK_REQUEST);
+      SubmitWorkRequestProto.newBuilder(BASE_SUBMIT_WORK_REQUEST);
     builder.setContainerIdString(containerId.toString());
     builder.setAmHost(getAddress().getHostName());
     builder.setAmPort(getAddress().getPort());
@@ -211,7 +210,7 @@ public class TezTestServiceTaskCommunicatorImpl extends TezTaskCommunicatorImpl 
     DataOutputBuffer containerTokens_dob = new DataOutputBuffer();
     containerCredentials.writeTokenStorageToStream(containerTokens_dob);
     ByteBuffer containerCredentialsBuffer = ByteBuffer.wrap(containerTokens_dob.getData(), 0,
-        containerTokens_dob.getLength());
+      containerTokens_dob.getLength());
     return containerCredentialsBuffer;
   }
 }

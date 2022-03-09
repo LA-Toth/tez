@@ -18,11 +18,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.Objects;
 
-import com.google.common.collect.Maps;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -45,12 +44,6 @@ import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.common.security.TokenCache;
-import org.apache.tez.serviceplugins.api.ContainerEndReason;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
-import org.apache.tez.serviceplugins.api.TaskCommunicator;
-import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
-import org.apache.tez.serviceplugins.api.TaskHeartbeatRequest;
-import org.apache.tez.serviceplugins.api.TaskHeartbeatResponse;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.TezUncheckedException;
@@ -60,6 +53,14 @@ import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.runtime.api.impl.TezHeartbeatRequest;
 import org.apache.tez.runtime.api.impl.TezHeartbeatResponse;
+import org.apache.tez.serviceplugins.api.ContainerEndReason;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+import org.apache.tez.serviceplugins.api.TaskCommunicator;
+import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
+import org.apache.tez.serviceplugins.api.TaskHeartbeatRequest;
+import org.apache.tez.serviceplugins.api.TaskHeartbeatResponse;
+
+import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,53 +70,18 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
   private static final Logger LOG = LoggerFactory.getLogger(TezTaskCommunicatorImpl.class);
 
   private static final ContainerTask TASK_FOR_INVALID_JVM = new ContainerTask(
-      null, true, null, null, false);
-
-  private final TezTaskUmbilicalProtocol taskUmbilical;
-
+    null, true, null, null, false);
   protected final ConcurrentMap<ContainerId, ContainerInfo> registeredContainers =
-      new ConcurrentHashMap<>();
+    new ConcurrentHashMap<>();
   protected final ConcurrentMap<TezTaskAttemptID, ContainerId> attemptToContainerMap =
-      new ConcurrentHashMap<>();
-
-
+    new ConcurrentHashMap<>();
   protected final String tokenIdentifier;
   protected final Token<JobTokenIdentifier> sessionToken;
   protected final Configuration conf;
+  private final TezTaskUmbilicalProtocol taskUmbilical;
   protected InetSocketAddress address;
 
   protected volatile Server server;
-
-  public static final class ContainerInfo {
-
-    ContainerInfo(ContainerId containerId, String host, int port) {
-      this.containerId = containerId;
-      this.host = host;
-      this.port = port;
-    }
-
-    final ContainerId containerId;
-    public final String host;
-    public final int port;
-    TezHeartbeatResponse lastResponse = null;
-    TaskSpec taskSpec = null;
-    long lastRequestId = 0;
-    Map<String, LocalResource> additionalLRs = null;
-    Credentials credentials = null;
-    boolean credentialsChanged = false;
-    boolean taskPulled = false;
-    long usedMemory = 0;
-
-    void reset() {
-      taskSpec = null;
-      additionalLRs = null;
-      credentials = null;
-      credentialsChanged = false;
-      taskPulled = false;
-    }
-  }
-
-
 
   /**
    * Construct the service.
@@ -129,7 +95,7 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
       conf = TezUtils.createConfFromUserPayload(getContext().getInitialUserPayload());
     } catch (IOException e) {
       throw new TezUncheckedException(
-          "Unable to parse user payload for " + TezTaskCommunicatorImpl.class.getSimpleName(), e);
+        "Unable to parse user payload for " + TezTaskCommunicatorImpl.class.getSimpleName(), e);
     }
   }
 
@@ -146,32 +112,32 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
   protected void startRpcServer() {
     try {
       JobTokenSecretManager jobTokenSecretManager =
-          new JobTokenSecretManager();
+        new JobTokenSecretManager();
       jobTokenSecretManager.addTokenForJob(tokenIdentifier, sessionToken);
 
       server = new RPC.Builder(conf)
-          .setProtocol(TezTaskUmbilicalProtocol.class)
-          .setBindAddress("0.0.0.0")
-          .setPort(0)
-          .setInstance(taskUmbilical)
-          .setNumHandlers(
-              conf.getInt(TezConfiguration.TEZ_AM_TASK_LISTENER_THREAD_COUNT,
-                  TezConfiguration.TEZ_AM_TASK_LISTENER_THREAD_COUNT_DEFAULT))
-          .setPortRangeConfig(TezConfiguration.TEZ_AM_TASK_AM_PORT_RANGE)
-          .setSecretManager(jobTokenSecretManager).build();
+        .setProtocol(TezTaskUmbilicalProtocol.class)
+        .setBindAddress("0.0.0.0")
+        .setPort(0)
+        .setInstance(taskUmbilical)
+        .setNumHandlers(
+          conf.getInt(TezConfiguration.TEZ_AM_TASK_LISTENER_THREAD_COUNT,
+            TezConfiguration.TEZ_AM_TASK_LISTENER_THREAD_COUNT_DEFAULT))
+        .setPortRangeConfig(TezConfiguration.TEZ_AM_TASK_AM_PORT_RANGE)
+        .setSecretManager(jobTokenSecretManager).build();
 
       // Enable service authorization?
       if (conf.getBoolean(
-          CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
-          false)) {
+        CommonConfigurationKeysPublic.HADOOP_SECURITY_AUTHORIZATION,
+        false)) {
         refreshServiceAcls(conf, new TezAMPolicyProvider());
       }
 
       server.start();
       InetSocketAddress serverBindAddress = NetUtils.getConnectAddress(server);
       this.address = NetUtils.createSocketAddrForHost(
-          serverBindAddress.getAddress().getCanonicalHostName(),
-          serverBindAddress.getPort());
+        serverBindAddress.getAddress().getCanonicalHostName(),
+        serverBindAddress.getPort());
       LOG.info("Instantiated TezTaskCommunicator RPC at " + this.address);
     } catch (IOException e) {
       throw new TezUncheckedException(e);
@@ -197,7 +163,7 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
   @Override
   public void registerRunningContainer(ContainerId containerId, String host, int port) {
     ContainerInfo oldInfo = registeredContainers.putIfAbsent(containerId,
-        new ContainerInfo(containerId, host, port));
+      new ContainerInfo(containerId, host, port));
     if (oldInfo != null) {
       throw new TezUncheckedException("Multiple registrations for containerId: " + containerId);
     }
@@ -207,7 +173,7 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
   public void registerContainerEnd(ContainerId containerId, ContainerEndReason endReason, String diagnostics) {
     ContainerInfo containerInfo = registeredContainers.remove(containerId);
     if (containerInfo != null) {
-      synchronized(containerInfo) {
+      synchronized (containerInfo) {
         if (containerInfo.taskSpec != null && containerInfo.taskSpec.getTaskAttemptID() != null) {
           attemptToContainerMap.remove(containerInfo.taskSpec.getTaskAttemptID());
         }
@@ -223,14 +189,14 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
 
     ContainerInfo containerInfo = registeredContainers.get(containerId);
     Objects.requireNonNull(containerInfo,
-        String.format("Cannot register task attempt %s to unknown container %s",
-            taskSpec.getTaskAttemptID(), containerId));
+      String.format("Cannot register task attempt %s to unknown container %s",
+        taskSpec.getTaskAttemptID(), containerId));
     synchronized (containerInfo) {
       if (containerInfo.taskSpec != null) {
         throw new TezUncheckedException(
-            "Cannot register task: " + taskSpec.getTaskAttemptID() + " to container: " +
-                containerId + " , with pre-existing assignment: " +
-                containerInfo.taskSpec.getTaskAttemptID());
+          "Cannot register task: " + taskSpec.getTaskAttemptID() + " to container: " +
+            containerId + " , with pre-existing assignment: " +
+            containerInfo.taskSpec.getTaskAttemptID());
       }
       containerInfo.taskSpec = taskSpec;
       containerInfo.additionalLRs = additionalResources;
@@ -241,25 +207,25 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
       ContainerId oldId = attemptToContainerMap.putIfAbsent(taskSpec.getTaskAttemptID(), containerId);
       if (oldId != null) {
         throw new TezUncheckedException(
-            "Attempting to register an already registered taskAttempt with id: " +
-                taskSpec.getTaskAttemptID() + " to containerId: " + containerId +
-                ". Already registered to containerId: " + oldId);
+          "Attempting to register an already registered taskAttempt with id: " +
+            taskSpec.getTaskAttemptID() + " to containerId: " + containerId +
+            ". Already registered to containerId: " + oldId);
       }
     }
   }
 
-
   @Override
-  public void unregisterRunningTaskAttempt(TezTaskAttemptID taskAttemptID, TaskAttemptEndReason endReason, String diagnostics) {
+  public void unregisterRunningTaskAttempt(TezTaskAttemptID taskAttemptID, TaskAttemptEndReason endReason,
+                                           String diagnostics) {
     ContainerId containerId = attemptToContainerMap.remove(taskAttemptID);
-    if(containerId == null) {
+    if (containerId == null) {
       LOG.warn("Unregister task attempt: " + taskAttemptID + " from unknown container");
       return;
     }
     ContainerInfo containerInfo = registeredContainers.get(containerId);
     if (containerInfo == null) {
       LOG.warn("Unregister task attempt: " + taskAttemptID +
-          " from non-registered container: " + containerId);
+        " from non-registered container: " + containerId);
       return;
     }
     synchronized (containerInfo) {
@@ -300,119 +266,16 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
     return this.taskUmbilical;
   }
 
-  private class TezTaskUmbilicalProtocolImpl implements TezTaskUmbilicalProtocol {
-
-    @Override
-    public ContainerTask getTask(ContainerContext containerContext) throws IOException {
-      ContainerTask task = null;
-      if (containerContext == null || containerContext.getContainerIdentifier() == null) {
-        LOG.info("Invalid task request with an empty containerContext or containerId");
-        task = TASK_FOR_INVALID_JVM;
-      } else {
-        ContainerId containerId = ConverterUtils.toContainerId(containerContext
-            .getContainerIdentifier());
-        LOG.debug("Container with id: {} asked for a task", containerId);
-        task = getContainerTask(containerId);
-        if (task != null && !task.shouldDie()) {
-          getContext().taskSubmitted(task.getTaskSpec().getTaskAttemptID(), containerId);
-          getContext().taskStartedRemotely(task.getTaskSpec().getTaskAttemptID());
-        }
-      }
-      LOG.debug("getTask returning task: {}", task);
-      return task;
-    }
-
-    @Override
-    public boolean canCommit(TezTaskAttemptID taskAttemptId) throws IOException {
-      return getContext().canCommit(taskAttemptId);
-    }
-
-    @Override
-    public TezHeartbeatResponse heartbeat(TezHeartbeatRequest request) throws IOException,
-        TezException {
-      ContainerId containerId = ConverterUtils.toContainerId(request.getContainerIdentifier());
-      long requestId = request.getRequestId();
-      LOG.debug("Received heartbeat from container, request={}", request);
-
-      ContainerInfo containerInfo = registeredContainers.get(containerId);
-      if (containerInfo == null) {
-        LOG.warn("Received task heartbeat from unknown container with id: " + containerId +
-            ", asking it to die");
-        TezHeartbeatResponse response = new TezHeartbeatResponse();
-        response.setLastRequestId(requestId);
-        response.setShouldDie();
-        return response;
-      }
-
-      synchronized (containerInfo) {
-        if (containerInfo.lastRequestId == requestId) {
-          LOG.warn("Old sequenceId received: " + requestId
-              + ", Re-sending last response to client");
-          return containerInfo.lastResponse;
-        }
-      }
-
-
-
-      TezHeartbeatResponse response = new TezHeartbeatResponse();
-      TezTaskAttemptID taskAttemptID = request.getCurrentTaskAttemptID();
-      if (taskAttemptID != null) {
-        TaskHeartbeatResponse tResponse;
-        synchronized (containerInfo) {
-          ContainerId containerIdFromMap = attemptToContainerMap.get(taskAttemptID);
-          if (containerIdFromMap == null || !containerIdFromMap.equals(containerId)) {
-            throw new TezException("Attempt " + taskAttemptID
-                + " is not recognized for heartbeat");
-          }
-
-          if (containerInfo.lastRequestId + 1 != requestId) {
-            throw new TezException("Container " + containerId
-                + " has invalid request id. Expected: "
-                + containerInfo.lastRequestId + 1
-                + " and actual: " + requestId);
-          }
-        }
-        TaskHeartbeatRequest tRequest = new TaskHeartbeatRequest(request.getContainerIdentifier(),
-            request.getCurrentTaskAttemptID(), request.getEvents(), request.getStartIndex(),
-            request.getPreRoutedStartIndex(), request.getMaxEvents());
-        tResponse = getContext().heartbeat(tRequest);
-        response.setEvents(tResponse.getEvents());
-        response.setNextFromEventId(tResponse.getNextFromEventId());
-        response.setNextPreRoutedEventId(tResponse.getNextPreRoutedEventId());
-      }
-      response.setLastRequestId(requestId);
-      containerInfo.lastRequestId = requestId;
-      containerInfo.lastResponse = response;
-      containerInfo.usedMemory = request.getUsedMemory();
-      return response;
-    }
-
-
-    // TODO Remove this method once we move to the Protobuf RPC engine
-    @Override
-    public long getProtocolVersion(String protocol, long clientVersion) throws IOException {
-      return versionID;
-    }
-
-    // TODO Remove this method once we move to the Protobuf RPC engine
-    @Override
-    public ProtocolSignature getProtocolSignature(String protocol, long clientVersion,
-                                                  int clientMethodsHash) throws IOException {
-      return ProtocolSignature.getProtocolSignature(this, protocol,
-          clientVersion, clientMethodsHash);
-    }
-  }
-
   private ContainerTask getContainerTask(ContainerId containerId) throws IOException {
     ContainerInfo containerInfo = registeredContainers.get(containerId);
     ContainerTask task;
     if (containerInfo == null) {
       if (getContext().isKnownContainer(containerId)) {
         LOG.info("Container with id: " + containerId
-            + " is valid, but no longer registered, and will be killed");
+          + " is valid, but no longer registered, and will be killed");
       } else {
         LOG.info("Container with id: " + containerId
-            + " is invalid and will be killed");
+          + " is invalid and will be killed");
       }
       task = TASK_FOR_INVALID_JVM;
     } else {
@@ -425,7 +288,7 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
           } else {
             if (LOG.isDebugEnabled()) {
               LOG.debug("Task " + containerInfo.taskSpec.getTaskAttemptID() +
-                  " already sent to container: " + containerId);
+                " already sent to container: " + containerId);
             }
             task = null;
           }
@@ -440,12 +303,12 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
 
   private ContainerTask constructContainerTask(ContainerInfo containerInfo) throws IOException {
     return new ContainerTask(containerInfo.taskSpec, false,
-        convertLocalResourceMap(containerInfo.additionalLRs), containerInfo.credentials,
-        containerInfo.credentialsChanged);
+      convertLocalResourceMap(containerInfo.additionalLRs), containerInfo.credentials,
+      containerInfo.credentialsChanged);
   }
 
   private Map<String, TezLocalResource> convertLocalResourceMap(Map<String, LocalResource> ylrs)
-      throws IOException {
+    throws IOException {
     Map<String, TezLocalResource> tlrs = Maps.newHashMap();
     if (ylrs != null) {
       for (Map.Entry<String, LocalResource> ylrEntry : ylrs.entrySet()) {
@@ -471,5 +334,133 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
 
   public long getTotalUsedMemory() {
     return registeredContainers.values().stream().mapToLong(c -> c.usedMemory).sum();
+  }
+
+  public static final class ContainerInfo {
+
+    public final String host;
+    public final int port;
+    final ContainerId containerId;
+    TezHeartbeatResponse lastResponse = null;
+    TaskSpec taskSpec = null;
+    long lastRequestId = 0;
+    Map<String, LocalResource> additionalLRs = null;
+    Credentials credentials = null;
+    boolean credentialsChanged = false;
+    boolean taskPulled = false;
+    long usedMemory = 0;
+    ContainerInfo(ContainerId containerId, String host, int port) {
+      this.containerId = containerId;
+      this.host = host;
+      this.port = port;
+    }
+
+    void reset() {
+      taskSpec = null;
+      additionalLRs = null;
+      credentials = null;
+      credentialsChanged = false;
+      taskPulled = false;
+    }
+  }
+
+  private class TezTaskUmbilicalProtocolImpl implements TezTaskUmbilicalProtocol {
+
+    @Override
+    public ContainerTask getTask(ContainerContext containerContext) throws IOException {
+      ContainerTask task = null;
+      if (containerContext == null || containerContext.getContainerIdentifier() == null) {
+        LOG.info("Invalid task request with an empty containerContext or containerId");
+        task = TASK_FOR_INVALID_JVM;
+      } else {
+        ContainerId containerId = ConverterUtils.toContainerId(containerContext
+          .getContainerIdentifier());
+        LOG.debug("Container with id: {} asked for a task", containerId);
+        task = getContainerTask(containerId);
+        if (task != null && !task.shouldDie()) {
+          getContext().taskSubmitted(task.getTaskSpec().getTaskAttemptID(), containerId);
+          getContext().taskStartedRemotely(task.getTaskSpec().getTaskAttemptID());
+        }
+      }
+      LOG.debug("getTask returning task: {}", task);
+      return task;
+    }
+
+    @Override
+    public boolean canCommit(TezTaskAttemptID taskAttemptId) throws IOException {
+      return getContext().canCommit(taskAttemptId);
+    }
+
+    @Override
+    public TezHeartbeatResponse heartbeat(TezHeartbeatRequest request) throws IOException,
+      TezException {
+      ContainerId containerId = ConverterUtils.toContainerId(request.getContainerIdentifier());
+      long requestId = request.getRequestId();
+      LOG.debug("Received heartbeat from container, request={}", request);
+
+      ContainerInfo containerInfo = registeredContainers.get(containerId);
+      if (containerInfo == null) {
+        LOG.warn("Received task heartbeat from unknown container with id: " + containerId +
+          ", asking it to die");
+        TezHeartbeatResponse response = new TezHeartbeatResponse();
+        response.setLastRequestId(requestId);
+        response.setShouldDie();
+        return response;
+      }
+
+      synchronized (containerInfo) {
+        if (containerInfo.lastRequestId == requestId) {
+          LOG.warn("Old sequenceId received: " + requestId
+            + ", Re-sending last response to client");
+          return containerInfo.lastResponse;
+        }
+      }
+
+      TezHeartbeatResponse response = new TezHeartbeatResponse();
+      TezTaskAttemptID taskAttemptID = request.getCurrentTaskAttemptID();
+      if (taskAttemptID != null) {
+        TaskHeartbeatResponse tResponse;
+        synchronized (containerInfo) {
+          ContainerId containerIdFromMap = attemptToContainerMap.get(taskAttemptID);
+          if (containerIdFromMap == null || !containerIdFromMap.equals(containerId)) {
+            throw new TezException("Attempt " + taskAttemptID
+              + " is not recognized for heartbeat");
+          }
+
+          if (containerInfo.lastRequestId + 1 != requestId) {
+            throw new TezException("Container " + containerId
+              + " has invalid request id. Expected: "
+              + containerInfo.lastRequestId + 1
+              + " and actual: " + requestId);
+          }
+        }
+        TaskHeartbeatRequest tRequest = new TaskHeartbeatRequest(request.getContainerIdentifier(),
+          request.getCurrentTaskAttemptID(), request.getEvents(), request.getStartIndex(),
+          request.getPreRoutedStartIndex(), request.getMaxEvents());
+        tResponse = getContext().heartbeat(tRequest);
+        response.setEvents(tResponse.getEvents());
+        response.setNextFromEventId(tResponse.getNextFromEventId());
+        response.setNextPreRoutedEventId(tResponse.getNextPreRoutedEventId());
+      }
+      response.setLastRequestId(requestId);
+      containerInfo.lastRequestId = requestId;
+      containerInfo.lastResponse = response;
+      containerInfo.usedMemory = request.getUsedMemory();
+      return response;
+    }
+
+    // TODO Remove this method once we move to the Protobuf RPC engine
+    @Override
+    public long getProtocolVersion(String protocol, long clientVersion) throws IOException {
+      return versionID;
+    }
+
+    // TODO Remove this method once we move to the Protobuf RPC engine
+    @Override
+    public ProtocolSignature getProtocolSignature(String protocol, long clientVersion,
+                                                  int clientMethodsHash) throws IOException {
+      return ProtocolSignature.getProtocolSignature(this, protocol,
+        clientVersion, clientMethodsHash);
+    }
   }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,10 +29,6 @@ import org.apache.tez.common.annotation.ConfigurationProperty;
 @Private
 public class TezConfigurationConstants {
 
-  static {
-    TezConfiguration.setupConfigurationScope(TezConfigurationConstants.class);
-  }
-
   /**
    * String value. Set automatically by the client. The host name of the client the Tez application
    * was submitted from.
@@ -41,7 +37,6 @@ public class TezConfigurationConstants {
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
   public static final String TEZ_SUBMIT_HOST = TezConfiguration.TEZ_PREFIX + "submit.host";
-
   /**
    * String value. Set automatically by the client. The host address of the client the Tez
    * application was submitted from.
@@ -50,6 +45,9 @@ public class TezConfigurationConstants {
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
   public static final String TEZ_SUBMIT_HOST_ADDRESS =
-      TezConfiguration.TEZ_PREFIX + "submit.host.address";
+    TezConfiguration.TEZ_PREFIX + "submit.host.address";
 
+  static {
+    TezConfiguration.setupConfigurationScope(TezConfigurationConstants.class);
+  }
 }

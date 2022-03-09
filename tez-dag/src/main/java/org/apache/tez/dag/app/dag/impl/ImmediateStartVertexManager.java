@@ -1,29 +1,29 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.app.dag.impl;
 
-import org.apache.tez.common.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.dag.api.EdgeProperty;
 import org.apache.tez.dag.api.InputDescriptor;
 import org.apache.tez.dag.api.VertexManagerPlugin;
@@ -35,10 +35,10 @@ import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.TaskAttemptIdentifier;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
 
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Starts all tasks immediately on vertex start
@@ -69,7 +69,7 @@ public class ImmediateStartVertexManager extends VertexManagerPlugin {
         getContext().registerForVertexStateUpdates(srcVertex, EnumSet.of(VertexState.CONFIGURED));
       } else {
         LOG.info("Vertex: " + getContext().getVertexName() + "; Ignoring " + srcVertex
-            + " as it has got 0 tasks");
+          + " as it has got 0 tasks");
       }
     }
     onVertexStartedDone.set(true);
@@ -89,7 +89,7 @@ public class ImmediateStartVertexManager extends VertexManagerPlugin {
     if (!canScheduleTasks()) {
       return;
     }
-    
+
     tasksScheduled = true;
     List<ScheduleTaskRequest> tasksToStart = Lists.newArrayListWithCapacity(managedTasks);
     for (int i = 0; i < managedTasks; ++i) {
@@ -118,19 +118,19 @@ public class ImmediateStartVertexManager extends VertexManagerPlugin {
 
     return true;
   }
-  
+
   @Override
   public void onVertexStateUpdated(VertexStateUpdate stateUpdate) {
     Preconditions.checkArgument(stateUpdate.getVertexState() == VertexState.CONFIGURED,
-        "Received incorrect state notification : " + stateUpdate.getVertexState() + " for vertex: "
-            + stateUpdate.getVertexName() + " in vertex: " + getContext().getVertexName());
-    Preconditions.checkArgument(srcVertexConfigured.containsKey(stateUpdate.getVertexName()),
-        "Received incorrect vertex notification : " + stateUpdate.getVertexState() + " for vertex: "
-            + stateUpdate.getVertexName() + " in vertex: " + getContext().getVertexName());
-    Preconditions.checkState(srcVertexConfigured.put(stateUpdate.getVertexName(), true)
-        .booleanValue() == false);
-    LOG.info("Received configured notification: " + stateUpdate.getVertexState() + " for vertex: "
+      "Received incorrect state notification : " + stateUpdate.getVertexState() + " for vertex: "
         + stateUpdate.getVertexName() + " in vertex: " + getContext().getVertexName());
+    Preconditions.checkArgument(srcVertexConfigured.containsKey(stateUpdate.getVertexName()),
+      "Received incorrect vertex notification : " + stateUpdate.getVertexState() + " for vertex: "
+        + stateUpdate.getVertexName() + " in vertex: " + getContext().getVertexName());
+    Preconditions.checkState(srcVertexConfigured.put(stateUpdate.getVertexName(), true)
+      .booleanValue() == false);
+    LOG.info("Received configured notification: " + stateUpdate.getVertexState() + " for vertex: "
+      + stateUpdate.getVertexName() + " in vertex: " + getContext().getVertexName());
     scheduleTasks();
   }
 
@@ -148,7 +148,6 @@ public class ImmediateStartVertexManager extends VertexManagerPlugin {
 
   @Override
   public void onRootVertexInitialized(String inputName,
-      InputDescriptor inputDescriptor, List<Event> events) {
+                                      InputDescriptor inputDescriptor, List<Event> events) {
   }
-
 }

@@ -27,10 +27,10 @@ public class DAGAppMasterEventUserServiceFatalError extends DAGAppMasterEvent im
                                                 String diagnostics, Throwable t) {
     super(type);
     Preconditions.checkArgument(
-        EnumSet.of(DAGAppMasterEventType.TASK_SCHEDULER_SERVICE_FATAL_ERROR,
-            DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR,
-            DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR).contains(type),
-        "Event created with incorrect type: " + type);
+      EnumSet.of(DAGAppMasterEventType.TASK_SCHEDULER_SERVICE_FATAL_ERROR,
+        DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR,
+        DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR).contains(type),
+      "Event created with incorrect type: " + type);
     this.error = t;
     this.diagnostics = diagnostics;
   }

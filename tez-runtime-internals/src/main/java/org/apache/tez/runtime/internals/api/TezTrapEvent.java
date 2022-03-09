@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,12 +18,12 @@
 
 package org.apache.tez.runtime.internals.api;
 
-import org.apache.tez.common.TezAbstractEvent;
-import org.apache.tez.runtime.api.impl.TezEvent;
+import static org.apache.tez.runtime.internals.api.TezTrapEventType.TRAP_EVENT_TYPE;
 
 import java.util.List;
 
-import static org.apache.tez.runtime.internals.api.TezTrapEventType.TRAP_EVENT_TYPE;
+import org.apache.tez.common.TezAbstractEvent;
+import org.apache.tez.runtime.api.impl.TezEvent;
 
 /**
  * Event sent when no more events should be sent to the AM.

@@ -38,19 +38,20 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
+
 import org.junit.Assert;
 import org.junit.Test;
 
 public class TestTaskSpec {
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testSerDe() throws IOException {
     ByteBuffer payload = null;
     ProcessorDescriptor procDesc = ProcessorDescriptor.create("proc").setUserPayload(
-        UserPayload.create(payload)).setHistoryText("historyText");
+      UserPayload.create(payload)).setHistoryText("historyText");
 
     List<InputSpec> inputSpecs = new ArrayList<>();
-    InputSpec inputSpec = new InputSpec("src1", InputDescriptor.create("inputClass"),10);
+    InputSpec inputSpec = new InputSpec("src1", InputDescriptor.create("inputClass"), 10);
     inputSpecs.add(inputSpec);
     List<OutputSpec> outputSpecs = new ArrayList<>();
     OutputSpec outputSpec = new OutputSpec("dest1", OutputDescriptor.create("outputClass"), 999);
@@ -61,9 +62,9 @@ public class TestTaskSpec {
     taskConf.set("foo", "bar");
 
     TezTaskAttemptID taId = TezTaskAttemptID.getInstance(TezTaskID.getInstance(
-        TezVertexID.getInstance(TezDAGID.getInstance("1234", 1, 1), 1), 1), 1);
+      TezVertexID.getInstance(TezDAGID.getInstance("1234", 1, 1), 1), 1), 1);
     TaskSpec taskSpec = new TaskSpec(taId, "dagName", "vName", -1, procDesc, inputSpecs, outputSpecs,
-        groupInputSpecs, taskConf);
+      groupInputSpecs, taskConf);
 
     ByteArrayOutputStream bos = new ByteArrayOutputStream();
     DataOutput out = new DataOutputStream(bos);
@@ -81,11 +82,10 @@ public class TestTaskSpec {
     Assert.assertEquals(taskSpec.getOutputs().size(), deSerTaskSpec.getOutputs().size());
     Assert.assertNull(deSerTaskSpec.getGroupInputs());
     Assert.assertEquals(taskSpec.getInputs().get(0).getSourceVertexName(),
-        deSerTaskSpec.getInputs().get(0).getSourceVertexName());
+      deSerTaskSpec.getInputs().get(0).getSourceVertexName());
     Assert.assertEquals(taskSpec.getOutputs().get(0).getDestinationVertexName(),
-        deSerTaskSpec.getOutputs().get(0).getDestinationVertexName());
+      deSerTaskSpec.getOutputs().get(0).getDestinationVertexName());
 
     Assert.assertEquals(taskConf.get("foo"), deSerTaskSpec.getTaskConf().get("foo"));
   }
-
 }

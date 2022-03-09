@@ -1,29 +1,26 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.app.rm.node;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.apache.tez.dag.app.dag.DAG;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
@@ -32,14 +29,17 @@ import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.app.AppContext;
+import org.apache.tez.dag.app.dag.DAG;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AMNodeTracker extends AbstractService implements
-    EventHandler<AMNodeEvent> {
-  
+  EventHandler<AMNodeEvent> {
+
   static final Logger LOG = LoggerFactory.getLogger(AMNodeTracker.class);
-  
+
   private final ConcurrentMap<Integer, PerSourceNodeTracker> perSourceNodeTrackers;
 
   @SuppressWarnings("rawtypes")
@@ -59,31 +59,31 @@ public class AMNodeTracker extends AbstractService implements
     this.eventHandler = eventHandler;
     this.appContext = appContext;
   }
-  
+
   @Override
   public synchronized void serviceInit(Configuration conf) {
     this.maxTaskFailuresPerNode = conf.getInt(
-        TezConfiguration.TEZ_AM_MAX_TASK_FAILURES_PER_NODE, 
-        TezConfiguration.TEZ_AM_MAX_TASK_FAILURES_PER_NODE_DEFAULT);
+      TezConfiguration.TEZ_AM_MAX_TASK_FAILURES_PER_NODE,
+      TezConfiguration.TEZ_AM_MAX_TASK_FAILURES_PER_NODE_DEFAULT);
     this.nodeBlacklistingEnabled = conf.getBoolean(
-        TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED,
-        TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED_DEFAULT);
+      TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED,
+      TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED_DEFAULT);
     this.blacklistDisablePercent = conf.getInt(
-          TezConfiguration.TEZ_AM_NODE_BLACKLISTING_IGNORE_THRESHOLD,
-          TezConfiguration.TEZ_AM_NODE_BLACKLISTING_IGNORE_THRESHOLD_DEFAULT);
+      TezConfiguration.TEZ_AM_NODE_BLACKLISTING_IGNORE_THRESHOLD,
+      TezConfiguration.TEZ_AM_NODE_BLACKLISTING_IGNORE_THRESHOLD_DEFAULT);
     this.nodeUpdatesRescheduleEnabled = conf.getBoolean(
-          TezConfiguration.TEZ_AM_NODE_UNHEALTHY_RESCHEDULE_TASKS,
-          TezConfiguration.TEZ_AM_NODE_UNHEALTHY_RESCHEDULE_TASKS_DEFAULT);
+      TezConfiguration.TEZ_AM_NODE_UNHEALTHY_RESCHEDULE_TASKS,
+      TezConfiguration.TEZ_AM_NODE_UNHEALTHY_RESCHEDULE_TASKS_DEFAULT);
 
     LOG.info("blacklistDisablePercent is " + blacklistDisablePercent +
-        ", blacklistingEnabled: " + nodeBlacklistingEnabled +
-        ", maxTaskFailuresPerNode: " + maxTaskFailuresPerNode +
-        ", nodeUpdatesRescheduleEnabled: " + nodeUpdatesRescheduleEnabled);
+      ", blacklistingEnabled: " + nodeBlacklistingEnabled +
+      ", maxTaskFailuresPerNode: " + maxTaskFailuresPerNode +
+      ", nodeUpdatesRescheduleEnabled: " + nodeUpdatesRescheduleEnabled);
 
     if (blacklistDisablePercent < -1 || blacklistDisablePercent > 100) {
       throw new TezUncheckedException("Invalid blacklistDisablePercent: "
-          + blacklistDisablePercent
-          + ". Should be an integer between 0 and 100 or -1 to disabled");
+        + blacklistDisablePercent
+        + ". Should be an integer between 0 and 100 or -1 to disabled");
     }
   }
 
@@ -91,7 +91,6 @@ public class AMNodeTracker extends AbstractService implements
     PerSourceNodeTracker nodeTracker = getAndCreateIfNeededPerSourceTracker(schedulerId);
     nodeTracker.nodeSeen(nodeId);
   }
-
 
   boolean registerBadNodeAndShouldBlacklist(AMNode amNode, int schedulerId) {
     return perSourceNodeTrackers.get(schedulerId).registerBadNodeAndShouldBlacklist(amNode);
@@ -161,9 +160,9 @@ public class AMNodeTracker extends AbstractService implements
     PerSourceNodeTracker nodeTracker = perSourceNodeTrackers.get(schedulerId);
     if (nodeTracker == null) {
       nodeTracker =
-          new PerSourceNodeTracker(schedulerId, eventHandler, appContext, maxTaskFailuresPerNode,
-              nodeBlacklistingEnabled, blacklistDisablePercent,
-              nodeUpdatesRescheduleEnabled);
+        new PerSourceNodeTracker(schedulerId, eventHandler, appContext, maxTaskFailuresPerNode,
+          nodeBlacklistingEnabled, blacklistDisablePercent,
+          nodeUpdatesRescheduleEnabled);
       PerSourceNodeTracker old = perSourceNodeTrackers.putIfAbsent(schedulerId, nodeTracker);
       nodeTracker = old != null ? old : nodeTracker;
     }

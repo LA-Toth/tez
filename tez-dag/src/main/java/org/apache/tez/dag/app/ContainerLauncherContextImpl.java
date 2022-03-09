@@ -14,9 +14,9 @@
 
 package org.apache.tez.dag.app;
 
-import javax.annotation.Nullable;
-
 import java.util.Objects;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
@@ -25,10 +25,6 @@ import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.dag.app.dag.event.DAGAppMasterEventType;
 import org.apache.tez.dag.app.dag.event.DAGAppMasterEventUserServiceFatalError;
 import org.apache.tez.dag.app.launcher.ContainerLauncherManager;
-import org.apache.tez.serviceplugins.api.ContainerLauncherContext;
-import org.apache.tez.serviceplugins.api.DagInfo;
-import org.apache.tez.serviceplugins.api.ServicePluginError;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.dag.app.rm.container.AMContainerEvent;
 import org.apache.tez.dag.app.rm.container.AMContainerEventCompleted;
 import org.apache.tez.dag.app.rm.container.AMContainerEventLaunchFailed;
@@ -37,6 +33,11 @@ import org.apache.tez.dag.app.rm.container.AMContainerEventStopFailed;
 import org.apache.tez.dag.app.rm.container.AMContainerEventType;
 import org.apache.tez.dag.history.DAGHistoryEvent;
 import org.apache.tez.dag.history.events.ContainerLaunchedEvent;
+import org.apache.tez.serviceplugins.api.ContainerLauncherContext;
+import org.apache.tez.serviceplugins.api.DagInfo;
+import org.apache.tez.serviceplugins.api.ServicePluginError;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,12 +67,11 @@ public class ContainerLauncherContextImpl implements ContainerLauncherContext {
   @Override
   public void containerLaunched(ContainerId containerId) {
     context.getEventHandler().handle(
-        new AMContainerEventLaunched(containerId));
+      new AMContainerEventLaunched(containerId));
     ContainerLaunchedEvent lEvt = new ContainerLaunchedEvent(
-        containerId, context.getClock().getTime(), context.getApplicationAttemptId());
+      containerId, context.getClock().getTime(), context.getApplicationAttemptId());
     context.getHistoryHandler().handle(new DAGHistoryEvent(
-        null, lEvt));
-
+      null, lEvt));
   }
 
   @Override
@@ -82,21 +82,22 @@ public class ContainerLauncherContextImpl implements ContainerLauncherContext {
   @Override
   public void containerStopRequested(ContainerId containerId) {
     context.getEventHandler().handle(
-        new AMContainerEvent(containerId, AMContainerEventType.C_NM_STOP_SENT));
+      new AMContainerEvent(containerId, AMContainerEventType.C_NM_STOP_SENT));
   }
 
   @Override
   public void containerStopFailed(ContainerId containerId, String diagnostics) {
     context.getEventHandler().handle(
-        new AMContainerEventStopFailed(containerId, diagnostics));
+      new AMContainerEventStopFailed(containerId, diagnostics));
   }
 
   @Override
   public void containerCompleted(ContainerId containerId, int exitStatus, String diagnostics,
                                  TaskAttemptEndReason endReason) {
-    context.getEventHandler().handle(new AMContainerEventCompleted(containerId, exitStatus, diagnostics, TezUtilsInternal
+    context.getEventHandler()
+      .handle(new AMContainerEventCompleted(containerId, exitStatus, diagnostics, TezUtilsInternal
         .fromTaskAttemptEndReason(
-            endReason)));
+          endReason)));
   }
 
   @Override
@@ -129,12 +130,12 @@ public class ContainerLauncherContextImpl implements ContainerLauncherContext {
       return tal.getTaskCommunicator(taskCommId).getMetaInfo();
     } catch (Exception e) {
       String msg = "Error in retrieving meta-info from TaskCommunicator"
-          + ", communicatorName=" + context.getTaskCommunicatorName(taskCommId);
+        + ", communicatorName=" + context.getTaskCommunicatorName(taskCommId);
       LOG.error(msg, e);
       context.getEventHandler().handle(
-          new DAGAppMasterEventUserServiceFatalError(
-              DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
-              msg, e));
+        new DAGAppMasterEventUserServiceFatalError(
+          DAGAppMasterEventType.TASK_COMMUNICATOR_SERVICE_FATAL_ERROR,
+          msg, e));
     }
     return null;
   }
@@ -144,6 +145,4 @@ public class ContainerLauncherContextImpl implements ContainerLauncherContext {
     Objects.requireNonNull(servicePluginError, "ServiceError must be specified");
     containerLauncherManager.reportError(containerLauncherIndex, servicePluginError, message, dagInfo);
   }
-
-
 }

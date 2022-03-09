@@ -33,82 +33,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hadoop.conf.Configuration;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 public class TestTezSharedExecutor {
-
-  private static class Sleep implements Runnable {
-    private final long sleepTime;
-    Sleep(long sleepTime) {
-      this.sleepTime = sleepTime;
-    }
-    @Override
-    public void run() {
-      try {
-        Thread.sleep(sleepTime);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-  }
-
-  private static class Wait implements Runnable {
-    private final CountDownLatch latch;
-    Wait(CountDownLatch latch) {
-      this.latch = latch;
-    }
-    @Override
-    public void run() {
-      try {
-        latch.await();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-    }
-  }
-
-  private static class Counter implements Runnable {
-    private final AtomicInteger counter;
-    Counter(ConcurrentHashMap<String, AtomicInteger> map, String tag) {
-      if (!map.contains(tag)) {
-        map.putIfAbsent(tag, new AtomicInteger(0));
-      }
-      this.counter = map.get(tag);
-    }
-    @Override
-    public void run() {
-      counter.getAndIncrement();
-    }
-  }
-
-  private static class Appender<T> implements Runnable {
-    private final Collection<T> collection;
-    private final T obj;
-    Appender(Collection<T> collection, T obj) {
-      this.collection = collection;
-      this.obj = obj;
-    }
-    @Override
-    public void run() {
-      collection.add(obj);
-    }
-  }
-
-  private static class Runner implements Runnable {
-    private Runnable[] runnables;
-    Runner(Runnable ... runnables) {
-      this.runnables = runnables;
-    }
-    @Override
-    public void run() {
-      for (Runnable runnable : runnables) {
-        runnable.run();
-      }
-    }
-  }
 
   private TezSharedExecutor sharedExecutor;
 
@@ -123,7 +54,7 @@ public class TestTezSharedExecutor {
     sharedExecutor = null;
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testSimpleExecution() throws Exception {
     ConcurrentHashMap<String, AtomicInteger> map = new ConcurrentHashMap<>();
 
@@ -158,7 +89,7 @@ public class TestTezSharedExecutor {
     }
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testAwaitTermination() throws Exception {
     ExecutorService service = sharedExecutor.createExecutorService(1, "await-termination");
     CountDownLatch latch = new CountDownLatch(1);
@@ -179,7 +110,7 @@ public class TestTezSharedExecutor {
     Assert.assertTrue(service.isShutdown());
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testSerialExecution() throws Exception {
     ExecutorService service = sharedExecutor.createExecutorService(1, "serial-test");
     CountDownLatch latch = new CountDownLatch(1);
@@ -208,14 +139,14 @@ public class TestTezSharedExecutor {
     Assert.assertEquals(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), list);
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testParallelExecution() throws Exception {
     ConcurrentHashMap<String, AtomicInteger> map = new ConcurrentHashMap<>();
 
     List<Future<?>> futures = new ArrayList<>();
     ExecutorService[] services = {
-        sharedExecutor.createExecutorService(2, "parallel-1"),
-        sharedExecutor.createExecutorService(2, "parallel-2")
+      sharedExecutor.createExecutorService(2, "parallel-1"),
+      sharedExecutor.createExecutorService(2, "parallel-2")
     };
     int[] expectedCounts = {0, 0};
     Random random = new Random();
@@ -223,7 +154,7 @@ public class TestTezSharedExecutor {
       int serviceIndex = random.nextInt(2);
       expectedCounts[serviceIndex] += 1;
       futures.add(services[serviceIndex].submit(
-          new Runner(new Sleep(10), new Counter(map, "test" + serviceIndex))));
+        new Runner(new Sleep(10), new Counter(map, "test" + serviceIndex))));
     }
     for (Future<?> future : futures) {
       future.get();
@@ -237,4 +168,83 @@ public class TestTezSharedExecutor {
     Assert.assertEquals(expectedCounts[1] + 1, map.get("test1").get());
   }
 
+  private static class Sleep implements Runnable {
+    private final long sleepTime;
+
+    Sleep(long sleepTime) {
+      this.sleepTime = sleepTime;
+    }
+
+    @Override
+    public void run() {
+      try {
+        Thread.sleep(sleepTime);
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+  private static class Wait implements Runnable {
+    private final CountDownLatch latch;
+
+    Wait(CountDownLatch latch) {
+      this.latch = latch;
+    }
+
+    @Override
+    public void run() {
+      try {
+        latch.await();
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+      }
+    }
+  }
+
+  private static class Counter implements Runnable {
+    private final AtomicInteger counter;
+
+    Counter(ConcurrentHashMap<String, AtomicInteger> map, String tag) {
+      if (!map.contains(tag)) {
+        map.putIfAbsent(tag, new AtomicInteger(0));
+      }
+      this.counter = map.get(tag);
+    }
+
+    @Override
+    public void run() {
+      counter.getAndIncrement();
+    }
+  }
+
+  private static class Appender<T> implements Runnable {
+    private final Collection<T> collection;
+    private final T obj;
+
+    Appender(Collection<T> collection, T obj) {
+      this.collection = collection;
+      this.obj = obj;
+    }
+
+    @Override
+    public void run() {
+      collection.add(obj);
+    }
+  }
+
+  private static class Runner implements Runnable {
+    private Runnable[] runnables;
+
+    Runner(Runnable... runnables) {
+      this.runnables = runnables;
+    }
+
+    @Override
+    public void run() {
+      for (Runnable runnable : runnables) {
+        runnable.run();
+      }
+    }
+  }
 }

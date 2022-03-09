@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,8 +22,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 import org.apache.hadoop.conf.Configuration;
@@ -45,6 +43,8 @@ import org.apache.tez.runtime.api.events.InputUpdatePayloadEvent;
 import org.apache.tez.util.StopWatch;
 
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Implements an {@link InputInitializer} that distributes Map Reduce 
@@ -59,7 +59,7 @@ import com.google.common.collect.Lists;
 public class MRInputSplitDistributor extends InputInitializer {
 
   private static final Logger LOG = LoggerFactory.getLogger(MRInputSplitDistributor.class);
-  
+
   private boolean sendSerializedEvents;
 
   private MRSplitsProto splitsProto;
@@ -72,29 +72,29 @@ public class MRInputSplitDistributor extends InputInitializer {
   public List<Event> initialize() throws IOException {
     StopWatch sw = new StopWatch().start();
     MRInputUserPayloadProto userPayloadProto = MRInputHelpers
-        .parseMRInputPayload(getContext().getInputUserPayload());
+      .parseMRInputPayload(getContext().getInputUserPayload());
     sw.stop();
     if (LOG.isDebugEnabled()) {
       LOG.debug("Time to parse MRInput payload into prot: "
-          + sw.now(TimeUnit.MILLISECONDS));
+        + sw.now(TimeUnit.MILLISECONDS));
     }
     Configuration conf = TezUtils.createConfFromByteString(userPayloadProto
-        .getConfigurationBytes());
+      .getConfigurationBytes());
     JobConf jobConf = new JobConf(conf);
     boolean useNewApi = jobConf.getUseNewMapper();
     sendSerializedEvents = conf.getBoolean(
-        MRJobConfig.MR_TEZ_INPUT_INITIALIZER_SERIALIZE_EVENT_PAYLOAD,
-        MRJobConfig.MR_TEZ_INPUT_INITIALIZER_SERIALIZE_EVENT_PAYLOAD_DEFAULT);
+      MRJobConfig.MR_TEZ_INPUT_INITIALIZER_SERIALIZE_EVENT_PAYLOAD,
+      MRJobConfig.MR_TEZ_INPUT_INITIALIZER_SERIALIZE_EVENT_PAYLOAD_DEFAULT);
     LOG.info("Emitting serialized splits: " + sendSerializedEvents);
 
     this.splitsProto = userPayloadProto.getSplits();
-    
+
     MRInputUserPayloadProto.Builder updatedPayloadBuilder = MRInputUserPayloadProto.newBuilder(userPayloadProto);
     updatedPayloadBuilder.clearSplits();
 
     List<Event> events = Lists.newArrayListWithCapacity(this.splitsProto.getSplitsCount() + 1);
     InputUpdatePayloadEvent updatePayloadEvent = InputUpdatePayloadEvent.create(
-        updatedPayloadBuilder.build().toByteString().asReadOnlyByteBuffer());
+      updatedPayloadBuilder.build().toByteString().asReadOnlyByteBuffer());
 
     events.add(updatePayloadEvent);
     int count = 0;
@@ -107,15 +107,15 @@ public class MRInputSplitDistributor extends InputInitializer {
         // Unnecessary array copy, can be avoided by using ByteBuffer instead of
         // a raw array.
         diEvent = InputDataInformationEvent.createWithSerializedPayload(count++,
-            mrSplit.toByteString().asReadOnlyByteBuffer());
+          mrSplit.toByteString().asReadOnlyByteBuffer());
       } else {
         if (useNewApi) {
           org.apache.hadoop.mapreduce.InputSplit newInputSplit = MRInputUtils
-              .getNewSplitDetailsFromEvent(mrSplit, conf);
+            .getNewSplitDetailsFromEvent(mrSplit, conf);
           diEvent = InputDataInformationEvent.createWithObjectPayload(count++, newInputSplit);
         } else {
           org.apache.hadoop.mapred.InputSplit oldInputSplit = MRInputUtils
-              .getOldSplitDetailsFromEvent(mrSplit, conf);
+            .getOldSplitDetailsFromEvent(mrSplit, conf);
           diEvent = InputDataInformationEvent.createWithObjectPayload(count++, oldInputSplit);
         }
       }

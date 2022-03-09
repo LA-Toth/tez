@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 import java.util.BitSet;
 import java.util.List;
 
-import com.google.protobuf.ByteString;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.tez.common.TezCommonUtils;
@@ -30,18 +29,19 @@ import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.OutputContext;
 import org.apache.tez.runtime.api.events.CompositeDataMovementEvent;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads;
+
+import com.google.protobuf.ByteString;
 import org.junit.Test;
 
 // Tests which don't require parameterization
 public class TestUnorderedPartitionedKVOutput2 {
-
 
   @Test(timeout = 5000)
   public void testNonStartedOutput() throws Exception {
     OutputContext outputContext = OutputTestHelpers.createOutputContext();
     int numPartitions = 1;
     UnorderedPartitionedKVOutput output =
-        new UnorderedPartitionedKVOutput(outputContext, numPartitions);
+      new UnorderedPartitionedKVOutput(outputContext, numPartitions);
     output.initialize();
     List<Event> events = output.close();
     assertEquals(1, events.size());
@@ -50,11 +50,11 @@ public class TestUnorderedPartitionedKVOutput2 {
     CompositeDataMovementEvent dme = (CompositeDataMovementEvent) event1;
     ByteBuffer bb = dme.getUserPayload();
     ShuffleUserPayloads.DataMovementEventPayloadProto shufflePayload =
-        ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(bb));
+      ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(bb));
     assertTrue(shufflePayload.hasEmptyPartitions());
 
     byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(shufflePayload
-        .getEmptyPartitions());
+      .getEmptyPartitions());
     BitSet emptyPartionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
     assertEquals(numPartitions, emptyPartionsBitSet.cardinality());
     for (int i = 0; i < numPartitions; i++) {
@@ -70,9 +70,9 @@ public class TestUnorderedPartitionedKVOutput2 {
     userPayloadConf.set("local-key", "local-value");
     baseConf.set("base-key", "base-value");
     OutputContext outputContext = OutputTestHelpers.createOutputContext(
-        userPayloadConf, baseConf, new Path("/"));
+      userPayloadConf, baseConf, new Path("/"));
     UnorderedPartitionedKVOutput output =
-        new UnorderedPartitionedKVOutput(outputContext, 1);
+      new UnorderedPartitionedKVOutput(outputContext, 1);
     output.initialize();
     Configuration mergedConf = output.conf;
     assertEquals("base-value", mergedConf.get("base-key"));

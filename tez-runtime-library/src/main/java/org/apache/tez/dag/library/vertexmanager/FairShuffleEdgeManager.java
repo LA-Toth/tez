@@ -1,32 +1,32 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.library.vertexmanager;
 
-import com.google.protobuf.InvalidProtocolBufferException;
+import java.util.HashMap;
+
+import javax.annotation.Nullable;
 
 import org.apache.tez.dag.api.EdgeManagerPluginContext;
 import org.apache.tez.dag.api.EdgeManagerPluginOnDemand;
 import org.apache.tez.dag.api.UserPayload;
 
-import javax.annotation.Nullable;
-
-import java.util.HashMap;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 /**
  * Edge manager for fair routing. Each destination task has its
@@ -59,7 +59,7 @@ public class FairShuffleEdgeManager extends EdgeManagerPluginOnDemand {
   @Override
   public int getNumDestinationConsumerTasks(int sourceTaskIndex) {
     int numTasks = 0;
-    for(DestinationTaskInputsProperty entry: mapping.values()) {
+    for (DestinationTaskInputsProperty entry : mapping.values()) {
       if (entry.isSourceTaskInRange(sourceTaskIndex)) {
         numTasks++;
       }
@@ -72,24 +72,24 @@ public class FairShuffleEdgeManager extends EdgeManagerPluginOnDemand {
   public void initialize() {
     UserPayload userPayload = getContext().getUserPayload();
     if (userPayload == null || userPayload.getPayload() == null ||
-        userPayload.getPayload().limit() == 0) {
+      userPayload.getPayload().limit() == 0) {
       throw new RuntimeException("Could not initialize FairShuffleEdgeManager"
-          + " from provided user payload");
+        + " from provided user payload");
     }
     try {
       conf = FairEdgeConfiguration.fromUserPayload(userPayload);
       mapping = conf.getRoutingTable();
     } catch (InvalidProtocolBufferException e) {
       throw new RuntimeException("Could not initialize FairShuffleEdgeManager"
-          + " from provided user payload", e);
+        + " from provided user payload", e);
     }
   }
 
   @Override
   public int routeInputErrorEventToSource(int destinationTaskIndex,
-      int destinationFailedInputIndex) {
+                                          int destinationFailedInputIndex) {
     return mapping.get(destinationTaskIndex).getSourceTaskIndex(
-        destinationFailedInputIndex);
+      destinationFailedInputIndex);
   }
 
   @Override
@@ -98,11 +98,11 @@ public class FairShuffleEdgeManager extends EdgeManagerPluginOnDemand {
 
   @Override
   public EventRouteMetadata routeDataMovementEventToDestination(
-      int sourceTaskIndex, int sourceOutputIndex, int destTaskIndex)
-      throws Exception {
+    int sourceTaskIndex, int sourceOutputIndex, int destTaskIndex)
+    throws Exception {
     DestinationTaskInputsProperty property = mapping.get(destTaskIndex);
     int targetIndex = property.getPhysicalInputIndex(sourceTaskIndex,
-        sourceOutputIndex);
+      sourceOutputIndex);
     if (targetIndex != -1) {
       return EventRouteMetadata.create(1, new int[]{targetIndex});
     } else {
@@ -121,16 +121,17 @@ public class FairShuffleEdgeManager extends EdgeManagerPluginOnDemand {
   }
 
   @Override
-  public @Nullable CompositeEventRouteMetadata
-      routeCompositeDataMovementEventToDestination(int sourceTaskIndex,
-      int destinationTaskIndex) {
+  public @Nullable
+  CompositeEventRouteMetadata
+  routeCompositeDataMovementEventToDestination(int sourceTaskIndex,
+                                               int destinationTaskIndex) {
     DestinationTaskInputsProperty property = mapping.get(destinationTaskIndex);
     int firstPhysicalInputIndex =
-        property.getFirstPhysicalInputIndex(sourceTaskIndex);
+      property.getFirstPhysicalInputIndex(sourceTaskIndex);
     if (firstPhysicalInputIndex >= 0) {
       return CompositeEventRouteMetadata.create(property.getNumOfPartitions(),
-          firstPhysicalInputIndex,
-          property.getFirstPartitionId());
+        firstPhysicalInputIndex,
+        property.getFirstPartitionId());
     } else {
       return null;
     }
@@ -138,16 +139,15 @@ public class FairShuffleEdgeManager extends EdgeManagerPluginOnDemand {
 
   @Override
   public EventRouteMetadata routeInputSourceTaskFailedEventToDestination(
-      int sourceTaskIndex, int destinationTaskIndex) throws Exception {
+    int sourceTaskIndex, int destinationTaskIndex) throws Exception {
     DestinationTaskInputsProperty property = mapping.get(destinationTaskIndex);
     int firstPhysicalInputIndex =
-        property.getFirstPhysicalInputIndex(sourceTaskIndex);
+      property.getFirstPhysicalInputIndex(sourceTaskIndex);
     if (firstPhysicalInputIndex >= 0) {
       return EventRouteMetadata.create(property.getNumOfPartitions(),
-          getRange(firstPhysicalInputIndex, property.getNumOfPartitions()));
+        getRange(firstPhysicalInputIndex, property.getNumOfPartitions()));
     } else {
       return null;
     }
   }
 }
-

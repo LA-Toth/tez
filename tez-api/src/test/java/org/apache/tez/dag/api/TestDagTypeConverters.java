@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +24,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -45,32 +44,44 @@ import org.apache.tez.serviceplugins.api.ContainerLauncherDescriptor;
 import org.apache.tez.serviceplugins.api.ServicePluginsDescriptor;
 import org.apache.tez.serviceplugins.api.TaskCommunicatorDescriptor;
 import org.apache.tez.serviceplugins.api.TaskSchedulerDescriptor;
+
+import com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.google.common.collect.Sets;
-
 public class TestDagTypeConverters {
+
+  static final String testScheduler = "testScheduler";
+  static final String testLauncher = "testLauncher";
+  static final String testComm = "testComm";
+  static final String classSuffix = "_class";
+
+  private static UserPayload createPayload(int i) {
+    ByteBuffer bb = ByteBuffer.allocate(4);
+    bb.putInt(0, i);
+    UserPayload payload = UserPayload.create(bb);
+    return payload;
+  }
 
   @Test(timeout = 5000)
   public void testTezEntityDescriptorSerialization() throws IOException {
     UserPayload payload = UserPayload.create(ByteBuffer.wrap(new String("Foobar").getBytes()), 100);
     String historytext = "Bar123";
     EntityDescriptor entityDescriptor =
-        InputDescriptor.create("inputClazz").setUserPayload(payload)
+      InputDescriptor.create("inputClazz").setUserPayload(payload)
         .setHistoryText(historytext);
     TezEntityDescriptorProto proto =
-        DagTypeConverters.convertToDAGPlan(entityDescriptor);
+      DagTypeConverters.convertToDAGPlan(entityDescriptor);
     Assert.assertEquals(payload.getVersion(), proto.getTezUserPayload().getVersion());
     Assert.assertArrayEquals(payload.deepCopyAsArray(), proto.getTezUserPayload().getUserPayload().toByteArray());
     assertTrue(proto.hasHistoryText());
     Assert.assertNotEquals(historytext, proto.getHistoryText());
     Assert.assertEquals(historytext, new String(
-        TezCommonUtils.decompressByteStringToByteArray(proto.getHistoryText())));
+      TezCommonUtils.decompressByteStringToByteArray(proto.getHistoryText())));
 
     // Ensure that the history text is not deserialized
     InputDescriptor inputDescriptor =
-        DagTypeConverters.convertInputDescriptorFromDAGPlan(proto);
+      DagTypeConverters.convertInputDescriptorFromDAGPlan(proto);
     Assert.assertNull(inputDescriptor.getHistoryText());
 
     // Check history text value
@@ -93,7 +104,6 @@ public class TestDagTypeConverters {
     Assert.assertEquals("/file", lr1UrlDeserialized.getFile());
     Assert.assertEquals("hdfs", lr1UrlDeserialized.getScheme());
 
-
     // With port
     String p2String = "hdfs://mycluster:2311/file";
     Path p2Path = new Path(p2String);
@@ -109,13 +119,11 @@ public class TestDagTypeConverters {
     Assert.assertEquals(2311, lr2UrlDeserialized.getPort());
   }
 
-
   @Test(timeout = 5000)
   public void testVertexExecutionContextTranslation() {
     VertexExecutionContext originalContext;
     VertexExecutionContextProto contextProto;
     VertexExecutionContext retrievedContext;
-
 
     // Uber
     originalContext = VertexExecutionContext.createExecuteInAm(true);
@@ -136,15 +144,8 @@ public class TestDagTypeConverters {
     assertEquals(originalContext, retrievedContext);
   }
 
-
-  static final String testScheduler = "testScheduler";
-  static final String testLauncher = "testLauncher";
-  static final String testComm = "testComm";
-  static final String classSuffix = "_class";
-
   @Test(timeout = 5000)
   public void testServiceDescriptorTranslation() {
-
 
     TaskSchedulerDescriptor[] taskSchedulers;
     ContainerLauncherDescriptor[] containerLaunchers;
@@ -170,7 +171,7 @@ public class TestDagTypeConverters {
     taskComms = createTaskCommunicators(1, true);
 
     servicePluginsDescriptor = ServicePluginsDescriptor.create(taskSchedulers, containerLaunchers,
-        taskComms);
+      taskComms);
     proto = DagTypeConverters.convertServicePluginDescriptorToProto(servicePluginsDescriptor);
     assertTrue(proto.hasUberEnabled());
     assertTrue(proto.hasContainersEnabled());
@@ -180,14 +181,13 @@ public class TestDagTypeConverters {
     verifyPlugins(proto.getContainerLaunchersList(), 1, testLauncher, false);
     verifyPlugins(proto.getTaskCommunicatorsList(), 1, testComm, true);
 
-
     // Multiple plugin set specified. All with a payload
     taskSchedulers = createTaskScheduelrs(3, true);
     containerLaunchers = createContainerLaunchers(3, true);
     taskComms = createTaskCommunicators(3, true);
 
     servicePluginsDescriptor = ServicePluginsDescriptor.create(taskSchedulers, containerLaunchers,
-        taskComms);
+      taskComms);
     proto = DagTypeConverters.convertServicePluginDescriptorToProto(servicePluginsDescriptor);
     assertTrue(proto.hasUberEnabled());
     assertTrue(proto.hasContainersEnabled());
@@ -203,7 +203,7 @@ public class TestDagTypeConverters {
     taskComms = createTaskCommunicators(1, true);
 
     servicePluginsDescriptor = ServicePluginsDescriptor.create(false, true, taskSchedulers, containerLaunchers,
-        taskComms);
+      taskComms);
     proto = DagTypeConverters.convertServicePluginDescriptorToProto(servicePluginsDescriptor);
     assertTrue(proto.hasUberEnabled());
     assertTrue(proto.hasContainersEnabled());
@@ -256,13 +256,13 @@ public class TestDagTypeConverters {
 
   private void assertSame(DAGAccessControls dagAccessControls, ACLInfo aclInfo) {
     assertEquals(dagAccessControls.getUsersWithViewACLs(),
-        Sets.newHashSet(aclInfo.getUsersWithViewAccessList()));
+      Sets.newHashSet(aclInfo.getUsersWithViewAccessList()));
     assertEquals(dagAccessControls.getUsersWithModifyACLs(),
-        Sets.newHashSet(aclInfo.getUsersWithModifyAccessList()));
+      Sets.newHashSet(aclInfo.getUsersWithModifyAccessList()));
     assertEquals(dagAccessControls.getGroupsWithViewACLs(),
-        Sets.newHashSet(aclInfo.getGroupsWithViewAccessList()));
+      Sets.newHashSet(aclInfo.getGroupsWithViewAccessList()));
     assertEquals(dagAccessControls.getGroupsWithModifyACLs(),
-        Sets.newHashSet(aclInfo.getGroupsWithModifyAccessList()));
+      Sets.newHashSet(aclInfo.getGroupsWithModifyAccessList()));
   }
 
   private void verifyPlugins(List<TezNamedEntityDescriptorProto> entities, int expectedCount,
@@ -272,13 +272,13 @@ public class TestDagTypeConverters {
       assertEquals(indexedEntity(baseString, i), entities.get(i).getName());
       TezEntityDescriptorProto subEntityProto = entities.get(i).getEntityDescriptor();
       assertEquals(append(indexedEntity(baseString, i), classSuffix),
-          subEntityProto.getClassName());
+        subEntityProto.getClassName());
       assertEquals(hasPayload, subEntityProto.hasTezUserPayload());
       if (hasPayload) {
         UserPayload userPayload =
-            UserPayload
-                .create(subEntityProto.getTezUserPayload().getUserPayload().asReadOnlyByteBuffer(),
-                    subEntityProto.getTezUserPayload().getVersion());
+          UserPayload
+            .create(subEntityProto.getTezUserPayload().getUserPayload().asReadOnlyByteBuffer(),
+              subEntityProto.getTezUserPayload().getVersion());
         ByteBuffer bb = userPayload.getPayload();
         assertNotNull(bb);
         assertEquals(i, bb.getInt());
@@ -290,7 +290,7 @@ public class TestDagTypeConverters {
     TaskSchedulerDescriptor[] descriptors = new TaskSchedulerDescriptor[count];
     for (int i = 0; i < count; i++) {
       descriptors[i] = TaskSchedulerDescriptor.create(indexedEntity(testScheduler, i),
-          append(indexedEntity(testScheduler, i), classSuffix));
+        append(indexedEntity(testScheduler, i), classSuffix));
       if (withUserPayload) {
         descriptors[i].setUserPayload(createPayload(i));
       }
@@ -303,7 +303,7 @@ public class TestDagTypeConverters {
     ContainerLauncherDescriptor[] descriptors = new ContainerLauncherDescriptor[count];
     for (int i = 0; i < count; i++) {
       descriptors[i] = ContainerLauncherDescriptor.create(indexedEntity(testLauncher, i),
-          append(indexedEntity(testLauncher, i), classSuffix));
+        append(indexedEntity(testLauncher, i), classSuffix));
       if (withUserPayload) {
         descriptors[i].setUserPayload(createPayload(i));
       }
@@ -315,19 +315,12 @@ public class TestDagTypeConverters {
     TaskCommunicatorDescriptor[] descriptors = new TaskCommunicatorDescriptor[count];
     for (int i = 0; i < count; i++) {
       descriptors[i] = TaskCommunicatorDescriptor.create(indexedEntity(testComm, i),
-          append(indexedEntity(testComm, i), classSuffix));
+        append(indexedEntity(testComm, i), classSuffix));
       if (withUserPayload) {
         descriptors[i].setUserPayload(createPayload(i));
       }
     }
     return descriptors;
-  }
-
-  private static UserPayload createPayload(int i) {
-    ByteBuffer bb = ByteBuffer.allocate(4);
-    bb.putInt(0, i);
-    UserPayload payload = UserPayload.create(bb);
-    return payload;
   }
 
   private String indexedEntity(String name, int index) {

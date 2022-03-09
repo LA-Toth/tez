@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,7 +46,7 @@ public class GroupInputEdge {
     this.edgeProperty = edgeProperty;
     if (mergedInput == null) {
       throw new TezUncheckedException(
-          "Merged input must be specified when using GroupInputEdge");
+        "Merged input must be specified when using GroupInputEdge");
     }
     this.mergedInput = mergedInput;
   }
@@ -88,7 +88,7 @@ public class GroupInputEdge {
   public EdgeProperty getEdgeProperty() {
     return edgeProperty;
   }
-  
+
   InputDescriptor getMergedInput() {
     return mergedInput;
   }
@@ -100,7 +100,7 @@ public class GroupInputEdge {
   public String getId() {
     return String.valueOf(this.hashCode());
   }
- 
+
   @Override
   public String toString() {
     return inputVertexGroup + " -> " + outputVertex + " (" + edgeProperty + ")";
@@ -111,9 +111,9 @@ public class GroupInputEdge {
     final int prime = 31;
     int result = 1;
     result = prime * result
-        + ((inputVertexGroup == null) ? 0 : inputVertexGroup.hashCode());
+      + ((inputVertexGroup == null) ? 0 : inputVertexGroup.hashCode());
     result = prime * result
-        + ((outputVertex == null) ? 0 : outputVertex.hashCode());
+      + ((outputVertex == null) ? 0 : outputVertex.hashCode());
     return result;
   }
 

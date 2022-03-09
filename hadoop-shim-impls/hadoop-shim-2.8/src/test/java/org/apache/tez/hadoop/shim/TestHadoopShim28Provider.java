@@ -19,6 +19,7 @@
 package org.apache.tez.hadoop.shim;
 
 import org.apache.hadoop.conf.Configuration;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -36,7 +37,7 @@ public class TestHadoopShim28Provider {
     Assert.assertNotNull(provider.createHadoopShim("foo", 2, 111));
 
     Assert.assertEquals(HadoopShim28.class,
-        provider.createHadoopShim("foo", 2, 9).getClass());
+      provider.createHadoopShim("foo", 2, 9).getClass());
   }
 
   @Test
@@ -45,7 +46,7 @@ public class TestHadoopShim28Provider {
     // Set shim and version to ensure that hadoop version from the build does not create
     // a mismatch
     conf.set(HadoopShimsLoader.TEZ_HADOOP_SHIM_PROVIDER_CLASS,
-        HadoopShim28Provider.class.getName());
+      HadoopShim28Provider.class.getName());
     conf.set(HadoopShimsLoader.TEZ_HADOOP_SHIM_HADOOP_VERSION_OVERRIDE, "2.8.0");
     HadoopShimsLoader loader = new HadoopShimsLoader(conf, true);
     HadoopShim shim = loader.getHadoopShim();
@@ -69,12 +70,11 @@ public class TestHadoopShim28Provider {
     Configuration conf = new Configuration(false);
     // Set incompatible version so that override shim does not return a valid shim
     conf.set(HadoopShimsLoader.TEZ_HADOOP_SHIM_PROVIDER_CLASS,
-        HadoopShim28Provider.class.getName());
+      HadoopShim28Provider.class.getName());
     conf.set(HadoopShimsLoader.TEZ_HADOOP_SHIM_HADOOP_VERSION_OVERRIDE, "2.1.0");
     HadoopShimsLoader loader = new HadoopShimsLoader(conf, true);
     HadoopShim shim = loader.getHadoopShim();
     Assert.assertNotNull(shim);
     Assert.assertEquals(DefaultHadoopShim.class, shim.getClass());
   }
-
 }

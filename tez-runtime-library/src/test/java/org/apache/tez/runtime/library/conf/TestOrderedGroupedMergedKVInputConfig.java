@@ -28,9 +28,10 @@ import static org.junit.Assert.fail;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.google.common.collect.Maps;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
+
+import com.google.common.collect.Maps;
 import org.junit.Test;
 
 public class TestOrderedGroupedMergedKVInputConfig {
@@ -59,22 +60,22 @@ public class TestOrderedGroupedMergedKVInputConfig {
     fromConf.setInt(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES, 1111);
     fromConf.set("io.shouldExist", "io");
     fromConf.setInt(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST, 3);
+      .TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST, 3);
     fromConf.setFloat(
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ACCEPTABLE_HOST_FETCH_FAILURE_FRACTION,
-        0.1f);
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_ACCEPTABLE_HOST_FETCH_FAILURE_FRACTION,
+      0.1f);
     fromConf.setFloat(
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MAX_STALL_TIME_FRACTION,
-        0.6f);
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MAX_STALL_TIME_FRACTION,
+      0.6f);
     fromConf.setInt(
-        TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_SOURCE_ATTEMPT_ABORT_LIMIT,
-        10);
+      TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_SOURCE_ATTEMPT_ABORT_LIMIT,
+      10);
     fromConf.setFloat(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MAX_ALLOWED_FAILED_FETCH_ATTEMPT_FRACTION, 0.2f);
+      .TEZ_RUNTIME_SHUFFLE_MAX_ALLOWED_FAILED_FETCH_ATTEMPT_FRACTION, 0.2f);
     fromConf.setFloat(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MIN_REQUIRED_PROGRESS_FRACTION, 0.6f);
+      .TEZ_RUNTIME_SHUFFLE_MIN_REQUIRED_PROGRESS_FRACTION, 0.6f);
     fromConf.setBoolean(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION, false);
+      .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION, false);
     Configuration fromConfUnfiltered = new Configuration(false);
     fromConfUnfiltered.set("test.conf.unfiltered.1", "unfiltered1");
     Map<String, String> additionalConf = new HashMap<String, String>();
@@ -82,23 +83,22 @@ public class TestOrderedGroupedMergedKVInputConfig {
     additionalConf.put(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_FACTOR, "3");
     additionalConf.put("file.shouldExist", "file");
     OrderedGroupedKVInputConfig.Builder builder =
-        OrderedGroupedKVInputConfig.newBuilder("KEY", "VALUE")
-            .setKeyComparatorClass("KEY_COMPARATOR", null)
-            .setCompression(true, "CustomCodec", null)
-            .setMaxSingleMemorySegmentFraction(0.11f)
-            .setMergeFraction(0.22f)
-            .setPostMergeBufferFraction(0.33f)
-            .setShuffleBufferFraction(0.44f)
-            .setAdditionalConfiguration("fs.shouldExist", "fs")
-            .setAdditionalConfiguration("test.key.1", "key1")
-            .setAdditionalConfiguration(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD,
-                String.valueOf(false))
-            .setAdditionalConfiguration(additionalConf)
-            .setFromConfiguration(fromConf)
-            .setFromConfigurationUnfiltered(fromConfUnfiltered);
+      OrderedGroupedKVInputConfig.newBuilder("KEY", "VALUE")
+        .setKeyComparatorClass("KEY_COMPARATOR", null)
+        .setCompression(true, "CustomCodec", null)
+        .setMaxSingleMemorySegmentFraction(0.11f)
+        .setMergeFraction(0.22f)
+        .setPostMergeBufferFraction(0.33f)
+        .setShuffleBufferFraction(0.44f)
+        .setAdditionalConfiguration("fs.shouldExist", "fs")
+        .setAdditionalConfiguration("test.key.1", "key1")
+        .setAdditionalConfiguration(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD,
+          String.valueOf(false))
+        .setAdditionalConfiguration(additionalConf)
+        .setFromConfiguration(fromConf)
+        .setFromConfigurationUnfiltered(fromConfUnfiltered);
 
     OrderedGroupedKVInputConfig configuration = builder.build();
-
 
     OrderedGroupedKVInputConfig rebuilt = new OrderedGroupedKVInputConfig();
     rebuilt.fromUserPayload(configuration.toUserPayload());
@@ -109,32 +109,33 @@ public class TestOrderedGroupedMergedKVInputConfig {
     assertEquals("KEY", conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_CLASS, ""));
     assertEquals("VALUE", conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_VALUE_CLASS, ""));
     assertEquals("CustomCodec",
-        conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
+      conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
     assertEquals(true, conf.getBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS,
-        false));
+      false));
     assertEquals(0.11f, conf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MEMORY_LIMIT_PERCENT, 0.0f), 0.001f);
     assertEquals(0.22f, conf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MERGE_PERCENT, 0.0f), 0.001f);
-    assertEquals(0.33f, conf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_INPUT_POST_MERGE_BUFFER_PERCENT, 0.0f), 0.001f);
+    assertEquals(0.33f, conf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_INPUT_POST_MERGE_BUFFER_PERCENT, 0.0f),
+      0.001f);
     assertEquals(0.44f, conf.getFloat(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_FETCH_BUFFER_PERCENT, 0.00f), 0.001f);
     assertEquals(0.1f, conf.getFloat(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_ACCEPTABLE_HOST_FETCH_FAILURE_FRACTION, 0.00f), 0.001f);
+      .TEZ_RUNTIME_SHUFFLE_ACCEPTABLE_HOST_FETCH_FAILURE_FRACTION, 0.00f), 0.001f);
     assertEquals(3, conf.getInt(TezRuntimeConfiguration.TEZ_RUNTIME_SHUFFLE_MIN_FAILURES_PER_HOST, 0), 0);
     assertEquals(10, conf.getInt(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_SOURCE_ATTEMPT_ABORT_LIMIT, 0), 0);
+      .TEZ_RUNTIME_SHUFFLE_SOURCE_ATTEMPT_ABORT_LIMIT, 0), 0);
     assertEquals(0.6f, conf.getFloat(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MAX_STALL_TIME_FRACTION, 0.00f), 0.001f);
+      .TEZ_RUNTIME_SHUFFLE_MAX_STALL_TIME_FRACTION, 0.00f), 0.001f);
     assertEquals(0.2f, conf.getFloat(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MAX_ALLOWED_FAILED_FETCH_ATTEMPT_FRACTION, 0.00f), 0.001f);
+      .TEZ_RUNTIME_SHUFFLE_MAX_ALLOWED_FAILED_FETCH_ATTEMPT_FRACTION, 0.00f), 0.001f);
     assertEquals(0.6f, conf.getFloat(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_MIN_REQUIRED_PROGRESS_FRACTION, 0.6f), 0.001f);
+      .TEZ_RUNTIME_SHUFFLE_MIN_REQUIRED_PROGRESS_FRACTION, 0.6f), 0.001f);
     assertEquals(false, conf.getBoolean(TezRuntimeConfiguration
-        .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION, true));
+      .TEZ_RUNTIME_SHUFFLE_FAILED_CHECK_SINCE_LAST_COMPLETION, true));
 
     // Verify additional configs
     assertEquals(false, conf.getBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD,
-        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT));
+      TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT));
     assertEquals(1111, conf.getInt(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES,
-        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES_DEFAULT));
+      TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_BYTES_DEFAULT));
     assertEquals(3, conf.getInt(TezRuntimeConfiguration.TEZ_RUNTIME_IO_SORT_FACTOR, -1));
     assertEquals("io", conf.get("io.shouldExist"));
     assertEquals("file", conf.get("file.shouldExist"));
@@ -149,7 +150,7 @@ public class TestOrderedGroupedMergedKVInputConfig {
   @Test(timeout = 5000)
   public void testDefaultConfigsUsed() {
     OrderedGroupedKVInputConfig.Builder builder =
-        OrderedGroupedKVInputConfig.newBuilder("KEY", "VALUE");
+      OrderedGroupedKVInputConfig.newBuilder("KEY", "VALUE");
     OrderedGroupedKVInputConfig configuration = builder.build();
 
     OrderedGroupedKVInputConfig rebuilt = new OrderedGroupedKVInputConfig();
@@ -158,11 +159,11 @@ public class TestOrderedGroupedMergedKVInputConfig {
     Configuration conf = rebuilt.conf;
 
     assertEquals(true, conf.getBoolean(TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD,
-        TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT));
+      TezRuntimeConfiguration.TEZ_RUNTIME_IFILE_READAHEAD_DEFAULT));
 
     // Default property present.
     assertEquals("TestCodec",
-        conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
+      conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
 
     // Verify whatever was configured
     assertEquals("KEY", conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_CLASS, ""));
@@ -174,10 +175,10 @@ public class TestOrderedGroupedMergedKVInputConfig {
     Map<String, String> combinerConf = Maps.newHashMap();
     combinerConf.put("combiner.test.key", "COMBINERKEY");
     combinerConf
-        .put(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, "InvalidKeyOverride");
+      .put(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, "InvalidKeyOverride");
     OrderedGroupedKVInputConfig.Builder builder =
-        OrderedGroupedKVInputConfig.newBuilder("KEY", "VALUE")
-            .setCombiner("COMBINER", combinerConf);
+      OrderedGroupedKVInputConfig.newBuilder("KEY", "VALUE")
+        .setCombiner("COMBINER", combinerConf);
 
     OrderedGroupedKVInputConfig configuration = builder.build();
 
@@ -188,7 +189,7 @@ public class TestOrderedGroupedMergedKVInputConfig {
 
     // Default Output property should not be overridden based on partitioner config
     assertEquals("TestCodec",
-        conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
+      conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMPRESS_CODEC, ""));
 
     assertEquals("COMBINERKEY", conf.get("combiner.test.key"));
   }

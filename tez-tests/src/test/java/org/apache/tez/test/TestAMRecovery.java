@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,10 +26,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 
-import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
@@ -74,14 +72,16 @@ import org.apache.tez.runtime.api.ProcessorContext;
 import org.apache.tez.runtime.api.TaskAttemptIdentifier;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
 import org.apache.tez.runtime.library.processor.SimpleProcessor;
+
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestAMRecovery {
 
@@ -92,7 +92,7 @@ public class TestAMRecovery {
   private static int MAX_AM_ATTEMPT = 10;
   private static MiniTezCluster miniTezCluster = null;
   private static String TEST_ROOT_DIR = "target" + Path.SEPARATOR
-      + TestAMRecovery.class.getName() + "-tmpDir";
+    + TestAMRecovery.class.getName() + "-tmpDir";
   private static MiniDFSCluster dfsCluster = null;
   private static TezClient tezSession = null;
   private static FileSystem remoteFs = null;
@@ -105,15 +105,15 @@ public class TestAMRecovery {
     try {
       conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, TEST_ROOT_DIR);
       dfsCluster =
-          new MiniDFSCluster.Builder(conf).numDataNodes(3).format(true)
-              .racks(null).build();
+        new MiniDFSCluster.Builder(conf).numDataNodes(3).format(true)
+          .racks(null).build();
       remoteFs = dfsCluster.getFileSystem();
     } catch (IOException io) {
       throw new RuntimeException("problem starting mini dfs cluster", io);
     }
     if (miniTezCluster == null) {
       miniTezCluster =
-          new MiniTezCluster(TestAMRecovery.class.getName(), 1, 1, 1);
+        new MiniTezCluster(TestAMRecovery.class.getName(), 1, 1, 1);
       Configuration miniTezconf = new Configuration(conf);
       miniTezconf.setInt(YarnConfiguration.RM_AM_MAX_ATTEMPTS, MAX_AM_ATTEMPT);
       miniTezconf.set("fs.defaultFS", remoteFs.getUri().toString()); // use HDFS
@@ -156,29 +156,29 @@ public class TestAMRecovery {
   public void setup() throws Exception {
     LOG.info("Starting session");
     Path remoteStagingDir =
-        remoteFs.makeQualified(new Path(TEST_ROOT_DIR, String
-            .valueOf(new Random().nextInt(100000))));
+      remoteFs.makeQualified(new Path(TEST_ROOT_DIR, String
+        .valueOf(new Random().nextInt(100000))));
     TezClientUtils.ensureStagingDirExists(conf, remoteStagingDir);
 
     tezConf = new TezConfiguration(miniTezCluster.getConfig());
     tezConf.setInt(TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS, 0);
     tezConf.set(TezConfiguration.TEZ_AM_LOG_LEVEL, "INFO");
     tezConf.set(TezConfiguration.TEZ_AM_STAGING_DIR,
-        remoteStagingDir.toString());
+      remoteStagingDir.toString());
     tezConf
-        .setBoolean(TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED, false);
+      .setBoolean(TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED, false);
     tezConf.setInt(TezConfiguration.TEZ_AM_MAX_APP_ATTEMPTS, MAX_AM_ATTEMPT);
     tezConf.setInt(TezConfiguration.TEZ_AM_RESOURCE_MEMORY_MB, 500);
     tezConf.set(TezConfiguration.TEZ_AM_LAUNCH_CMD_OPTS, " -Xmx256m");
     tezConf.setBoolean(TezConfiguration.TEZ_AM_SESSION_MODE, true);
     tezConf.setBoolean(
-        TezConfiguration.TEZ_AM_STAGING_SCRATCH_DATA_AUTO_DELETE, false);
+      TezConfiguration.TEZ_AM_STAGING_SCRATCH_DATA_AUTO_DELETE, false);
     tezConf.setBoolean(
-        RecoveryService.TEZ_TEST_RECOVERY_DRAIN_EVENTS_WHEN_STOPPED,
-        true);
-    tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_MAX_RETRIES_KEY,0);
+      RecoveryService.TEZ_TEST_RECOVERY_DRAIN_EVENTS_WHEN_STOPPED,
+      true);
+    tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_MAX_RETRIES_KEY, 0);
     tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_MAX_RETRIES_ON_SOCKET_TIMEOUTS_KEY, 0);
-    tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_TIMEOUT_KEY,1000);
+    tezConf.setInt(CommonConfigurationKeysPublic.IPC_CLIENT_CONNECT_TIMEOUT_KEY, 1000);
     tezSession = TezClient.create("TestDAGRecovery", tezConf);
     tezSession.start();
   }
@@ -206,8 +206,8 @@ public class TestAMRecovery {
   @Test(timeout = 120000)
   public void testVertexPartiallyFinished_Broadcast() throws Exception {
     DAG dag =
-        createDAG("VertexPartiallyFinished_Broadcast", ControlledImmediateStartVertexManager.class,
-            DataMovementType.BROADCAST, true);
+      createDAG("VertexPartiallyFinished_Broadcast", ControlledImmediateStartVertexManager.class,
+        DataMovementType.BROADCAST, true);
     TezCounters counters = runDAGAndVerify(dag, DAGStatus.State.SUCCEEDED);
     assertEquals(4, counters.findCounter(DAGCounter.NUM_SUCCEEDED_TASKS).getValue());
     assertEquals(2, counters.findCounter(TestCounter.Counter_1).getValue());
@@ -237,8 +237,8 @@ public class TestAMRecovery {
   @Test(timeout = 120000)
   public void testVertexCompletelyFinished_Broadcast() throws Exception {
     DAG dag =
-        createDAG("VertexCompletelyFinished_Broadcast", ControlledImmediateStartVertexManager.class,
-            DataMovementType.BROADCAST, false);
+      createDAG("VertexCompletelyFinished_Broadcast", ControlledImmediateStartVertexManager.class,
+        DataMovementType.BROADCAST, false);
     TezCounters counters = runDAGAndVerify(dag, DAGStatus.State.SUCCEEDED);
 
     assertEquals(4, counters.findCounter(DAGCounter.NUM_SUCCEEDED_TASKS).getValue());
@@ -269,8 +269,8 @@ public class TestAMRecovery {
   @Test(timeout = 120000)
   public void testVertexPartialFinished_One2One() throws Exception {
     DAG dag =
-        createDAG("VertexPartialFinished_One2One", ControlledInputReadyVertexManager.class,
-            DataMovementType.ONE_TO_ONE, true);
+      createDAG("VertexPartialFinished_One2One", ControlledInputReadyVertexManager.class,
+        DataMovementType.ONE_TO_ONE, true);
     TezCounters counters = runDAGAndVerify(dag, DAGStatus.State.SUCCEEDED);
     assertEquals(4, counters.findCounter(DAGCounter.NUM_SUCCEEDED_TASKS).getValue());
     assertEquals(2, counters.findCounter(TestCounter.Counter_1).getValue());
@@ -288,7 +288,6 @@ public class TestAMRecovery {
     // finished in attempt 2
     assertEquals(1, findTaskAttemptFinishedEvent(historyEvents2, 0, 0).size());
     assertEquals(1, findTaskAttemptFinishedEvent(historyEvents2, 0, 1).size());
-
   }
 
   /**
@@ -301,8 +300,8 @@ public class TestAMRecovery {
   @Test(timeout = 120000)
   public void testVertexCompletelyFinished_One2One() throws Exception {
     DAG dag =
-        createDAG("VertexCompletelyFinished_One2One", ControlledInputReadyVertexManager.class,
-            DataMovementType.ONE_TO_ONE, false);
+      createDAG("VertexCompletelyFinished_One2One", ControlledInputReadyVertexManager.class,
+        DataMovementType.ONE_TO_ONE, false);
     TezCounters counters = runDAGAndVerify(dag, DAGStatus.State.SUCCEEDED);
     assertEquals(4, counters.findCounter(DAGCounter.NUM_SUCCEEDED_TASKS).getValue());
     assertEquals(2, counters.findCounter(TestCounter.Counter_1).getValue());
@@ -320,7 +319,6 @@ public class TestAMRecovery {
     // finished in attempt 2
     assertEquals(1, findTaskAttemptFinishedEvent(historyEvents2, 0, 0).size());
     assertEquals(1, findTaskAttemptFinishedEvent(historyEvents2, 0, 1).size());
-
   }
 
   /**
@@ -333,8 +331,8 @@ public class TestAMRecovery {
   @Test(timeout = 120000)
   public void testVertexPartiallyFinished_ScatterGather() throws Exception {
     DAG dag =
-        createDAG("VertexPartiallyFinished_ScatterGather", ControlledShuffleVertexManager.class,
-            DataMovementType.SCATTER_GATHER, true);
+      createDAG("VertexPartiallyFinished_ScatterGather", ControlledShuffleVertexManager.class,
+        DataMovementType.SCATTER_GATHER, true);
     TezCounters counters = runDAGAndVerify(dag, DAGStatus.State.SUCCEEDED);
     assertEquals(4, counters.findCounter(DAGCounter.NUM_SUCCEEDED_TASKS).getValue());
     assertEquals(2, counters.findCounter(TestCounter.Counter_1).getValue());
@@ -352,7 +350,6 @@ public class TestAMRecovery {
     // finished in attempt 2
     assertEquals(1, findTaskAttemptFinishedEvent(historyEvents2, 0, 0).size());
     assertEquals(1, findTaskAttemptFinishedEvent(historyEvents2, 0, 1).size());
-
   }
 
   /**
@@ -365,8 +362,8 @@ public class TestAMRecovery {
   @Test(timeout = 120000)
   public void testVertexCompletelyFinished_ScatterGather() throws Exception {
     DAG dag =
-        createDAG("VertexCompletelyFinished_ScatterGather", ControlledShuffleVertexManager.class,
-            DataMovementType.SCATTER_GATHER, false);
+      createDAG("VertexCompletelyFinished_ScatterGather", ControlledShuffleVertexManager.class,
+        DataMovementType.SCATTER_GATHER, false);
     TezCounters counters = runDAGAndVerify(dag, DAGStatus.State.SUCCEEDED);
     assertEquals(4, counters.findCounter(DAGCounter.NUM_SUCCEEDED_TASKS).getValue());
     assertEquals(2, counters.findCounter(TestCounter.Counter_1).getValue());
@@ -403,18 +400,17 @@ public class TestAMRecovery {
     tezConf.set(FAIL_ON_ATTEMPT, rand.nextInt(MAX_AM_ATTEMPT) + "");
     LOG.info("Set FAIL_ON_ATTEMPT=" + tezConf.get(FAIL_ON_ATTEMPT));
     DAG dag =
-        createDAG("HighMaxAttempt", FailOnAttemptVertexManager.class,
-            DataMovementType.SCATTER_GATHER, false);
+      createDAG("HighMaxAttempt", FailOnAttemptVertexManager.class,
+        DataMovementType.SCATTER_GATHER, false);
     runDAGAndVerify(dag, DAGStatus.State.SUCCEEDED);
-
   }
 
   TezCounters runDAGAndVerify(DAG dag, DAGStatus.State finalState) throws Exception {
     tezSession.waitTillReady();
     DAGClient dagClient = tezSession.submitDAG(dag);
     DAGStatus dagStatus =
-        dagClient.waitForCompletionWithStatusUpdates(EnumSet
-            .of(StatusGetOpts.GET_COUNTERS));
+      dagClient.waitForCompletionWithStatusUpdates(EnumSet
+        .of(StatusGetOpts.GET_COUNTERS));
     Assert.assertEquals(finalState, dagStatus.getState());
     return dagStatus.getDAGCounters();
   }
@@ -431,7 +427,7 @@ public class TestAMRecovery {
    * @throws IOException
    */
   private DAG createDAG(String dagName, Class vertexManagerClass, DataMovementType dmType,
-      boolean failOnParitialCompleted) throws IOException {
+                        boolean failOnParitialCompleted) throws IOException {
     if (failOnParitialCompleted) {
       tezConf.set(FAIL_ON_PARTIAL_FINISHED, "true");
     } else {
@@ -441,31 +437,31 @@ public class TestAMRecovery {
     UserPayload payload = UserPayload.create(null);
     Vertex v1 = Vertex.create("v1", MyProcessor.getProcDesc(), 2);
     v1.setVertexManagerPlugin(VertexManagerPluginDescriptor.create(
-        ScheduleControlledVertexManager.class.getName()).setUserPayload(
-        TezUtils.createUserPayloadFromConf(tezConf)));
+      ScheduleControlledVertexManager.class.getName()).setUserPayload(
+      TezUtils.createUserPayloadFromConf(tezConf)));
     Vertex v2 = Vertex.create("v2", DoNothingProcessor.getProcDesc(), 2);
     v2.setVertexManagerPlugin(VertexManagerPluginDescriptor.create(
-        vertexManagerClass.getName()).setUserPayload(
-        TezUtils.createUserPayloadFromConf(tezConf)));
+      vertexManagerClass.getName()).setUserPayload(
+      TezUtils.createUserPayloadFromConf(tezConf)));
 
     dag.addVertex(v1).addVertex(v2);
     dag.addEdge(Edge.create(v1, v2, EdgeProperty.create(dmType,
-        DataSourceType.PERSISTED, SchedulingType.SEQUENTIAL,
-        TestOutput.getOutputDesc(payload), TestInput.getInputDesc(payload))));
+      DataSourceType.PERSISTED, SchedulingType.SEQUENTIAL,
+      TestOutput.getOutputDesc(payload), TestInput.getInputDesc(payload))));
     return dag;
   }
 
   private List<TaskAttemptFinishedEvent> findTaskAttemptFinishedEvent(
-      List<HistoryEvent> historyEvents, int vertexId, int taskId) {
+    List<HistoryEvent> historyEvents, int vertexId, int taskId) {
     List<TaskAttemptFinishedEvent> resultEvents =
-        new ArrayList<TaskAttemptFinishedEvent>();
+      new ArrayList<TaskAttemptFinishedEvent>();
     for (HistoryEvent historyEvent : historyEvents) {
       if (historyEvent.getEventType() == HistoryEventType.TASK_ATTEMPT_FINISHED) {
         TaskAttemptFinishedEvent taFinishedEvent =
-            (TaskAttemptFinishedEvent) historyEvent;
+          (TaskAttemptFinishedEvent) historyEvent;
         if (taFinishedEvent.getVertexID()
-            .getId() == vertexId
-            && taFinishedEvent.getTaskID().getId() == taskId) {
+          .getId() == vertexId
+          && taFinishedEvent.getTaskID().getId() == taskId) {
           resultEvents.add(taFinishedEvent);
         }
       }
@@ -476,18 +472,18 @@ public class TestAMRecovery {
   private List<HistoryEvent> readRecoveryLog(int attemptNum) throws IOException {
     ApplicationId appId = tezSession.getAppMasterApplicationId();
     Path tezSystemStagingDir =
-        TezCommonUtils.getTezSystemStagingPath(tezConf, appId.toString());
+      TezCommonUtils.getTezSystemStagingPath(tezConf, appId.toString());
     Path recoveryDataDir =
-        TezCommonUtils.getRecoveryPath(tezSystemStagingDir, tezConf);
+      TezCommonUtils.getRecoveryPath(tezSystemStagingDir, tezConf);
     FileSystem fs = tezSystemStagingDir.getFileSystem(tezConf);
     List<HistoryEvent> historyEvents = new ArrayList<HistoryEvent>();
-    for (int i=1; i <= attemptNum; ++i) {
+    for (int i = 1; i <= attemptNum; ++i) {
       Path currentAttemptRecoveryDataDir =
-          TezCommonUtils.getAttemptRecoveryPath(recoveryDataDir, i);
+        TezCommonUtils.getAttemptRecoveryPath(recoveryDataDir, i);
       Path recoveryFilePath =
-          new Path(currentAttemptRecoveryDataDir, appId.toString().replace(
-              "application", "dag")
-              + "_1" + TezConstants.DAG_RECOVERY_RECOVER_FILE_SUFFIX);
+        new Path(currentAttemptRecoveryDataDir, appId.toString().replace(
+          "application", "dag")
+          + "_1" + TezConstants.DAG_RECOVERY_RECOVER_FILE_SUFFIX);
       if (fs.exists(recoveryFilePath)) {
         LOG.info("Read recovery file:" + recoveryFilePath);
         historyEvents.addAll(RecoveryParser.parseDAGRecoveryFile(fs.open(recoveryFilePath)));
@@ -498,16 +494,20 @@ public class TestAMRecovery {
 
   private void printHistoryEvents(List<HistoryEvent> historyEvents, int attemptId) {
     LOG.info("RecoveryLogs from attempt:" + attemptId);
-    for(HistoryEvent historyEvent : historyEvents) {
+    for (HistoryEvent historyEvent : historyEvents) {
       LOG.info("Parsed event from recovery stream"
-          + ", eventType=" + historyEvent.getEventType()
-          + ", event=" + historyEvent);
+        + ", eventType=" + historyEvent.getEventType()
+        + ", event=" + historyEvent);
     }
     LOG.info("");
   }
 
+  public static enum TestCounter {
+    Counter_1,
+  }
+
   public static class ControlledInputReadyVertexManager extends
-      InputReadyVertexManager {
+    InputReadyVertexManager {
 
     private Configuration conf;
     private int completedTaskNum = 0;
@@ -521,7 +521,7 @@ public class TestAMRecovery {
       super.initialize();
       try {
         conf =
-            TezUtils.createConfFromUserPayload(getContext().getUserPayload());
+          TezUtils.createConfFromUserPayload(getContext().getUserPayload());
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -530,7 +530,7 @@ public class TestAMRecovery {
     @Override
     public void onSourceTaskCompleted(TaskAttemptIdentifier attempt) {
       super.onSourceTaskCompleted(attempt);
-      completedTaskNum ++;
+      completedTaskNum++;
       if (getContext().getDAGAttemptNumber() == 1) {
         if (conf.getBoolean(FAIL_ON_PARTIAL_FINISHED, true)) {
           if (completedTaskNum == 1) {
@@ -538,7 +538,7 @@ public class TestAMRecovery {
           }
         } else {
           if (completedTaskNum == getContext().
-              getVertexNumTasks(attempt.getTaskIdentifier().getVertexIdentifier().getName())) {
+            getVertexNumTasks(attempt.getTaskIdentifier().getVertexIdentifier().getName())) {
             System.exit(-1);
           }
         }
@@ -547,7 +547,7 @@ public class TestAMRecovery {
   }
 
   public static class ControlledShuffleVertexManager extends
-      ShuffleVertexManager {
+    ShuffleVertexManager {
 
     private Configuration conf;
     private int completedTaskNum = 0;
@@ -561,7 +561,7 @@ public class TestAMRecovery {
       super.initialize();
       try {
         conf =
-            TezUtils.createConfFromUserPayload(getContext().getUserPayload());
+          TezUtils.createConfFromUserPayload(getContext().getUserPayload());
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -570,7 +570,7 @@ public class TestAMRecovery {
     @Override
     public void onSourceTaskCompleted(TaskAttemptIdentifier attempt) {
       super.onSourceTaskCompleted(attempt);
-      completedTaskNum ++;
+      completedTaskNum++;
       if (getContext().getDAGAttemptNumber() == 1) {
         if (conf.getBoolean(FAIL_ON_PARTIAL_FINISHED, true)) {
           if (completedTaskNum == 1) {
@@ -578,7 +578,7 @@ public class TestAMRecovery {
           }
         } else {
           if (completedTaskNum == getContext().
-              getVertexNumTasks(attempt.getTaskIdentifier().getVertexIdentifier().getName())) {
+            getVertexNumTasks(attempt.getTaskIdentifier().getVertexIdentifier().getName())) {
             System.exit(-1);
           }
         }
@@ -587,13 +587,13 @@ public class TestAMRecovery {
   }
 
   public static class ControlledImmediateStartVertexManager extends
-      ImmediateStartVertexManager {
+    ImmediateStartVertexManager {
 
     private Configuration conf;
     private int completedTaskNum = 0;
 
     public ControlledImmediateStartVertexManager(
-        VertexManagerPluginContext context) {
+      VertexManagerPluginContext context) {
       super(context);
     }
 
@@ -602,7 +602,7 @@ public class TestAMRecovery {
       super.initialize();
       try {
         conf =
-            TezUtils.createConfFromUserPayload(getContext().getUserPayload());
+          TezUtils.createConfFromUserPayload(getContext().getUserPayload());
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -611,7 +611,7 @@ public class TestAMRecovery {
     @Override
     public void onSourceTaskCompleted(TaskAttemptIdentifier attempt) {
       super.onSourceTaskCompleted(attempt);
-      completedTaskNum ++;
+      completedTaskNum++;
       if (getContext().getDAGAttemptNumber() == 1) {
         if (conf.getBoolean(FAIL_ON_PARTIAL_FINISHED, true)) {
           if (completedTaskNum == 1) {
@@ -619,7 +619,7 @@ public class TestAMRecovery {
           }
         } else {
           if (completedTaskNum == getContext().
-              getVertexNumTasks(attempt.getTaskIdentifier().getVertexIdentifier().getName())) {
+            getVertexNumTasks(attempt.getTaskIdentifier().getVertexIdentifier().getName())) {
             System.exit(-1);
           }
         }
@@ -627,7 +627,6 @@ public class TestAMRecovery {
     }
   }
 
-  
   /**
    * VertexManager which control schedule only one task when it is test case of partially-finished.
    *
@@ -644,7 +643,7 @@ public class TestAMRecovery {
     public void initialize() {
       try {
         conf =
-            TezUtils.createConfFromUserPayload(getContext().getUserPayload());
+          TezUtils.createConfFromUserPayload(getContext().getUserPayload());
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -652,18 +651,18 @@ public class TestAMRecovery {
 
     @Override
     public void onVertexStarted(List<TaskAttemptIdentifier> completions)
-        throws Exception {
+      throws Exception {
       if (getContext().getDAGAttemptNumber() == 1) {
         // only schedule one task if it is partiallyFinished case
         if (conf.getBoolean(FAIL_ON_PARTIAL_FINISHED, true)) {
           getContext().scheduleTasks(Lists.newArrayList(ScheduleTaskRequest.create(0, null)));
-          return ;
+          return;
         }
       }
       // schedule all tasks when it is not partiallyFinished
       int taskNum = getContext().getVertexNumTasks(getContext().getVertexName());
       List<ScheduleTaskRequest> taskWithLocationHints = new ArrayList<ScheduleTaskRequest>();
-      for (int i=0;i<taskNum;++i) {
+      for (int i = 0; i < taskNum; ++i) {
         taskWithLocationHints.add(ScheduleTaskRequest.create(i, null));
       }
       getContext().scheduleTasks(taskWithLocationHints);
@@ -671,20 +670,20 @@ public class TestAMRecovery {
 
     @Override
     public void onSourceTaskCompleted(TaskAttemptIdentifier attempt)
-        throws Exception {
-      
+      throws Exception {
+
     }
 
     @Override
     public void onVertexManagerEventReceived(VertexManagerEvent vmEvent)
-        throws Exception {
-      
+      throws Exception {
+
     }
 
     @Override
     public void onRootVertexInitialized(String inputName,
-        InputDescriptor inputDescriptor, List<Event> events) throws Exception {
-      
+                                        InputDescriptor inputDescriptor, List<Event> events) throws Exception {
+
     }
   }
 
@@ -705,7 +704,7 @@ public class TestAMRecovery {
       super.initialize();
       try {
         conf =
-            TezUtils.createConfFromUserPayload(getContext().getUserPayload());
+          TezUtils.createConfFromUserPayload(getContext().getUserPayload());
       } catch (IOException e) {
         e.printStackTrace();
       }
@@ -724,23 +723,19 @@ public class TestAMRecovery {
     }
   }
 
-  public static enum TestCounter {
-    Counter_1,
-  }
-
   public static class MyProcessor extends SimpleProcessor {
 
     public MyProcessor(ProcessorContext context) {
       super(context);
     }
 
+    public static ProcessorDescriptor getProcDesc() {
+      return ProcessorDescriptor.create(MyProcessor.class.getName());
+    }
+
     @Override
     public void run() throws Exception {
       getContext().getCounters().findCounter(TestCounter.Counter_1).increment(1);
-    }
-
-    public static ProcessorDescriptor getProcDesc() {
-      return ProcessorDescriptor.create(MyProcessor.class.getName());
     }
   }
 
@@ -750,18 +745,17 @@ public class TestAMRecovery {
       super(context);
     }
 
+    public static ProcessorDescriptor getProcDesc() {
+      return ProcessorDescriptor.create(DoNothingProcessor.class.getName());
+    }
+
     @Override
     public void run() throws Exception {
-      // Sleep 3 second in vertex2 to avoid that vertex2 completed 
+      // Sleep 3 second in vertex2 to avoid that vertex2 completed
       // before vertex2 get the SourceVertexTaskAttemptCompletedEvent.
       // SourceVertexTaskAttemptCompletedEvent will been ingored if vertex in SUCCEEDED,
       // so AM won't been killed in the VM of vertex2
       Thread.sleep(3000);
     }
-
-    public static ProcessorDescriptor getProcDesc() {
-      return ProcessorDescriptor.create(DoNothingProcessor.class.getName());
-    }
   }
-
 }

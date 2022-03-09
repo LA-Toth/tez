@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,12 +31,12 @@ import org.apache.hadoop.yarn.api.records.Resource;
 import org.apache.tez.client.CallerContext;
 import org.apache.tez.common.ATSConstants;
 import org.apache.tez.dag.api.DAG;
+import org.apache.tez.dag.api.DataSinkDescriptor;
+import org.apache.tez.dag.api.DataSourceDescriptor;
 import org.apache.tez.dag.api.EdgeProperty;
 import org.apache.tez.dag.api.EdgeProperty.DataMovementType;
 import org.apache.tez.dag.api.EdgeProperty.DataSourceType;
 import org.apache.tez.dag.api.EdgeProperty.SchedulingType;
-import org.apache.tez.dag.api.DataSinkDescriptor;
-import org.apache.tez.dag.api.DataSourceDescriptor;
 import org.apache.tez.dag.api.GroupInputEdge;
 import org.apache.tez.dag.api.InputDescriptor;
 import org.apache.tez.dag.api.OutputCommitterDescriptor;
@@ -47,11 +47,10 @@ import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.runtime.api.OutputCommitter;
+
 import org.codehaus.jettison.json.JSONException;
 import org.junit.Assert;
 import org.junit.Test;
-
-import com.google.common.collect.Sets;
 
 public class TestDAGUtils {
 
@@ -62,16 +61,16 @@ public class TestDAGUtils {
     int dummyTaskCount = 1;
     Resource dummyTaskResource = Resource.newInstance(1, 1);
     org.apache.tez.dag.api.Vertex v1 = Vertex.create("vertex1",
-        ProcessorDescriptor.create("Processor").setHistoryText("vertex1 Processor HistoryText"),
-        dummyTaskCount, dummyTaskResource);
+      ProcessorDescriptor.create("Processor").setHistoryText("vertex1 Processor HistoryText"),
+      dummyTaskCount, dummyTaskResource);
     v1.addDataSource("input1", DataSourceDescriptor.create(InputDescriptor.create(
-        "input.class").setHistoryText("input HistoryText"), null, null));
+      "input.class").setHistoryText("input HistoryText"), null, null));
     org.apache.tez.dag.api.Vertex v2 = Vertex.create("vertex2",
-        ProcessorDescriptor.create("Processor").setHistoryText("vertex2 Processor HistoryText"),
-        dummyTaskCount, dummyTaskResource);
+      ProcessorDescriptor.create("Processor").setHistoryText("vertex2 Processor HistoryText"),
+      dummyTaskCount, dummyTaskResource);
     org.apache.tez.dag.api.Vertex v3 = Vertex.create("vertex3",
-        ProcessorDescriptor.create("Processor").setHistoryText("vertex3 Processor HistoryText"),
-        dummyTaskCount, dummyTaskResource);
+      ProcessorDescriptor.create("Processor").setHistoryText("vertex3 Processor HistoryText"),
+      dummyTaskCount, dummyTaskResource);
 
     DAG dag = DAG.create("testDag");
     dag.setCallerContext(CallerContext.create("context1", "callerId1", "callerType1", "desc1"));
@@ -79,18 +78,18 @@ public class TestDAGUtils {
     String groupName1 = "uv12";
     org.apache.tez.dag.api.VertexGroup uv12 = dag.createVertexGroup(groupName1, v1, v2);
     OutputDescriptor outDesc = OutputDescriptor.create("output.class")
-        .setHistoryText("uvOut HistoryText");
+      .setHistoryText("uvOut HistoryText");
     OutputCommitterDescriptor ocd =
-        OutputCommitterDescriptor.create(OutputCommitter.class.getName());
+      OutputCommitterDescriptor.create(OutputCommitter.class.getName());
     uv12.addDataSink("uvOut", DataSinkDescriptor.create(outDesc, ocd, null));
     v3.addDataSink("uvOut", DataSinkDescriptor.create(outDesc, ocd, null));
 
     GroupInputEdge e1 = GroupInputEdge.create(uv12, v3,
-        EdgeProperty.create(DataMovementType.SCATTER_GATHER,
-            DataSourceType.PERSISTED, SchedulingType.SEQUENTIAL,
-            OutputDescriptor.create("dummy output class").setHistoryText("Dummy History Text"),
-            InputDescriptor.create("dummy input class").setHistoryText("Dummy History Text")),
-        InputDescriptor.create("merge.class").setHistoryText("Merge HistoryText"));
+      EdgeProperty.create(DataMovementType.SCATTER_GATHER,
+        DataSourceType.PERSISTED, SchedulingType.SEQUENTIAL,
+        OutputDescriptor.create("dummy output class").setHistoryText("Dummy History Text"),
+        InputDescriptor.create("dummy input class").setHistoryText("Dummy History Text")),
+      InputDescriptor.create("merge.class").setHistoryText("Merge HistoryText"));
 
     dag.addVertex(v1);
     dag.addVertex(v2);
@@ -103,7 +102,7 @@ public class TestDAGUtils {
   @SuppressWarnings("unchecked")
   public void testConvertDAGPlanToATSMap() throws IOException, JSONException {
     DAGPlan dagPlan = createDAG();
-    Map<String,TezVertexID> idNameMap = new HashMap<String, TezVertexID>();
+    Map<String, TezVertexID> idNameMap = new HashMap<String, TezVertexID>();
     ApplicationId appId = ApplicationId.newInstance(1, 1);
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
     TezVertexID vId1 = TezVertexID.getInstance(dagId, 1);
@@ -118,7 +117,7 @@ public class TestDAGUtils {
     Assert.assertEquals("testDag", atsMap.get(DAGUtils.DAG_NAME_KEY));
     Assert.assertTrue(atsMap.containsKey(DAGUtils.DAG_INFO_KEY));
     Assert.assertTrue(atsMap.containsKey(DAGUtils.DAG_CONTEXT_KEY));
-    Map<String, String> contextMap = (Map<String, String>)atsMap.get(DAGUtils.DAG_CONTEXT_KEY);
+    Map<String, String> contextMap = (Map<String, String>) atsMap.get(DAGUtils.DAG_CONTEXT_KEY);
     Assert.assertEquals("context1", contextMap.get(ATSConstants.CONTEXT));
     Assert.assertEquals("callerId1", contextMap.get(ATSConstants.CALLER_ID));
     Assert.assertEquals("callerType1", contextMap.get(ATSConstants.CALLER_TYPE));
@@ -143,7 +142,7 @@ public class TestDAGUtils {
     for (Object o : ((Collection<?>) atsMap.get(DAGUtils.VERTICES_KEY))) {
       Map<String, Object> v = (Map<String, Object>) o;
       Assert.assertTrue(v.containsKey(DAGUtils.VERTEX_NAME_KEY));
-      String vName = (String)v.get(DAGUtils.VERTEX_NAME_KEY);
+      String vName = (String) v.get(DAGUtils.VERTEX_NAME_KEY);
       Assert.assertTrue(v.containsKey(DAGUtils.PROCESSOR_CLASS_KEY));
       Assert.assertTrue(v.containsKey(DAGUtils.USER_PAYLOAD_AS_TEXT));
 
@@ -198,7 +197,7 @@ public class TestDAGUtils {
       Assert.assertTrue(e.containsKey(DAGUtils.INPUT_VERTEX_NAME_KEY));
       Assert.assertTrue(e.containsKey(DAGUtils.OUTPUT_VERTEX_NAME_KEY));
       Assert.assertEquals(DataMovementType.SCATTER_GATHER.name(),
-          e.get(DAGUtils.DATA_MOVEMENT_TYPE_KEY));
+        e.get(DAGUtils.DATA_MOVEMENT_TYPE_KEY));
       Assert.assertEquals(DataSourceType.PERSISTED.name(), e.get(DAGUtils.DATA_SOURCE_TYPE_KEY));
       Assert.assertEquals(SchedulingType.SEQUENTIAL.name(), e.get(DAGUtils.SCHEDULING_TYPE_KEY));
       Assert.assertEquals("dummy output class", e.get(DAGUtils.EDGE_SOURCE_CLASS_KEY));
@@ -215,5 +214,4 @@ public class TestDAGUtils {
       Assert.assertTrue(e.containsKey(DAGUtils.VERTEX_GROUP_EDGE_MERGED_INPUTS_KEY));
     }
   }
-
 }

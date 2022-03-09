@@ -14,7 +14,13 @@
 
 package org.apache.tez;
 
+import java.io.File;
+import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import javax.annotation.Nullable;
+
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.yarn.event.Event;
 import org.apache.tez.dag.api.records.DAGProtos;
@@ -28,13 +34,9 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.utils.Graph;
 import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.ServicePluginError;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @InterfaceAudience.Private
 /**
@@ -55,7 +57,7 @@ public class Utils {
       name = appContext.getContainerLauncherName(launcherIndex);
     } catch (Exception e) {
       LOG.error("Unable to get launcher name for index: " + launcherIndex +
-          ", falling back to reporting the index");
+        ", falling back to reporting the index");
       return "[" + String.valueOf(launcherIndex) + "]";
     }
     return "[" + launcherIndex + ":" + name + "]";
@@ -67,7 +69,7 @@ public class Utils {
       name = appContext.getTaskCommunicatorName(taskCommIndex);
     } catch (Exception e) {
       LOG.error("Unable to get taskcomm name for index: " + taskCommIndex +
-          ", falling back to reporting the index");
+        ", falling back to reporting the index");
       return "[" + String.valueOf(taskCommIndex) + "]";
     }
     return "[" + taskCommIndex + ":" + name + "]";
@@ -79,7 +81,7 @@ public class Utils {
       name = appContext.getTaskSchedulerName(schedulerIndex);
     } catch (Exception e) {
       LOG.error("Unable to get scheduler name for index: " + schedulerIndex +
-          ", falling back to reporting the index");
+        ", falling back to reporting the index");
       return "[" + String.valueOf(schedulerIndex) + "]";
     }
     return "[" + schedulerIndex + ":" + name + "]";
@@ -91,9 +93,9 @@ public class Utils {
                                                        DagInfo dagInfo, AppContext appContext,
                                                        String componentName) {
     String message = "Error reported by " + componentName + " [" +
-        entityString + "][" +
-        servicePluginError +
-        "] " + (diagnostics == null ? "" : diagnostics);
+      entityString + "][" +
+      servicePluginError +
+      "] " + (diagnostics == null ? "" : diagnostics);
     if (dagInfo != null) {
       DAG dag = appContext.getCurrentDAG();
       if (dag != null && dag.getID().getId() == dagInfo.getIndex()) {
@@ -109,21 +111,22 @@ public class Utils {
 
   /**
    * Generate a visualization file.
-   * @param dag DAG.
-   * @param dagPB DAG plan.
-   * @param logDirs directories where the file will be written.
+   *
+   * @param dag       DAG.
+   * @param dagPB     DAG plan.
+   * @param logDirs   directories where the file will be written.
    * @param scheduler scheduler that will provide the priorities
    *                  of the vertexes.
    */
   public static void generateDAGVizFile(final DAG dag,
-      final DAGProtos.DAGPlan dagPB,
-      final String[] logDirs, final @Nullable DAGScheduler scheduler) {
+                                        final DAGProtos.DAGPlan dagPB,
+                                        final String[] logDirs, final @Nullable DAGScheduler scheduler) {
     TezDAGID dagId = dag.getID();
 
     HashMap<String, Vertex> nameToVertex = null;
     if (scheduler != null) {
       nameToVertex = new HashMap<>(dag.getVertices().size());
-      for (Vertex v: dag.getVertices().values()) {
+      for (Vertex v : dag.getVertices().values()) {
         nameToVertex.put(v.getName(), v);
       }
     }
@@ -131,71 +134,71 @@ public class Utils {
     Graph graph = new Graph(sanitizeLabelForViz(dagPB.getName()));
     for (DAGProtos.VertexPlan vertexPlan : dagPB.getVertexList()) {
       StringBuilder nodeLabel = new StringBuilder(
-          sanitizeLabelForViz(vertexPlan.getName())
+        sanitizeLabelForViz(vertexPlan.getName())
           + "[" + getShortClassName(
-              vertexPlan.getProcessorDescriptor().getClassName()));
+          vertexPlan.getProcessorDescriptor().getClassName()));
 
       if (scheduler != null) {
         Vertex vertex = nameToVertex.get(vertexPlan.getName());
         if (vertex != null) {
           try {
             int priority = (scheduler.getPriorityLowLimit(dag, vertex)
-                + scheduler.getPriorityHighLimit(dag,vertex)) / 2;
+              + scheduler.getPriorityHighLimit(dag, vertex)) / 2;
             nodeLabel.append(", priority=").append(priority).append("]");
           } catch (UnsupportedOperationException e) {
             LOG.info("The DAG graphviz file with priorities will not"
-                + " be generate since the scheduler "
-                + scheduler.getClass().getSimpleName() + " doesn't"
-                + " override the methods to get the priorities");
+              + " be generate since the scheduler "
+              + scheduler.getClass().getSimpleName() + " doesn't"
+              + " override the methods to get the priorities");
             return;
           }
         }
       }
       Graph.Node n = graph.newNode(sanitizeLabelForViz(vertexPlan.getName()),
-          nodeLabel.toString());
+        nodeLabel.toString());
       for (DAGProtos.RootInputLeafOutputProto input
-          : vertexPlan.getInputsList()) {
+        : vertexPlan.getInputsList()) {
         Graph.Node inputNode = graph.getNode(
-            sanitizeLabelForViz(vertexPlan.getName())
+          sanitizeLabelForViz(vertexPlan.getName())
             + "_" + sanitizeLabelForViz(input.getName()));
         inputNode.setLabel(sanitizeLabelForViz(vertexPlan.getName())
-            + "[" + sanitizeLabelForViz(input.getName()) + "]");
+          + "[" + sanitizeLabelForViz(input.getName()) + "]");
         inputNode.setShape("box");
         inputNode.addEdge(n, "Input"
-            + " [inputClass=" + getShortClassName(
-                  input.getIODescriptor().getClassName())
-            + ", initializer=" + getShortClassName(
-                  input.getControllerDescriptor().getClassName()) + "]");
+          + " [inputClass=" + getShortClassName(
+          input.getIODescriptor().getClassName())
+          + ", initializer=" + getShortClassName(
+          input.getControllerDescriptor().getClassName()) + "]");
       }
       for (DAGProtos.RootInputLeafOutputProto output
-          : vertexPlan.getOutputsList()) {
+        : vertexPlan.getOutputsList()) {
         Graph.Node outputNode = graph.getNode(sanitizeLabelForViz(
-                vertexPlan.getName())
-            + "_" + sanitizeLabelForViz(output.getName()));
+          vertexPlan.getName())
+          + "_" + sanitizeLabelForViz(output.getName()));
         outputNode.setLabel(sanitizeLabelForViz(vertexPlan.getName())
-            + "[" + sanitizeLabelForViz(output.getName()) + "]");
+          + "[" + sanitizeLabelForViz(output.getName()) + "]");
         outputNode.setShape("box");
         n.addEdge(outputNode, "Output"
-            + " [outputClass=" + getShortClassName(
-                  output.getIODescriptor().getClassName())
-            + ", committer=" + getShortClassName(
-                  output.getControllerDescriptor().getClassName()) + "]");
+          + " [outputClass=" + getShortClassName(
+          output.getIODescriptor().getClassName())
+          + ", committer=" + getShortClassName(
+          output.getControllerDescriptor().getClassName()) + "]");
       }
     }
 
     for (DAGProtos.EdgePlan e : dagPB.getEdgeList()) {
 
       Graph.Node n = graph.getNode(sanitizeLabelForViz(
-          e.getInputVertexName()));
+        e.getInputVertexName()));
       n.addEdge(graph.getNode(sanitizeLabelForViz(
           e.getOutputVertexName())),
-          "["
-              + "input=" + getShortClassName(e.getEdgeSource().getClassName())
-              + ", output=" + getShortClassName(
-                    e.getEdgeDestination().getClassName())
-              + ", dataMovement=" + e.getDataMovementType().name().trim()
-              + ", schedulingType="
-              + e.getSchedulingType().name().trim() + "]");
+        "["
+          + "input=" + getShortClassName(e.getEdgeSource().getClassName())
+          + ", output=" + getShortClassName(
+          e.getEdgeDestination().getClassName())
+          + ", dataMovement=" + e.getDataMovementType().name().trim()
+          + ", schedulingType="
+          + e.getSchedulingType().name().trim() + "]");
     }
 
     String outputFile = "";
@@ -204,7 +207,7 @@ public class Utils {
       outputFile += File.separator;
     } else {
       LOG.warn("DAGVizFile will be created under current (.) directory: {},"
-          + " which is not expected and recommended", new File(".").getAbsolutePath());
+        + " which is not expected and recommended", new File(".").getAbsolutePath());
     }
     outputFile += dagId.toString();
     // Means we have set the priorities
@@ -215,17 +218,18 @@ public class Utils {
 
     try {
       LOG.info("Generating DAG graphviz file"
-           + ", dagId=" + dagId.toString()
-           + ", filePath=" + outputFile);
+        + ", dagId=" + dagId.toString()
+        + ", filePath=" + outputFile);
       graph.save(outputFile);
     } catch (Exception e) {
       LOG.warn("Error occurred when trying to save graph structure"
-          + " for dag " + dagId.toString(), e);
+        + " for dag " + dagId.toString(), e);
     }
   }
 
   /**
    * Get the short name of the class.
+   *
    * @param className long name
    * @return short name
    */
@@ -239,6 +243,7 @@ public class Utils {
 
   /**
    * Replace some characters with underscores.
+   *
    * @param label label to sanitize
    * @return the label with the replaced characters
    */

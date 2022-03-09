@@ -20,10 +20,10 @@
 
 package org.apache.tez.runtime.library.conf;
 
-import javax.annotation.Nullable;
-
 import java.util.Map;
 import java.util.Objects;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
@@ -38,24 +38,23 @@ import org.apache.tez.runtime.library.output.UnorderedPartitionedKVOutput;
 
 /**
  * Configure payloads for the UnorderedPartitionedKVOutput and UnorderedKVInput pair </p>
- *
+ * <p>
  * Values will be picked up from tez-site if not specified, otherwise defaults from
  * {@link org.apache.tez.runtime.library.api.TezRuntimeConfiguration} will be used.
  */
 @InterfaceAudience.Public
 @InterfaceStability.Evolving
 public class UnorderedPartitionedKVEdgeConfig
-    extends HadoopKeyValuesBasedBaseEdgeConfig {
+  extends HadoopKeyValuesBasedBaseEdgeConfig {
 
   private final UnorderedPartitionedKVOutputConfig outputConf;
   private final UnorderedKVInputConfig inputConf;
 
   private UnorderedPartitionedKVEdgeConfig(
-      UnorderedPartitionedKVOutputConfig outputConfiguration,
-      UnorderedKVInputConfig inputConfiguration) {
+    UnorderedPartitionedKVOutputConfig outputConfiguration,
+    UnorderedKVInputConfig inputConfiguration) {
     this.outputConf = outputConfiguration;
     this.inputConf = inputConfiguration;
-
   }
 
   /**
@@ -133,11 +132,11 @@ public class UnorderedPartitionedKVEdgeConfig
    */
   public EdgeProperty createDefaultEdgeProperty() {
     EdgeProperty edgeProperty = EdgeProperty.create(EdgeProperty.DataMovementType.SCATTER_GATHER,
-        EdgeProperty.DataSourceType.PERSISTED, EdgeProperty.SchedulingType.SEQUENTIAL,
-        OutputDescriptor.create(
-            getOutputClassName()).setUserPayload(getOutputPayload()),
-        InputDescriptor.create(
-            getInputClassName()).setUserPayload(getInputPayload()));
+      EdgeProperty.DataSourceType.PERSISTED, EdgeProperty.SchedulingType.SEQUENTIAL,
+      OutputDescriptor.create(
+        getOutputClassName()).setUserPayload(getOutputPayload()),
+      InputDescriptor.create(
+        getInputClassName()).setUserPayload(getInputPayload()));
     Utils.setEdgePropertyHistoryText(this, edgeProperty);
     return edgeProperty;
   }
@@ -152,10 +151,10 @@ public class UnorderedPartitionedKVEdgeConfig
   public EdgeProperty createDefaultCustomEdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor) {
     Objects.requireNonNull(edgeManagerDescriptor, "EdgeManagerDescriptor cannot be null");
     EdgeProperty edgeProperty =
-        EdgeProperty.create(edgeManagerDescriptor, EdgeProperty.DataSourceType.PERSISTED,
-            EdgeProperty.SchedulingType.SEQUENTIAL,
-            OutputDescriptor.create(getOutputClassName()).setUserPayload(getOutputPayload()),
-            InputDescriptor.create(getInputClassName()).setUserPayload(getInputPayload()));
+      EdgeProperty.create(edgeManagerDescriptor, EdgeProperty.DataSourceType.PERSISTED,
+        EdgeProperty.SchedulingType.SEQUENTIAL,
+        OutputDescriptor.create(getOutputClassName()).setUserPayload(getOutputPayload()),
+        InputDescriptor.create(getInputClassName()).setUserPayload(getInputPayload()));
     Utils.setEdgePropertyHistoryText(this, edgeProperty);
     return edgeProperty;
   }
@@ -165,18 +164,18 @@ public class UnorderedPartitionedKVEdgeConfig
   public static class Builder extends HadoopKeyValuesBasedBaseEdgeConfig.Builder<Builder> {
 
     private final UnorderedPartitionedKVOutputConfig.Builder outputBuilder =
-        new UnorderedPartitionedKVOutputConfig.Builder();
+      new UnorderedPartitionedKVOutputConfig.Builder();
     private final UnorderedPartitionedKVOutputConfig.SpecificBuilder<UnorderedPartitionedKVEdgeConfig.Builder>
-        specificOutputBuilder =
-        new UnorderedPartitionedKVOutputConfig.SpecificBuilder<UnorderedPartitionedKVEdgeConfig.Builder>(
-            this, outputBuilder);
+      specificOutputBuilder =
+      new UnorderedPartitionedKVOutputConfig.SpecificBuilder<UnorderedPartitionedKVEdgeConfig.Builder>(
+        this, outputBuilder);
 
     private final UnorderedKVInputConfig.Builder inputBuilder =
-        new UnorderedKVInputConfig.Builder();
+      new UnorderedKVInputConfig.Builder();
     private final UnorderedKVInputConfig.SpecificBuilder<UnorderedPartitionedKVEdgeConfig.Builder>
-        specificInputBuilder =
-        new UnorderedKVInputConfig.SpecificBuilder<UnorderedPartitionedKVEdgeConfig.Builder>(
-            this, inputBuilder);
+      specificInputBuilder =
+      new UnorderedKVInputConfig.SpecificBuilder<UnorderedPartitionedKVEdgeConfig.Builder>(
+        this, inputBuilder);
 
     @InterfaceAudience.Private
     Builder(String keyClassName, String valueClassName, String partitionerClassName,
@@ -189,7 +188,8 @@ public class UnorderedPartitionedKVEdgeConfig
     }
 
     @Override
-    public Builder setCompression(boolean enabled, @Nullable String compressionCodec, @Nullable Map<String, String> codecConf) {
+    public Builder setCompression(boolean enabled, @Nullable String compressionCodec,
+                                  @Nullable Map<String, String> codecConf) {
       outputBuilder.setCompression(enabled, compressionCodec, codecConf);
       inputBuilder.setCompression(enabled, compressionCodec, codecConf);
       return this;
@@ -225,7 +225,7 @@ public class UnorderedPartitionedKVEdgeConfig
 
     @Override
     public Builder setFromConfigurationUnfiltered(
-        Configuration conf) {
+      Configuration conf) {
       outputBuilder.setFromConfigurationUnfiltered(conf);
       inputBuilder.setFromConfigurationUnfiltered(conf);
       return this;
@@ -256,7 +256,8 @@ public class UnorderedPartitionedKVEdgeConfig
      *                               to the ones required by the comparator.
      * @return this object for further chained method calls
      */
-    public Builder setValueSerializationClass(String serializationClassName, @Nullable Map<String, String> serializerConf) {
+    public Builder setValueSerializationClass(String serializationClassName,
+                                              @Nullable Map<String, String> serializerConf) {
       outputBuilder.setValueSerializationClass(serializationClassName, serializerConf);
       inputBuilder.setValueSerializationClass(serializationClassName, serializerConf);
       return this;
@@ -273,6 +274,7 @@ public class UnorderedPartitionedKVEdgeConfig
 
     /**
      * Configure the specific input
+     *
      * @return a builder to configure the input
      */
     public UnorderedKVInputConfig.SpecificBuilder<Builder> configureInput() {
@@ -281,11 +283,11 @@ public class UnorderedPartitionedKVEdgeConfig
 
     /**
      * Build and return an instance of the configuration
+     *
      * @return an instance of the acatual configuration
      */
     public UnorderedPartitionedKVEdgeConfig build() {
       return new UnorderedPartitionedKVEdgeConfig(outputBuilder.build(), inputBuilder.build());
     }
-
   }
 }

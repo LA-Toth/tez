@@ -14,20 +14,21 @@
 
 package org.apache.tez.dag.app;
 
-import javax.annotation.Nullable;
 import java.net.InetSocketAddress;
 import java.util.Map;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.tez.serviceplugins.api.TaskCommunicator;
 import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.serviceplugins.api.ContainerEndReason;
 import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+import org.apache.tez.serviceplugins.api.TaskCommunicator;
 
 public class TaskCommunicatorWrapper {
 
@@ -37,23 +38,22 @@ public class TaskCommunicatorWrapper {
     this.real = real;
   }
 
-
   public void registerRunningContainer(ContainerId containerId, String hostname, int port) throws
-      Exception {
+    Exception {
     real.registerRunningContainer(containerId, hostname, port);
   }
 
   public void registerContainerEnd(ContainerId containerId, ContainerEndReason endReason,
                                    @Nullable String diagnostics) throws Exception {
     real.registerContainerEnd(containerId, endReason, diagnostics);
-
   }
 
   public void registerRunningTaskAttempt(ContainerId containerId, TaskSpec taskSpec,
                                          Map<String, LocalResource> additionalResources,
                                          Credentials credentials, boolean credentialsChanged,
                                          int priority) throws Exception {
-    real.registerRunningTaskAttempt(containerId, taskSpec, additionalResources, credentials, credentialsChanged, priority);
+    real.registerRunningTaskAttempt(containerId, taskSpec, additionalResources, credentials, credentialsChanged,
+      priority);
   }
 
   public void unregisterRunningTaskAttempt(TezTaskAttemptID taskAttemptID,
@@ -83,13 +83,12 @@ public class TaskCommunicatorWrapper {
   }
 
   public String getInProgressLogsUrl(TezTaskAttemptID attemptID, NodeId containerNodeId)
-      throws Exception {
+    throws Exception {
     return real.getInProgressLogsUrl(attemptID, containerNodeId);
   }
 
   public String getCompletedLogsUrl(TezTaskAttemptID attemptID, NodeId containerNodeId)
-      throws Exception {
+    throws Exception {
     return real.getCompletedLogsUrl(attemptID, containerNodeId);
   }
-
 }

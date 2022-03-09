@@ -31,11 +31,12 @@ import org.apache.tez.dag.api.client.DAGClient;
 import org.apache.tez.dag.api.client.DAGStatus;
 import org.apache.tez.runtime.api.AbstractLogicalIOProcessor;
 import org.apache.tez.runtime.api.Event;
-import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.LogicalInput;
 import org.apache.tez.runtime.api.LogicalOutput;
 import org.apache.tez.runtime.api.ProcessorContext;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
+
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +47,7 @@ public class TestTaskErrorsUsingLocalMode {
 
   private static final String VERTEX_NAME = "vertex1";
   private static final File STAGING_DIR = new File(System.getProperty("test.build.data"),
-      TestTaskErrorsUsingLocalMode.class.getName()).getAbsoluteFile();
-
+    TestTaskErrorsUsingLocalMode.class.getName()).getAbsoluteFile();
 
   @Test(timeout = 20000)
   public void testFatalErrorReported() throws IOException, TezException, InterruptedException {
@@ -58,8 +58,8 @@ public class TestTaskErrorsUsingLocalMode {
     try {
       FailingProcessor.configureForFatalFail();
       DAG dag = DAG.create("testFatalErrorReportedDag").addVertex(
-          Vertex
-              .create(VERTEX_NAME, ProcessorDescriptor.create(FailingProcessor.class.getName()), 1));
+        Vertex
+          .create(VERTEX_NAME, ProcessorDescriptor.create(FailingProcessor.class.getName()), 1));
 
       dagClient = tezClient.submitDAG(dag);
       dagClient.waitForCompletion();
@@ -82,8 +82,8 @@ public class TestTaskErrorsUsingLocalMode {
     try {
       FailingProcessor.configureForNonFatalFail();
       DAG dag = DAG.create("testNonFatalErrorReported").addVertex(
-          Vertex
-              .create(VERTEX_NAME, ProcessorDescriptor.create(FailingProcessor.class.getName()), 1));
+        Vertex
+          .create(VERTEX_NAME, ProcessorDescriptor.create(FailingProcessor.class.getName()), 1));
 
       dagClient = tezClient.submitDAG(dag);
       dagClient.waitForCompletion();
@@ -106,8 +106,8 @@ public class TestTaskErrorsUsingLocalMode {
     try {
       FailingProcessor.configureForKilled(10);
       DAG dag = DAG.create("testSelfKillReported").addVertex(
-          Vertex
-              .create(VERTEX_NAME, ProcessorDescriptor.create(FailingProcessor.class.getName()), 1));
+        Vertex
+          .create(VERTEX_NAME, ProcessorDescriptor.create(FailingProcessor.class.getName()), 1));
 
       dagClient = tezClient.submitDAG(dag);
       dagClient.waitForCompletion();
@@ -121,7 +121,6 @@ public class TestTaskErrorsUsingLocalMode {
     }
   }
 
-
   private TezClient getTezClient(String name) throws IOException, TezException {
     TezConfiguration tezConf1 = new TezConfiguration();
     tezConf1.setBoolean(TezConfiguration.TEZ_LOCAL_MODE, true);
@@ -133,7 +132,6 @@ public class TestTaskErrorsUsingLocalMode {
     tezClient1.start();
     return tezClient1;
   }
-
 
   public static class FailingProcessor extends AbstractLogicalIOProcessor {
 
@@ -147,9 +145,12 @@ public class TestTaskErrorsUsingLocalMode {
     private static volatile boolean shouldKill;
     private static volatile int killModeAttemptNumberToSucceed;
 
-
     static {
       reset();
+    }
+
+    public FailingProcessor(ProcessorContext context) {
+      super(context);
     }
 
     static void reset() {
@@ -177,10 +178,6 @@ public class TestTaskErrorsUsingLocalMode {
       killModeAttemptNumberToSucceed = attemptNumber;
     }
 
-    public FailingProcessor(ProcessorContext context) {
-      super(context);
-    }
-
     @Override
     public void initialize() throws Exception {
 
@@ -198,7 +195,7 @@ public class TestTaskErrorsUsingLocalMode {
 
     @Override
     public void run(Map<String, LogicalInput> inputs, Map<String, LogicalOutput> outputs) throws
-        Exception {
+      Exception {
       LOG.info("Running Failing processor");
       if (shouldFail) {
         if (fatalError) {
@@ -216,5 +213,4 @@ public class TestTaskErrorsUsingLocalMode {
       }
     }
   }
-
 }

@@ -35,6 +35,7 @@ import org.apache.tez.dag.history.logging.HistoryLoggingService;
 import org.apache.tez.dag.history.logging.proto.HistoryLoggerProtos.HistoryEventProto;
 import org.apache.tez.dag.history.logging.proto.HistoryLoggerProtos.ManifestEntryProto;
 import org.apache.tez.dag.records.TezDAGID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,18 +45,15 @@ import org.slf4j.LoggerFactory;
  * read the data from these files.
  */
 public class ProtoHistoryLoggingService extends HistoryLoggingService {
-  private static final Logger LOG = LoggerFactory.getLogger(ProtoHistoryLoggingService.class);
   // The file suffix used if we are writing start events and rest into different files.
   static final String SPLIT_DAG_EVENTS_FILE_SUFFIX = "_1";
-
+  private static final Logger LOG = LoggerFactory.getLogger(ProtoHistoryLoggingService.class);
   private final HistoryEventProtoConverter converter =
-      new HistoryEventProtoConverter();
+    new HistoryEventProtoConverter();
+  private final AtomicBoolean stopped = new AtomicBoolean(false);
   private boolean loggingDisabled = false;
-
   private LinkedBlockingQueue<DAGHistoryEvent> eventQueue;
   private Thread eventHandlingThread;
-  private final AtomicBoolean stopped = new AtomicBoolean(false);
-
   private TezProtoLoggers loggers;
   private ProtoMessageWriter<HistoryEventProto> appEventsWriter;
   private ProtoMessageWriter<HistoryEventProto> dagEventsWriter;
@@ -77,14 +75,14 @@ public class ProtoHistoryLoggingService extends HistoryLoggingService {
     LOG.info("Initing ProtoHistoryLoggingService");
     setConfig(conf);
     loggingDisabled = !conf.getBoolean(TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED,
-        TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED_DEFAULT);
+      TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED_DEFAULT);
     splitDagStartEvents = conf.getBoolean(TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_SPLIT_DAG_START,
-        TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_SPLIT_DAG_START_DEFAULT);
+      TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_SPLIT_DAG_START_DEFAULT);
     final int queueSize = conf.getInt(TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_QUEUE_SIZE,
-        TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_QUEUE_SIZE_DEFAULT);
+      TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_QUEUE_SIZE_DEFAULT);
     eventQueue = new LinkedBlockingQueue<>(queueSize);
     LOG.info("Inited ProtoHistoryLoggingService. loggingDisabled: {} splitDagStartEvents: {} queueSize: {}",
-        loggingDisabled, splitDagStartEvents, queueSize);
+      loggingDisabled, splitDagStartEvents, queueSize);
   }
 
   @Override
@@ -94,12 +92,12 @@ public class ProtoHistoryLoggingService extends HistoryLoggingService {
       loggers = new TezProtoLoggers();
       if (!loggers.setup(getConfig(), appContext.getClock())) {
         LOG.warn("Log file location for ProtoHistoryLoggingService not specified, " +
-            "logging disabled");
+          "logging disabled");
         loggingDisabled = true;
         return;
       }
       appEventsWriter = loggers.getAppEventsLogger().getWriter(
-          appContext.getApplicationAttemptId().toString());
+        appContext.getApplicationAttemptId().toString());
       eventHandlingThread = new Thread(this::loop, "HistoryEventHandlingThread");
       eventHandlingThread.start();
     }
@@ -126,7 +124,7 @@ public class ProtoHistoryLoggingService extends HistoryLoggingService {
       eventQueue.add(event);
     } catch (IllegalStateException e) {
       LOG.error("Queue capacity filled up, ignoring event: " +
-          event.getHistoryEvent().getEventType());
+        event.getHistoryEvent().getEventType());
       if (LOG.isDebugEnabled()) {
         LOG.debug("Queue capacity filled up, ignoring event: {}", event.getHistoryEvent());
       }
@@ -170,12 +168,12 @@ public class ProtoHistoryLoggingService extends HistoryLoggingService {
       HistoryEventType type = historyEvent.getEventType();
       TezDAGID dagId = event.getDAGID();
       if (type == HistoryEventType.DAG_FINISHED) {
-        finishCurrentDag((DAGFinishedEvent)historyEvent);
+        finishCurrentDag((DAGFinishedEvent) historyEvent);
       } else if (type == HistoryEventType.DAG_SUBMITTED) {
         finishCurrentDag(null);
         currentDagId = dagId;
         dagEventsWriter = loggers.getDagEventsLogger().getWriter(dagId.toString()
-            + "_" + appContext.getApplicationAttemptId().getAttemptId());
+          + "_" + appContext.getApplicationAttemptId().getAttemptId());
         dagSubmittedEventOffset = dagEventsWriter.getOffset();
         dagEventsWriter.writeProto(converter.convert(historyEvent));
       } else if (dagEventsWriter != null) {
@@ -184,8 +182,8 @@ public class ProtoHistoryLoggingService extends HistoryLoggingService {
           // Close the file and write submitted event offset into manifest.
           finishCurrentDag(null);
           dagEventsWriter = loggers.getDagEventsLogger().getWriter(dagId.toString()
-              + "_" + appContext.getApplicationAttemptId().getAttemptId()
-              + SPLIT_DAG_EVENTS_FILE_SUFFIX);
+            + "_" + appContext.getApplicationAttemptId().getAttemptId()
+            + SPLIT_DAG_EVENTS_FILE_SUFFIX);
         }
       }
     }
@@ -206,19 +204,19 @@ public class ProtoHistoryLoggingService extends HistoryLoggingService {
         // The day has changed write to a new file.
         IOUtils.closeQuietly(manifestEventsWriter);
         manifestEventsWriter = manifestLogger.getWriter(
-            appContext.getApplicationAttemptId().toString());
+          appContext.getApplicationAttemptId().toString());
         manifestDate = manifestLogger.getDateFromDir(
-            manifestEventsWriter.getPath().getParent().getName());
+          manifestEventsWriter.getPath().getParent().getName());
       }
       ManifestEntryProto.Builder entry = ManifestEntryProto.newBuilder()
-          .setDagId(currentDagId.toString())
-          .setAppId(currentDagId.getApplicationId().toString())
-          .setDagSubmittedEventOffset(dagSubmittedEventOffset)
-          .setDagFinishedEventOffset(finishEventOffset)
-          .setDagFilePath(dagEventsWriter.getPath().toString())
-          .setAppFilePath(appEventsFile)
-          .setAppLaunchedEventOffset(appLaunchedEventOffset)
-          .setWriteTime(System.currentTimeMillis());
+        .setDagId(currentDagId.toString())
+        .setAppId(currentDagId.getApplicationId().toString())
+        .setDagSubmittedEventOffset(dagSubmittedEventOffset)
+        .setDagFinishedEventOffset(finishEventOffset)
+        .setDagFilePath(dagEventsWriter.getPath().toString())
+        .setAppFilePath(appEventsFile)
+        .setAppLaunchedEventOffset(appLaunchedEventOffset)
+        .setWriteTime(System.currentTimeMillis());
       if (event != null) {
         entry.setDagId(event.getDAGID().toString());
       }

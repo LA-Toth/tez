@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,6 +31,14 @@ public class MultiStageMRConfigUtil {
   //                    Methods based on Stage Num                            //
   //////////////////////////////////////////////////////////////////////////////
 
+  private static final String INITIAL_MAP_VERTEX_NAME = "initialmap";
+  private static final String FINAL_REDUCE_VERTEX_NAME = "finalreduce";
+
+  //////////////////////////////////////////////////////////////////////////////
+  //                  Methods based on Vertex Name                            //
+  //////////////////////////////////////////////////////////////////////////////
+  private static final String INTERMEDIATE_TASK_VERTEX_NAME_PREFIX = "ivertex";
+
   @Private
   public static int getNumIntermediateStages(Configuration conf) {
     return conf.getInt(MRJobConfig.MRR_INTERMEDIATE_STAGES, 0);
@@ -40,18 +48,10 @@ public class MultiStageMRConfigUtil {
   // Intermediate stage numbers should start from 1.
   @Private
   public static String getPropertyNameForIntermediateStage(
-      int intermediateStage, String originalPropertyName) {
+    int intermediateStage, String originalPropertyName) {
     return MRJobConfig.MRR_INTERMEDIATE_STAGE_PREFIX + intermediateStage + "."
-        + originalPropertyName;
+      + originalPropertyName;
   }
- 
- //////////////////////////////////////////////////////////////////////////////
- //                  Methods based on Vertex Name                            //
- //////////////////////////////////////////////////////////////////////////////
-  
-  private static final String INITIAL_MAP_VERTEX_NAME = "initialmap";
-  private static final String FINAL_REDUCE_VERTEX_NAME = "finalreduce";
-  private static final String INTERMEDIATE_TASK_VERTEX_NAME_PREFIX = "ivertex";
 
   @Private
   public static String getInitialMapVertexName() {
@@ -70,7 +70,7 @@ public class MultiStageMRConfigUtil {
 
   @Private
   static Configuration extractStageConf(Configuration baseConf,
-      String prefix) {
+                                        String prefix) {
     Configuration strippedConf = new Configuration(false);
     Configuration conf = new Configuration(false);
     Iterator<Entry<String, String>> confEntries = baseConf.iterator();

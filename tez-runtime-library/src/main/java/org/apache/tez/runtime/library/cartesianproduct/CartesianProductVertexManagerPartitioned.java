@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,20 +16,6 @@
  * limitations under the License.
  */
 package org.apache.tez.runtime.library.cartesianproduct;
-
-import com.google.common.primitives.Ints;
-import org.apache.tez.common.ReflectionUtils;
-import org.apache.tez.dag.api.TezReflectionException;
-import org.apache.tez.dag.api.UserPayload;
-import org.apache.tez.dag.api.VertexManagerPluginContext;
-import org.apache.tez.dag.api.VertexManagerPluginContext.ScheduleTaskRequest;
-import org.apache.tez.dag.api.event.VertexState;
-import org.apache.tez.dag.api.event.VertexStateUpdate;
-import org.apache.tez.runtime.api.TaskAttemptIdentifier;
-import org.apache.tez.runtime.api.events.VertexManagerEvent;
-import org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,11 +26,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.tez.common.ReflectionUtils;
+import org.apache.tez.dag.api.TezReflectionException;
+import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.dag.api.VertexManagerPluginContext;
+import org.apache.tez.dag.api.VertexManagerPluginContext.ScheduleTaskRequest;
+import org.apache.tez.dag.api.event.VertexState;
+import org.apache.tez.dag.api.event.VertexStateUpdate;
+import org.apache.tez.runtime.api.TaskAttemptIdentifier;
+import org.apache.tez.runtime.api.events.VertexManagerEvent;
+import org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
+
+import com.google.common.primitives.Ints;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Starts scheduling tasks when number of completed source tasks crosses
  * min fraction and schedules all task when max fraction is reached
  */
 class CartesianProductVertexManagerPartitioned extends CartesianProductVertexManagerReal {
+  private static final Logger LOG =
+    LoggerFactory.getLogger(CartesianProductVertexManagerPartitioned.class);
   private List<String> sourceVertices;
   private int[] numPartitions;
   private float minFraction, maxFraction;
@@ -53,14 +56,11 @@ class CartesianProductVertexManagerPartitioned extends CartesianProductVertexMan
   private boolean vertexReconfigured = false;
   private int numCPSrcNotInConfiguredState = 0;
   private int numBroadcastSrcNotInRunningState = 0;
-
   private CartesianProductFilter filter;
   private Map<String, BitSet> sourceTaskCompleted = new HashMap<>();
   private int numFinishedSrcTasks = 0;
   private int totalNumSrcTasks = 0;
   private int lastScheduledTaskId = -1;
-  private static final Logger LOG =
-    LoggerFactory.getLogger(CartesianProductVertexManagerPartitioned.class);
 
   public CartesianProductVertexManagerPartitioned(VertexManagerPluginContext context) {
     super(context);
@@ -119,7 +119,7 @@ class CartesianProductVertexManagerPartitioned extends CartesianProductVertexMan
   }
 
   @Override
-  public synchronized void onVertexStateUpdated(VertexStateUpdate stateUpdate) throws IOException{
+  public synchronized void onVertexStateUpdated(VertexStateUpdate stateUpdate) throws IOException {
     VertexState state = stateUpdate.getVertexState();
 
     if (state == VertexState.CONFIGURED) {
@@ -128,7 +128,7 @@ class CartesianProductVertexManagerPartitioned extends CartesianProductVertexMan
       }
       numCPSrcNotInConfiguredState--;
       totalNumSrcTasks += getContext().getVertexNumTasks(stateUpdate.getVertexName());
-    } else if (state == VertexState.RUNNING){
+    } else if (state == VertexState.RUNNING) {
       numBroadcastSrcNotInRunningState--;
     }
     // try schedule because there may be no more vertex start and source completions
@@ -182,24 +182,24 @@ class CartesianProductVertexManagerPartitioned extends CartesianProductVertexMan
       return;
     }
     // determine the destination task with largest id to schedule
-    float percentFinishedSrcTask = numFinishedSrcTasks*1f/totalNumSrcTasks;
+    float percentFinishedSrcTask = numFinishedSrcTasks * 1f / totalNumSrcTasks;
     int numTaskToSchedule;
     if (percentFinishedSrcTask < minFraction) {
       numTaskToSchedule = 0;
     } else if (minFraction <= percentFinishedSrcTask &&
-        percentFinishedSrcTask <= maxFraction) {
+      percentFinishedSrcTask <= maxFraction) {
       numTaskToSchedule = (int) ((percentFinishedSrcTask - minFraction)
-        /(maxFraction - minFraction) * parallelism);
+        / (maxFraction - minFraction) * parallelism);
     } else {
       numTaskToSchedule = parallelism;
     }
     // schedule tasks if there are more we can schedule
-    if (numTaskToSchedule-1 > lastScheduledTaskId) {
+    if (numTaskToSchedule - 1 > lastScheduledTaskId) {
       List<ScheduleTaskRequest> scheduleTaskRequests = new ArrayList<>();
       for (int i = lastScheduledTaskId + 1; i < numTaskToSchedule; i++) {
         scheduleTaskRequests.add(ScheduleTaskRequest.create(i, null));
       }
-      lastScheduledTaskId = numTaskToSchedule-1;
+      lastScheduledTaskId = numTaskToSchedule - 1;
       getContext().scheduleTasks(scheduleTaskRequests);
     }
   }

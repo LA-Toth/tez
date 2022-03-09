@@ -17,16 +17,6 @@
  */
 package org.apache.tez.http.async.netty;
 
-import org.asynchttpclient.AsyncHandler;
-import org.asynchttpclient.HttpResponseBodyPart;
-import org.asynchttpclient.HttpResponseStatus;
-import org.asynchttpclient.Response;
-import org.apache.hadoop.classification.InterfaceAudience;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import io.netty.handler.codec.http.HttpHeaders;
-
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +27,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.hadoop.classification.InterfaceAudience;
+
+import io.netty.handler.codec.http.HttpHeaders;
+import org.asynchttpclient.AsyncHandler;
+import org.asynchttpclient.HttpResponseBodyPart;
+import org.asynchttpclient.HttpResponseStatus;
+import org.asynchttpclient.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Same as {@link org.asynchttpclient.BodyDeferringAsyncHandler} with additional checks handle
@@ -52,16 +52,13 @@ class TezBodyDeferringAsyncHandler implements AsyncHandler<Response> {
   private final Response.ResponseBuilder responseBuilder = new Response.ResponseBuilder();
   private final CountDownLatch headersArrived = new CountDownLatch(1);
   private final OutputStream output;
-
+  private final Semaphore semaphore = new Semaphore(1);
+  private final URL url;
+  private final int headerReceiveTimeout;
   private volatile boolean responseSet;
   private volatile boolean statusReceived;
   private volatile Response response;
   private volatile Throwable throwable;
-
-  private final Semaphore semaphore = new Semaphore(1);
-
-  private final URL url;
-  private final int headerReceiveTimeout;
 
   TezBodyDeferringAsyncHandler(final OutputStream os, final URL url, final int timeout) {
     this.output = os;
@@ -181,7 +178,7 @@ class TezBodyDeferringAsyncHandler implements AsyncHandler<Response> {
     boolean result = headersArrived.await(headerReceiveTimeout, TimeUnit.MILLISECONDS);
     if (!result) {
       LOG.error("Breaking after timeout={}, url={}, responseSet={} statusReceived={}",
-          headerReceiveTimeout, url, responseSet, statusReceived);
+        headerReceiveTimeout, url, responseSet, statusReceived);
       return null;
     }
     try {
@@ -207,7 +204,7 @@ class TezBodyDeferringAsyncHandler implements AsyncHandler<Response> {
     private final TezBodyDeferringAsyncHandler bdah;
 
     public BodyDeferringInputStream(final Future<Response> future,
-        final TezBodyDeferringAsyncHandler bdah, final InputStream in) {
+                                    final TezBodyDeferringAsyncHandler bdah, final InputStream in) {
       super(in);
       this.future = future;
       this.bdah = bdah;

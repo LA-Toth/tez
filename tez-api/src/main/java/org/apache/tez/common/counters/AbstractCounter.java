@@ -18,8 +18,9 @@
 
 package org.apache.tez.common.counters;
 
-import com.google.common.base.Objects;
 import org.apache.hadoop.classification.InterfaceAudience;
+
+import com.google.common.base.Objects;
 
 /**
  * An abstract counter class to provide common implementation of
@@ -38,8 +39,8 @@ public abstract class AbstractCounter implements TezCounter {
       synchronized (genericRight) {
         TezCounter right = (TezCounter) genericRight;
         return getName().equals(right.getName()) &&
-               getDisplayName().equals(right.getDisplayName()) &&
-               getValue() == right.getValue();
+          getDisplayName().equals(right.getDisplayName()) &&
+          getValue() == right.getValue();
       }
     }
     return false;

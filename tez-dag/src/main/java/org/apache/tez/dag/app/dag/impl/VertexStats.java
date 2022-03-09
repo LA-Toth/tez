@@ -90,7 +90,7 @@ public class VertexStats {
       firstTaskStartTime = taskReport.getStartTime();
     }
     if ((taskReport.getFinishTime() > 0) &&
-        (lastTaskFinishTime == -1
+      (lastTaskFinishTime == -1
         || lastTaskFinishTime <= taskReport.getFinishTime())) {
       if (lastTaskFinishTime != taskReport.getFinishTime()) {
         lastTasksToFinish.clear();
@@ -100,13 +100,13 @@ public class VertexStats {
     }
 
     if (!taskReport.getTaskState().equals(
-        TaskState.SUCCEEDED)) {
+      TaskState.SUCCEEDED)) {
       // ignore non-successful tasks when calculating durations
       return;
     }
 
     long taskDuration = taskReport.getFinishTime() -
-        taskReport.getStartTime();
+      taskReport.getStartTime();
     if (taskDuration < 0) {
       return;
     }
@@ -129,12 +129,12 @@ public class VertexStats {
       longestDurationTasks.add(taskReport.getTaskId());
     }
 
-    avgTaskDuration = ((avgTaskDuration * (numSuccessfulTasks-1)) + taskDuration)
-        /numSuccessfulTasks;
+    avgTaskDuration = ((avgTaskDuration * (numSuccessfulTasks - 1)) + taskDuration)
+      / numSuccessfulTasks;
   }
 
   private void appendTaskIdSet(StringBuilder sb,
-      Set<TezTaskID> taskIDs) {
+                               Set<TezTaskID> taskIDs) {
     sb.append("[ ");
     boolean first = true;
     if (taskIDs != null) {
@@ -154,20 +154,19 @@ public class VertexStats {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("firstTaskStartTime=").append(firstTaskStartTime)
-       .append(", firstTasksToStart=");
+      .append(", firstTasksToStart=");
     appendTaskIdSet(sb, firstTasksToStart);
     sb.append(", lastTaskFinishTime=").append(lastTaskFinishTime)
-       .append(", lastTasksToFinish=");
+      .append(", lastTasksToFinish=");
     appendTaskIdSet(sb, lastTasksToFinish);
     sb.append(", minTaskDuration=").append(minTaskDuration)
-       .append(", maxTaskDuration=").append(maxTaskDuration)
-       .append(", avgTaskDuration=").append(avgTaskDuration)
-       .append(", numSuccessfulTasks=").append(numSuccessfulTasks)
-       .append(", shortestDurationTasks=");
+      .append(", maxTaskDuration=").append(maxTaskDuration)
+      .append(", avgTaskDuration=").append(avgTaskDuration)
+      .append(", numSuccessfulTasks=").append(numSuccessfulTasks)
+      .append(", shortestDurationTasks=");
     appendTaskIdSet(sb, shortestDurationTasks);
     sb.append(", longestDurationTasks=");
     appendTaskIdSet(sb, longestDurationTasks);
     return sb.toString();
   }
-
 }

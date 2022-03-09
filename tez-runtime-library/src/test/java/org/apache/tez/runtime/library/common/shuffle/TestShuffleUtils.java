@@ -1,7 +1,25 @@
 package org.apache.tez.runtime.library.common.shuffle;
 
-import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.SocketTimeoutException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -33,32 +51,14 @@ import org.apache.tez.runtime.library.common.sort.impl.TezIndexRecord;
 import org.apache.tez.runtime.library.common.sort.impl.TezSpillRecord;
 import org.apache.tez.runtime.library.partitioner.HashPartitioner;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads;
+
+import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
 import org.slf4j.Logger;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.SocketTimeoutException;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.List;
-
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -104,10 +104,9 @@ public class TestShuffleUtils {
     DataOutputBuffer serviceProviderMetaData = new DataOutputBuffer();
     serviceProviderMetaData.writeInt(80);
     doReturn(ByteBuffer.wrap(serviceProviderMetaData.getData())).when(outputContext)
-        .getServiceProviderMetaData
-            (conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-                TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
-
+      .getServiceProviderMetaData
+        (conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
+          TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT));
 
     doReturn(1).when(outputContext).getTaskVertexIndex();
     doReturn(1).when(outputContext).getOutputIndex();
@@ -118,7 +117,6 @@ public class TestShuffleUtils {
     return outputContext;
   }
 
-
   @Before
   public void setup() throws Exception {
     conf = new Configuration();
@@ -127,14 +125,14 @@ public class TestShuffleUtils {
     localFs = FileSystem.getLocal(conf);
 
     workingDir = new Path(
-        new Path(System.getProperty("test.build.data", "/tmp")),
-        TestShuffleUtils.class.getName())
-        .makeQualified(localFs.getUri(), localFs.getWorkingDirectory());
+      new Path(System.getProperty("test.build.data", "/tmp")),
+      TestShuffleUtils.class.getName())
+      .makeQualified(localFs.getUri(), localFs.getWorkingDirectory());
     String localDirs = workingDir.toString();
     conf.set(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_CLASS, Text.class.getName());
     conf.set(TezRuntimeConfiguration.TEZ_RUNTIME_VALUE_CLASS, Text.class.getName());
     conf.set(TezRuntimeConfiguration.TEZ_RUNTIME_PARTITIONER_CLASS,
-        HashPartitioner.class.getName());
+      HashPartitioner.class.getName());
     conf.setStrings(TezRuntimeFrameworkConfigs.LOCAL_DIRS, localDirs);
   }
 
@@ -143,9 +141,9 @@ public class TestShuffleUtils {
     TezSpillRecord spillRecord = new TezSpillRecord(numPartitions);
     long startOffset = 0;
     long partLen = 200; //compressed
-    for(int i=0;i<numPartitions;i++) {
+    for (int i = 0; i < numPartitions; i++) {
       long rawLen = ThreadLocalRandom.current().nextLong(100, 200);
-      if (i % 2  == 0 || allEmptyPartitions) {
+      if (i % 2 == 0 || allEmptyPartitions) {
         rawLen = 0; //indicates empty partition, see TEZ-3605
       }
       TezIndexRecord indexRecord = new TezIndexRecord(startOffset, rawLen, partLen);
@@ -167,11 +165,11 @@ public class TestShuffleUtils {
     int physicalOutputs = 10;
     String pathComponent = "/attempt_x_y_0/file.out";
     String auxiliaryService = conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
+      TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
 
     ShuffleUtils.generateEventOnSpill(events, finalMergeEnabled, isLastEvent,
-        outputContext, spillId, new TezSpillRecord(indexFile, conf),
-            physicalOutputs, true, pathComponent, null, false, auxiliaryService, TezCommonUtils.newBestCompressionDeflater());
+      outputContext, spillId, new TezSpillRecord(indexFile, conf),
+      physicalOutputs, true, pathComponent, null, false, auxiliaryService, TezCommonUtils.newBestCompressionDeflater());
 
     Assert.assertTrue(events.size() == 1);
     Assert.assertTrue(events.get(0) instanceof CompositeDataMovementEvent);
@@ -182,7 +180,7 @@ public class TestShuffleUtils {
 
     ByteBuffer payload = cdme.getUserPayload();
     ShuffleUserPayloads.DataMovementEventPayloadProto dmeProto =
-        ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(payload));
+      ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(payload));
 
     Assert.assertTrue(dmeProto.getSpillId() == 0);
     Assert.assertTrue(dmeProto.hasLastEvent() && !dmeProto.getLastEvent());
@@ -190,10 +188,9 @@ public class TestShuffleUtils {
     byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(dmeProto.getEmptyPartitions());
     BitSet emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
     Assert.assertTrue("emptyPartitionBitSet cardinality (expecting 5) = " + emptyPartitionsBitSet
-        .cardinality(), emptyPartitionsBitSet.cardinality() == 5);
+      .cardinality(), emptyPartitionsBitSet.cardinality() == 5);
 
     events.clear();
-
   }
 
   @Test
@@ -207,12 +204,12 @@ public class TestShuffleUtils {
     int physicalOutputs = 10;
     String pathComponent = "/attempt_x_y_0/file.out";
     String auxiliaryService = conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
+      TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
 
     //normal code path where we do final merge all the time
     ShuffleUtils.generateEventOnSpill(events, finalMergeEnabled, isLastEvent,
-        outputContext, spillId, new TezSpillRecord(indexFile, conf),
-            physicalOutputs, true, pathComponent, null, false, auxiliaryService, TezCommonUtils.newBestCompressionDeflater());
+      outputContext, spillId, new TezSpillRecord(indexFile, conf),
+      physicalOutputs, true, pathComponent, null, false, auxiliaryService, TezCommonUtils.newBestCompressionDeflater());
 
     Assert.assertTrue(events.size() == 2); //one for VM
     Assert.assertTrue(events.get(0) instanceof VertexManagerEvent);
@@ -223,18 +220,17 @@ public class TestShuffleUtils {
     Assert.assertTrue(cdme.getSourceIndexStart() == 0);
 
     ShuffleUserPayloads.DataMovementEventPayloadProto dmeProto =
-        ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom( cdme.getUserPayload()));
+      ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(cdme.getUserPayload()));
 
     //With final merge, spill details should not be present
     Assert.assertFalse(dmeProto.hasSpillId());
     Assert.assertFalse(dmeProto.hasLastEvent() || dmeProto.getLastEvent());
 
-    byte[]  emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(dmeProto
-        .getEmptyPartitions());
-    BitSet  emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
+    byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(dmeProto
+      .getEmptyPartitions());
+    BitSet emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
     Assert.assertTrue("emptyPartitionBitSet cardinality (expecting 5) = " + emptyPartitionsBitSet
-        .cardinality(), emptyPartitionsBitSet.cardinality() == 5);
-
+      .cardinality(), emptyPartitionsBitSet.cardinality() == 5);
   }
 
   @Test
@@ -250,12 +246,12 @@ public class TestShuffleUtils {
     int physicalOutputs = 10;
     String pathComponent = "/attempt_x_y_0/file.out";
     String auxiliaryService = conf.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
+      TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
 
     //normal code path where we do final merge all the time
     ShuffleUtils.generateEventOnSpill(events, finalMergeDisabled, isLastEvent,
-        outputContext, spillId, new TezSpillRecord(indexFile, conf),
-            physicalOutputs, true, pathComponent, null, false, auxiliaryService, TezCommonUtils.newBestCompressionDeflater());
+      outputContext, spillId, new TezSpillRecord(indexFile, conf),
+      physicalOutputs, true, pathComponent, null, false, auxiliaryService, TezCommonUtils.newBestCompressionDeflater());
 
     Assert.assertTrue(events.size() == 2); //one for VM
     Assert.assertTrue(events.get(0) instanceof VertexManagerEvent);
@@ -266,7 +262,7 @@ public class TestShuffleUtils {
     Assert.assertTrue(cdme.getSourceIndexStart() == 0);
 
     ShuffleUserPayloads.DataMovementEventPayloadProto dmeProto =
-        ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom( cdme.getUserPayload()));
+      ShuffleUserPayloads.DataMovementEventPayloadProto.parseFrom(ByteString.copyFrom(cdme.getUserPayload()));
 
     //spill details should be present
     Assert.assertTrue(dmeProto.getSpillId() == 0);
@@ -274,12 +270,11 @@ public class TestShuffleUtils {
 
     Assert.assertTrue(dmeProto.getPathComponent().equals(""));
 
-    byte[]  emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(dmeProto
-        .getEmptyPartitions());
-    BitSet  emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
+    byte[] emptyPartitions = TezCommonUtils.decompressByteStringToByteArray(dmeProto
+      .getEmptyPartitions());
+    BitSet emptyPartitionsBitSet = TezUtilsInternal.fromByteArray(emptyPartitions);
     Assert.assertTrue("emptyPartitionBitSet cardinality (expecting 10) = " + emptyPartitionsBitSet
-        .cardinality(), emptyPartitionsBitSet.cardinality() == 10);
-
+      .cardinality(), emptyPartitionsBitSet.cardinality() == 10);
   }
 
   @Test
@@ -287,17 +282,17 @@ public class TestShuffleUtils {
     String codecErrorMsg = "codec failure";
     CompressionInputStream mockCodecStream = mock(CompressionInputStream.class);
     when(mockCodecStream.read(any(byte[].class), anyInt(), anyInt()))
-        .thenThrow(new InternalError(codecErrorMsg));
+      .thenThrow(new InternalError(codecErrorMsg));
     Decompressor mockDecoder = mock(Decompressor.class);
     CompressionCodec mockCodec = mock(ConfigurableCodecForTest.class);
     when(((ConfigurableCodecForTest) mockCodec).getConf()).thenReturn(mock(Configuration.class));
     when(mockCodec.createDecompressor()).thenReturn(mockDecoder);
     when(mockCodec.createInputStream(any(InputStream.class), any(Decompressor.class)))
-        .thenReturn(mockCodecStream);
-    byte[] header = new byte[] { (byte) 'T', (byte) 'I', (byte) 'F', (byte) 1};
+      .thenReturn(mockCodecStream);
+    byte[] header = new byte[]{(byte) 'T', (byte) 'I', (byte) 'F', (byte) 1};
     try {
       ShuffleUtils.shuffleToMemory(new byte[1024], new ByteArrayInputStream(header),
-          1024, 128, mockCodec, false, 0, mock(Logger.class), null);
+        1024, 128, mockCodec, false, 0, mock(Logger.class), null);
       Assert.fail("shuffle was supposed to throw!");
     } catch (IOException e) {
       Assert.assertTrue(e.getCause() instanceof InternalError);
@@ -310,17 +305,17 @@ public class TestShuffleUtils {
     String codecErrorMsg = "codec failure";
     CompressionInputStream mockCodecStream = mock(CompressionInputStream.class);
     when(mockCodecStream.read(any(byte[].class), anyInt(), anyInt()))
-        .thenThrow(new IllegalArgumentException(codecErrorMsg));
+      .thenThrow(new IllegalArgumentException(codecErrorMsg));
     Decompressor mockDecoder = mock(Decompressor.class);
     CompressionCodec mockCodec = mock(ConfigurableCodecForTest.class);
     when(((ConfigurableCodecForTest) mockCodec).getConf()).thenReturn(mock(Configuration.class));
     when(mockCodec.createDecompressor()).thenReturn(mockDecoder);
     when(mockCodec.createInputStream(any(InputStream.class), any(Decompressor.class)))
-        .thenReturn(mockCodecStream);
-    byte[] header = new byte[] { (byte) 'T', (byte) 'I', (byte) 'F', (byte) 1};
+      .thenReturn(mockCodecStream);
+    byte[] header = new byte[]{(byte) 'T', (byte) 'I', (byte) 'F', (byte) 1};
     try {
       ShuffleUtils.shuffleToMemory(new byte[1024], new ByteArrayInputStream(header),
-          1024, 128, mockCodec, false, 0, mock(Logger.class), null);
+        1024, 128, mockCodec, false, 0, mock(Logger.class), null);
       Assert.fail("shuffle was supposed to throw!");
     } catch (IOException e) {
       Assert.assertTrue(e.getCause() instanceof IllegalArgumentException);
@@ -328,15 +323,15 @@ public class TestShuffleUtils {
     }
     CompressionInputStream mockCodecStream1 = mock(CompressionInputStream.class);
     when(mockCodecStream1.read(any(byte[].class), anyInt(), anyInt()))
-        .thenThrow(new SocketTimeoutException(codecErrorMsg));
+      .thenThrow(new SocketTimeoutException(codecErrorMsg));
     CompressionCodec mockCodec1 = mock(ConfigurableCodecForTest.class);
     when(((ConfigurableCodecForTest) mockCodec1).getConf()).thenReturn(mock(Configuration.class));
     when(mockCodec1.createDecompressor()).thenReturn(mockDecoder);
     when(mockCodec1.createInputStream(any(InputStream.class), any(Decompressor.class)))
-        .thenReturn(mockCodecStream1);
+      .thenReturn(mockCodecStream1);
     try {
       ShuffleUtils.shuffleToMemory(new byte[1024], new ByteArrayInputStream(header),
-          1024, 128, mockCodec1, false, 0, mock(Logger.class), null);
+        1024, 128, mockCodec1, false, 0, mock(Logger.class), null);
       Assert.fail("shuffle was supposed to throw!");
     } catch (IOException e) {
       Assert.assertTrue(e instanceof SocketTimeoutException);
@@ -344,15 +339,15 @@ public class TestShuffleUtils {
     }
     CompressionInputStream mockCodecStream2 = mock(CompressionInputStream.class);
     when(mockCodecStream2.read(any(byte[].class), anyInt(), anyInt()))
-        .thenThrow(new InternalError(codecErrorMsg));
+      .thenThrow(new InternalError(codecErrorMsg));
     CompressionCodec mockCodec2 = mock(ConfigurableCodecForTest.class);
     when(((ConfigurableCodecForTest) mockCodec2).getConf()).thenReturn(mock(Configuration.class));
     when(mockCodec2.createDecompressor()).thenReturn(mockDecoder);
     when(mockCodec2.createInputStream(any(InputStream.class), any(Decompressor.class)))
-        .thenReturn(mockCodecStream2);
+      .thenReturn(mockCodecStream2);
     try {
       ShuffleUtils.shuffleToMemory(new byte[1024], new ByteArrayInputStream(header),
-          1024, 128, mockCodec2, false, 0, mock(Logger.class), null);
+        1024, 128, mockCodec2, false, 0, mock(Logger.class), null);
       Assert.fail("shuffle was supposed to throw!");
     } catch (IOException e) {
       Assert.assertTrue(e.getCause() instanceof InternalError);
@@ -369,14 +364,14 @@ public class TestShuffleUtils {
     ByteArrayInputStream in = new ByteArrayInputStream(bogusData);
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     ShuffleUtils.shuffleToDisk(baos, "somehost", in,
-        bogusData.length, 2000, mock(Logger.class), null, false, 0, false);
+      bogusData.length, 2000, mock(Logger.class), null, false, 0, false);
     Assert.assertArrayEquals(bogusData, baos.toByteArray());
 
     // verify sending same stream of zeroes with validation generates an exception
     in.reset();
     try {
       ShuffleUtils.shuffleToDisk(mock(OutputStream.class), "somehost", in,
-          bogusData.length, 2000, mock(Logger.class), null, false, 0, true);
+        bogusData.length, 2000, mock(Logger.class), null, false, 0, true);
       Assert.fail("shuffle was supposed to throw!");
     } catch (IOException e) {
     }
@@ -426,7 +421,7 @@ public class TestShuffleUtils {
 
     @Override
     public CompressionInputStream createInputStream(InputStream arg0, Decompressor arg1)
-        throws IOException {
+      throws IOException {
       return null;
     }
 
@@ -437,7 +432,7 @@ public class TestShuffleUtils {
 
     @Override
     public CompressionOutputStream createOutputStream(OutputStream arg0, Compressor arg1)
-        throws IOException {
+      throws IOException {
       return null;
     }
 

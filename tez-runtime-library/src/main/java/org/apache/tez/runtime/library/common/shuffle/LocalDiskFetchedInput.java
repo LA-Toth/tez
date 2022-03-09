@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,16 +22,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
 import org.apache.commons.io.input.BoundedInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
+
+import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LocalDiskFetchedInput extends FetchedInput {
   private static final Logger LOG = LoggerFactory.getLogger(LocalDiskFetchedInput.class);
@@ -44,7 +45,7 @@ public class LocalDiskFetchedInput extends FetchedInput {
   public LocalDiskFetchedInput(long startOffset, long compressedSize,
                                InputAttemptIdentifier inputAttemptIdentifier, Path inputFile,
                                Configuration conf, FetchedInputCallback callbackHandler)
-      throws IOException {
+    throws IOException {
     super(inputAttemptIdentifier, callbackHandler);
     this.size = compressedSize;
     this.startOffset = startOffset;
@@ -64,7 +65,7 @@ public class LocalDiskFetchedInput extends FetchedInput {
 
   @Override
   public OutputStream getOutputStream() throws IOException {
-      throw new IOException("Output Stream is not supported for " + this.toString());
+    throw new IOException("Output Stream is not supported for " + this.toString());
   }
 
   @Override
@@ -89,12 +90,12 @@ public class LocalDiskFetchedInput extends FetchedInput {
       notifyFetchFailure();
     }
   }
-  
+
   @Override
   public void free() {
     Preconditions.checkState(
-        isState(State.COMMITTED) || isState(State.ABORTED),
-        "FetchedInput can only be freed after it is committed or aborted");
+      isState(State.COMMITTED) || isState(State.ABORTED),
+      "FetchedInput can only be freed after it is committed or aborted");
     if (isState(State.COMMITTED)) { // ABORTED would have already called cleanup
       setState(State.FREED);
       notifyFreedResource();
@@ -104,12 +105,12 @@ public class LocalDiskFetchedInput extends FetchedInput {
   @Override
   public String toString() {
     return "LocalDiskFetchedInput [inputFile path =" + inputFile +
-        ", offset" + startOffset +
-        ", compressedSize=" + getSize() +
-        ", inputAttemptIdentifier=" + getInputAttemptIdentifier() +
-        ", type=" + getType() +
-        ", id=" + getId() +
-        ", state=" + getState() + "]";
+      ", offset" + startOffset +
+      ", compressedSize=" + getSize() +
+      ", inputAttemptIdentifier=" + getInputAttemptIdentifier() +
+      ", type=" + getType() +
+      ", id=" + getId() +
+      ", state=" + getState() + "]";
   }
 
   @VisibleForTesting
@@ -126,5 +127,4 @@ public class LocalDiskFetchedInput extends FetchedInput {
   protected FileSystem getLocalFS() {
     return localFS;
   }
-
 }

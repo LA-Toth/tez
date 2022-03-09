@@ -41,10 +41,11 @@ import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.runtime.api.ExecutionContext;
-import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.InputContext;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.impl.ExecutionContextImpl;
 import org.apache.tez.runtime.library.common.Constants;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -96,16 +97,13 @@ public class TestShuffle {
       ArgumentCaptor<Throwable> throwableArgumentCaptor = ArgumentCaptor.forClass(Throwable.class);
       ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
       verify(inputContext, times(1)).reportFailure(eq(TaskFailureType.NON_FATAL), throwableArgumentCaptor.capture(),
-          stringArgumentCaptor.capture());
+        stringArgumentCaptor.capture());
 
       Throwable t = throwableArgumentCaptor.getValue();
       assertTrue(t.getCause().getMessage().contains(exceptionMessage));
-
     } finally {
       shuffle.shutdown();
     }
-
-
   }
 
   @Test(timeout = 10000)
@@ -130,14 +128,12 @@ public class TestShuffle {
       ArgumentCaptor<Throwable> throwableArgumentCaptor = ArgumentCaptor.forClass(Throwable.class);
       ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
       verify(inputContext, times(0)).reportFailure(eq(TaskFailureType.NON_FATAL),
-          throwableArgumentCaptor.capture(),
-          stringArgumentCaptor.capture());
+        throwableArgumentCaptor.capture(),
+        stringArgumentCaptor.capture());
     } finally {
       shuffle.shutdown();
     }
-
   }
-
 
   private InputContext createTezInputContext() throws IOException {
     ApplicationId applicationId = ApplicationId.newInstance(1, 1);
@@ -151,19 +147,19 @@ public class TestShuffle {
     ByteBuffer shuffleBuffer = ByteBuffer.allocate(4).putInt(0, 4);
     doReturn(shuffleBuffer).when(inputContext).getServiceProviderMetaData(anyString());
     Token<JobTokenIdentifier>
-        sessionToken = new Token<JobTokenIdentifier>(new JobTokenIdentifier(new Text("text")),
-        new JobTokenSecretManager());
+      sessionToken = new Token<JobTokenIdentifier>(new JobTokenIdentifier(new Text("text")),
+      new JobTokenSecretManager());
     ByteBuffer tokenBuffer = TezCommonUtils.serializeServiceData(sessionToken);
     doReturn(tokenBuffer).when(inputContext).getServiceConsumerMetaData(anyString());
     when(inputContext.createTezFrameworkExecutorService(anyInt(), anyString())).thenAnswer(
-        new Answer<ExecutorService>() {
-          @Override
-          public ExecutorService answer(InvocationOnMock invocation) throws Throwable {
-            return sharedExecutor.createExecutorService(
-                invocation.getArgumentAt(0, Integer.class),
-                invocation.getArgumentAt(1, String.class));
-          }
-        });
+      new Answer<ExecutorService>() {
+        @Override
+        public ExecutorService answer(InvocationOnMock invocation) throws Throwable {
+          return sharedExecutor.createExecutorService(
+            invocation.getArgumentAt(0, Integer.class),
+            invocation.getArgumentAt(1, String.class));
+        }
+      });
     return inputContext;
   }
 }

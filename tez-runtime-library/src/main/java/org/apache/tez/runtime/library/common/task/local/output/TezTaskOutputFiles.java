@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,17 +20,18 @@ package org.apache.tez.runtime.library.common.task.local.output;
 
 import java.io.IOException;
 
-import org.apache.tez.common.Preconditions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.LocalDirAllocator;
 import org.apache.hadoop.fs.Path;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezRuntimeFrameworkConfigs;
 import org.apache.tez.runtime.library.common.Constants;
 import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Manipulate the working area for the transient store for components in tez-runtime-library
@@ -42,16 +43,9 @@ import org.apache.tez.runtime.library.common.shuffle.ShuffleUtils;
 @InterfaceStability.Unstable
 public class TezTaskOutputFiles extends TezTaskOutput {
 
-  public TezTaskOutputFiles(Configuration conf, String uniqueId, int dagID) {
-    super(conf, uniqueId, dagID);
-  }
-
   private static final Logger LOG = LoggerFactory.getLogger(TezTaskOutputFiles.class);
-
   private static final String SPILL_FILE_DIR_PATTERN = "%s_%d";
-
   private static final String SPILL_FILE_PATTERN = "%s_src_%d_spill_%d.out";
-
   /*
   Under YARN, this defaults to one or more of the local directories, along with the appId in the path.
   Note: The containerId is not part of this.
@@ -59,6 +53,10 @@ public class TezTaskOutputFiles extends TezTaskOutput {
    */
   private final LocalDirAllocator lDirAlloc =
     new LocalDirAllocator(TezRuntimeFrameworkConfigs.LOCAL_DIRS);
+
+  public TezTaskOutputFiles(Configuration conf, String uniqueId, int dagID) {
+    super(conf, uniqueId, dagID);
+  }
 
   /*
    * if service_id = mapreduce_shuffle  then "${appDir}/output/${uniqueId}"
@@ -69,7 +67,6 @@ public class TezTaskOutputFiles extends TezTaskOutput {
     String dagPath = getDagOutputDir(Constants.TEZ_RUNTIME_TASK_OUTPUT_DIR);
     return new Path(dagPath, uniqueId);
   }
-
 
   /**
    * Create a local output file name.
@@ -131,11 +128,10 @@ public class TezTaskOutputFiles extends TezTaskOutput {
   public Path getOutputFileForWriteInVolume(Path existing) {
     //Get hold attempt directory (${appDir}/output/)
     Preconditions.checkArgument(existing.getParent().getParent() != null, "Parent directory's "
-        + "parent can not be null");
+      + "parent can not be null");
     Path attemptDir = new Path(existing.getParent().getParent(), uniqueId);
     return new Path(attemptDir, Constants.TEZ_RUNTIME_TASK_OUTPUT_FILENAME_STRING);
   }
-
 
   /**
    * Create a local output index file name.
@@ -153,9 +149,9 @@ public class TezTaskOutputFiles extends TezTaskOutput {
   public Path getOutputIndexFileForWrite(long size) throws IOException {
     Path attemptIndexOutput =
       new Path(getAttemptOutputDir(), Constants.TEZ_RUNTIME_TASK_OUTPUT_FILENAME_STRING +
-                                      Constants.TEZ_RUNTIME_TASK_OUTPUT_INDEX_SUFFIX_STRING);
+        Constants.TEZ_RUNTIME_TASK_OUTPUT_INDEX_SUFFIX_STRING);
     return lDirAlloc.getLocalPathForWrite(attemptIndexOutput.toString(),
-        size, conf);
+      size, conf);
   }
 
   /**
@@ -179,10 +175,10 @@ public class TezTaskOutputFiles extends TezTaskOutput {
   public Path getOutputIndexFileForWriteInVolume(Path existing) {
     //Get hold attempt directory (${appDir}/output/)
     Preconditions.checkArgument(existing.getParent().getParent() != null, "Parent directory's "
-        + "parent can not be null");
+      + "parent can not be null");
     Path attemptDir = new Path(existing.getParent().getParent(), uniqueId);
     return new Path(attemptDir, Constants.TEZ_RUNTIME_TASK_OUTPUT_FILENAME_STRING
-        + Constants.TEZ_RUNTIME_TASK_OUTPUT_INDEX_SUFFIX_STRING);
+      + Constants.TEZ_RUNTIME_TASK_OUTPUT_INDEX_SUFFIX_STRING);
   }
 
   /**
@@ -198,11 +194,11 @@ public class TezTaskOutputFiles extends TezTaskOutput {
    */
   @Override
   public Path getSpillFileForWrite(int spillNumber, long size)
-      throws IOException {
+    throws IOException {
     Preconditions.checkArgument(spillNumber >= 0, "Provide a valid spill number " + spillNumber);
     String dagPath = getDagOutputDir(Constants.TEZ_RUNTIME_TASK_OUTPUT_DIR);
     Path taskAttemptDir = new Path(dagPath,
-        String.format(SPILL_FILE_DIR_PATTERN, uniqueId, spillNumber));
+      String.format(SPILL_FILE_DIR_PATTERN, uniqueId, spillNumber));
     Path outputDir = new Path(taskAttemptDir, Constants.TEZ_RUNTIME_TASK_OUTPUT_FILENAME_STRING);
     return lDirAlloc.getLocalPathForWrite(outputDir.toString(), size, conf);
   }
@@ -220,16 +216,15 @@ public class TezTaskOutputFiles extends TezTaskOutput {
    */
   @Override
   public Path getSpillIndexFileForWrite(int spillNumber, long size)
-      throws IOException {
+    throws IOException {
     Preconditions.checkArgument(spillNumber >= 0, "Provide a valid spill number " + spillNumber);
     String dagPath = getDagOutputDir(Constants.TEZ_RUNTIME_TASK_OUTPUT_DIR);
     Path taskAttemptDir = new Path(dagPath, String.format(
-        SPILL_FILE_DIR_PATTERN, uniqueId, spillNumber));
+      SPILL_FILE_DIR_PATTERN, uniqueId, spillNumber));
     Path outputDir = new Path(taskAttemptDir, Constants.TEZ_RUNTIME_TASK_OUTPUT_FILENAME_STRING +
-        Constants.TEZ_RUNTIME_TASK_OUTPUT_INDEX_SUFFIX_STRING);
+      Constants.TEZ_RUNTIME_TASK_OUTPUT_INDEX_SUFFIX_STRING);
     return lDirAlloc.getLocalPathForWrite(outputDir.toString(), size, conf);
   }
-
 
   /**
    * Create a local input file name.
@@ -247,7 +242,7 @@ public class TezTaskOutputFiles extends TezTaskOutput {
    */
   @Override
   public Path getInputFileForWrite(int srcIdentifier,
-      int spillNum, long size) throws IOException {
+                                   int spillNum, long size) throws IOException {
     String dagPath = getDagOutputDir(getSpillFileName(srcIdentifier, spillNum));
     return lDirAlloc.getLocalPathForWrite(dagPath, size, conf);
   }

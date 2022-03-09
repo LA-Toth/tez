@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-import com.google.common.collect.Lists;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.event.EventHandler;
@@ -50,6 +49,8 @@ import org.apache.tez.runtime.api.InputInitializerContext;
 import org.apache.tez.runtime.api.events.InputInitializerEvent;
 import org.apache.tez.runtime.api.impl.EventMetaData;
 import org.apache.tez.runtime.api.impl.TezEvent;
+
+import com.google.common.collect.Lists;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -65,7 +66,7 @@ public class TestRootInputInitializerManager {
     InputDescriptor id = mock(InputDescriptor.class);
     InputInitializerDescriptor iid = mock(InputInitializerDescriptor.class);
     RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor> rootInput =
-        new RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>("InputName", id, iid);
+      new RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>("InputName", id, iid);
 
     InputInitializer initializer = mock(InputInitializer.class);
     InputInitializerContext initializerContext = mock(InputInitializerContext.class);
@@ -74,8 +75,8 @@ public class TestRootInputInitializerManager {
     AppContext appContext = mock(AppContext.class, RETURNS_DEEP_STUBS);
 
     RootInputInitializerManager.InitializerWrapper initializerWrapper =
-        new RootInputInitializerManager.InitializerWrapper(rootInput, initializer,
-            initializerContext, vertex, stateChangeNotifier, appContext);
+      new RootInputInitializerManager.InitializerWrapper(rootInput, initializer,
+        initializerContext, vertex, stateChangeNotifier, appContext);
 
     ApplicationId appId = ApplicationId.newInstance(1000, 1);
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
@@ -90,12 +91,11 @@ public class TestRootInputInitializerManager {
     String srcVertexName = "srcVertexName";
     List<TezEvent> eventList = Lists.newLinkedList();
 
-
     // First Attempt send event
     TezTaskAttemptID srcTaskAttemptId11 = TezTaskAttemptID.getInstance(srcTaskId1, 1);
     EventMetaData sourceInfo11 =
-        new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, srcVertexName, null,
-            srcTaskAttemptId11);
+      new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, srcVertexName, null,
+        srcTaskAttemptId11);
     InputInitializerEvent e1 = InputInitializerEvent.create("fakeVertex", "fakeInput", null);
     TezEvent te1 = new TezEvent(e1, sourceInfo11);
     eventList.add(te1);
@@ -116,8 +116,8 @@ public class TestRootInputInitializerManager {
     // 2nd attempt send event
     TezTaskAttemptID srcTaskAttemptId12 = TezTaskAttemptID.getInstance(srcTaskId1, 2);
     EventMetaData sourceInfo12 =
-        new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, srcVertexName, null,
-            srcTaskAttemptId12);
+      new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, srcVertexName, null,
+        srcTaskAttemptId12);
     InputInitializerEvent e2 = InputInitializerEvent.create("fakeVertex", "fakeInput", null);
     TezEvent te2 = new TezEvent(e2, sourceInfo12);
     eventList.add(te2);
@@ -140,7 +140,7 @@ public class TestRootInputInitializerManager {
     InputDescriptor id = mock(InputDescriptor.class);
     InputInitializerDescriptor iid = mock(InputInitializerDescriptor.class);
     RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor> rootInput =
-        new RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>("InputName", id, iid);
+      new RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>("InputName", id, iid);
 
     InputInitializer initializer = mock(InputInitializer.class);
     InputInitializerContext initializerContext = mock(InputInitializerContext.class);
@@ -149,8 +149,8 @@ public class TestRootInputInitializerManager {
     AppContext appContext = mock(AppContext.class, RETURNS_DEEP_STUBS);
 
     RootInputInitializerManager.InitializerWrapper initializerWrapper =
-        new RootInputInitializerManager.InitializerWrapper(rootInput, initializer,
-            initializerContext, vertex, stateChangeNotifier, appContext);
+      new RootInputInitializerManager.InitializerWrapper(rootInput, initializer,
+        initializerContext, vertex, stateChangeNotifier, appContext);
 
     ApplicationId appId = ApplicationId.newInstance(1000, 1);
     TezDAGID dagId = TezDAGID.getInstance(appId, 1);
@@ -165,12 +165,11 @@ public class TestRootInputInitializerManager {
     String srcVertexName = "srcVertexName";
     List<TezEvent> eventList = Lists.newLinkedList();
 
-
     // First Attempt send event
     TezTaskAttemptID srcTaskAttemptId11 = TezTaskAttemptID.getInstance(srcTaskId1, 1);
     EventMetaData sourceInfo11 =
-        new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, srcVertexName, null,
-            srcTaskAttemptId11);
+      new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, srcVertexName, null,
+        srcTaskAttemptId11);
     InputInitializerEvent e1 = InputInitializerEvent.create("fakeVertex", "fakeInput", null);
     TezEvent te1 = new TezEvent(e1, sourceInfo11);
     eventList.add(te1);
@@ -188,7 +187,6 @@ public class TestRootInputInitializerManager {
 
     reset(initializer);
 
-
     TezTaskAttemptID srcTaskAttemptId12 = TezTaskAttemptID.getInstance(srcTaskId1, 2);
     // 2nd attempt succeeded
     initializerWrapper.onTaskSucceeded(srcVertexName, srcTaskId1, srcTaskAttemptId12.getId());
@@ -196,8 +194,8 @@ public class TestRootInputInitializerManager {
 
     // 2nd attempt send event
     EventMetaData sourceInfo12 =
-        new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, srcVertexName, null,
-            srcTaskAttemptId12);
+      new EventMetaData(EventMetaData.EventProducerConsumerType.PROCESSOR, srcVertexName, null,
+        srcTaskAttemptId12);
     InputInitializerEvent e2 = InputInitializerEvent.create("fakeVertex", "fakeInput", null);
     TezEvent te2 = new TezEvent(e2, sourceInfo12);
     eventList.add(te2);
@@ -206,8 +204,7 @@ public class TestRootInputInitializerManager {
     verify(initializer, never()).handleInputInitializerEvent(any(List.class));
   }
 
-
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testCorrectUgiUsage() throws TezException, InterruptedException {
     Vertex vertex = mock(Vertex.class);
     doReturn(mock(TezVertexID.class)).when(vertex).getVertexId();
@@ -216,12 +213,13 @@ public class TestRootInputInitializerManager {
     doReturn(mock(EventHandler.class)).when(appContext).getEventHandler();
     UserGroupInformation dagUgi = UserGroupInformation.createRemoteUser("fakeuser");
     StateChangeNotifier stateChangeNotifier = mock(StateChangeNotifier.class);
-    RootInputInitializerManager rootInputInitializerManager = new RootInputInitializerManager(vertex, appContext, dagUgi, stateChangeNotifier);
+    RootInputInitializerManager rootInputInitializerManager = new RootInputInitializerManager(vertex, appContext,
+      dagUgi, stateChangeNotifier);
 
     InputDescriptor id = mock(InputDescriptor.class);
     InputInitializerDescriptor iid = InputInitializerDescriptor.create(InputInitializerForUgiTest.class.getName());
     RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor> rootInput =
-        new RootInputLeafOutput<>("InputName", id, iid);
+      new RootInputLeafOutput<>("InputName", id, iid);
     rootInputInitializerManager.runInputInitializers(Collections.singletonList(rootInput));
 
     InputInitializerForUgiTest.awaitInitialize();
@@ -232,11 +230,10 @@ public class TestRootInputInitializerManager {
 
   public static class InputInitializerForUgiTest extends InputInitializer {
 
+    static final Object initializeSync = new Object();
     static volatile UserGroupInformation ctorUgi;
     static volatile UserGroupInformation initializeUgi;
-
     static boolean initialized = false;
-    static final Object initializeSync = new Object();
 
     public InputInitializerForUgiTest(InputInitializerContext initializerContext) {
       super(initializerContext);
@@ -244,6 +241,14 @@ public class TestRootInputInitializerManager {
         ctorUgi = UserGroupInformation.getCurrentUser();
       } catch (IOException e) {
         throw new RuntimeException(e);
+      }
+    }
+
+    static void awaitInitialize() throws InterruptedException {
+      synchronized (initializeSync) {
+        while (!initialized) {
+          initializeSync.wait();
+        }
       }
     }
 
@@ -259,14 +264,6 @@ public class TestRootInputInitializerManager {
 
     @Override
     public void handleInputInitializerEvent(List<InputInitializerEvent> events) throws Exception {
-    }
-
-    static void awaitInitialize() throws InterruptedException {
-      synchronized (initializeSync) {
-        while (!initialized) {
-          initializeSync.wait();
-        }
-      }
     }
   }
 }

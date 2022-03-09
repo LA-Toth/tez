@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,10 +17,10 @@
  */
 package org.apache.tez.util;
 
+import java.text.NumberFormat;
+
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.text.NumberFormat;
 
 public class TestNumberFormat {
 
@@ -31,8 +31,9 @@ public class TestNumberFormat {
     NumberFormat numberFormat = NumberFormat.getInstance();
     numberFormat.setGroupingUsed(false);
     numberFormat.setMinimumIntegerDigits(6);
-    long[] testLongs = {1, 23, 456, 7890, 12345, 678901, 2345689, 0, -0, -1, -23, -456, -7890, -12345, -678901, -2345689};
-    for (long l: testLongs) {
+    long[] testLongs = {1, 23, 456, 7890, 12345, 678901, 2345689, 0, -0, -1, -23, -456, -7890, -12345, -678901,
+      -2345689};
+    for (long l : testLongs) {
       Assert.assertEquals("Number formats should be equal", numberFormat.format(l), fastNumberFormat.format(l));
     }
   }

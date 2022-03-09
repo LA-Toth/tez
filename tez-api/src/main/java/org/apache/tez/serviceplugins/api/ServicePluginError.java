@@ -26,10 +26,6 @@ import org.apache.hadoop.classification.InterfaceStability;
  */
 public interface ServicePluginError {
 
-  enum ErrorType {
-    TEMPORARY, PERMANENT,
-  }
-
   /**
    * Get the enum representation
    *
@@ -44,5 +40,7 @@ public interface ServicePluginError {
    */
   ErrorType getErrorType();
 
-
+  enum ErrorType {
+    TEMPORARY, PERMANENT,
+  }
 }

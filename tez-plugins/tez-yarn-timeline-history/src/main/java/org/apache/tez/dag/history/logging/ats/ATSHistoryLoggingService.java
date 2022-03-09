@@ -30,8 +30,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.tez.dag.history.events.DAGRecoveredEvent;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.timeline.TimelineEntity;
 import org.apache.hadoop.yarn.api.records.timeline.TimelinePutResponse;
@@ -59,36 +61,29 @@ import com.google.common.annotations.VisibleForTesting;
 public class ATSHistoryLoggingService extends HistoryLoggingService {
 
   private static final Logger LOG = LoggerFactory.getLogger(ATSHistoryLoggingService.class);
-
+  private static final String atsHistoryLoggingServiceClassName =
+    "org.apache.tez.dag.history.logging.ats.ATSHistoryLoggingService";
+  private static final String atsHistoryACLManagerClassName =
+    "org.apache.tez.dag.history.ats.acls.ATSHistoryACLPolicyManager";
+  private final Object lock = new Object();
   @VisibleForTesting
   LinkedBlockingQueue<DAGHistoryEvent> eventQueue = new LinkedBlockingQueue<DAGHistoryEvent>();
-
+  @VisibleForTesting
+  TimelineClient timelineClient;
+  @VisibleForTesting
+  HistoryACLPolicyManager historyACLPolicyManager;
   private Thread eventHandlingThread;
   private AtomicBoolean stopped = new AtomicBoolean(false);
   private int eventCounter = 0;
   private int eventsProcessed = 0;
-  private final Object lock = new Object();
   private boolean historyLoggingEnabled = true;
-
-  @VisibleForTesting
-  TimelineClient timelineClient;
-
   private HashSet<TezDAGID> skippedDAGs = new HashSet<TezDAGID>();
   private Map<TezDAGID, String> dagDomainIdMap = new HashMap<TezDAGID, String>();
   private long maxTimeToWaitOnShutdown;
   private boolean waitForeverOnShutdown = false;
-
   private int maxEventsPerBatch;
   private long maxPollingTimeMillis;
-
   private String sessionDomainId;
-  private static final String atsHistoryLoggingServiceClassName =
-      "org.apache.tez.dag.history.logging.ats.ATSHistoryLoggingService";
-  private static final String atsHistoryACLManagerClassName =
-      "org.apache.tez.dag.history.ats.acls.ATSHistoryACLPolicyManager";
-
-  @VisibleForTesting
-  HistoryACLPolicyManager historyACLPolicyManager;
 
   public ATSHistoryLoggingService() {
     super(ATSHistoryLoggingService.class.getName());
@@ -97,10 +92,10 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
   @Override
   public void serviceInit(Configuration conf) throws Exception {
     historyLoggingEnabled = conf.getBoolean(TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED,
-        TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED_DEFAULT);
+      TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED_DEFAULT);
     if (!historyLoggingEnabled) {
       LOG.info("ATSService: History Logging disabled. "
-          + TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED + " set to false");
+        + TezConfiguration.TEZ_AM_HISTORY_LOGGING_ENABLED + " set to false");
       return;
     }
 
@@ -113,19 +108,19 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
       if (conf.get(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS, "")
         .equals(atsHistoryLoggingServiceClassName)) {
         LOG.warn(atsHistoryLoggingServiceClassName
-            + " is disabled due to Timeline Service being disabled, "
-            + YarnConfiguration.TIMELINE_SERVICE_ENABLED + " set to false");
+          + " is disabled due to Timeline Service being disabled, "
+          + YarnConfiguration.TIMELINE_SERVICE_ENABLED + " set to false");
       }
     }
     maxTimeToWaitOnShutdown = conf.getLong(
-        TezConfiguration.YARN_ATS_EVENT_FLUSH_TIMEOUT_MILLIS,
-        TezConfiguration.YARN_ATS_EVENT_FLUSH_TIMEOUT_MILLIS_DEFAULT);
+      TezConfiguration.YARN_ATS_EVENT_FLUSH_TIMEOUT_MILLIS,
+      TezConfiguration.YARN_ATS_EVENT_FLUSH_TIMEOUT_MILLIS_DEFAULT);
     maxEventsPerBatch = conf.getInt(
-        TezConfiguration.YARN_ATS_MAX_EVENTS_PER_BATCH,
-        TezConfiguration.YARN_ATS_MAX_EVENTS_PER_BATCH_DEFAULT);
+      TezConfiguration.YARN_ATS_MAX_EVENTS_PER_BATCH,
+      TezConfiguration.YARN_ATS_MAX_EVENTS_PER_BATCH_DEFAULT);
     maxPollingTimeMillis = conf.getInt(
-        TezConfiguration.YARN_ATS_MAX_POLLING_TIME_PER_EVENT,
-        TezConfiguration.YARN_ATS_MAX_POLLING_TIME_PER_EVENT_DEFAULT);
+      TezConfiguration.YARN_ATS_MAX_POLLING_TIME_PER_EVENT,
+      TezConfiguration.YARN_ATS_MAX_POLLING_TIME_PER_EVENT_DEFAULT);
     if (maxTimeToWaitOnShutdown < 0) {
       waitForeverOnShutdown = true;
     }
@@ -138,18 +133,17 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
 
     try {
       historyACLPolicyManager = ReflectionUtils.createClazzInstance(
-          atsHistoryACLManagerClassName);
+        atsHistoryACLManagerClassName);
       historyACLPolicyManager.setConf(conf);
     } catch (TezReflectionException e) {
       LOG.warn("Could not instantiate object for " + atsHistoryACLManagerClassName
-          + ". ACLs cannot be enforced correctly for history data in Timeline", e);
+        + ". ACLs cannot be enforced correctly for history data in Timeline", e);
       if (!conf.getBoolean(TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS,
-          TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS_DEFAULT)) {
+        TezConfiguration.TEZ_AM_ALLOW_DISABLED_TIMELINE_DOMAINS_DEFAULT)) {
         throw e;
       }
       historyACLPolicyManager = null;
     }
-
   }
 
   @Override
@@ -174,14 +168,14 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
         List<DAGHistoryEvent> events = new LinkedList<DAGHistoryEvent>();
         boolean interrupted = false;
         while (!stopped.get() && !Thread.currentThread().isInterrupted()
-              && !interrupted) {
+          && !interrupted) {
 
           // Log the size of the event-queue every so often.
           if (eventCounter != 0 && eventCounter % 1000 == 0) {
             if (eventsProcessed != 0 && !events.isEmpty()) {
               LOG.info("Event queue stats"
-                  + ", eventsProcessedSinceLastUpdate=" + eventsProcessed
-                  + ", eventQueueSize=" + eventQueue.size());
+                + ", eventsProcessedSinceLastUpdate=" + eventsProcessed
+                + ", eventQueueSize=" + eventQueue.size());
             }
             eventCounter = 0;
             eventsProcessed = 0;
@@ -217,7 +211,7 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
   @Override
   public void serviceStop() {
     LOG.info("Stopping ATSService"
-        + ", eventQueueBacklog=" + eventQueue.size());
+      + ", eventQueueBacklog=" + eventQueue.size());
     stopped.set(true);
     if (eventHandlingThread != null) {
       eventHandlingThread.interrupt();
@@ -225,9 +219,9 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
     synchronized (lock) {
       if (!eventQueue.isEmpty()) {
         LOG.warn("ATSService being stopped"
-            + ", eventQueueBacklog=" + eventQueue.size()
-            + ", maxTimeLeftToFlush=" + maxTimeToWaitOnShutdown
-            + ", waitForever=" + waitForeverOnShutdown);
+          + ", eventQueueBacklog=" + eventQueue.size()
+          + ", maxTimeLeftToFlush=" + maxTimeToWaitOnShutdown
+          + ", waitForever=" + waitForeverOnShutdown);
         long startTime = appContext.getClock().getTime();
         long endTime = startTime + maxTimeToWaitOnShutdown;
         List<DAGHistoryEvent> events = new LinkedList<DAGHistoryEvent>();
@@ -236,7 +230,7 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
             getEventBatch(events);
           } catch (InterruptedException e) {
             LOG.info("ATSService interrupted while shutting down. Exiting."
-                  + " EventQueueBacklog=" + eventQueue.size());
+              + " EventQueueBacklog=" + eventQueue.size());
           }
           if (events.isEmpty()) {
             LOG.info("Event queue empty, stopping ATS Service");
@@ -253,7 +247,7 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
     }
     if (!eventQueue.isEmpty()) {
       LOG.warn("Did not finish flushing eventQueue before stopping ATSService"
-          + ", eventQueueBacklog=" + eventQueue.size());
+        + ", eventQueueBacklog=" + eventQueue.size());
     }
     if (timelineClient != null) {
       timelineClient.stop();
@@ -295,11 +289,11 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
 
     if (eventType.equals(HistoryEventType.DAG_SUBMITTED)) {
       DAGSubmittedEvent dagSubmittedEvent =
-          (DAGSubmittedEvent) event.getHistoryEvent();
+        (DAGSubmittedEvent) event.getHistoryEvent();
       String dagName = dagSubmittedEvent.getDAGName();
       if ((dagName != null
-          && dagName.startsWith(TezConstants.TEZ_PREWARM_DAG_NAME_PREFIX))
-          || (!dagSubmittedEvent.isHistoryLoggingEnabled())) {
+        && dagName.startsWith(TezConstants.TEZ_PREWARM_DAG_NAME_PREFIX))
+        || (!dagSubmittedEvent.isHistoryLoggingEnabled())) {
         // Skip recording pre-warm DAG events
         skippedDAGs.add(dagId);
         return false;
@@ -337,10 +331,10 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
         continue;
       }
       List<TimelineEntity> eventEntities = HistoryEventTimelineConversion.convertToTimelineEntities(
-          event.getHistoryEvent());
+        event.getHistoryEvent());
       entities.addAll(eventEntities);
       if (historyACLPolicyManager != null && domainId != null && !domainId.isEmpty()) {
-        for (TimelineEntity entity: eventEntities) {
+        for (TimelineEntity entity : eventEntities) {
           historyACLPolicyManager.updateTimelineEntityDomain(entity, domainId);
         }
       }
@@ -351,7 +345,7 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
     }
     try {
       TimelinePutResponse response =
-          timelineClient.putEntities(entities.toArray(new TimelineEntity[entities.size()]));
+        timelineClient.putEntities(entities.toArray(new TimelineEntity[entities.size()]));
       if (response != null
         && !response.getErrors().isEmpty()) {
         int count = response.getErrors().size();
@@ -359,8 +353,8 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
           TimelinePutError err = response.getErrors().get(i);
           if (err.getErrorCode() != 0) {
             LOG.warn("Could not post history event to ATS"
-                + ", atsPutError=" + err.getErrorCode()
-                + ", entityId=" + err.getEntityId());
+              + ", atsPutError=" + err.getErrorCode()
+              + ", entityId=" + err.getEntityId());
           }
         }
       }
@@ -391,16 +385,16 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
         dagDomainIdMap.remove(dagId);
       }
     } else if (HistoryEventType.DAG_SUBMITTED == historyEvent.getEventType()
-        || HistoryEventType.DAG_RECOVERED == historyEvent.getEventType()) {
+      || HistoryEventType.DAG_RECOVERED == historyEvent.getEventType()) {
       // In case this is the first event for the dag, create and populate dag domain.
       Configuration conf;
       DAGPlan dagPlan;
       if (HistoryEventType.DAG_SUBMITTED == historyEvent.getEventType()) {
-          conf = ((DAGSubmittedEvent)historyEvent).getConf();
-          dagPlan = ((DAGSubmittedEvent)historyEvent).getDAGPlan();
+        conf = ((DAGSubmittedEvent) historyEvent).getConf();
+        dagPlan = ((DAGSubmittedEvent) historyEvent).getDAGPlan();
       } else {
-         conf = appContext.getCurrentDAG().getConf();
-         dagPlan = appContext.getCurrentDAG().getJobPlan();
+        conf = appContext.getCurrentDAG().getConf();
+        dagPlan = appContext.getCurrentDAG().getJobPlan();
       }
       domainId = createDagDomain(conf, dagPlan, dagId);
 
@@ -416,6 +410,7 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
 
   /**
    * Creates a domain for the session.
+   *
    * @return domainId to be used. null if acls are disabled.
    * @throws HistoryACLPolicyException, IOException Forward if historyACLPolicyManger exception.
    */
@@ -424,7 +419,7 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
       return null;
     }
     Map<String, String> domainInfo = historyACLPolicyManager.setupSessionACLs(getConfig(),
-        appContext.getApplicationID());
+      appContext.getApplicationID());
     if (domainInfo != null) {
       return domainInfo.get(TezConfiguration.YARN_ATS_ACL_SESSION_DOMAIN_ID);
     }
@@ -433,12 +428,13 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
 
   /**
    * When running in session mode, create a domain for the dag and return it.
+   *
    * @param dagConf The configuration the dag for which domain has to be created.
    * @param dagPlan The dag plan which contains the ACLs.
-   * @param dagId The dagId for which domain has to be created.
+   * @param dagId   The dagId for which domain has to be created.
    * @return The created domain id on success.
-   *     sessionDomainId: If there is a failure also disable history logging for this dag.
-   *     sessionDomainId: If historyACLPolicyManager returns null.
+   * sessionDomainId: If there is a failure also disable history logging for this dag.
+   * sessionDomainId: If historyACLPolicyManager returns null.
    */
   private String createDagDomain(Configuration dagConf, DAGPlan dagPlan, TezDAGID dagId) {
     // In non session mode dag domain is same as session domain id.
@@ -446,12 +442,12 @@ public class ATSHistoryLoggingService extends HistoryLoggingService {
       return sessionDomainId;
     }
     DAGAccessControls dagAccessControls = dagPlan.hasAclInfo()
-        ? DagTypeConverters.convertDAGAccessControlsFromProto(dagPlan.getAclInfo())
-        : null;
+      ? DagTypeConverters.convertDAGAccessControlsFromProto(dagPlan.getAclInfo())
+      : null;
     try {
       Map<String, String> domainInfo = historyACLPolicyManager.setupSessionDAGACLs(
-          dagConf, appContext.getApplicationID(), Integer.toString(dagId.getId()),
-          dagAccessControls);
+        dagConf, appContext.getApplicationID(), Integer.toString(dagId.getId()),
+        dagAccessControls);
       if (domainInfo != null) {
         return domainInfo.get(TezConfiguration.YARN_ATS_ACL_DAG_DOMAIN_ID);
       }

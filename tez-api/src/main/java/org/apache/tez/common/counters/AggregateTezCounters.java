@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,16 +19,16 @@
 package org.apache.tez.common.counters;
 
 public class AggregateTezCounters extends TezCounters {
-  
+
   private static final GroupFactory groupFactory = new GroupFactory();
-  
+
   public AggregateTezCounters() {
     super(groupFactory);
   }
-  
+
   // Mix framework group implementation into CounterGroup interface
   private static class AggregateFrameworkGroupImpl<T extends Enum<T>>
-      extends FrameworkCounterGroup<T, TezCounter> implements CounterGroup {
+    extends FrameworkCounterGroup<T, TezCounter> implements CounterGroup {
 
     AggregateFrameworkGroupImpl(Class<T> cls) {
       super(cls);
@@ -37,7 +37,7 @@ public class AggregateTezCounters extends TezCounters {
     @Override
     protected FrameworkCounter<T> newCounter(T key) {
       return (new AggregateFrameworkCounter<T>(key, getName()))
-          .asFrameworkCounter();
+        .asFrameworkCounter();
     }
 
     @Override
@@ -49,7 +49,7 @@ public class AggregateTezCounters extends TezCounters {
   // Mix generic group implementation into CounterGroup interface
   // and provide some mandatory group factory methods.
   private static class AggregateGenericGroup extends AbstractCounterGroup<TezCounter>
-      implements CounterGroup {
+    implements CounterGroup {
 
     AggregateGenericGroup(String name, String displayName, Limits limits) {
       super(name, displayName, limits);
@@ -73,7 +73,7 @@ public class AggregateTezCounters extends TezCounters {
 
   // Mix file system group implementation into the CounterGroup interface
   private static class AggregateFileSystemGroup extends FileSystemCounterGroup<TezCounter>
-      implements CounterGroup {
+    implements CounterGroup {
 
     @Override
     protected TezCounter newCounter(String scheme, FileSystemCounter key) {
@@ -92,14 +92,15 @@ public class AggregateTezCounters extends TezCounters {
    *  {@link org.apache.hadoop.TezCounters.Counters mapred.Counters}
    */
   private static class GroupFactory
-      extends CounterGroupFactory<TezCounter, CounterGroup> {
+    extends CounterGroupFactory<TezCounter, CounterGroup> {
 
     @Override
     protected <T extends Enum<T>>
     FrameworkGroupFactory<CounterGroup>
-        newFrameworkGroupFactory(final Class<T> cls) {
+    newFrameworkGroupFactory(final Class<T> cls) {
       return new FrameworkGroupFactory<CounterGroup>() {
-        @Override public CounterGroup newGroup(String name) {
+        @Override
+        public CounterGroup newGroup(String name) {
           return new AggregateFrameworkGroupImpl<T>(cls); // impl in this package
         }
       };

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,66 +36,65 @@ import java.util.zip.Deflater;
 import javax.annotation.Nullable;
 import javax.crypto.SecretKey;
 
-import org.apache.tez.common.Preconditions;
-import com.google.common.primitives.Ints;
-import com.google.protobuf.ByteString;
-
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.tez.dag.api.TezConfiguration;
-import org.apache.tez.http.BaseHttpConnection;
-import org.apache.tez.http.HttpConnectionParams;
-import org.apache.tez.runtime.api.events.DataMovementEvent;
-import org.apache.tez.runtime.library.common.TezRuntimeUtils;
-import org.apache.tez.runtime.library.utils.DATA_RANGE_IN_MB;
-import org.apache.tez.util.FastNumberFormat;
-import org.roaringbitmap.RoaringBitmap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.io.DataInputByteBuffer;
+import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.security.token.Token;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezCommonUtils;
 import org.apache.tez.common.TezUtilsInternal;
 import org.apache.tez.common.counters.TaskCounter;
 import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.common.security.JobTokenSecretManager;
+import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.http.BaseHttpConnection;
+import org.apache.tez.http.HttpConnectionParams;
 import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.OutputContext;
 import org.apache.tez.runtime.api.events.CompositeDataMovementEvent;
+import org.apache.tez.runtime.api.events.DataMovementEvent;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
 import org.apache.tez.runtime.library.common.InputAttemptIdentifier;
+import org.apache.tez.runtime.library.common.TezRuntimeUtils;
 import org.apache.tez.runtime.library.common.sort.impl.IFile;
 import org.apache.tez.runtime.library.common.sort.impl.TezIndexRecord;
 import org.apache.tez.runtime.library.common.sort.impl.TezSpillRecord;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.DataMovementEventPayloadProto;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.DetailedPartitionStatsProto;
+import org.apache.tez.runtime.library.utils.DATA_RANGE_IN_MB;
+import org.apache.tez.util.FastNumberFormat;
+
+import com.google.common.primitives.Ints;
+import com.google.protobuf.ByteString;
+import org.roaringbitmap.RoaringBitmap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ShuffleUtils {
 
+  static final ThreadLocal<DecimalFormat> MBPS_FORMAT =
+    new ThreadLocal<DecimalFormat>() {
+      @Override
+      protected DecimalFormat initialValue() {
+        return new DecimalFormat("0.00");
+      }
+    };
+  static final ThreadLocal<FastNumberFormat> MBPS_FAST_FORMAT =
+    new ThreadLocal<FastNumberFormat>() {
+      @Override
+      protected FastNumberFormat initialValue() {
+        FastNumberFormat fmt = FastNumberFormat.getInstance();
+        fmt.setMinimumIntegerDigits(2);
+        return fmt;
+      }
+    };
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleUtils.class);
   private static final long MB = 1024l * 1024l;
 
-  static final ThreadLocal<DecimalFormat> MBPS_FORMAT =
-      new ThreadLocal<DecimalFormat>() {
-        @Override
-        protected DecimalFormat initialValue() {
-          return new DecimalFormat("0.00");
-        }
-      };
-  static final ThreadLocal<FastNumberFormat> MBPS_FAST_FORMAT =
-      new ThreadLocal<FastNumberFormat>() {
-        @Override
-        protected FastNumberFormat initialValue() {
-          FastNumberFormat fmt = FastNumberFormat.getInstance();
-          fmt.setMinimumIntegerDigits(2);
-          return fmt;
-        }
-      };
-
   public static SecretKey getJobTokenSecretFromTokenBytes(ByteBuffer meta)
-      throws IOException {
+    throws IOException {
     DataInputByteBuffer in = new DataInputByteBuffer();
     in.reset(meta);
     Token<JobTokenIdentifier> jt = new Token<JobTokenIdentifier>();
@@ -105,28 +104,28 @@ public class ShuffleUtils {
   }
 
   public static ByteBuffer convertJobTokenToBytes(
-      Token<JobTokenIdentifier> jobToken) throws IOException {
+    Token<JobTokenIdentifier> jobToken) throws IOException {
     return TezCommonUtils.convertJobTokenToBytes(jobToken);
   }
 
   public static int deserializeShuffleProviderMetaData(ByteBuffer meta)
-      throws IOException {
+    throws IOException {
     return TezRuntimeUtils.deserializeShuffleProviderMetaData(meta);
   }
 
   public static void shuffleToMemory(byte[] shuffleData,
-      InputStream input, int decompressedLength, int compressedLength,
-      CompressionCodec codec, boolean ifileReadAhead, int ifileReadAheadLength,
-      Logger LOG, InputAttemptIdentifier identifier) throws IOException {
+                                     InputStream input, int decompressedLength, int compressedLength,
+                                     CompressionCodec codec, boolean ifileReadAhead, int ifileReadAheadLength,
+                                     Logger LOG, InputAttemptIdentifier identifier) throws IOException {
     try {
       IFile.Reader.readToMemory(shuffleData, input, compressedLength, codec,
-          ifileReadAhead, ifileReadAheadLength);
+        ifileReadAhead, ifileReadAheadLength);
       // metrics.inputBytes(shuffleData.length);
       LOG.debug("Read {} bytes from input for {}", shuffleData.length, identifier);
     } catch (InternalError | Exception e) {
       // Close the streams
       LOG.info("Failed to read data to memory for " + identifier + ". len=" + compressedLength +
-          ", decomp=" + decompressedLength + ". ExceptionMessage=" + e.getMessage());
+        ", decomp=" + decompressedLength + ". ExceptionMessage=" + e.getMessage());
       ioCleanup(input);
       if (e instanceof InternalError) {
         // The codec for lz0,lz4,snappy,bz2,etc. throw java.lang.InternalError
@@ -141,16 +140,17 @@ public class ShuffleUtils {
       }
     }
   }
-  
+
   public static void shuffleToDisk(OutputStream output, String hostIdentifier,
-      InputStream input, long compressedLength, long decompressedLength, Logger LOG, InputAttemptIdentifier identifier,
-      boolean ifileReadAhead, int ifileReadAheadLength, boolean verifyChecksum) throws IOException {
+                                   InputStream input, long compressedLength, long decompressedLength, Logger LOG,
+                                   InputAttemptIdentifier identifier,
+                                   boolean ifileReadAhead, int ifileReadAheadLength, boolean verifyChecksum) throws IOException {
     // Copy data to local-disk
     long bytesLeft = compressedLength;
     try {
       if (verifyChecksum) {
         bytesLeft -= IFile.Reader.readToDisk(output, input, compressedLength,
-            ifileReadAhead, ifileReadAheadLength);
+          ifileReadAhead, ifileReadAheadLength);
       } else {
         final int BYTES_TO_READ = 64 * 1024;
         byte[] buf = new byte[BYTES_TO_READ];
@@ -158,7 +158,7 @@ public class ShuffleUtils {
           int n = input.read(buf, 0, (int) Math.min(bytesLeft, BYTES_TO_READ));
           if (n < 0) {
             throw new IOException("read past end of stream reading "
-                + identifier);
+              + identifier);
           }
           output.write(buf, 0, n);
           bytesLeft -= n;
@@ -168,14 +168,14 @@ public class ShuffleUtils {
 
       if (LOG.isDebugEnabled()) {
         LOG.debug("Read " + (compressedLength - bytesLeft)
-            + " bytes from input for " + identifier);
+          + " bytes from input for " + identifier);
       }
 
       output.close();
     } catch (IOException ioe) {
       // Close the streams
       LOG.info("Failed to read data to disk for " + identifier + ". len=" + compressedLength +
-          ", decomp=" + decompressedLength + ". ExceptionMessage=" + ioe.getMessage());
+        ", decomp=" + decompressedLength + ". ExceptionMessage=" + ioe.getMessage());
       ioCleanup(input, output);
       // Re-throw
       throw ioe;
@@ -184,10 +184,10 @@ public class ShuffleUtils {
     // Sanity check
     if (bytesLeft != 0) {
       throw new IOException("Incomplete map output received for " +
-          identifier + " from " +
-          hostIdentifier + " (" + 
-          bytesLeft + " bytes missing of " + 
-          compressedLength + ")");
+        identifier + " from " +
+        hostIdentifier + " (" +
+        bytesLeft + " bytes missing of " +
+        compressedLength + ")");
     }
   }
 
@@ -204,7 +204,8 @@ public class ShuffleUtils {
   }
 
   public static StringBuilder constructBaseURIForShuffleHandler(String host,
-      int port, int partition, int partitionCount, String appId, int dagIdentifier, boolean sslShuffle) {
+                                                                int port, int partition, int partitionCount,
+                                                                String appId, int dagIdentifier, boolean sslShuffle) {
     final String http_protocol = (sslShuffle) ? "https://" : "http://";
     StringBuilder sb = new StringBuilder(http_protocol);
     sb.append(host);
@@ -226,7 +227,7 @@ public class ShuffleUtils {
   }
 
   public static URL constructInputURL(String baseURI,
-      Collection<InputAttemptIdentifier> inputs, boolean keepAlive) throws MalformedURLException {
+                                      Collection<InputAttemptIdentifier> inputs, boolean keepAlive) throws MalformedURLException {
     StringBuilder url = new StringBuilder(baseURI);
     boolean first = true;
     for (InputAttemptIdentifier input : inputs) {
@@ -246,8 +247,9 @@ public class ShuffleUtils {
   }
 
   public static BaseHttpConnection getHttpConnection(boolean asyncHttp, URL url,
-      HttpConnectionParams params, String logIdentifier, JobTokenSecretManager jobTokenSecretManager)
-      throws IOException {
+                                                     HttpConnectionParams params, String logIdentifier,
+                                                     JobTokenSecretManager jobTokenSecretManager)
+    throws IOException {
     return TezRuntimeUtils.getHttpConnection(asyncHttp, url, params, logIdentifier, jobTokenSecretManager);
   }
 
@@ -283,16 +285,17 @@ public class ShuffleUtils {
    * @throws IOException
    */
   static ByteBuffer generateDMEPayload(boolean sendEmptyPartitionDetails,
-      int numPhysicalOutputs, TezSpillRecord spillRecord, OutputContext context,
-      int spillId, boolean finalMergeEnabled, boolean isLastEvent, String pathComponent, String auxiliaryService, Deflater deflater)
-      throws IOException {
+                                       int numPhysicalOutputs, TezSpillRecord spillRecord, OutputContext context,
+                                       int spillId, boolean finalMergeEnabled, boolean isLastEvent,
+                                       String pathComponent, String auxiliaryService, Deflater deflater)
+    throws IOException {
     DataMovementEventPayloadProto.Builder payloadBuilder = DataMovementEventPayloadProto
-        .newBuilder();
+      .newBuilder();
 
     boolean outputGenerated = true;
     if (sendEmptyPartitionDetails) {
       BitSet emptyPartitionDetails = new BitSet();
-      for(int i=0;i<spillRecord.size();i++) {
+      for (int i = 0; i < spillRecord.size(); i++) {
         TezIndexRecord indexRecord = spillRecord.getIndex(i);
         if (!indexRecord.hasData()) {
           emptyPartitionDetails.set(i);
@@ -302,19 +305,19 @@ public class ShuffleUtils {
       outputGenerated = (spillRecord.size() != emptyPartitions);
       if (emptyPartitions > 0) {
         ByteString emptyPartitionsBytesString =
-            TezCommonUtils.compressByteArrayToByteString(
-                TezUtilsInternal.toByteArray(emptyPartitionDetails), deflater);
+          TezCommonUtils.compressByteArrayToByteString(
+            TezUtilsInternal.toByteArray(emptyPartitionDetails), deflater);
         payloadBuilder.setEmptyPartitions(emptyPartitionsBytesString);
         LOG.info("EmptyPartition bitsetSize=" + emptyPartitionDetails.cardinality() + ", numOutputs="
-            + numPhysicalOutputs + ", emptyPartitions=" + emptyPartitions
-            + ", compressedSize=" + emptyPartitionsBytesString.size());
+          + numPhysicalOutputs + ", emptyPartitions=" + emptyPartitions
+          + ", compressedSize=" + emptyPartitionsBytesString.size());
       }
     }
 
     if (!sendEmptyPartitionDetails || outputGenerated) {
       String host = context.getExecutionContext().getHostName();
       ByteBuffer shuffleMetadata = context
-          .getServiceProviderMetaData(auxiliaryService);
+        .getServiceProviderMetaData(auxiliaryService);
       int shufflePort = ShuffleUtils.deserializeShuffleProviderMetaData(shuffleMetadata);
       payloadBuilder.setHost(host);
       payloadBuilder.setPort(shufflePort);
@@ -348,19 +351,18 @@ public class ShuffleUtils {
                                                        OutputContext context,
                                                        boolean generateVmEvent,
                                                        boolean isCompositeEvent, Deflater deflater) throws
-      IOException {
+    IOException {
     DataMovementEventPayloadProto.Builder payloadBuilder = DataMovementEventPayloadProto
-        .newBuilder();
-
+      .newBuilder();
 
     // Construct the VertexManager event if required.
     if (generateVmEvent) {
       ShuffleUserPayloads.VertexManagerEventPayloadProto.Builder vmBuilder =
-          ShuffleUserPayloads.VertexManagerEventPayloadProto.newBuilder();
+        ShuffleUserPayloads.VertexManagerEventPayloadProto.newBuilder();
       vmBuilder.setOutputSize(0);
       VertexManagerEvent vmEvent = VertexManagerEvent.create(
-          context.getDestinationVertexName(),
-          vmBuilder.build().toByteString().asReadOnlyByteBuffer());
+        context.getDestinationVertexName(),
+        vmBuilder.build().toByteString().asReadOnlyByteBuffer());
       eventList.add(vmEvent);
     }
 
@@ -370,17 +372,16 @@ public class ShuffleUtils {
     BitSet emptyPartitionDetails = new BitSet(numPhysicalOutputs);
     emptyPartitionDetails.set(0, numPhysicalOutputs, true);
     ByteString emptyPartitionsBytesString =
-        TezCommonUtils.compressByteArrayToByteString(
-            TezUtilsInternal.toByteArray(emptyPartitionDetails), deflater);
+      TezCommonUtils.compressByteArrayToByteString(
+        TezUtilsInternal.toByteArray(emptyPartitionDetails), deflater);
     payloadBuilder.setEmptyPartitions(emptyPartitionsBytesString);
     payloadBuilder.setRunDuration(0);
     DataMovementEventPayloadProto payloadProto = payloadBuilder.build();
     ByteBuffer dmePayload = payloadProto.toByteString().asReadOnlyByteBuffer();
 
-
     if (isCompositeEvent) {
       CompositeDataMovementEvent cdme =
-          CompositeDataMovementEvent.create(0, numPhysicalOutputs, dmePayload);
+        CompositeDataMovementEvent.create(0, numPhysicalOutputs, dmePayload);
       eventList.add(cdme);
     } else {
       DataMovementEvent dme = DataMovementEvent.create(0, dmePayload);
@@ -404,74 +405,78 @@ public class ShuffleUtils {
    * @throws IOException
    */
   public static void generateEventOnSpill(List<Event> eventList, boolean finalMergeEnabled,
-      boolean isLastEvent, OutputContext context, int spillId, TezSpillRecord spillRecord,
-      int numPhysicalOutputs, boolean sendEmptyPartitionDetails, String pathComponent,
-      @Nullable long[] partitionStats, boolean reportDetailedPartitionStats, String auxiliaryService, Deflater deflater)
-      throws IOException {
+                                          boolean isLastEvent, OutputContext context, int spillId,
+                                          TezSpillRecord spillRecord,
+                                          int numPhysicalOutputs, boolean sendEmptyPartitionDetails,
+                                          String pathComponent,
+                                          @Nullable long[] partitionStats, boolean reportDetailedPartitionStats,
+                                          String auxiliaryService, Deflater deflater)
+    throws IOException {
     Objects.requireNonNull(eventList, "EventList can't be null");
 
     context.notifyProgress();
     if (finalMergeEnabled) {
       Preconditions.checkArgument(isLastEvent, "Can not send multiple events when final merge is "
-          + "enabled");
+        + "enabled");
     }
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("pathComponent=" + pathComponent + ", isLastEvent="
-          + isLastEvent + ", spillId=" + spillId + ", finalMergeDisabled=" + finalMergeEnabled +
-          ", numPhysicalOutputs=" + numPhysicalOutputs);
+        + isLastEvent + ", spillId=" + spillId + ", finalMergeDisabled=" + finalMergeEnabled +
+        ", numPhysicalOutputs=" + numPhysicalOutputs);
     }
 
     ByteBuffer payload = generateDMEPayload(sendEmptyPartitionDetails, numPhysicalOutputs,
-        spillRecord, context, spillId,
-        finalMergeEnabled, isLastEvent, pathComponent, auxiliaryService, deflater);
+      spillRecord, context, spillId,
+      finalMergeEnabled, isLastEvent, pathComponent, auxiliaryService, deflater);
 
     if (finalMergeEnabled || isLastEvent) {
       VertexManagerEvent vmEvent = generateVMEvent(context, partitionStats,
-          reportDetailedPartitionStats, deflater);
+        reportDetailedPartitionStats, deflater);
       eventList.add(vmEvent);
     }
 
     CompositeDataMovementEvent csdme =
-        CompositeDataMovementEvent.create(0, numPhysicalOutputs, payload);
+      CompositeDataMovementEvent.create(0, numPhysicalOutputs, payload);
     eventList.add(csdme);
   }
 
   public static VertexManagerEvent generateVMEvent(OutputContext context,
-      long[] sizePerPartition, boolean reportDetailedPartitionStats, Deflater deflater)
-          throws IOException {
+                                                   long[] sizePerPartition, boolean reportDetailedPartitionStats,
+                                                   Deflater deflater)
+    throws IOException {
     ShuffleUserPayloads.VertexManagerEventPayloadProto.Builder vmBuilder =
-        ShuffleUserPayloads.VertexManagerEventPayloadProto.newBuilder();
+      ShuffleUserPayloads.VertexManagerEventPayloadProto.newBuilder();
 
     long outputSize = context.getCounters().
-        findCounter(TaskCounter.OUTPUT_BYTES).getValue();
+      findCounter(TaskCounter.OUTPUT_BYTES).getValue();
 
     // Set this information only when required.  In pipelined shuffle,
     // multiple events would end up adding up to final output size.
     // This is needed for auto-reduce parallelism to work properly.
     vmBuilder.setOutputSize(outputSize);
     vmBuilder.setNumRecord(context.getCounters().findCounter(TaskCounter.OUTPUT_RECORDS).getValue()
-     + context.getCounters().findCounter(TaskCounter.OUTPUT_LARGE_RECORDS).getValue());
+      + context.getCounters().findCounter(TaskCounter.OUTPUT_LARGE_RECORDS).getValue());
 
     //set partition stats
     if (sizePerPartition != null && sizePerPartition.length > 0) {
       if (reportDetailedPartitionStats) {
         vmBuilder.setDetailedPartitionStats(
-            getDetailedPartitionStatsForPhysicalOutput(sizePerPartition));
+          getDetailedPartitionStatsForPhysicalOutput(sizePerPartition));
       } else {
         RoaringBitmap stats = getPartitionStatsForPhysicalOutput(
-            sizePerPartition);
+          sizePerPartition);
         DataOutputBuffer dout = new DataOutputBuffer();
         stats.serialize(dout);
         ByteString partitionStatsBytes =
-            TezCommonUtils.compressByteArrayToByteString(dout.getData(), deflater);
+          TezCommonUtils.compressByteArrayToByteString(dout.getData(), deflater);
         vmBuilder.setPartitionStats(partitionStatsBytes);
       }
     }
 
     VertexManagerEvent vmEvent = VertexManagerEvent.create(
-        context.getDestinationVertexName(),
-        vmBuilder.build().toByteString().asReadOnlyByteBuffer());
+      context.getDestinationVertexName(),
+      vmBuilder.build().toByteString().asReadOnlyByteBuffer());
     return vmEvent;
   }
 
@@ -506,8 +511,8 @@ public class ShuffleUtils {
   public static DetailedPartitionStatsProto
   getDetailedPartitionStatsForPhysicalOutput(long[] sizes) {
     DetailedPartitionStatsProto.Builder builder =
-        DetailedPartitionStatsProto.newBuilder();
-    for (int i=0; i<sizes.length; i++) {
+      DetailedPartitionStatsProto.newBuilder();
+    for (int i = 0; i < sizes.length; i++) {
       // Round the size up. So 1 byte -> the value of sizeInMB == 1
       // Throws IllegalArgumentException if value is greater than
       // Integer.MAX_VALUE. That should be ok given Integer.MAX_VALUE * MB
@@ -516,6 +521,22 @@ public class ShuffleUtils {
       builder.addSizeInMb(sizeInMb);
     }
     return builder.build();
+  }
+
+  /**
+   * Build {@link org.apache.tez.http.HttpConnectionParams} from configuration
+   *
+   * @param conf
+   * @return HttpConnectionParams
+   */
+  public static HttpConnectionParams getHttpConnectionParams(Configuration conf) {
+    return TezRuntimeUtils.getHttpConnectionParams(conf);
+  }
+
+  public static boolean isTezShuffleHandler(Configuration config) {
+    return config.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
+        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT).
+      contains("tez");
   }
 
   public static class FetchStatsLogger {
@@ -531,20 +552,20 @@ public class ShuffleUtils {
       this.aggregateLogger = aggregateLogger;
     }
 
-
     private static StringBuilder toShortString(InputAttemptIdentifier inputAttemptIdentifier, StringBuilder sb) {
       sb.append("{");
       sb.append(inputAttemptIdentifier.getInputIdentifier());
       sb.append(", ").append(inputAttemptIdentifier.getAttemptNumber());
       sb.append(", ").append(inputAttemptIdentifier.getPathComponent());
       if (inputAttemptIdentifier.getFetchTypeInfo()
-          != InputAttemptIdentifier.SPILL_INFO.FINAL_MERGE_ENABLED) {
+        != InputAttemptIdentifier.SPILL_INFO.FINAL_MERGE_ENABLED) {
         sb.append(", ").append(inputAttemptIdentifier.getFetchTypeInfo().ordinal());
         sb.append(", ").append(inputAttemptIdentifier.getSpillEventId());
       }
       sb.append("}");
       return sb;
     }
+
     /**
      * Log individual fetch complete event.
      * This log information would be used by tez-tool/perf-analzyer/shuffle tools for mining
@@ -559,7 +580,8 @@ public class ShuffleUtils {
      * @param srcAttemptIdentifier
      */
     public void logIndividualFetchComplete(long millis, long bytesCompressed,
-        long bytesDecompressed, String outputType, InputAttemptIdentifier srcAttemptIdentifier) {
+                                           long bytesDecompressed, String outputType,
+                                           InputAttemptIdentifier srcAttemptIdentifier) {
 
       if (activeLogger.isInfoEnabled()) {
         long wholeMBs = 0;
@@ -605,30 +627,13 @@ public class ShuffleUtils {
         }
         if (currentCount % 1000 == 0) {
           double avgRate = currentTotalTime == 0 ? 0
-              : currentCompressedSize / (double)currentTotalTime / 1000 / 1024 / 1024;
+            : currentCompressedSize / (double) currentTotalTime / 1000 / 1024 / 1024;
           aggregateLogger.info("Completed {} fetches, stats for last 1000 fetches: "
               + "avg csize: {}, avg dsize: {}, avgTime: {}, avgRate: {}", currentCount,
-              currentCompressedSize / 1000, currentDecompressedSize / 1000, currentTotalTime / 1000,
-              MBPS_FORMAT.get().format(avgRate));
+            currentCompressedSize / 1000, currentDecompressedSize / 1000, currentTotalTime / 1000,
+            MBPS_FORMAT.get().format(avgRate));
         }
       }
     }
   }
-
-  /**
-   * Build {@link org.apache.tez.http.HttpConnectionParams} from configuration
-   *
-   * @param conf
-   * @return HttpConnectionParams
-   */
-  public static HttpConnectionParams getHttpConnectionParams(Configuration conf) {
-    return TezRuntimeUtils.getHttpConnectionParams(conf);
-  }
-
-  public static boolean isTezShuffleHandler(Configuration config) {
-    return config.get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT).
-        contains("tez");
-  }
 }
-

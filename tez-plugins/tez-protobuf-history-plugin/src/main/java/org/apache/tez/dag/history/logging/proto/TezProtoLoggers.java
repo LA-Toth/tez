@@ -42,11 +42,11 @@ public class TezProtoLoggers {
       return false;
     }
     appEventsLogger = new DatePartitionedLogger<>(HistoryEventProto.PARSER,
-        new Path(logDir, "app_data"), conf, clock);
+      new Path(logDir, "app_data"), conf, clock);
     dagEventsLogger = new DatePartitionedLogger<>(HistoryEventProto.PARSER,
-        new Path(logDir, "dag_data"), conf, clock);
+      new Path(logDir, "dag_data"), conf, clock);
     manifestEventsLogger = new DatePartitionedLogger<>(ManifestEntryProto.PARSER,
-        new Path(logDir, "dag_meta"), conf, clock);
+      new Path(logDir, "dag_meta"), conf, clock);
     return true;
   }
 

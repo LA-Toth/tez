@@ -41,7 +41,6 @@ import org.apache.tez.history.parser.datamodel.TaskAttemptInfo;
 import java.util.Collection;
 import java.util.List;
 
-
 /**
  * This will provide the set of nodes participated in the DAG in descending order of task execution
  * time.
@@ -52,15 +51,23 @@ public class SlowNodeAnalyzer extends TezAnalyzerBase implements Analyzer {
 
   private static final Log LOG = LogFactory.getLog(SlowNodeAnalyzer.class);
 
-  private static final String[] headers = { "nodeName", "noOfTasksExecuted", "noOfKilledTasks",
-      "noOfFailedTasks", "avgSucceededTaskExecutionTime", "avgKilledTaskExecutionTime",
-      "avgFailedTaskExecutionTime", "avgHDFSBytesRead", "avgHDFSBytesWritten",
-      "avgFileBytesRead", "avgFileBytesWritten", "avgGCTimeMillis", "avgCPUTimeMillis" };
+  private static final String[] headers = {"nodeName", "noOfTasksExecuted", "noOfKilledTasks",
+    "noOfFailedTasks", "avgSucceededTaskExecutionTime", "avgKilledTaskExecutionTime",
+    "avgFailedTaskExecutionTime", "avgHDFSBytesRead", "avgHDFSBytesWritten",
+    "avgFileBytesRead", "avgFileBytesWritten", "avgGCTimeMillis", "avgCPUTimeMillis"};
 
   private final CSVResult csvResult = new CSVResult(headers);
 
   public SlowNodeAnalyzer(Configuration config) {
     super(config);
+  }
+
+  public static void main(String[] args) throws Exception {
+    Configuration config = new Configuration();
+    SlowNodeAnalyzer analyzer = new SlowNodeAnalyzer(config);
+    int res = ToolRunner.run(config, analyzer, args);
+    analyzer.printResults();
+    System.exit(res);
   }
 
   @Override
@@ -77,42 +84,43 @@ public class SlowNodeAnalyzer extends TezAnalyzerBase implements Analyzer {
       record.add(getNumberOfTasks(taskAttemptInfos, TaskAttemptState.FAILED) + "");
 
       Iterable<TaskAttemptInfo> succeedTasks = getFilteredTaskAttempts(taskAttemptInfos,
-          TaskAttemptState.SUCCEEDED);
+        TaskAttemptState.SUCCEEDED);
       record.add(getAvgTaskExecutionTime(succeedTasks) + "");
 
       Iterable<TaskAttemptInfo> killedTasks = getFilteredTaskAttempts(taskAttemptInfos,
-          TaskAttemptState.KILLED);
+        TaskAttemptState.KILLED);
       record.add(getAvgTaskExecutionTime(killedTasks) + "");
 
       Iterable<TaskAttemptInfo> failedTasks = getFilteredTaskAttempts(taskAttemptInfos,
-          TaskAttemptState.FAILED);
+        TaskAttemptState.FAILED);
       record.add(getAvgTaskExecutionTime(failedTasks) + "");
 
       record.add(getAvgCounter(taskAttemptInfos, FileSystemCounter.class
-          .getName(), FileSystemCounter.HDFS_BYTES_READ.name()) + "");
+        .getName(), FileSystemCounter.HDFS_BYTES_READ.name()) + "");
       record.add(getAvgCounter(taskAttemptInfos, FileSystemCounter.class
-          .getName(), FileSystemCounter.HDFS_BYTES_WRITTEN.name()) + "");
+        .getName(), FileSystemCounter.HDFS_BYTES_WRITTEN.name()) + "");
       record.add(getAvgCounter(taskAttemptInfos, FileSystemCounter.class
-          .getName(), FileSystemCounter.FILE_BYTES_READ.name()) + "");
+        .getName(), FileSystemCounter.FILE_BYTES_READ.name()) + "");
       record.add(getAvgCounter(taskAttemptInfos, FileSystemCounter.class
-          .getName(), FileSystemCounter.FILE_BYTES_WRITTEN.name()) + "");
+        .getName(), FileSystemCounter.FILE_BYTES_WRITTEN.name()) + "");
       record.add(getAvgCounter(taskAttemptInfos, TaskCounter.class
-          .getName(), TaskCounter.GC_TIME_MILLIS.name()) + "");
+        .getName(), TaskCounter.GC_TIME_MILLIS.name()) + "");
       record.add(getAvgCounter(taskAttemptInfos, TaskCounter.class
-              .getName(), TaskCounter.CPU_MILLISECONDS.name()) + "");
+        .getName(), TaskCounter.CPU_MILLISECONDS.name()) + "");
 
-          csvResult.addRecord(record.toArray(new String[record.size()]));
+      csvResult.addRecord(record.toArray(new String[record.size()]));
     }
   }
 
   private Iterable<TaskAttemptInfo> getFilteredTaskAttempts(Collection<TaskAttemptInfo>
-      taskAttemptInfos, final TaskAttemptState status) {
+                                                              taskAttemptInfos, final TaskAttemptState status) {
     return Iterables.filter(taskAttemptInfos, new
-        Predicate<TaskAttemptInfo>() {
-          @Override public boolean apply(TaskAttemptInfo input) {
-            return input.getStatus().equalsIgnoreCase(status.toString());
-          }
-        });
+      Predicate<TaskAttemptInfo>() {
+        @Override
+        public boolean apply(TaskAttemptInfo input) {
+          return input.getStatus().equalsIgnoreCase(status.toString());
+        }
+      });
   }
 
   private float getAvgTaskExecutionTime(Iterable<TaskAttemptInfo> taskAttemptInfos) {
@@ -126,7 +134,7 @@ public class SlowNodeAnalyzer extends TezAnalyzerBase implements Analyzer {
   }
 
   private int getNumberOfTasks(Collection<TaskAttemptInfo> taskAttemptInfos, TaskAttemptState
-      status) {
+    status) {
     int tasks = 0;
     for (TaskAttemptInfo attemptInfo : taskAttemptInfos) {
       if (attemptInfo.getStatus().equalsIgnoreCase(status.toString())) {
@@ -137,7 +145,7 @@ public class SlowNodeAnalyzer extends TezAnalyzerBase implements Analyzer {
   }
 
   private float getAvgCounter(Collection<TaskAttemptInfo> taskAttemptInfos, String
-      counterGroupName, String counterName) {
+    counterGroupName, String counterName) {
     long total = 0;
     int taskCount = 0;
     for (TaskAttemptInfo attemptInfo : taskAttemptInfos) {
@@ -148,7 +156,7 @@ public class SlowNodeAnalyzer extends TezAnalyzerBase implements Analyzer {
         taskCount++;
       } else {
         LOG.info("Could not find counterGroupName=" + counterGroupName + ", counter=" +
-            counterName + " in " + attemptInfo);
+          counterName + " in " + attemptInfo);
       }
     }
     return (taskCount > 0) ? (total * 1.0f / taskCount) : 0;
@@ -169,22 +177,14 @@ public class SlowNodeAnalyzer extends TezAnalyzerBase implements Analyzer {
     StringBuilder sb = new StringBuilder();
     sb.append("Analyze node details for the DAG.").append("\n");
     sb.append("This could be used to find out the set of nodes where the tasks are taking more "
-        + "time on average.").append("\n");
+      + "time on average.").append("\n");
     sb.append("This could be used to find out the set of nodes where the tasks are taking more "
         + "time on average and to understand whether too many tasks got scheduled on a node.")
-        .append("\n");
+      .append("\n");
     sb.append("One needs to combine the task execution time with other metrics like bytes "
-        + "read/written etc to get better idea of bad nodes. In order to understand the slow "
-        + "nodes due to network, it might be worthwhile to consider the shuffle performance "
-        + "analyzer tool in tez-tools").append("\n");
+      + "read/written etc to get better idea of bad nodes. In order to understand the slow "
+      + "nodes due to network, it might be worthwhile to consider the shuffle performance "
+      + "analyzer tool in tez-tools").append("\n");
     return sb.toString();
-  }
-
-  public static void main(String[] args) throws Exception {
-    Configuration config = new Configuration();
-    SlowNodeAnalyzer analyzer = new SlowNodeAnalyzer(config);
-    int res = ToolRunner.run(config, analyzer, args);
-    analyzer.printResults();
-    System.exit(res);
   }
 }

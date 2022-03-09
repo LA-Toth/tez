@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,21 +27,14 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.google.common.annotations.VisibleForTesting;
-
-import org.apache.hadoop.io.BoundedByteArrayOutputStream;
-import org.apache.tez.runtime.library.common.task.local.output.TezTaskOutput;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.BoundedByteArrayOutputStream;
 import org.apache.hadoop.io.DataInputBuffer;
 import org.apache.hadoop.io.DataOutputBuffer;
-import org.apache.tez.runtime.library.utils.BufferUtils;
-import org.apache.tez.runtime.library.utils.CodecUtils;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.io.compress.CodecPool;
@@ -52,6 +45,13 @@ import org.apache.hadoop.io.compress.Decompressor;
 import org.apache.hadoop.io.serializer.Serialization;
 import org.apache.hadoop.io.serializer.Serializer;
 import org.apache.tez.common.counters.TezCounter;
+import org.apache.tez.runtime.library.common.task.local.output.TezTaskOutput;
+import org.apache.tez.runtime.library.utils.BufferUtils;
+import org.apache.tez.runtime.library.utils.CodecUtils;
+
+import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * <code>IFile</code> is the simple <key-len, value-len, key, value> format
@@ -63,14 +63,13 @@ import org.apache.tez.common.counters.TezCounter;
 @InterfaceAudience.Private
 @InterfaceStability.Unstable
 public class IFile {
-  private static final Logger LOG = LoggerFactory.getLogger(IFile.class);
   public static final int EOF_MARKER = -1; // End of File Marker
   public static final int RLE_MARKER = -2; // Repeat same key marker
   public static final int V_END_MARKER = -3; // End of values marker
   public static final DataInputBuffer REPEAT_KEY = new DataInputBuffer();
-  static final byte[] HEADER = new byte[] { (byte) 'T', (byte) 'I',
-    (byte) 'F' , (byte) 0};
-
+  static final byte[] HEADER = new byte[]{(byte) 'T', (byte) 'I',
+    (byte) 'F', (byte) 0};
+  private static final Logger LOG = LoggerFactory.getLogger(IFile.class);
   private static final String INCOMPLETE_READ = "Requested to read %d got %d";
   private static final String REQ_BUFFER_SIZE_TOO_LARGE = "Size of data %d is greater than the max allowed of %d";
 
@@ -91,18 +90,15 @@ public class IFile {
    */
   public static class FileBackedInMemIFileWriter extends Writer {
 
+    private static final int checksumSize = IFileOutputStream.getCheckSumSize();
     private FileSystem fs;
     private boolean bufferFull;
-
     // For lazy creation of file
     private TezTaskOutput taskOutput;
     private int totalSize;
-
     private Path outputPath;
     private CompressionCodec fileCodec;
     private BoundedByteArrayOutputStream cacheStream;
-
-    private static final int checksumSize = IFileOutputStream.getCheckSumSize();
 
     /**
      * Note that we do not allow compression in in-mem stream.
@@ -121,11 +117,12 @@ public class IFile {
      * @throws IOException
      */
     public FileBackedInMemIFileWriter(Serialization<?> keySerialization,
-        Serialization<?> valSerialization, FileSystem fs, TezTaskOutput taskOutput,
-        Class<?> keyClass, Class<?> valueClass, CompressionCodec codec, TezCounter writesCounter,
-        TezCounter serializedBytesCounter, int cacheSize) throws IOException {
+                                      Serialization<?> valSerialization, FileSystem fs, TezTaskOutput taskOutput,
+                                      Class<?> keyClass, Class<?> valueClass, CompressionCodec codec,
+                                      TezCounter writesCounter,
+                                      TezCounter serializedBytesCounter, int cacheSize) throws IOException {
       super(keySerialization, valSerialization, new FSDataOutputStream(createBoundedBuffer(cacheSize), null),
-          keyClass, valueClass, null, writesCounter, serializedBytesCounter);
+        keyClass, valueClass, null, writesCounter, serializedBytesCounter);
       this.fs = fs;
       this.cacheStream = (BoundedByteArrayOutputStream) this.rawOut.getWrappedStream();
       this.taskOutput = taskOutput;
@@ -141,11 +138,7 @@ public class IFile {
      */
     static int getBaseCacheSize() {
       return (HEADER.length + checksumSize
-          + (2 * WritableUtils.getVIntSize(EOF_MARKER)));
-    }
-
-    boolean shouldWriteToDisk() {
-      return totalSize >= cacheStream.getLimit();
+        + (2 * WritableUtils.getVIntSize(EOF_MARKER)));
     }
 
     /**
@@ -157,6 +150,10 @@ public class IFile {
     public static BoundedByteArrayOutputStream createBoundedBuffer(int size) {
       int resize = Math.max(getBaseCacheSize(), size);
       return new BoundedByteArrayOutputStream(resize);
+    }
+
+    boolean shouldWriteToDisk() {
+      return totalSize >= cacheStream.getLimit();
     }
 
     /**
@@ -178,7 +175,7 @@ public class IFile {
 
       // Get the buffer which contains data in memory
       BoundedByteArrayOutputStream bout =
-          (BoundedByteArrayOutputStream) this.rawOut.getWrappedStream();
+        (BoundedByteArrayOutputStream) this.rawOut.getWrappedStream();
 
       // Create new file based writer
       if (outputPath == null) {
@@ -204,15 +201,14 @@ public class IFile {
       bout.reset();
     }
 
-
     @Override
     protected void writeKVPair(byte[] keyData, int keyPos, int keyLength,
-        byte[] valueData, int valPos, int valueLength) throws IOException {
+                               byte[] valueData, int valPos, int valueLength) throws IOException {
       if (!bufferFull) {
         // Compute actual payload size: write RLE marker, length info and then entire data.
         totalSize += ((prevKey == REPEAT_KEY) ? V_END_MARKER_SIZE : 0)
-            + WritableUtils.getVIntSize(keyLength) + keyLength
-            + WritableUtils.getVIntSize(valueLength) + valueLength;
+          + WritableUtils.getVIntSize(keyLength) + keyLength
+          + WritableUtils.getVIntSize(valueLength) + valueLength;
 
         if (shouldWriteToDisk()) {
           resetToFileBasedWriter();
@@ -225,7 +221,7 @@ public class IFile {
     protected void writeValue(byte[] data, int offset, int length) throws IOException {
       if (!bufferFull) {
         totalSize += ((prevKey != REPEAT_KEY) ? RLE_MARKER_SIZE : 0)
-            + WritableUtils.getVIntSize(length) + length;
+          + WritableUtils.getVIntSize(length) + length;
 
         if (shouldWriteToDisk()) {
           resetToFileBasedWriter();
@@ -255,13 +251,13 @@ public class IFile {
       return null;
     }
 
+    public Path getOutputPath() {
+      return this.outputPath;
+    }
+
     @VisibleForTesting
     void setOutputPath(Path outputPath) {
       this.outputPath = outputPath;
-    }
-
-    public Path getOutputPath() {
-      return this.outputPath;
     }
   }
 
@@ -272,45 +268,36 @@ public class IFile {
   @InterfaceStability.Unstable
   @SuppressWarnings({"unchecked", "rawtypes"})
   public static class Writer {
+    // de-dup keys or not
+    protected final boolean rle;
+    final AtomicBoolean closed = new AtomicBoolean(false);
+    final DataOutputBuffer buffer = new DataOutputBuffer();
+    final DataOutputBuffer previous = new DataOutputBuffer();
+    final int RLE_MARKER_SIZE = WritableUtils.getVIntSize(RLE_MARKER);
+    final int V_END_MARKER_SIZE = WritableUtils.getVIntSize(V_END_MARKER);
+    private final TezCounter writtenRecordsCounter;
+    private final TezCounter serializedUncompressedBytes;
     protected DataOutputStream out;
     boolean ownOutputStream = false;
     long start = 0;
     FSDataOutputStream rawOut;
-    final AtomicBoolean closed = new AtomicBoolean(false);
-
     CompressionOutputStream compressedOut;
     Compressor compressor;
     boolean compressOutput = false;
-
     long decompressedBytesWritten = 0;
     long compressedBytesWritten = 0;
-
-    // Count records written to disk
-    private long numRecordsWritten = 0;
-    private long rleWritten = 0; //number of RLE markers written
-    private long totalKeySaving = 0; //number of keys saved due to multi KV writes + RLE
-    private final TezCounter writtenRecordsCounter;
-    private final TezCounter serializedUncompressedBytes;
-
     IFileOutputStream checksumOut;
-
     boolean closeSerializers = false;
     Serializer keySerializer = null;
     Serializer valueSerializer = null;
-
-    final DataOutputBuffer buffer = new DataOutputBuffer();
-    final DataOutputBuffer previous = new DataOutputBuffer();
     Object prevKey = null;
     boolean headerWritten = false;
     @VisibleForTesting
     boolean sameKey = false;
-
-    final int RLE_MARKER_SIZE = WritableUtils.getVIntSize(RLE_MARKER);
-    final int V_END_MARKER_SIZE = WritableUtils.getVIntSize(V_END_MARKER);
-
-    // de-dup keys or not
-    protected final boolean rle;
-
+    // Count records written to disk
+    private long numRecordsWritten = 0;
+    private long rleWritten = 0; //number of RLE markers written
+    private long totalKeySaving = 0; //number of keys saved due to multi KV writes + RLE
 
     public Writer(Serialization keySerialization, Serialization valSerialization, FileSystem fs, Path file,
                   Class keyClass, Class valueClass,
@@ -318,7 +305,7 @@ public class IFile {
                   TezCounter writesCounter,
                   TezCounter serializedBytesCounter) throws IOException {
       this(keySerialization, valSerialization, fs.create(file), keyClass, valueClass, codec,
-           writesCounter, serializedBytesCounter);
+        writesCounter, serializedBytesCounter);
       ownOutputStream = true;
     }
 
@@ -329,10 +316,10 @@ public class IFile {
     }
 
     public Writer(Serialization keySerialization, Serialization valSerialization, FSDataOutputStream outputStream,
-        Class keyClass, Class valueClass, CompressionCodec codec, TezCounter writesCounter,
-        TezCounter serializedBytesCounter) throws IOException {
+                  Class keyClass, Class valueClass, CompressionCodec codec, TezCounter writesCounter,
+                  TezCounter serializedBytesCounter) throws IOException {
       this(keySerialization, valSerialization, outputStream, keyClass, valueClass, codec, writesCounter,
-          serializedBytesCounter, false);
+        serializedBytesCounter, false);
     }
 
     public Writer(Serialization keySerialization, Serialization valSerialization, FSDataOutputStream outputStream,
@@ -360,6 +347,10 @@ public class IFile {
       }
     }
 
+    public Writer(Serialization keySerialization, Serialization valSerialization, FileSystem fs, Path file) throws IOException {
+      this(keySerialization, valSerialization, fs, file, null, null, null, null, null);
+    }
+
     void setupOutputStream(CompressionCodec codec) throws IOException {
       this.checksumOut = new IFileOutputStream(this.rawOut);
       if (codec != null) {
@@ -367,19 +358,15 @@ public class IFile {
         if (this.compressor != null) {
           this.compressor.reset();
           this.compressedOut = CodecUtils.createOutputStream(codec, checksumOut, compressor);
-          this.out = new FSDataOutputStream(this.compressedOut,  null);
+          this.out = new FSDataOutputStream(this.compressedOut, null);
           this.compressOutput = true;
         } else {
           LOG.warn("Could not obtain compressor from CodecPool");
-          this.out = new FSDataOutputStream(checksumOut,null);
+          this.out = new FSDataOutputStream(checksumOut, null);
         }
       } else {
-        this.out = new FSDataOutputStream(checksumOut,null);
+        this.out = new FSDataOutputStream(checksumOut, null);
       }
-    }
-
-    public Writer(Serialization keySerialization, Serialization valSerialization, FileSystem fs, Path file) throws IOException {
-      this(keySerialization, valSerialization, fs, file, null, null, null, null, null);
     }
 
     protected void writeHeader(OutputStream outputStream) throws IOException {
@@ -440,9 +427,9 @@ public class IFile {
       }
       if (LOG.isDebugEnabled()) {
         LOG.debug("Total keys written=" + numRecordsWritten + "; rleEnabled=" + rle + "; Savings" +
-            "(due to multi-kv/rle)=" + totalKeySaving + "; number of RLEs written=" +
-            rleWritten + "; compressedLen=" + compressedBytesWritten + "; rawLen="
-            + decompressedBytesWritten);
+          "(due to multi-kv/rle)=" + totalKeySaving + "; number of RLEs written=" +
+          rleWritten + "; compressedLen=" + compressedBytesWritten + "; rawLen="
+          + decompressedBytesWritten);
       }
     }
 
@@ -462,7 +449,7 @@ public class IFile {
       if (!sameKey) {
         keySerializer.serialize(key);
         keyLength = buffer.getLength();
-        assert(keyLength >= 0);
+        assert (keyLength >= 0);
         if (rle && (keyLength == previous.getLength())) {
           sameKey = (BufferUtils.compare(previous, buffer) == 0);
         }
@@ -471,11 +458,11 @@ public class IFile {
       // Append the 'value'
       valueSerializer.serialize(value);
       int valueLength = buffer.getLength() - keyLength;
-      assert(valueLength >= 0);
+      assert (valueLength >= 0);
       if (!sameKey) {
         //dump entire key value pair
         writeKVPair(buffer.getData(), 0, keyLength, buffer.getData(),
-            keyLength, buffer.getLength() - keyLength);
+          keyLength, buffer.getLength() - keyLength);
         if (rle) {
           previous.reset();
           previous.write(buffer.getData(), 0, keyLength); //store the key
@@ -517,7 +504,7 @@ public class IFile {
      */
     public void appendValue(DataInputBuffer value) throws IOException {
       int valueLength = value.getLength() - value.getPosition();
-      assert(valueLength >= 0);
+      assert (valueLength >= 0);
       writeValue(value.getData(), value.getPosition(), valueLength);
       buffer.reset();
       ++numRecordsWritten;
@@ -532,7 +519,7 @@ public class IFile {
      * @throws IOException
      */
     public <V> void appendValues(Iterator<V> valuesItr) throws IOException {
-      while(valuesItr.hasNext()) {
+      while (valuesItr.hasNext()) {
         appendValue(valuesItr.next());
       }
     }
@@ -551,7 +538,7 @@ public class IFile {
         append(key, valuesItr.next()); //append first KV pair
       }
       //append the remaining values
-      while(valuesItr.hasNext()) {
+      while (valuesItr.hasNext()) {
         appendValue(valuesItr.next());
       }
     }
@@ -569,10 +556,10 @@ public class IFile {
      */
     public void append(DataInputBuffer key, DataInputBuffer value) throws IOException {
       int keyLength = key.getLength() - key.getPosition();
-      assert(key == REPEAT_KEY || keyLength >=0);
+      assert (key == REPEAT_KEY || keyLength >= 0);
 
       int valueLength = value.getLength() - value.getPosition();
-      assert(valueLength >= 0);
+      assert (valueLength >= 0);
 
       sameKey = (key == REPEAT_KEY);
       if (!sameKey && rle) {
@@ -581,7 +568,7 @@ public class IFile {
 
       if (!sameKey) {
         writeKVPair(key.getData(), key.getPosition(), keyLength,
-            value.getData(), value.getPosition(), valueLength);
+          value.getData(), value.getPosition(), valueLength);
         if (rle) {
           BufferUtils.copy(key, previous);
         }
@@ -598,7 +585,7 @@ public class IFile {
       out.write(data, offset, length);
       // Update bytes written
       decompressedBytesWritten +=
-          length + WritableUtils.getVIntSize(length);
+        length + WritableUtils.getVIntSize(length);
       if (serializedUncompressedBytes != null) {
         serializedUncompressedBytes.increment(length);
       }
@@ -606,7 +593,7 @@ public class IFile {
     }
 
     protected void writeKVPair(byte[] keyData, int keyPos, int keyLength,
-        byte[] valueData, int valPos, int valueLength) throws IOException {
+                               byte[] valueData, int valPos, int valueLength) throws IOException {
       writeValueMarker(out);
       WritableUtils.writeVInt(out, keyLength);
       WritableUtils.writeVInt(out, valueLength);
@@ -615,8 +602,8 @@ public class IFile {
 
       // Update bytes written
       decompressedBytesWritten +=
-          keyLength + valueLength + WritableUtils.getVIntSize(keyLength)
-              + WritableUtils.getVIntSize(valueLength);
+        keyLength + valueLength + WritableUtils.getVIntSize(keyLength)
+          + WritableUtils.getVIntSize(valueLength);
       if (serializedUncompressedBytes != null) {
         serializedUncompressedBytes.increment(keyLength + valueLength);
       }
@@ -650,7 +637,7 @@ public class IFile {
     }
 
     // Required for mark/reset
-    public DataOutputStream getOutputStream () {
+    public DataOutputStream getOutputStream() {
       return out;
     }
 
@@ -676,42 +663,34 @@ public class IFile {
   @InterfaceStability.Unstable
   public static class Reader {
 
-    public enum KeyState {NO_KEY, NEW_KEY, SAME_KEY}
-
-    private static final int DEFAULT_BUFFER_SIZE = 128*1024;
+    private static final int DEFAULT_BUFFER_SIZE = 128 * 1024;
     @VisibleForTesting
     // Not final for testing
     protected static int MAX_BUFFER_SIZE
-            = Integer.MAX_VALUE - 8;  // The maximum array size is a little less than the
-                                      // max integer value. Trying to create a larger array
-                                      // will result in an OOM exception. The exact value
-                                      // is JVM dependent so setting it to max int - 8 to be safe.
-
-    // Count records read from disk
-    private long numRecordsRead = 0;
+      = Integer.MAX_VALUE - 8;  // The maximum array size is a little less than the
+    final InputStream in;        // Possibly decompressed stream that we read
+    // max integer value. Trying to create a larger array
+    // will result in an OOM exception. The exact value
+    // is JVM dependent so setting it to max int - 8 to be safe.
+    final long fileLength;
     private final TezCounter readRecordsCounter;
     private final TezCounter bytesReadCounter;
-
-    final InputStream in;        // Possibly decompressed stream that we read
-    Decompressor decompressor;
     public long bytesRead = 0;
-    final long fileLength;
     protected boolean eof = false;
-    IFileInputStream checksumIn;
-
     protected byte[] buffer = null;
     protected int bufferSize = DEFAULT_BUFFER_SIZE;
     protected DataInputStream dataIn = null;
-
     protected int recNo = 1;
     protected int originalKeyLength;
     protected int prevKeyLength;
-    byte keyBytes[] = new byte[0];
-
     protected int currentKeyLength;
     protected int currentValueLength;
+    Decompressor decompressor;
+    IFileInputStream checksumIn;
+    byte keyBytes[] = new byte[0];
     long startPos;
-
+    // Count records read from disk
+    private long numRecordsRead = 0;
     /**
      * Construct an IFile Reader.
      *
@@ -727,8 +706,8 @@ public class IFile {
                   TezCounter readsCounter, TezCounter bytesReadCounter, boolean ifileReadAhead,
                   int ifileReadAheadLength, int bufferSize) throws IOException {
       this(fs.open(file), fs.getFileStatus(file).getLen(), codec,
-          readsCounter, bytesReadCounter, ifileReadAhead,
-          ifileReadAheadLength, bufferSize);
+        readsCounter, bytesReadCounter, ifileReadAhead,
+        ifileReadAheadLength, bufferSize);
     }
 
     /**
@@ -742,13 +721,13 @@ public class IFile {
      * @throws IOException
      */
     public Reader(InputStream in, long length,
-        CompressionCodec codec,
-        TezCounter readsCounter, TezCounter bytesReadCounter,
-        boolean readAhead, int readAheadLength,
-        int bufferSize) throws IOException {
+                  CompressionCodec codec,
+                  TezCounter readsCounter, TezCounter bytesReadCounter,
+                  boolean readAhead, int readAheadLength,
+                  int bufferSize) throws IOException {
       this(in, ((in != null) ? (length - HEADER.length) : length), codec,
-          readsCounter, bytesReadCounter, readAhead, readAheadLength,
-          bufferSize, ((in != null) ? isCompressedFlagEnabled(in) : false));
+        readsCounter, bytesReadCounter, readAhead, readAheadLength,
+        bufferSize, ((in != null) ? isCompressedFlagEnabled(in) : false));
       if (in != null && bytesReadCounter != null) {
         bytesReadCounter.increment(IFile.HEADER.length);
       }
@@ -771,7 +750,7 @@ public class IFile {
                   int bufferSize, boolean isCompressed) throws IOException {
       if (in != null) {
         checksumIn = new IFileInputStream(in, length, readAhead,
-            readAheadLength/* , isCompressed */);
+          readAheadLength/* , isCompressed */);
         if (isCompressed && codec != null) {
           decompressor = CodecUtils.getDecompressor(codec);
           if (decompressor != null) {
@@ -809,12 +788,12 @@ public class IFile {
      * @throws IOException
      */
     public static void readToMemory(byte[] buffer, InputStream in, int compressedLength,
-        CompressionCodec codec, boolean ifileReadAhead, int ifileReadAheadLength)
-        throws IOException {
+                                    CompressionCodec codec, boolean ifileReadAhead, int ifileReadAheadLength)
+      throws IOException {
       boolean isCompressed = IFile.Reader.isCompressedFlagEnabled(in);
       IFileInputStream checksumIn = new IFileInputStream(in,
-          compressedLength - IFile.HEADER.length, ifileReadAhead,
-          ifileReadAheadLength);
+        compressedLength - IFile.HEADER.length, ifileReadAhead,
+        ifileReadAheadLength);
       in = checksumIn;
       Decompressor decompressor = null;
       if (isCompressed && codec != null) {
@@ -822,7 +801,7 @@ public class IFile {
         if (decompressor != null) {
           decompressor.reset();
           in = CodecUtils.getDecompressedInputStreamWithBufferSize(codec, checksumIn, decompressor,
-              compressedLength);
+            compressedLength);
         } else {
           LOG.warn("Could not obtain decompressor from CodecPool");
           in = checksumIn;
@@ -840,10 +819,10 @@ public class IFile {
           throw new IOException("Unexpected extra bytes from input stream");
         }
       } catch (IOException ioe) {
-        if(in != null) {
+        if (in != null) {
           try {
             in.close();
-          } catch(IOException e) {
+          } catch (IOException e) {
             LOG.debug("Exception in closing {}", in, e);
           }
         }
@@ -866,8 +845,8 @@ public class IFile {
      * @throws IOException
      */
     public static long readToDisk(OutputStream out, InputStream in, long length,
-        boolean ifileReadAhead, int ifileReadAheadLength)
-        throws IOException {
+                                  boolean ifileReadAhead, int ifileReadAheadLength)
+      throws IOException {
       final int BYTES_TO_READ = 64 * 1024;
       byte[] buf = new byte[BYTES_TO_READ];
 
@@ -881,7 +860,7 @@ public class IFile {
       long bytesLeft = length - HEADER.length;
       @SuppressWarnings("resource")
       IFileInputStream ifInput = new IFileInputStream(in, bytesLeft,
-          ifileReadAhead, ifileReadAheadLength);
+        ifileReadAhead, ifileReadAheadLength);
       while (bytesLeft > 0) {
         int n = ifInput.readWithChecksum(buf, 0, (int) Math.min(bytesLeft, BYTES_TO_READ));
         if (n < 0) {
@@ -891,6 +870,35 @@ public class IFile {
         bytesLeft -= n;
       }
       return length - bytesLeft;
+    }
+
+    private static byte[] createLargerArray(int currentLength) {
+      if (currentLength > MAX_BUFFER_SIZE) {
+        throw new IllegalArgumentException(
+          String.format(REQ_BUFFER_SIZE_TOO_LARGE, currentLength, MAX_BUFFER_SIZE));
+      }
+      int newLength;
+      if (currentLength > (MAX_BUFFER_SIZE - currentLength)) {
+        // possible overflow: if (2*currentLength > MAX_BUFFER_SIZE)
+        newLength = currentLength;
+      } else {
+        newLength = currentLength << 1;
+      }
+      return new byte[newLength];
+    }
+
+    private static void verifyHeaderMagic(byte[] header) throws IOException {
+      if (!(header[0] == 'T' && header[1] == 'I'
+        && header[2] == 'F')) {
+        throw new IOException("Not a valid ifile header");
+      }
+    }
+
+    public static boolean isCompressedFlagEnabled(InputStream in) throws IOException {
+      byte[] header = new byte[HEADER.length];
+      IOUtils.readFully(in, header, 0, HEADER.length);
+      verifyHeaderMagic(header);
+      return (header[3] == 1);
     }
 
     public long getLength() {
@@ -914,7 +922,7 @@ public class IFile {
       int bytesRead = 0;
       while (bytesRead < len) {
         int n = IOUtils.wrappedReadForCompressedData(in, buf, off + bytesRead,
-            len - bytesRead);
+          len - bytesRead);
         if (n < 0) {
           return bytesRead;
         }
@@ -939,8 +947,8 @@ public class IFile {
         originalKeyLength = currentKeyLength;
       }
       bytesRead +=
-          WritableUtils.getVIntSize(currentKeyLength)
-              + WritableUtils.getVIntSize(currentValueLength);
+        WritableUtils.getVIntSize(currentKeyLength)
+          + WritableUtils.getVIntSize(currentValueLength);
     }
 
     /**
@@ -974,11 +982,11 @@ public class IFile {
       // Sanity check
       if (currentKeyLength != RLE_MARKER && currentKeyLength < 0) {
         throw new IOException("Rec# " + recNo + ": Negative key-length: " +
-                              currentKeyLength + " PreviousKeyLen: " + prevKeyLength);
+          currentKeyLength + " PreviousKeyLen: " + prevKeyLength);
       }
       if (currentValueLength < 0) {
         throw new IOException("Rec# " + recNo + ": Negative value-length: " +
-                              currentValueLength);
+          currentValueLength);
       }
       return true;
     }
@@ -987,32 +995,17 @@ public class IFile {
       return readRawKey(key) != KeyState.NO_KEY;
     }
 
-    private static byte[] createLargerArray(int currentLength) {
-      if (currentLength > MAX_BUFFER_SIZE) {
-        throw new IllegalArgumentException(
-                String.format(REQ_BUFFER_SIZE_TOO_LARGE, currentLength, MAX_BUFFER_SIZE));
-      }
-      int newLength;
-      if (currentLength > (MAX_BUFFER_SIZE - currentLength)) {
-        // possible overflow: if (2*currentLength > MAX_BUFFER_SIZE)
-        newLength = currentLength;
-      } else {
-        newLength = currentLength << 1;
-      }
-      return new byte[newLength];
-    }
-
     public KeyState readRawKey(DataInputBuffer key) throws IOException {
       if (!positionToNextRecord(dataIn)) {
         if (LOG.isDebugEnabled()) {
           LOG.debug("currentKeyLength=" + currentKeyLength +
-              ", currentValueLength=" + currentValueLength +
-              ", bytesRead=" + bytesRead +
-              ", length=" + fileLength);
+            ", currentValueLength=" + currentValueLength +
+            ", bytesRead=" + bytesRead +
+            ", length=" + fileLength);
         }
         return KeyState.NO_KEY;
       }
-      if(currentKeyLength == RLE_MARKER) {
+      if (currentKeyLength == RLE_MARKER) {
         // get key length from original key
         key.reset(keyBytes, originalKeyLength);
         return KeyState.SAME_KEY;
@@ -1050,20 +1043,6 @@ public class IFile {
       ++numRecordsRead;
     }
 
-    private static void verifyHeaderMagic(byte[] header) throws IOException {
-      if (!(header[0] == 'T' && header[1] == 'I'
-          && header[2] == 'F')) {
-        throw new IOException("Not a valid ifile header");
-      }
-    }
-
-    public static boolean isCompressedFlagEnabled(InputStream in) throws IOException {
-      byte[] header = new byte[HEADER.length];
-      IOUtils.readFully(in, header, 0, HEADER.length);
-      verifyHeaderMagic(header);
-      return (header[3] == 1);
-    }
-
     public void close() throws IOException {
       // Close the underlying stream
       in.close();
@@ -1094,6 +1073,7 @@ public class IFile {
     public void disableChecksumValidation() {
       checksumIn.disableChecksumValidation();
     }
-  }
 
+    public enum KeyState {NO_KEY, NEW_KEY, SAME_KEY}
+  }
 }

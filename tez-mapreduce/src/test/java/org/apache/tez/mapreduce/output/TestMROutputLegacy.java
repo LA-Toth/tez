@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.io.File;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -41,16 +43,15 @@ import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.mapreduce.committer.MROutputCommitter;
 import org.apache.tez.mapreduce.hadoop.MRConfig;
 import org.apache.tez.runtime.api.OutputContext;
-import org.junit.Test;
 
-import java.io.File;
+import org.junit.Test;
 
 public class TestMROutputLegacy {
   private static final File TEST_DIR = new File(System.getProperty("test.build.data"),
-      TestMROutputLegacy.class.getName()).getAbsoluteFile();
+    TestMROutputLegacy.class.getName()).getAbsoluteFile();
 
   // simulate the behavior of translating MR to DAG using MR old API
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testOldAPI_MR() throws Exception {
     String outputPath = TEST_DIR.getAbsolutePath();
     JobConf conf = new JobConf();
@@ -62,9 +63,9 @@ public class TestMROutputLegacy {
     conf.setBoolean(MRConfig.IS_MAP_PROCESSOR, false);
     UserPayload vertexPayload = TezUtils.createUserPayloadFromConf(conf);
     OutputDescriptor od = OutputDescriptor.create(MROutputLegacy.class.getName())
-        .setUserPayload(vertexPayload);
+      .setUserPayload(vertexPayload);
     DataSinkDescriptor sink = DataSinkDescriptor.create(od,
-        OutputCommitterDescriptor.create(MROutputCommitter.class.getName()), null);
+      OutputCommitterDescriptor.create(MROutputCommitter.class.getName()), null);
 
     OutputContext outputContext = createMockOutputContext(sink.getOutputDescriptor().getUserPayload());
     MROutputLegacy output = new MROutputLegacy(outputContext, 2);
@@ -81,7 +82,7 @@ public class TestMROutputLegacy {
   }
 
   // simulate the behavior of translating MR to DAG using MR new API
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testNewAPI_MR() throws Exception {
     String outputPath = TEST_DIR.getAbsolutePath();
     Job job = Job.getInstance();
@@ -94,9 +95,9 @@ public class TestMROutputLegacy {
     job.getConfiguration().setBoolean(MRConfig.IS_MAP_PROCESSOR, false);
     UserPayload vertexPayload = TezUtils.createUserPayloadFromConf(job.getConfiguration());
     OutputDescriptor od = OutputDescriptor.create(MROutputLegacy.class.getName())
-        .setUserPayload(vertexPayload);
+      .setUserPayload(vertexPayload);
     DataSinkDescriptor sink = DataSinkDescriptor.create(od,
-        OutputCommitterDescriptor.create(MROutputCommitter.class.getName()), null);
+      OutputCommitterDescriptor.create(MROutputCommitter.class.getName()), null);
 
     OutputContext outputContext = createMockOutputContext(sink.getOutputDescriptor().getUserPayload());
     MROutputLegacy output = new MROutputLegacy(outputContext, 2);
@@ -113,7 +114,7 @@ public class TestMROutputLegacy {
   }
 
   // simulate the behavior of translating Mapper-only job to DAG using MR old API
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testOldAPI_MapperOnly() throws Exception {
     String outputPath = TEST_DIR.getAbsolutePath();
     JobConf conf = new JobConf();
@@ -125,9 +126,9 @@ public class TestMROutputLegacy {
     conf.setBoolean(MRConfig.IS_MAP_PROCESSOR, true);
     UserPayload vertexPayload = TezUtils.createUserPayloadFromConf(conf);
     OutputDescriptor od = OutputDescriptor.create(MROutputLegacy.class.getName())
-        .setUserPayload(vertexPayload);
+      .setUserPayload(vertexPayload);
     DataSinkDescriptor sink = DataSinkDescriptor.create(od,
-        OutputCommitterDescriptor.create(MROutputCommitter.class.getName()), null);
+      OutputCommitterDescriptor.create(MROutputCommitter.class.getName()), null);
 
     OutputContext outputContext = createMockOutputContext(sink.getOutputDescriptor().getUserPayload());
     MROutputLegacy output = new MROutputLegacy(outputContext, 2);
@@ -144,7 +145,7 @@ public class TestMROutputLegacy {
   }
 
   //simulate the behavior of translating mapper-only job to DAG using MR new API
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testNewAPI_MapperOnly() throws Exception {
     String outputPath = TEST_DIR.getAbsolutePath();
     Job job = Job.getInstance();
@@ -157,9 +158,9 @@ public class TestMROutputLegacy {
     job.getConfiguration().setBoolean(MRConfig.IS_MAP_PROCESSOR, true);
     UserPayload vertexPayload = TezUtils.createUserPayloadFromConf(job.getConfiguration());
     OutputDescriptor od = OutputDescriptor.create(MROutputLegacy.class.getName())
-        .setUserPayload(vertexPayload);
+      .setUserPayload(vertexPayload);
     DataSinkDescriptor sink = DataSinkDescriptor.create(od,
-        OutputCommitterDescriptor.create(MROutputCommitter.class.getName()), null);
+      OutputCommitterDescriptor.create(MROutputCommitter.class.getName()), null);
 
     OutputContext outputContext = createMockOutputContext(sink.getOutputDescriptor().getUserPayload());
     MROutputLegacy output = new MROutputLegacy(outputContext, 2);

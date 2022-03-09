@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,26 +24,23 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.tez.client.TezClientUtils;
 import org.apache.tez.dag.api.TezConfiguration;
 
 import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Placeholder to store additional launch command options to be specified for specific tasks in
  * different vertices.
  */
 public class TaskSpecificLaunchCmdOption {
-  private static final Logger LOG = LoggerFactory.getLogger(TaskSpecificLaunchCmdOption.class);
-
   //To check any characters apart from "a-zA-Z_0-9 : ; , [] - space" anywhere in input.
   final static Pattern INVALID_TASK_NAME_REGEX = Pattern
     .compile("[^(\\w\\s;:,\\[\\]\\-)]");
-
   /**
    * Regex to validate the task ranges. Vertex name can only have [a-zA-Z_0-9], -, and
    * space. Task id is expected to be a number. : is used for specifying task id range. , is used
@@ -51,10 +48,9 @@ public class TaskSpecificLaunchCmdOption {
    */
   final static Pattern TASKS_REGEX = Pattern
     .compile("([\\w\\s\\-]+)\\[([\\d:,\\s]*)\\];?");
-
   //Range regex where ':' should always be prepended and appended with digit.
   final static Pattern RANGE_REGEX = Pattern.compile("(\\d+):(\\d+)");
-
+  private static final Logger LOG = LoggerFactory.getLogger(TaskSpecificLaunchCmdOption.class);
   private final Map<String, BitSet> tasksMap;
   //Task specific launch-cmd options
   private final String tsLaunchCmdOpts;
@@ -63,9 +59,9 @@ public class TaskSpecificLaunchCmdOption {
 
   public TaskSpecificLaunchCmdOption(Configuration conf) {
     this.tsLaunchCmdOpts =
-        conf.getTrimmed(TezConfiguration.TEZ_TASK_SPECIFIC_LAUNCH_CMD_OPTS);
+      conf.getTrimmed(TezConfiguration.TEZ_TASK_SPECIFIC_LAUNCH_CMD_OPTS);
     this.tsLogParams = TezClientUtils
-        .parseLogParams(conf.getTrimmed(TezConfiguration.TEZ_TASK_SPECIFIC_LOG_LEVEL));
+      .parseLogParams(conf.getTrimmed(TezConfiguration.TEZ_TASK_SPECIFIC_LOG_LEVEL));
 
     if (shouldParseSpecificTaskList()) {
       this.tasksMap = getSpecificTasks(conf);
@@ -84,17 +80,17 @@ public class TaskSpecificLaunchCmdOption {
    * @return tsLaunchCmdOpts
    */
   public String getTaskSpecificOption(String launchCmdOpts, String vertexName,
-      int taskIdx) {
+                                      int taskIdx) {
     if (this.tsLaunchCmdOpts != null) {
       launchCmdOpts = (launchCmdOpts == null) ? "" : launchCmdOpts;
       vertexName = vertexName.replaceAll(" ", "");
       String result =
-          this.tsLaunchCmdOpts.replaceAll("__VERTEX_NAME__", vertexName)
-              .replaceAll("__TASK_INDEX__", Integer.toString(taskIdx));
+        this.tsLaunchCmdOpts.replaceAll("__VERTEX_NAME__", vertexName)
+          .replaceAll("__TASK_INDEX__", Integer.toString(taskIdx));
       result = (launchCmdOpts + " " + result);
 
       LOG.info("Launch-cmd options added to vertexName=" + vertexName
-          + ", taskIdx=" + taskIdx + ", tsLaunchCmdOpts=" + result.trim());
+        + ", taskIdx=" + taskIdx + ", tsLaunchCmdOpts=" + result.trim());
 
       return result.trim();
     }
@@ -157,7 +153,7 @@ public class TaskSpecificLaunchCmdOption {
    */
   private Map<String, BitSet> getSpecificTasks(Configuration conf) {
     String specificTaskList =
-        conf.getTrimmed(TezConfiguration.TEZ_TASK_SPECIFIC_LAUNCH_CMD_OPTS_LIST);
+      conf.getTrimmed(TezConfiguration.TEZ_TASK_SPECIFIC_LAUNCH_CMD_OPTS_LIST);
     if (!Strings.isNullOrEmpty(specificTaskList) && isValid(specificTaskList)) {
       final Map<String, BitSet> resultSet = new HashMap<String, BitSet>();
       Matcher matcher = TASKS_REGEX.matcher(specificTaskList);
@@ -176,7 +172,7 @@ public class TaskSpecificLaunchCmdOption {
   private boolean isValid(String specificTaskList) {
     if (INVALID_TASK_NAME_REGEX.matcher(specificTaskList).find()) {
       LOG.warn("Invalid option specified, "
-          + TezConfiguration.TEZ_TASK_SPECIFIC_LAUNCH_CMD_OPTS_LIST + "=" + specificTaskList);
+        + TezConfiguration.TEZ_TASK_SPECIFIC_LAUNCH_CMD_OPTS_LIST + "=" + specificTaskList);
       return false;
     }
     return true;
@@ -194,7 +190,7 @@ public class TaskSpecificLaunchCmdOption {
       return taskSet;
     }
     Iterable<String> tasks =
-        Splitter.on(",").omitEmptyStrings().trimResults().split(tasksInVertex);
+      Splitter.on(",").omitEmptyStrings().trimResults().split(tasksInVertex);
     for (String task : tasks) {
       /**
        * TODO: this is horrible way to check the ranges.
@@ -203,7 +199,7 @@ public class TaskSpecificLaunchCmdOption {
        * allowed.
        */
       if (task.endsWith(":") || task.startsWith(":")) {
-       //invalid range. e.g :20, 6: are not supported.
+        //invalid range. e.g :20, 6: are not supported.
         LOG.warn("Partial range is considered as an invalid option");
         return null;
       }

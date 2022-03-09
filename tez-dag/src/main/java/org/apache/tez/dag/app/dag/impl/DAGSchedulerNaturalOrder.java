@@ -1,25 +1,23 @@
 /*
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.app.dag.impl;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.dag.app.dag.DAG;
 import org.apache.tez.dag.app.dag.DAGScheduler;
@@ -28,20 +26,23 @@ import org.apache.tez.dag.app.dag.Vertex;
 import org.apache.tez.dag.app.dag.event.DAGEventSchedulerUpdate;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEventSchedule;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @SuppressWarnings("rawtypes")
 public class DAGSchedulerNaturalOrder extends DAGScheduler {
-  
-  private static final Logger LOG = 
-                            LoggerFactory.getLogger(DAGSchedulerNaturalOrder.class);
+
+  private static final Logger LOG =
+    LoggerFactory.getLogger(DAGSchedulerNaturalOrder.class);
 
   private final DAG dag;
   private final EventHandler handler;
-  
+
   public DAGSchedulerNaturalOrder(DAG dag, EventHandler dispatcher) {
     this.dag = dag;
     this.handler = dispatcher;
   }
-  
+
   @Override
   public void scheduleTaskEx(DAGEventSchedulerUpdate event) {
     TaskAttempt attempt = event.getAttempt();
@@ -53,22 +54,21 @@ public class DAGSchedulerNaturalOrder extends DAGScheduler {
 
     if (LOG.isDebugEnabled()) {
       LOG.debug("Scheduling " + attempt.getTaskAttemptID() + " between priorityLow: " + priorityLowLimit
-          + " and priorityHigh: " + priorityHighLimit);
+        + " and priorityHigh: " + priorityHighLimit);
     }
-    
+
     TaskAttemptEventSchedule attemptEvent = new TaskAttemptEventSchedule(
-        attempt.getTaskAttemptID(), priorityLowLimit, priorityHighLimit);
-                                      
+      attempt.getTaskAttemptID(), priorityLowLimit, priorityHighLimit);
+
     sendEvent(attemptEvent);
   }
-  
+
   @Override
   public void taskCompletedEx(DAGEventSchedulerUpdate event) {
   }
-  
+
   @SuppressWarnings("unchecked")
   void sendEvent(TaskAttemptEventSchedule event) {
     handler.handle(event);
   }
-
 }

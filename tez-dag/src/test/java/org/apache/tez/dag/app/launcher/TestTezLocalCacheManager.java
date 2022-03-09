@@ -18,6 +18,14 @@
 
 package org.apache.tez.dag.app.launcher;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileContext;
 import org.apache.hadoop.fs.Path;
@@ -29,66 +37,14 @@ import org.apache.hadoop.yarn.factories.RecordFactory;
 import org.apache.hadoop.yarn.factory.providers.RecordFactoryProvider;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.tez.dag.api.TezConfiguration;
+
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Test local cache manager.
  */
 public class TestTezLocalCacheManager {
-
-  @Test
-  public void testManager() throws URISyntaxException, IOException {
-    Map<String, LocalResource> resources = new HashMap<>();
-
-    // Test that localization works for regular files and verify that if multiple symlinks are created,
-    // they all work
-    LocalResource resourceOne = createFile("content-one");
-    LocalResource resourceTwo = createFile("content-two");
-
-    resources.put("file-one", resourceOne);
-    resources.put("file-two", resourceTwo);
-    resources.put("file-three", resourceTwo);
-
-    // Not currently supported, but shouldn't throw an exception...
-    resources.put("some-subdir/file-three", resourceTwo);
-
-    TezLocalCacheManager manager = new TezLocalCacheManager(resources, new Configuration());
-
-    try {
-      manager.localize();
-
-      Assert.assertEquals(
-          "content-one",
-          new String(Files.readAllBytes(Paths.get("./file-one")))
-      );
-
-      Assert.assertEquals(
-          "content-two",
-          new String(Files.readAllBytes(Paths.get("./file-two")))
-      );
-
-      Assert.assertEquals(
-          "content-two",
-          new String(Files.readAllBytes(Paths.get("./file-three")))
-      );
-    } finally {
-      manager.cleanup();
-    }
-
-    // verify that symlinks were removed
-    Assert.assertFalse(Files.exists(Paths.get("./file-one")));
-    Assert.assertFalse(Files.exists(Paths.get("./file-two")));
-    Assert.assertFalse(Files.exists(Paths.get("./file-three")));
-  }
 
   // create a temporary file with the given content and return a LocalResource
   private static LocalResource createFile(String content) throws IOException {
@@ -113,6 +69,51 @@ public class TestTezLocalCacheManager {
   }
 
   @Test
+  public void testManager() throws URISyntaxException, IOException {
+    Map<String, LocalResource> resources = new HashMap<>();
+
+    // Test that localization works for regular files and verify that if multiple symlinks are created,
+    // they all work
+    LocalResource resourceOne = createFile("content-one");
+    LocalResource resourceTwo = createFile("content-two");
+
+    resources.put("file-one", resourceOne);
+    resources.put("file-two", resourceTwo);
+    resources.put("file-three", resourceTwo);
+
+    // Not currently supported, but shouldn't throw an exception...
+    resources.put("some-subdir/file-three", resourceTwo);
+
+    TezLocalCacheManager manager = new TezLocalCacheManager(resources, new Configuration());
+
+    try {
+      manager.localize();
+
+      Assert.assertEquals(
+        "content-one",
+        new String(Files.readAllBytes(Paths.get("./file-one")))
+      );
+
+      Assert.assertEquals(
+        "content-two",
+        new String(Files.readAllBytes(Paths.get("./file-two")))
+      );
+
+      Assert.assertEquals(
+        "content-two",
+        new String(Files.readAllBytes(Paths.get("./file-three")))
+      );
+    } finally {
+      manager.cleanup();
+    }
+
+    // verify that symlinks were removed
+    Assert.assertFalse(Files.exists(Paths.get("./file-one")));
+    Assert.assertFalse(Files.exists(Paths.get("./file-two")));
+    Assert.assertFalse(Files.exists(Paths.get("./file-three")));
+  }
+
+  @Test
   public void testLocalizeRootDirectory() throws URISyntaxException, IOException {
     // default directory
     Map<String, LocalResource> resources = new HashMap<>();
@@ -126,7 +127,6 @@ public class TestTezLocalCacheManager {
       Assert.assertFalse(Files.exists(Paths.get("./file-one")));
       manager.localize();
       Assert.assertTrue(Files.exists(Paths.get("./file-one")));
-
     } finally {
       manager.cleanup();
       Assert.assertFalse(Files.exists(Paths.get("./file-one")));
@@ -145,7 +145,6 @@ public class TestTezLocalCacheManager {
       // file appears only at configured location
       Assert.assertFalse(Files.exists(Paths.get("./file-one")));
       Assert.assertTrue(Files.exists(Paths.get("./target/file-one")));
-
     } finally {
       manager.cleanup();
       Assert.assertFalse(Files.exists(Paths.get("./target/file-one")));

@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.mapreduce.client;
 
@@ -23,8 +23,6 @@ import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -49,9 +47,12 @@ import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.mapreduce.hadoop.MRJobConfig;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ResourceMgrDelegate {
   private static final Logger LOG = LoggerFactory.getLogger(ResourceMgrDelegate.class);
-      
+
   private YarnConfiguration conf;
   private GetNewApplicationResponse application;
   private ApplicationId applicationId;
@@ -68,13 +69,13 @@ public class ResourceMgrDelegate {
     client = YarnClient.createYarnClient();
     client.init(conf);
     this.rmAddress = conf.getSocketAddr(YarnConfiguration.RM_ADDRESS,
-        YarnConfiguration.DEFAULT_RM_ADDRESS,
-        YarnConfiguration.DEFAULT_RM_PORT);
+      YarnConfiguration.DEFAULT_RM_ADDRESS,
+      YarnConfiguration.DEFAULT_RM_PORT);
     client.start();
   }
 
   public TaskTrackerInfo[] getActiveTrackers() throws IOException,
-      InterruptedException {
+    InterruptedException {
     try {
       return TypeConverter.fromYarnNodes(client.getNodeReports());
     } catch (YarnException e) {
@@ -87,36 +88,36 @@ public class ResourceMgrDelegate {
       Set<String> appTypes = new HashSet<String>(1);
       appTypes.add(TezConstants.TEZ_APPLICATION_TYPE);
       return TypeConverter.fromYarnApps(client.getApplications(appTypes),
-          this.conf);
+        this.conf);
     } catch (YarnException e) {
       throw new IOException(e);
     }
   }
 
   public TaskTrackerInfo[] getBlacklistedTrackers() throws IOException,
-      InterruptedException {
+    InterruptedException {
     // TODO: Implement getBlacklistedTrackers
     LOG.warn("getBlacklistedTrackers - Not implemented yet");
     return new TaskTrackerInfo[0];
   }
 
   public ClusterMetrics getClusterMetrics() throws IOException,
-      InterruptedException {
+    InterruptedException {
     YarnClusterMetrics metrics;
     try {
       metrics = client.getYarnClusterMetrics();
     } catch (YarnException e) {
       throw new IOException(e);
     }
-    ClusterMetrics oldMetrics = new ClusterMetrics(1, 1, 1, 1, 1, 1, 
-        metrics.getNumNodeManagers() * 10, metrics.getNumNodeManagers() * 2, 1,
-        metrics.getNumNodeManagers(), 0, 0);
+    ClusterMetrics oldMetrics = new ClusterMetrics(1, 1, 1, 1, 1, 1,
+      metrics.getNumNodeManagers() * 10, metrics.getNumNodeManagers() * 2, 1,
+      metrics.getNumNodeManagers(), 0, 0);
     return oldMetrics;
   }
 
   @SuppressWarnings("rawtypes")
   public Token getDelegationToken(Text renewer) throws IOException,
-      InterruptedException {
+    InterruptedException {
     try {
       // Remove rmAddress after YARN-868 is addressed
       return ConverterUtils.convertFromYarn(
@@ -132,8 +133,8 @@ public class ResourceMgrDelegate {
 
   public JobID getNewJobID() throws IOException, InterruptedException {
     try {
-      this.application = 
-          client.createApplication().getNewApplicationResponse();
+      this.application =
+        client.createApplication().getNewApplicationResponse();
     } catch (YarnException e) {
       throw new IOException(e);
     }
@@ -142,22 +143,22 @@ public class ResourceMgrDelegate {
   }
 
   public QueueInfo getQueue(String queueName) throws IOException,
-  InterruptedException {
+    InterruptedException {
     try {
       org.apache.hadoop.yarn.api.records.QueueInfo queueInfo =
-          client.getQueueInfo(queueName);
+        client.getQueueInfo(queueName);
       return (queueInfo == null) ? null : TypeConverter.fromYarn(queueInfo,
-          conf);
-      } catch (YarnException e) {
+        conf);
+    } catch (YarnException e) {
       throw new IOException(e);
     }
   }
 
   public QueueAclsInfo[] getQueueAclsForCurrentUser() throws IOException,
-      InterruptedException {
+    InterruptedException {
     try {
       return TypeConverter.fromYarnQueueUserAclsInfo(
-          client.getQueueAclsInfo());
+        client.getQueueAclsInfo());
     } catch (YarnException e) {
       throw new IOException(e);
     }
@@ -174,14 +175,14 @@ public class ResourceMgrDelegate {
   public QueueInfo[] getRootQueues() throws IOException, InterruptedException {
     try {
       return TypeConverter.fromYarnQueueInfo(client.getRootQueueInfos(),
-          this.conf);
+        this.conf);
     } catch (YarnException e) {
       throw new IOException(e);
     }
   }
 
   public QueueInfo[] getChildQueues(String parent) throws IOException,
-      InterruptedException {
+    InterruptedException {
     try {
       return TypeConverter.fromYarnQueueInfo(client.getChildQueueInfos(parent),
         this.conf);
@@ -192,31 +193,28 @@ public class ResourceMgrDelegate {
 
   public String getStagingAreaDir() throws IOException, InterruptedException {
 //    Path path = new Path(MRJobConstants.JOB_SUBMIT_DIR);
-    String user = 
+    String user =
       UserGroupInformation.getCurrentUser().getShortUserName();
     Path path = MRApps.getStagingAreaDir(conf, user);
     LOG.debug("getStagingAreaDir: dir=" + path);
     return path.toString();
   }
 
-
   public String getSystemDir() throws IOException, InterruptedException {
     Path sysDir = new Path(MRJobConfig.JOB_SUBMIT_DIR);
     //FileContext.getFileContext(conf).delete(sysDir, true);
     return sysDir.toString();
   }
-  
 
   public long getTaskTrackerExpiryInterval() throws IOException,
-      InterruptedException {
+    InterruptedException {
     return 0;
   }
-  
+
   public void setJobPriority(JobID arg0, String arg1) throws IOException,
-      InterruptedException {
+    InterruptedException {
     return;
   }
-
 
   public long getProtocolVersion(String arg0, long arg1) throws IOException {
     return 0;
@@ -227,8 +225,7 @@ public class ResourceMgrDelegate {
   }
 
   public void killApplication(ApplicationId appId)
-      throws YarnException, IOException {
+    throws YarnException, IOException {
     client.killApplication(appId);
   }
-
 }

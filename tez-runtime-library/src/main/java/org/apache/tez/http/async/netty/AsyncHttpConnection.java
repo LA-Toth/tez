@@ -18,27 +18,6 @@
 
 package org.apache.tez.http.async.netty;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
-import org.asynchttpclient.AsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClient;
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
-import org.asynchttpclient.ListenableFuture;
-import org.asynchttpclient.Request;
-import org.asynchttpclient.RequestBuilder;
-import org.asynchttpclient.Response;
-import org.apache.commons.io.IOUtils;
-import org.apache.tez.http.BaseHttpConnection;
-import org.apache.tez.http.HttpConnectionParams;
-import org.apache.tez.http.SSLFactory;
-import org.apache.tez.common.security.JobTokenSecretManager;
-import org.apache.tez.runtime.library.common.security.SecureShuffleUtils;
-import org.apache.tez.runtime.library.common.shuffle.orderedgrouped.ShuffleHeader;
-import org.apache.tez.util.StopWatch;
-import org.apache.tez.util.TezRuntimeShutdownHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -47,27 +26,58 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.tez.common.Preconditions;
+import org.apache.tez.common.security.JobTokenSecretManager;
+import org.apache.tez.http.BaseHttpConnection;
+import org.apache.tez.http.HttpConnectionParams;
+import org.apache.tez.http.SSLFactory;
+import org.apache.tez.runtime.library.common.security.SecureShuffleUtils;
+import org.apache.tez.runtime.library.common.shuffle.orderedgrouped.ShuffleHeader;
+import org.apache.tez.util.StopWatch;
+import org.apache.tez.util.TezRuntimeShutdownHandler;
+
+import com.google.common.annotations.VisibleForTesting;
+import org.asynchttpclient.AsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClient;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import org.asynchttpclient.ListenableFuture;
+import org.asynchttpclient.Request;
+import org.asynchttpclient.RequestBuilder;
+import org.asynchttpclient.Response;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class AsyncHttpConnection extends BaseHttpConnection {
 
   private static final Logger LOG = LoggerFactory.getLogger(AsyncHttpConnection.class);
-
+  private static volatile AsyncHttpClient httpAsyncClient;
   private final JobTokenSecretManager jobTokenSecretMgr;
-  private String encHash;
-  private String msgToEncode;
-
   private final HttpConnectionParams httpConnParams;
   private final StopWatch stopWatch;
   private final URL url;
-
-  private static volatile AsyncHttpClient httpAsyncClient;
-
   private final TezBodyDeferringAsyncHandler handler;
   private final PipedOutputStream pos; //handler would write to this as and when it receives chunks
   private final PipedInputStream pis; //connected to pos, which can be used by fetchers
-
+  private String encHash;
+  private String msgToEncode;
   private Response response;
   private ListenableFuture<Response> responseFuture;
   private TezBodyDeferringAsyncHandler.BodyDeferringInputStream dis;
+
+  public AsyncHttpConnection(URL url, HttpConnectionParams connParams,
+                             String logIdentifier, JobTokenSecretManager jobTokenSecretManager) throws IOException {
+    this.jobTokenSecretMgr = jobTokenSecretManager;
+    this.httpConnParams = connParams;
+    this.url = url;
+    this.stopWatch = new StopWatch();
+    LOG.debug("MapOutput URL :{}", url);
+
+    initClient(httpConnParams);
+    pos = new PipedOutputStream();
+    pis = new PipedInputStream(pos, httpConnParams.getBufferSize());
+    handler = new TezBodyDeferringAsyncHandler(pos, url, UNIT_CONNECT_TIMEOUT);
+  }
 
   private void initClient(HttpConnectionParams httpConnParams) throws IOException {
     if (httpAsyncClient != null) {
@@ -93,14 +103,14 @@ public class AsyncHttpConnection extends BaseHttpConnection {
            * setMaxConnections & addRequestFilter.
            */
           builder
-              .setKeepAlive(httpConnParams.isKeepAlive())
-              .setCompressionEnforced(false)
-              //.setExecutorService(applicationThreadPool)
-              //.addRequestFilter(new ThrottleRequestFilter(1))
-              .setMaxConnectionsPerHost(1)
-              .setConnectTimeout(httpConnParams.getConnectionTimeout())
-              .setDisableUrlEncodingForBoundRequests(true)
-              .build();
+            .setKeepAlive(httpConnParams.isKeepAlive())
+            .setCompressionEnforced(false)
+            //.setExecutorService(applicationThreadPool)
+            //.addRequestFilter(new ThrottleRequestFilter(1))
+            .setMaxConnectionsPerHost(1)
+            .setConnectTimeout(httpConnParams.getConnectionTimeout())
+            .setDisableUrlEncodingForBoundRequests(true)
+            .build();
           DefaultAsyncHttpClientConfig config = builder.build();
           httpAsyncClient = new DefaultAsyncHttpClient(config);
           TezRuntimeShutdownHandler.addShutdownTask(() -> {
@@ -116,20 +126,6 @@ public class AsyncHttpConnection extends BaseHttpConnection {
         }
       }
     }
-  }
-
-  public AsyncHttpConnection(URL url, HttpConnectionParams connParams,
-      String logIdentifier, JobTokenSecretManager jobTokenSecretManager) throws IOException {
-    this.jobTokenSecretMgr = jobTokenSecretManager;
-    this.httpConnParams = connParams;
-    this.url = url;
-    this.stopWatch = new StopWatch();
-    LOG.debug("MapOutput URL :{}", url);
-
-    initClient(httpConnParams);
-    pos = new PipedOutputStream();
-    pis = new PipedInputStream(pos, httpConnParams.getBufferSize());
-    handler = new TezBodyDeferringAsyncHandler(pos, url, UNIT_CONNECT_TIMEOUT);
   }
 
   @VisibleForTesting
@@ -169,7 +165,7 @@ public class AsyncHttpConnection extends BaseHttpConnection {
       if (response == null) {
         throw new IOException("Response is null");
       }
-    } catch(IOException e) {
+    } catch (IOException e) {
       throw e;
     }
 
@@ -178,7 +174,7 @@ public class AsyncHttpConnection extends BaseHttpConnection {
     if (rc != HttpURLConnection.HTTP_OK) {
       LOG.debug("Request url={}, id={}", response.getUri());
       throw new IOException("Got invalid response code " + rc + " from "
-          + url + ": " + response.getStatusText());
+        + url + ": " + response.getStatusText());
     }
     return true;
   }
@@ -187,9 +183,9 @@ public class AsyncHttpConnection extends BaseHttpConnection {
     stopWatch.reset().start();
     // get the shuffle version
     if (!ShuffleHeader.DEFAULT_HTTP_HEADER_NAME
-        .equals(response.getHeader(ShuffleHeader.HTTP_HEADER_NAME))
-        || !ShuffleHeader.DEFAULT_HTTP_HEADER_VERSION
-        .equals(response.getHeader(ShuffleHeader.HTTP_HEADER_VERSION))) {
+      .equals(response.getHeader(ShuffleHeader.HTTP_HEADER_NAME))
+      || !ShuffleHeader.DEFAULT_HTTP_HEADER_VERSION
+      .equals(response.getHeader(ShuffleHeader.HTTP_HEADER_VERSION))) {
       throw new IOException("Incompatible shuffle response version");
     }
 
@@ -222,6 +218,7 @@ public class AsyncHttpConnection extends BaseHttpConnection {
     httpAsyncClient.close();
     httpAsyncClient = null;
   }
+
   /**
    * Cleanup the connection.
    *
@@ -237,5 +234,4 @@ public class AsyncHttpConnection extends BaseHttpConnection {
     IOUtils.closeQuietly(pis);
     response = null;
   }
-
 }

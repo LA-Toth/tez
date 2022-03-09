@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,14 +20,15 @@ package org.apache.tez.dag.history.events;
 
 import java.io.IOException;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.ContainerLaunchedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class ContainerLaunchedEvent implements HistoryEvent {
 
@@ -39,8 +40,8 @@ public class ContainerLaunchedEvent implements HistoryEvent {
   }
 
   public ContainerLaunchedEvent(ContainerId containerId,
-      long launchTime,
-      ApplicationAttemptId applicationAttemptId) {
+                                long launchTime,
+                                ApplicationAttemptId applicationAttemptId) {
     this.containerId = containerId;
     this.launchTime = launchTime;
     this.applicationAttemptId = applicationAttemptId;
@@ -63,17 +64,17 @@ public class ContainerLaunchedEvent implements HistoryEvent {
 
   public ContainerLaunchedProto toProto() {
     return ContainerLaunchedProto.newBuilder()
-        .setApplicationAttemptId(applicationAttemptId.toString())
-        .setContainerId(containerId.toString())
-        .setLaunchTime(launchTime)
-        .build();
+      .setApplicationAttemptId(applicationAttemptId.toString())
+      .setContainerId(containerId.toString())
+      .setLaunchTime(launchTime)
+      .build();
   }
 
   public void fromProto(ContainerLaunchedProto proto) {
     this.containerId = ConverterUtils.toContainerId(proto.getContainerId());
     launchTime = proto.getLaunchTime();
     this.applicationAttemptId = ConverterUtils.toApplicationAttemptId(
-        proto.getApplicationAttemptId());
+      proto.getApplicationAttemptId());
   }
 
   @Override
@@ -93,7 +94,7 @@ public class ContainerLaunchedEvent implements HistoryEvent {
   @Override
   public String toString() {
     return "containerId=" + containerId
-        + ", launchTime=" + launchTime;
+      + ", launchTime=" + launchTime;
   }
 
   public ContainerId getContainerId() {
@@ -107,5 +108,4 @@ public class ContainerLaunchedEvent implements HistoryEvent {
   public ApplicationAttemptId getApplicationAttemptId() {
     return applicationAttemptId;
   }
-
 }

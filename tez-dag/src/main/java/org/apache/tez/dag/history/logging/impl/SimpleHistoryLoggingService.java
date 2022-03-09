@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,30 +23,30 @@ import java.util.Random;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.tez.common.StreamHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.tez.common.StreamHelper;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.history.DAGHistoryEvent;
 import org.apache.tez.dag.history.logging.HistoryLoggingService;
+
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SimpleHistoryLoggingService extends HistoryLoggingService {
 
+  public static final String RECORD_SEPARATOR = "\u0001" + System.getProperty("line.separator");
+  public static final String LOG_FILE_NAME_PREFIX = "history.txt";
   private static final Logger LOG = LoggerFactory.getLogger(SimpleHistoryLoggingService.class);
   private Path logFileLocation;
   private FileSystem logFileFS;
   private FSDataOutputStream outputStream;
   private LinkedBlockingQueue<DAGHistoryEvent> eventQueue =
-      new LinkedBlockingQueue<DAGHistoryEvent>();
-  public static final String RECORD_SEPARATOR = "\u0001" + System.getProperty("line.separator");
-  public static final String LOG_FILE_NAME_PREFIX = "history.txt";
-
+    new LinkedBlockingQueue<DAGHistoryEvent>();
   private Thread eventHandlingThread;
   private AtomicBoolean stopped = new AtomicBoolean(false);
 
@@ -65,7 +65,7 @@ public class SimpleHistoryLoggingService extends HistoryLoggingService {
     if (logDirPath == null || logDirPath.isEmpty()) {
       String logDir = appContext.getLogDirs()[new Random().nextInt(appContext.getLogDirs().length)];
       LOG.info("Log file location for SimpleHistoryLoggingService not specified, defaulting to"
-          + " containerLogDir=" + logDir);
+        + " containerLogDir=" + logDir);
       Path p;
       logFileFS = FileSystem.getLocal(conf).getRawFileSystem();
       if (logDir != null) {
@@ -76,7 +76,7 @@ public class SimpleHistoryLoggingService extends HistoryLoggingService {
       logFileLocation = p;
     } else {
       LOG.info("Using configured log file location for SimpleHistoryLoggingService"
-          + " logDirPath=" + logDirPath);
+        + " logDirPath=" + logDirPath);
       Path p = new Path(logDirPath);
       logFileFS = p.getFileSystem(conf);
       if (!logFileFS.exists(p)) {
@@ -85,9 +85,9 @@ public class SimpleHistoryLoggingService extends HistoryLoggingService {
       logFileLocation = new Path(logFileFS.resolvePath(p), logFileName);
     }
     maxErrors = conf.getInt(TezConfiguration.TEZ_SIMPLE_HISTORY_LOGGING_MAX_ERRORS,
-        TezConfiguration.TEZ_SIMPLE_HISTORY_LOGGING_MAX_ERRORS_DEFAULT);
+      TezConfiguration.TEZ_SIMPLE_HISTORY_LOGGING_MAX_ERRORS_DEFAULT);
     LOG.info("Initializing SimpleHistoryLoggingService, logFileLocation=" + logFileLocation
-        + ", maxErrors=" + maxErrors);
+      + ", maxErrors=" + maxErrors);
     super.serviceInit(conf);
   }
 
@@ -117,7 +117,7 @@ public class SimpleHistoryLoggingService extends HistoryLoggingService {
   @Override
   protected void serviceStop() throws Exception {
     LOG.info("Stopping SimpleHistoryLoggingService"
-        + ", eventQueueBacklog=" + eventQueue.size());
+      + ", eventQueueBacklog=" + eventQueue.size());
     stopped.set(true);
     if (eventHandlingThread != null) {
       eventHandlingThread.interrupt();
@@ -168,9 +168,8 @@ public class SimpleHistoryLoggingService extends HistoryLoggingService {
       } else {
         loggingDisabled = true;
         LOG.error("Disabling SimpleHistoryLoggingService due to multiple errors," +
-            "consecutive max errors reached, maxErrors=" + maxErrors);
+          "consecutive max errors reached, maxErrors=" + maxErrors);
       }
     }
-
   }
 }

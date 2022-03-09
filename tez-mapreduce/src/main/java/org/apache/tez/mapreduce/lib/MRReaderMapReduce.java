@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,19 +21,20 @@ package org.apache.tez.mapreduce.lib;
 import java.io.IOException;
 import java.util.Objects;
 
-import org.apache.tez.runtime.api.InputContext;
-import org.apache.tez.runtime.library.api.IOInterruptedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.util.ReflectionUtils;
 import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.common.counters.TezCounters;
 import org.apache.tez.mapreduce.hadoop.mapreduce.TaskAttemptContextImpl;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.InputFormat;
-import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.tez.runtime.api.InputContext;
+import org.apache.tez.runtime.library.api.IOInterruptedException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MRReaderMapReduce extends MRReader {
 
@@ -51,19 +52,20 @@ public class MRReaderMapReduce extends MRReader {
   private boolean setupComplete = false;
 
   public MRReaderMapReduce(JobConf jobConf, TezCounters tezCounters, TezCounter inputRecordCounter,
-      long clusterId, int vertexIndex, int appId, int taskIndex, int taskAttemptNumber, InputContext context)
-      throws IOException {
+                           long clusterId, int vertexIndex, int appId, int taskIndex, int taskAttemptNumber,
+                           InputContext context)
+    throws IOException {
     this(jobConf, null, tezCounters, inputRecordCounter, clusterId, vertexIndex, appId, taskIndex,
-        taskAttemptNumber, context);
+      taskAttemptNumber, context);
   }
 
   public MRReaderMapReduce(JobConf jobConf, InputSplit inputSplit, TezCounters tezCounters,
-      TezCounter inputRecordCounter, long clusterId, int vertexIndex, int appId, int taskIndex,
-      int taskAttemptNumber, InputContext context) throws IOException {
+                           TezCounter inputRecordCounter, long clusterId, int vertexIndex, int appId, int taskIndex,
+                           int taskAttemptNumber, InputContext context) throws IOException {
     super(context);
     this.inputRecordCounter = inputRecordCounter;
     this.taskAttemptContext = new TaskAttemptContextImpl(jobConf, tezCounters, clusterId,
-        vertexIndex, appId, taskIndex, taskAttemptNumber, true, null);
+      vertexIndex, appId, taskIndex, taskAttemptNumber, true, null);
 
     Class<? extends org.apache.hadoop.mapreduce.InputFormat<?, ?>> inputFormatClazz;
 
@@ -79,12 +81,6 @@ public class MRReaderMapReduce extends MRReader {
       this.inputSplit = inputSplit;
       setupNewRecordReader();
     }
-  }
-
-  @Override
-  public void setSplit(Object inputSplit) throws IOException {
-    this.inputSplit = (InputSplit) inputSplit;
-    setupNewRecordReader();
   }
 
   public boolean isSetup() {
@@ -104,6 +100,12 @@ public class MRReaderMapReduce extends MRReader {
   @Override
   public Object getSplit() {
     return inputSplit;
+  }
+
+  @Override
+  public void setSplit(Object inputSplit) throws IOException {
+    this.inputSplit = (InputSplit) inputSplit;
+    setupNewRecordReader();
   }
 
   @Override

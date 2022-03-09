@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,14 +38,6 @@ import org.apache.hadoop.io.Writable;
 public interface TezCounter extends Writable {
 
   /**
-   * Set the display name of the counter
-   * @param displayName of the counter
-   * @deprecated (and no-op by default)
-   */
-  @Deprecated
-  void setDisplayName(String displayName);
-
-  /**
    * @return the name of the counter
    */
   String getName();
@@ -55,6 +47,14 @@ public interface TezCounter extends Writable {
    * @return the user facing name of the counter
    */
   String getDisplayName();
+
+  /**
+   * Set the display name of the counter
+   * @param displayName of the counter
+   * @deprecated (and no - op by default)
+   */
+  @Deprecated
+  void setDisplayName(String displayName);
 
   /**
    * What is the current value of this counter?
@@ -80,8 +80,10 @@ public interface TezCounter extends Writable {
    */
   public default void aggregate(TezCounter other) {
     increment(other.getValue());
-  };
- 
+  }
+
+  ;
+
   /**
    * Return the underlying object if this is a facade.
    * @return the undelying object.

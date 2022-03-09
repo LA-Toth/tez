@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -61,17 +61,18 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.hadoop.shim.DefaultHadoopShim;
+
 import org.junit.Test;
 
 public class TestRecoveryService {
 
   private static final String TEST_ROOT_DIR = "target" + Path.SEPARATOR
-      + TestRecoveryService.class.getName() + "-tmpDir";
+    + TestRecoveryService.class.getName() + "-tmpDir";
 
   private static final long startTime = System.currentTimeMillis();
   private static final ApplicationId appId = ApplicationId.newInstance(startTime, 1);
   private static final ApplicationAttemptId appAttemptId =
-      ApplicationAttemptId.newInstance(appId, 1);
+    ApplicationAttemptId.newInstance(appId, 1);
   private static final TezDAGID dagId = TezDAGID.getInstance(appId, 1);
   private static final TezVertexID vertexId = TezVertexID.getInstance(dagId, 1);
   private static final TezTaskID tezTaskId = TezTaskID.getInstance(vertexId, 1);
@@ -123,7 +124,7 @@ public class TestRecoveryService {
 
     summaryPath = TezCommonUtils.getSummaryRecoveryPath(recoveryService.recoveryPath);
     dagRecoveryPath = TezCommonUtils.getDAGRecoveryPath(
-        recoveryService.recoveryPath, dagId.toString());
+      recoveryService.recoveryPath, dagId.toString());
     if (useMockFs) {
       when(fs.create(eq(dagRecoveryPath), eq(false), anyInt())).thenReturn(dagFos);
       when(fs.create(eq(summaryPath), eq(false), anyInt())).thenReturn(summaryFos);
@@ -135,9 +136,9 @@ public class TestRecoveryService {
     setup(false, null);
     recoveryService.start();
     int randEventCount = new Random().nextInt(100) + 100;
-    for (int i=0; i< randEventCount; ++i) {
+    for (int i = 0; i < randEventCount; ++i) {
       recoveryService.handle(new DAGHistoryEvent(dagId,
-          new TaskStartedEvent(tezTaskId, "v1", 0L, 0L)));
+        new TaskStartedEvent(tezTaskId, "v1", 0L, 0L)));
     }
     recoveryService.stop();
     assertEquals(randEventCount, recoveryService.processedRecoveryEventCounter.get());
@@ -148,21 +149,21 @@ public class TestRecoveryService {
     setup(false, null);
     recoveryService.start();
     int randEventCount = new Random().nextInt(100) + 100;
-    for (int i=0; i< randEventCount; ++i) {
+    for (int i = 0; i < randEventCount; ++i) {
       recoveryService.handle(new DAGHistoryEvent(dagId,
-          new TaskStartedEvent(tezTaskId, "v1", 0L, 0L)));
+        new TaskStartedEvent(tezTaskId, "v1", 0L, 0L)));
     }
     recoveryService.await();
     assertTrue(recoveryService.outputStreamMap.containsKey(dagId));
     // 2 DAGFinishedEvent
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGFinishedEvent(dagId, 1L, 2L, DAGState.FAILED, "diag", null, "user", "dag1", null,
-            appAttemptId, null)));
+      new DAGFinishedEvent(dagId, 1L, 2L, DAGState.FAILED, "diag", null, "user", "dag1", null,
+        appAttemptId, null)));
     // outputStream removed
     assertFalse(recoveryService.outputStreamMap.containsKey(dagId));
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGFinishedEvent(dagId, 1L, 2L, DAGState.ERROR, "diag", null, "user", "dag1", null,
-            appAttemptId, null)));
+      new DAGFinishedEvent(dagId, 1L, 2L, DAGState.ERROR, "diag", null, "user", "dag1", null,
+        appAttemptId, null)));
     // no new outputStream opened
     assertEquals(recoveryService.outputStreamMap.size(), 0);
     assertFalse(recoveryService.outputStreamMap.containsKey(dagId));
@@ -176,13 +177,13 @@ public class TestRecoveryService {
     touchFile(summaryPath);
     assertFalse(recoveryService.hasRecoveryFailed());
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGFinishedEvent(dagId, 1L, 2L, DAGState.ERROR, "diag", null, "user", "dag1", null,
-            appAttemptId, null)));
+      new DAGFinishedEvent(dagId, 1L, 2L, DAGState.ERROR, "diag", null, "user", "dag1", null,
+        appAttemptId, null)));
     assertTrue(recoveryService.hasRecoveryFailed());
     // be able to handle event after fatal error
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGFinishedEvent(dagId, 1L, 2L, DAGState.ERROR, "diag", null, "user", "dag1", null,
-            appAttemptId, null)));
+      new DAGFinishedEvent(dagId, 1L, 2L, DAGState.ERROR, "diag", null, "user", "dag1", null,
+        appAttemptId, null)));
     recoveryService.stop();
   }
 
@@ -193,44 +194,44 @@ public class TestRecoveryService {
     touchFile(dagRecoveryPath);
     assertFalse(recoveryService.hasRecoveryFailed());
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new TaskStartedEvent(tezTaskId, "v1", 0L, 0L)));
+      new TaskStartedEvent(tezTaskId, "v1", 0L, 0L)));
     // wait for recovery event to be handled
     recoveryService.await();
     assertTrue(recoveryService.hasRecoveryFailed());
     // be able to handle recovery event after fatal error
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new TaskStartedEvent(tezTaskId, "v1", 0L, 0L)));
+      new TaskStartedEvent(tezTaskId, "v1", 0L, 0L)));
     recoveryService.stop();
   }
 
-  @Test(timeout=5000)
+  @Test(timeout = 5000)
   public void testRecoveryFlushOnMaxEvents() throws Exception {
-    setup(true, new String[][] {
-        {TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS, "10"},
-        {TezConfiguration.DAG_RECOVERY_FLUSH_INTERVAL_SECS, "-1"}
-      });
+    setup(true, new String[][]{
+      {TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS, "10"},
+      {TezConfiguration.DAG_RECOVERY_FLUSH_INTERVAL_SECS, "-1"}
+    });
     recoveryService.start();
 
     // Send 1 event less, wait for drain
     for (int i = 0; i < 9; ++i) {
       recoveryService.handle(new DAGHistoryEvent(dagId,
-          new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     }
     waitForDrain(-1);
     verify(dagFos, times(0)).hflush();
 
     // This event should cause the flush.
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+      new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     waitForDrain(-1);
     verify(dagFos, times(1)).hflush();
 
     recoveryService.stop();
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testRecoveryFlushOnTimeoutEvents() throws Exception {
-    setup(true, new String[][] {
+    setup(true, new String[][]{
       {TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS, "-1"},
       {TezConfiguration.DAG_RECOVERY_FLUSH_INTERVAL_SECS, "5"}
     });
@@ -239,7 +240,7 @@ public class TestRecoveryService {
     // Send lot of events.
     for (int i = 0; i < TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS_DEFAULT; ++i) {
       recoveryService.handle(new DAGHistoryEvent(dagId,
-          new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     }
     // wait for timeout.
     Thread.sleep(5000);
@@ -249,16 +250,16 @@ public class TestRecoveryService {
 
     // The flush is trigged by sending 1 event after the timeout.
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+      new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     waitForDrain(1000);
     verify(dagFos, times(1)).hflush();
 
     recoveryService.stop();
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testRecoveryFlush() throws Exception {
-    setup(true, new String[][] {
+    setup(true, new String[][]{
       {TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS, "10"},
       {TezConfiguration.DAG_RECOVERY_FLUSH_INTERVAL_SECS, "5"}
     });
@@ -266,37 +267,37 @@ public class TestRecoveryService {
 
     // 5 second flush
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+      new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     Thread.sleep(5000);
     assertTrue(recoveryService.eventQueue.isEmpty());
     verify(fs, times(1)).create(eq(dagRecoveryPath), eq(false), anyInt());
     verify(dagFos, times(0)).hflush();
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+      new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     waitForDrain(1000);
     verify(dagFos, times(1)).hflush();
 
     // Number of events flush.
     for (int i = 0; i < 9; ++i) {
       recoveryService.handle(new DAGHistoryEvent(dagId,
-          new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     }
     waitForDrain(-1);
     verify(dagFos, times(1)).hflush();
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+      new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     waitForDrain(-1);
     verify(dagFos, times(2)).hflush();
 
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+      new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
 
     recoveryService.stop();
   }
 
-  @Test(timeout=50000)
+  @Test(timeout = 50000)
   public void testRecoveryFlushOnStop() throws Exception {
-    setup(true, new String[][] {
+    setup(true, new String[][]{
       {TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS, "-1"},
       {TezConfiguration.DAG_RECOVERY_FLUSH_INTERVAL_SECS, "-1"}
     });
@@ -305,7 +306,7 @@ public class TestRecoveryService {
     // Does not flush on event counts.
     for (int i = 0; i < TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS_DEFAULT; ++i) {
       recoveryService.handle(new DAGHistoryEvent(dagId,
-          new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     }
     waitForDrain(-1);
     verify(dagFos, times(0)).hflush();
@@ -313,7 +314,7 @@ public class TestRecoveryService {
     // Does not flush on timeout.
     Thread.sleep(TezConfiguration.DAG_RECOVERY_FLUSH_INTERVAL_SECS_DEFAULT * 1000);
     recoveryService.handle(new DAGHistoryEvent(dagId,
-        new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
+      new DAGStartedEvent(dagId, startTime, "nobody", "test-dag")));
     waitForDrain(-1);
     verify(dagFos, times(0)).hflush();
 
@@ -322,9 +323,9 @@ public class TestRecoveryService {
     verify(dagFos, times(1)).hflush();
   }
 
-  @Test(timeout=5000)
+  @Test(timeout = 5000)
   public void testRecoveryFlushOnSummaryEvent() throws Exception {
-    setup(true, new String[][] {
+    setup(true, new String[][]{
       {TezConfiguration.DAG_RECOVERY_MAX_UNFLUSHED_EVENTS, "-1"},
       {TezConfiguration.DAG_RECOVERY_FLUSH_INTERVAL_SECS, "-1"}
     });
@@ -333,7 +334,7 @@ public class TestRecoveryService {
     DAGPlan dagPlan = DAGPlan.newBuilder().setName("test_dag").build();
     // This writes to recovery immediately.
     recoveryService.handle(new DAGHistoryEvent(dagId, new DAGSubmittedEvent(
-        dagId, startTime, dagPlan, appAttemptId, null, "nobody", conf, null, "default")));
+      dagId, startTime, dagPlan, appAttemptId, null, "nobody", conf, null, "default")));
     waitForDrain(-1);
     verify(summaryFos, times(1)).hflush();
     verify(dagFos, times(1)).hflush();
@@ -373,7 +374,7 @@ public class TestRecoveryService {
 
     @Override
     protected void handleRecoveryEvent(DAGHistoryEvent event)
-        throws IOException {
+      throws IOException {
       super.handleRecoveryEvent(event);
       processedRecoveryEventCounter.addAndGet(1);
     }
@@ -403,15 +404,15 @@ public class TestRecoveryService {
 
     @Override
     public FSDataOutputStream create(Path f, FsPermission permission, boolean overwrite,
-        int bufferSize, short replication, long blockSize, Progressable progress)
-        throws IOException {
+                                     int bufferSize, short replication, long blockSize, Progressable progress)
+      throws IOException {
       return delegate.create(f, permission, overwrite, bufferSize, replication, blockSize,
-          progress);
+        progress);
     }
 
     @Override
     public FSDataOutputStream append(Path f, int bufferSize, Progressable progress)
-        throws IOException {
+      throws IOException {
       return delegate.append(f, bufferSize, progress);
     }
 
@@ -431,13 +432,13 @@ public class TestRecoveryService {
     }
 
     @Override
-    public void setWorkingDirectory(Path new_dir) {
-      delegate.setWorkingDirectory(new_dir);
+    public Path getWorkingDirectory() {
+      return delegate.getWorkingDirectory();
     }
 
     @Override
-    public Path getWorkingDirectory() {
-      return delegate.getWorkingDirectory();
+    public void setWorkingDirectory(Path new_dir) {
+      delegate.setWorkingDirectory(new_dir);
     }
 
     @Override

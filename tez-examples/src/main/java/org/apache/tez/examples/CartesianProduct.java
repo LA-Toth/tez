@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +17,14 @@
  */
 package org.apache.tez.examples;
 
-import org.apache.tez.common.Preconditions;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.StringTokenizer;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -25,6 +32,7 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.tez.client.TezClient;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.dag.api.DAG;
 import org.apache.tez.dag.api.Edge;
 import org.apache.tez.dag.api.EdgeManagerPluginDescriptor;
@@ -47,16 +55,9 @@ import org.apache.tez.runtime.library.cartesianproduct.CartesianProductVertexMan
 import org.apache.tez.runtime.library.conf.UnorderedKVEdgeConfig;
 import org.apache.tez.runtime.library.conf.UnorderedPartitionedKVEdgeConfig;
 import org.apache.tez.runtime.library.processor.SimpleProcessor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.StringTokenizer;
 
 /**
  * This DAG does cartesian product of two text inputs and then filters results according to the
@@ -85,7 +86,94 @@ public class CartesianProduct extends TezExampleBase {
   private static final String UNPARTITIONED = "-unpartitioned";
   private static final Logger LOG = LoggerFactory.getLogger(CartesianProduct.class);
   private static final int numPartition = 2;
-  private static final String[] cpSources = new String[] {VERTEX1, VERTEX2};
+  private static final String[] cpSources = new String[]{VERTEX1, VERTEX2};
+
+  public static void main(String[] args) throws Exception {
+    int res = ToolRunner.run(new Configuration(), new CartesianProduct(), args);
+    System.exit(res);
+  }
+
+  private DAG createDAG(TezConfiguration tezConf, String inputPath1, String inputPath2,
+                        String inputPath3, String outputPath, boolean isPartitioned)
+    throws IOException {
+    Vertex v1 = Vertex.create(VERTEX1, ProcessorDescriptor.create(TokenProcessor.class.getName()));
+    // turn off groupSplit so that each input file incurs one task
+    v1.addDataSource(INPUT,
+      MRInput.createConfigBuilder(new Configuration(tezConf), TextInputFormat.class, inputPath1)
+        .groupSplits(false).build());
+    Vertex v2 = Vertex.create(VERTEX2, ProcessorDescriptor.create(TokenProcessor.class.getName()));
+    v2.addDataSource(INPUT,
+      MRInput.createConfigBuilder(new Configuration(tezConf), TextInputFormat.class, inputPath2)
+        .groupSplits(false).build());
+    Vertex v3 = Vertex.create(VERTEX3, ProcessorDescriptor.create(TokenProcessor.class.getName()));
+    v3.addDataSource(INPUT,
+      MRInput.createConfigBuilder(new Configuration(tezConf), TextInputFormat.class, inputPath3)
+        .groupSplits(false).build());
+    CartesianProductConfig cartesianProductConfig;
+    if (isPartitioned) {
+      Map<String, Integer> vertexPartitionMap = new HashMap<>();
+      for (String vertex : cpSources) {
+        vertexPartitionMap.put(vertex, numPartition);
+      }
+      cartesianProductConfig = new CartesianProductConfig(vertexPartitionMap);
+    } else {
+      cartesianProductConfig = new CartesianProductConfig(Arrays.asList(cpSources));
+    }
+    UserPayload userPayload = cartesianProductConfig.toUserPayload(tezConf);
+    Vertex v4 = Vertex.create(VERTEX4, ProcessorDescriptor.create(JoinProcessor.class.getName()));
+    v4.addDataSink(OUTPUT,
+      MROutput.createConfigBuilder(new Configuration(tezConf), TextOutputFormat.class, outputPath)
+        .build());
+    v4.setVertexManagerPlugin(
+      VertexManagerPluginDescriptor.create(CartesianProductVertexManager.class.getName())
+        .setUserPayload(userPayload));
+
+    EdgeManagerPluginDescriptor cpEdgeManager =
+      EdgeManagerPluginDescriptor.create(CartesianProductEdgeManager.class.getName());
+    cpEdgeManager.setUserPayload(userPayload);
+    EdgeProperty cpEdgeProperty;
+    if (isPartitioned) {
+      UnorderedPartitionedKVEdgeConfig cpEdgeConf =
+        UnorderedPartitionedKVEdgeConfig.newBuilder(Text.class.getName(),
+          IntWritable.class.getName(), CustomPartitioner.class.getName()).build();
+      cpEdgeProperty = cpEdgeConf.createDefaultCustomEdgeProperty(cpEdgeManager);
+    } else {
+      UnorderedKVEdgeConfig edgeConf =
+        UnorderedKVEdgeConfig.newBuilder(Text.class.getName(), IntWritable.class.getName()).build();
+      cpEdgeProperty = edgeConf.createDefaultCustomEdgeProperty(cpEdgeManager);
+    }
+
+    EdgeProperty broadcastEdgeProperty;
+    UnorderedKVEdgeConfig broadcastEdgeConf =
+      UnorderedKVEdgeConfig.newBuilder(Text.class.getName(), IntWritable.class.getName()).build();
+    broadcastEdgeProperty = broadcastEdgeConf.createDefaultBroadcastEdgeProperty();
+
+    return DAG.create("CartesianProduct")
+      .addVertex(v1).addVertex(v2).addVertex(v3).addVertex(v4)
+      .addEdge(Edge.create(v1, v4, cpEdgeProperty))
+      .addEdge(Edge.create(v2, v4, cpEdgeProperty))
+      .addEdge(Edge.create(v3, v4, broadcastEdgeProperty));
+  }
+
+  @Override
+  protected void printUsage() {
+    System.err.println("Usage: args: [" + PARTITIONED + "|" + UNPARTITIONED
+      + " <input_dir1> <input_dir2> <input_dir3> <output_dir>");
+  }
+
+  @Override
+  protected int validateArgs(String[] otherArgs) {
+    return (otherArgs.length != 5 || (!otherArgs[0].equals(PARTITIONED)
+      && !otherArgs[0].equals(UNPARTITIONED))) ? -1 : 0;
+  }
+
+  @Override
+  protected int runJob(String[] args, TezConfiguration tezConf,
+                       TezClient tezClient) throws Exception {
+    DAG dag = createDAG(tezConf, args[1], args[2],
+      args[3], args[4], args[0].equals(PARTITIONED));
+    return runDag(dag, isCountersLog(), LOG);
+  }
 
   public static class TokenProcessor extends SimpleProcessor {
     public TokenProcessor(ProcessorContext context) {
@@ -145,92 +233,4 @@ public class CartesianProduct extends TezExampleBase {
       return key.toString().charAt(0) % numPartition;
     }
   }
-
-  private DAG createDAG(TezConfiguration tezConf, String inputPath1, String inputPath2,
-                        String inputPath3, String outputPath, boolean isPartitioned)
-    throws IOException {
-    Vertex v1 = Vertex.create(VERTEX1, ProcessorDescriptor.create(TokenProcessor.class.getName()));
-    // turn off groupSplit so that each input file incurs one task
-    v1.addDataSource(INPUT,
-      MRInput.createConfigBuilder(new Configuration(tezConf), TextInputFormat.class, inputPath1)
-             .groupSplits(false).build());
-    Vertex v2 = Vertex.create(VERTEX2, ProcessorDescriptor.create(TokenProcessor.class.getName()));
-    v2.addDataSource(INPUT,
-      MRInput.createConfigBuilder(new Configuration(tezConf), TextInputFormat.class, inputPath2)
-              .groupSplits(false).build());
-    Vertex v3 = Vertex.create(VERTEX3, ProcessorDescriptor.create(TokenProcessor.class.getName()));
-    v3.addDataSource(INPUT,
-      MRInput.createConfigBuilder(new Configuration(tezConf), TextInputFormat.class, inputPath3)
-        .groupSplits(false).build());
-    CartesianProductConfig cartesianProductConfig;
-    if (isPartitioned) {
-      Map<String, Integer> vertexPartitionMap = new HashMap<>();
-      for (String vertex : cpSources) {
-        vertexPartitionMap.put(vertex, numPartition);
-      }
-      cartesianProductConfig = new CartesianProductConfig(vertexPartitionMap);
-    } else {
-      cartesianProductConfig = new CartesianProductConfig(Arrays.asList(cpSources));
-    }
-    UserPayload userPayload = cartesianProductConfig.toUserPayload(tezConf);
-    Vertex v4 = Vertex.create(VERTEX4, ProcessorDescriptor.create(JoinProcessor.class.getName()));
-    v4.addDataSink(OUTPUT,
-      MROutput.createConfigBuilder(new Configuration(tezConf), TextOutputFormat.class, outputPath)
-              .build());
-    v4.setVertexManagerPlugin(
-      VertexManagerPluginDescriptor.create(CartesianProductVertexManager.class.getName())
-                                   .setUserPayload(userPayload));
-
-    EdgeManagerPluginDescriptor cpEdgeManager =
-      EdgeManagerPluginDescriptor.create(CartesianProductEdgeManager.class.getName());
-    cpEdgeManager.setUserPayload(userPayload);
-    EdgeProperty cpEdgeProperty;
-    if (isPartitioned) {
-      UnorderedPartitionedKVEdgeConfig cpEdgeConf =
-        UnorderedPartitionedKVEdgeConfig.newBuilder(Text.class.getName(),
-          IntWritable.class.getName(), CustomPartitioner.class.getName()).build();
-      cpEdgeProperty = cpEdgeConf.createDefaultCustomEdgeProperty(cpEdgeManager);
-    } else {
-      UnorderedKVEdgeConfig edgeConf =
-        UnorderedKVEdgeConfig.newBuilder(Text.class.getName(), IntWritable.class.getName()).build();
-      cpEdgeProperty = edgeConf.createDefaultCustomEdgeProperty(cpEdgeManager);
-    }
-
-    EdgeProperty broadcastEdgeProperty;
-    UnorderedKVEdgeConfig broadcastEdgeConf =
-      UnorderedKVEdgeConfig.newBuilder(Text.class.getName(), IntWritable.class.getName()).build();
-    broadcastEdgeProperty = broadcastEdgeConf.createDefaultBroadcastEdgeProperty();
-
-    return DAG.create("CartesianProduct")
-      .addVertex(v1).addVertex(v2).addVertex(v3).addVertex(v4)
-      .addEdge(Edge.create(v1, v4, cpEdgeProperty))
-      .addEdge(Edge.create(v2, v4, cpEdgeProperty))
-      .addEdge(Edge.create(v3, v4, broadcastEdgeProperty));
-  }
-
-  @Override
-  protected void printUsage() {
-    System.err.println("Usage: args: ["+PARTITIONED + "|" + UNPARTITIONED
-      + " <input_dir1> <input_dir2> <input_dir3> <output_dir>");
-  }
-
-  @Override
-  protected int validateArgs(String[] otherArgs) {
-    return (otherArgs.length != 5 || (!otherArgs[0].equals(PARTITIONED)
-      && !otherArgs[0].equals(UNPARTITIONED))) ? -1 : 0;
-  }
-
-  @Override
-  protected int runJob(String[] args, TezConfiguration tezConf,
-      TezClient tezClient) throws Exception {
-    DAG dag = createDAG(tezConf, args[1], args[2],
-        args[3], args[4], args[0].equals(PARTITIONED));
-    return runDag(dag, isCountersLog(), LOG);
-  }
-
-  public static void main(String[] args) throws Exception {
-    int res = ToolRunner.run(new Configuration(), new CartesianProduct(), args);
-    System.exit(res);
-  }
 }
-

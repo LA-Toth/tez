@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.mapreduce.hadoop.mapred;
 
@@ -30,9 +30,51 @@ import org.apache.commons.collections4.IteratorUtils;
 
 public class MRCounters extends org.apache.hadoop.mapred.Counters {
   private final org.apache.tez.common.counters.TezCounters raw;
-  
+
   public MRCounters(org.apache.tez.common.counters.TezCounters raw) {
     this.raw = raw;
+  }
+
+  @SuppressWarnings("unchecked")
+  static org.apache.tez.common.counters.TezCounter convert(
+    org.apache.hadoop.mapred.Counters.Counter counter) {
+    org.apache.hadoop.mapreduce.Counter underlyingCounter =
+      counter.getUnderlyingCounter();
+    if (underlyingCounter instanceof org.apache.hadoop.mapreduce.counters.FrameworkCounterGroup.FrameworkCounter) {
+      org.apache.hadoop.mapreduce.counters.FrameworkCounterGroup.FrameworkCounter
+        real =
+        (org.apache.hadoop.mapreduce.counters.FrameworkCounterGroup.FrameworkCounter) underlyingCounter;
+      return new org.apache.tez.common.counters.FrameworkCounterGroup.FrameworkCounter(
+        real.getKey(), real.getGroupName());
+    } else if (underlyingCounter instanceof org.apache.hadoop.mapreduce.counters.FileSystemCounterGroup.FSCounter) {
+      org.apache.hadoop.mapreduce.counters.FileSystemCounterGroup.FSCounter real =
+        (org.apache.hadoop.mapreduce.counters.FileSystemCounterGroup.FSCounter) underlyingCounter;
+      return new org.apache.tez.common.counters.FileSystemCounterGroup.FSCounter(
+        real.getScheme(), convert(real.getFileSystemCounter()));
+    } else {
+      return new org.apache.tez.common.counters.GenericCounter(
+        underlyingCounter.getName(),
+        underlyingCounter.getDisplayName(),
+        underlyingCounter.getValue());
+    }
+  }
+
+  static org.apache.tez.common.counters.FileSystemCounter convert(
+    org.apache.hadoop.mapreduce.FileSystemCounter c) {
+    switch (c) {
+      case BYTES_READ:
+        return org.apache.tez.common.counters.FileSystemCounter.BYTES_READ;
+      case BYTES_WRITTEN:
+        return org.apache.tez.common.counters.FileSystemCounter.BYTES_WRITTEN;
+      case READ_OPS:
+        return org.apache.tez.common.counters.FileSystemCounter.READ_OPS;
+      case LARGE_READ_OPS:
+        return org.apache.tez.common.counters.FileSystemCounter.LARGE_READ_OPS;
+      case WRITE_OPS:
+        return org.apache.tez.common.counters.FileSystemCounter.WRITE_OPS;
+      default:
+        throw new IllegalArgumentException("Unknow FileSystemCounter: " + c);
+    }
   }
 
   @Override
@@ -43,14 +85,15 @@ public class MRCounters extends org.apache.hadoop.mapred.Counters {
   @SuppressWarnings("unchecked")
   @Override
   public synchronized Collection<String> getGroupNames() {
-    return IteratorUtils.toList(raw.getGroupNames().iterator());  }
+    return IteratorUtils.toList(raw.getGroupNames().iterator());
+  }
 
   @Override
   public synchronized String makeCompactString() {
     StringBuilder builder = new StringBuilder();
     boolean first = true;
-    for(Group group: this){
-      for(Counter counter: group) {
+    for (Group group : this) {
+      for (Counter counter : group) {
         if (first) {
           first = false;
         } else {
@@ -94,8 +137,8 @@ public class MRCounters extends org.apache.hadoop.mapred.Counters {
 
   @Override
   public synchronized void incrAllCounters(
-      org.apache.hadoop.mapred.Counters other) {
-    for (Group otherGroup: other) {
+    org.apache.hadoop.mapred.Counters other) {
+    for (Group otherGroup : other) {
       Group group = getGroup(otherGroup.getName());
       group.setDisplayName(otherGroup.getDisplayName());
       for (Counter otherCounter : otherGroup) {
@@ -116,59 +159,72 @@ public class MRCounters extends org.apache.hadoop.mapred.Counters {
   public String makeEscapedCompactString() {
     return toEscapedCompactString(this);
   }
-  
+
   public static class MRCounterGroup extends org.apache.hadoop.mapred.Counters.Group {
     private final org.apache.tez.common.counters.CounterGroup group;
+
     public MRCounterGroup(org.apache.tez.common.counters.CounterGroup group) {
       this.group = group;
     }
+
     @Override
     public String getName() {
       return group.getName();
     }
+
     @Override
     public String getDisplayName() {
       return group.getDisplayName();
     }
+
     @Override
     public void setDisplayName(String displayName) {
       group.setDisplayName(displayName);
     }
+
     @Override
     public void addCounter(org.apache.hadoop.mapred.Counters.Counter counter) {
       group.addCounter(convert(counter));
     }
+
     @Override
     public org.apache.hadoop.mapred.Counters.Counter addCounter(String name,
-        String displayName, long value) {
+                                                                String displayName, long value) {
       return new MRCounter(group.addCounter(name, displayName, value));
     }
+
     @Override
     public org.apache.hadoop.mapred.Counters.Counter findCounter(
-        String counterName, String displayName) {
+      String counterName, String displayName) {
       return new MRCounter(group.findCounter(counterName, displayName));
     }
+
     @Override
     public int size() {
       return group.size();
     }
+
     @SuppressWarnings("unchecked")
     @Override
     public org.apache.hadoop.mapreduce.counters.CounterGroupBase
     getUnderlyingGroup() {
       return new MRCounterGroup(group).getUnderlyingGroup();
     }
+
     @Override
     public void incrAllCounters(
-        org.apache.hadoop.mapreduce.counters.CounterGroupBase rightGroup) {
+      org.apache.hadoop.mapreduce.counters.CounterGroupBase rightGroup) {
       new MRCounterGroup(group).incrAllCounters(rightGroup);
     }
+
     @Override
     public void readFields(DataInput arg0) throws IOException {
     }
+
     @Override
     public void write(DataOutput arg0) throws IOException {
     }
+
     @SuppressWarnings("unchecked")
     @Override
     public Iterator iterator() {
@@ -204,19 +260,12 @@ public class MRCounters extends org.apache.hadoop.mapred.Counters {
       return result;
     }
   }
-  
+
   public static class MRCounter extends Counter {
     private final org.apache.tez.common.counters.TezCounter raw;
-    
+
     public MRCounter(org.apache.tez.common.counters.TezCounter raw) {
       this.raw = raw;
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void setDisplayName(String displayName) {
-      // TODO Auto-generated method stub
-      raw.setDisplayName(displayName);
     }
 
     @Override
@@ -227,6 +276,13 @@ public class MRCounters extends org.apache.hadoop.mapred.Counters {
     @Override
     public String getDisplayName() {
       return raw.getDisplayName();
+    }
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public void setDisplayName(String displayName) {
+      // TODO Auto-generated method stub
+      raw.setDisplayName(displayName);
     }
 
     @Override
@@ -265,7 +321,6 @@ public class MRCounters extends org.apache.hadoop.mapred.Counters {
       return c.equals(counter.getUnderlyingCounter());
     }
 
-
     @Override
     public long getCounter() {
       return raw.getValue();
@@ -286,48 +341,5 @@ public class MRCounters extends org.apache.hadoop.mapred.Counters {
       // TODO Auto-generated method stub
       return raw.hashCode();
     }
-  }
-
-  @SuppressWarnings("unchecked")
-  static org.apache.tez.common.counters.TezCounter convert(
-      org.apache.hadoop.mapred.Counters.Counter counter) {
-    org.apache.hadoop.mapreduce.Counter underlyingCounter =
-        counter.getUnderlyingCounter();
-    if (underlyingCounter instanceof org.apache.hadoop.mapreduce.counters.FrameworkCounterGroup.FrameworkCounter) {
-      org.apache.hadoop.mapreduce.counters.FrameworkCounterGroup.FrameworkCounter 
-      real = 
-      (org.apache.hadoop.mapreduce.counters.FrameworkCounterGroup.FrameworkCounter)underlyingCounter;
-      return new org.apache.tez.common.counters.FrameworkCounterGroup.FrameworkCounter(
-          real.getKey(), real.getGroupName());
-    } else if (underlyingCounter instanceof org.apache.hadoop.mapreduce.counters.FileSystemCounterGroup.FSCounter) {
-      org.apache.hadoop.mapreduce.counters.FileSystemCounterGroup.FSCounter real = 
-          (org.apache.hadoop.mapreduce.counters.FileSystemCounterGroup.FSCounter)underlyingCounter;
-      return new org.apache.tez.common.counters.FileSystemCounterGroup.FSCounter(
-          real.getScheme(), convert(real.getFileSystemCounter()));
-    } else {
-      return new org.apache.tez.common.counters.GenericCounter(
-          underlyingCounter.getName(), 
-          underlyingCounter.getDisplayName(), 
-          underlyingCounter.getValue());
-    }
-  }
-  
-  static org.apache.tez.common.counters.FileSystemCounter convert(
-      org.apache.hadoop.mapreduce.FileSystemCounter c) {
-    switch (c) {
-      case BYTES_READ:
-        return org.apache.tez.common.counters.FileSystemCounter.BYTES_READ;
-      case BYTES_WRITTEN:
-        return org.apache.tez.common.counters.FileSystemCounter.BYTES_WRITTEN;
-      case READ_OPS:
-        return org.apache.tez.common.counters.FileSystemCounter.READ_OPS;
-      case LARGE_READ_OPS:
-        return org.apache.tez.common.counters.FileSystemCounter.LARGE_READ_OPS;
-      case WRITE_OPS:
-        return org.apache.tez.common.counters.FileSystemCounter.WRITE_OPS;
-      default:
-        throw new IllegalArgumentException("Unknow FileSystemCounter: " + c);
-    }
-    
   }
 }

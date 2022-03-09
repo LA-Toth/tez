@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,9 +29,6 @@ import static org.mockito.Mockito.mock;
 
 import java.util.List;
 
-import org.apache.tez.dag.app.dag.DAG;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
@@ -43,6 +40,7 @@ import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.common.DrainDispatcher;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.app.AppContext;
+import org.apache.tez.dag.app.dag.DAG;
 import org.apache.tez.dag.app.rm.AMSchedulerEventNodeBlacklistUpdate;
 import org.apache.tez.dag.app.rm.AMSchedulerEventType;
 import org.apache.tez.dag.app.rm.TaskSchedulerManager;
@@ -50,20 +48,38 @@ import org.apache.tez.dag.app.rm.container.AMContainerEventNodeFailed;
 import org.apache.tez.dag.app.rm.container.AMContainerEventType;
 import org.apache.tez.dag.app.rm.container.AMContainerMap;
 import org.apache.tez.dag.records.TezTaskAttemptID;
+
+import com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
-@SuppressWarnings({ "resource", "rawtypes" })
+@SuppressWarnings({"resource", "rawtypes"})
 public class TestAMNodeTracker {
 
   private static final Logger LOG = LoggerFactory.getLogger(TestAMNodeTracker.class);
 
   DrainDispatcher dispatcher;
   EventHandler eventHandler;
-  
+
+  private static NodeReport generateNodeReport(NodeId nodeId, NodeState nodeState) {
+    NodeReport nodeReport = mock(NodeReport.class);
+    doReturn(nodeId).when(nodeReport).getNodeId();
+    doReturn(nodeState).when(nodeReport).getNodeState();
+    String httpAddress = nodeId.getHost() + ":3433";
+    doReturn(httpAddress).when(nodeReport).getHttpAddress();
+    doReturn("/default-rack").when(nodeReport).getRackName();
+    doReturn(Resource.newInstance(0, 0)).when(nodeReport).getUsed();
+    doReturn(Resource.newInstance(10240, 12)).when(nodeReport).getCapability();
+    doReturn(10).when(nodeReport).getNumContainers();
+    doReturn(nodeState.toString()).when(nodeReport).getHealthReport();
+    long healthReportTime = System.currentTimeMillis();
+    doReturn(healthReportTime).when(nodeReport).getLastHealthReportTime();
+    return nodeReport;
+  }
+
   @Before
   public void setup() {
     dispatcher = new DrainDispatcher();
@@ -71,23 +87,13 @@ public class TestAMNodeTracker {
     dispatcher.start();
     eventHandler = dispatcher.getEventHandler();
   }
-  
-  class TestEventHandler implements EventHandler{
-    List<Event> events = Lists.newLinkedList();
-    @SuppressWarnings("unchecked")
-    @Override
-    public void handle(Event event) {
-      events.add(event);
-      eventHandler.handle(event);
-    }
-  }
-  
+
   @After
   public void teardown() {
     dispatcher.stop();
   }
-  
-  @Test(timeout=5000)
+
+  @Test(timeout = 5000)
   public void testHealthUpdateKnownNode() {
     AppContext appContext = mock(AppContext.class);
 
@@ -106,7 +112,7 @@ public class TestAMNodeTracker {
     amNodeTracker.stop();
   }
 
-  @Test(timeout=5000)
+  @Test(timeout = 5000)
   public void testHealthUpdateUnknownNode() {
     AppContext appContext = mock(AppContext.class);
 
@@ -126,7 +132,7 @@ public class TestAMNodeTracker {
     // the log message for verification.
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testMultipleSourcesNodeRegistration() {
     AppContext appContext = mock(AppContext.class);
     AMNodeTracker amNodeTracker = new AMNodeTracker(eventHandler, appContext);
@@ -149,7 +155,7 @@ public class TestAMNodeTracker {
     assertNotNull(amNodeTracker.get(nodeId2, 1));
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testMultipleSourcesNodeCountUpdated() {
     AppContext appContext = mock(AppContext.class);
     AMNodeTracker amNodeTracker = new AMNodeTracker(eventHandler, appContext);
@@ -175,7 +181,7 @@ public class TestAMNodeTracker {
     assertNotNull(amNodeTracker.get(nodeId2, 1));
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testSingleNodeNotBlacklisted() {
     AppContext appContext = mock(AppContext.class);
     Configuration conf = new Configuration(false);
@@ -188,7 +194,7 @@ public class TestAMNodeTracker {
     doReturn(amNodeTracker).when(appContext).getNodeTracker();
     AMContainerMap amContainerMap = mock(AMContainerMap.class);
     TaskSchedulerManager taskSchedulerManager =
-        mock(TaskSchedulerManager.class);
+      mock(TaskSchedulerManager.class);
     dispatcher.register(AMNodeEventType.class, amNodeTracker);
     dispatcher.register(AMContainerEventType.class, amContainerMap);
     dispatcher.register(AMSchedulerEventType.class, taskSchedulerManager);
@@ -198,7 +204,7 @@ public class TestAMNodeTracker {
     _testSingleNodeNotBlacklisted(amNodeTracker, handler, 0);
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testSingleNodeNotBlacklistedAlternateScheduler() {
     AppContext appContext = mock(AppContext.class);
     Configuration conf = new Configuration(false);
@@ -211,7 +217,7 @@ public class TestAMNodeTracker {
     doReturn(amNodeTracker).when(appContext).getNodeTracker();
     AMContainerMap amContainerMap = mock(AMContainerMap.class);
     TaskSchedulerManager taskSchedulerManager =
-        mock(TaskSchedulerManager.class);
+      mock(TaskSchedulerManager.class);
     dispatcher.register(AMNodeEventType.class, amNodeTracker);
     dispatcher.register(AMContainerEventType.class, amContainerMap);
     dispatcher.register(AMSchedulerEventType.class, taskSchedulerManager);
@@ -221,7 +227,7 @@ public class TestAMNodeTracker {
     _testSingleNodeNotBlacklisted(amNodeTracker, handler, 1);
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testSingleNodeNotBlacklistedAlternateScheduler2() {
     AppContext appContext = mock(AppContext.class);
     Configuration conf = new Configuration(false);
@@ -234,7 +240,7 @@ public class TestAMNodeTracker {
     doReturn(amNodeTracker).when(appContext).getNodeTracker();
     AMContainerMap amContainerMap = mock(AMContainerMap.class);
     TaskSchedulerManager taskSchedulerManager =
-        mock(TaskSchedulerManager.class);
+      mock(TaskSchedulerManager.class);
     dispatcher.register(AMNodeEventType.class, amNodeTracker);
     dispatcher.register(AMContainerEventType.class, amContainerMap);
     dispatcher.register(AMSchedulerEventType.class, taskSchedulerManager);
@@ -243,7 +249,7 @@ public class TestAMNodeTracker {
 
     // Register multiple nodes from a scheduler which isn't being tested.
     // This should not affect the blacklisting behaviour
-    for (int i = 0 ; i < 10 ; i++) {
+    for (int i = 0; i < 10; i++) {
       amNodeTracker.nodeSeen(NodeId.newInstance("fakenode" + i, 3333), 0);
     }
 
@@ -252,7 +258,7 @@ public class TestAMNodeTracker {
     assertFalse(amNodeTracker.isBlacklistingIgnored(0));
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testNodeSelfBlacklist() {
     AppContext appContext = mock(AppContext.class);
     Configuration conf = new Configuration(false);
@@ -262,7 +268,7 @@ public class TestAMNodeTracker {
     doReturn(amNodeTracker).when(appContext).getNodeTracker();
     AMContainerMap amContainerMap = mock(AMContainerMap.class);
     TaskSchedulerManager taskSchedulerManager =
-        mock(TaskSchedulerManager.class);
+      mock(TaskSchedulerManager.class);
     dispatcher.register(AMNodeEventType.class, amNodeTracker);
     dispatcher.register(AMContainerEventType.class, amContainerMap);
     dispatcher.register(AMSchedulerEventType.class, taskSchedulerManager);
@@ -275,7 +281,7 @@ public class TestAMNodeTracker {
     }
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testNodeSelfBlacklistAlternateScheduler1() {
     AppContext appContext = mock(AppContext.class);
     Configuration conf = new Configuration(false);
@@ -285,7 +291,7 @@ public class TestAMNodeTracker {
     doReturn(amNodeTracker).when(appContext).getNodeTracker();
     AMContainerMap amContainerMap = mock(AMContainerMap.class);
     TaskSchedulerManager taskSchedulerManager =
-        mock(TaskSchedulerManager.class);
+      mock(TaskSchedulerManager.class);
     dispatcher.register(AMNodeEventType.class, amNodeTracker);
     dispatcher.register(AMContainerEventType.class, amContainerMap);
     dispatcher.register(AMSchedulerEventType.class, taskSchedulerManager);
@@ -298,7 +304,7 @@ public class TestAMNodeTracker {
     }
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testNodeSelfBlacklistAlternateScheduler2() {
     AppContext appContext = mock(AppContext.class);
     Configuration conf = new Configuration(false);
@@ -308,7 +314,7 @@ public class TestAMNodeTracker {
     doReturn(amNodeTracker).when(appContext).getNodeTracker();
     AMContainerMap amContainerMap = mock(AMContainerMap.class);
     TaskSchedulerManager taskSchedulerManager =
-        mock(TaskSchedulerManager.class);
+      mock(TaskSchedulerManager.class);
     dispatcher.register(AMNodeEventType.class, amNodeTracker);
     dispatcher.register(AMContainerEventType.class, amContainerMap);
     dispatcher.register(AMSchedulerEventType.class, taskSchedulerManager);
@@ -317,7 +323,7 @@ public class TestAMNodeTracker {
     try {
       // Register multiple nodes from a scheduler which isn't being tested.
       // This should not affect the blacklisting behaviour
-      for (int i = 0 ; i < 100 ; i++) {
+      for (int i = 0; i < 100; i++) {
         amNodeTracker.nodeSeen(NodeId.newInstance("fakenode" + i, 3333), 0);
       }
       _testNodeSelfBlacklist(amNodeTracker, handler, 1);
@@ -327,7 +333,7 @@ public class TestAMNodeTracker {
     }
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testMultipleAMNodeIDs() {
     AppContext appContext = mock(AppContext.class);
     Configuration conf = new Configuration(false);
@@ -364,7 +370,7 @@ public class TestAMNodeTracker {
     doReturn(amNodeTracker).when(appContext).getNodeTracker();
     AMContainerMap amContainerMap = mock(AMContainerMap.class);
     TaskSchedulerManager taskSchedulerManager =
-        mock(TaskSchedulerManager.class);
+      mock(TaskSchedulerManager.class);
     dispatcher.register(AMNodeEventType.class, amNodeTracker);
     dispatcher.register(AMContainerEventType.class, amContainerMap);
     dispatcher.register(AMSchedulerEventType.class, taskSchedulerManager);
@@ -383,7 +389,7 @@ public class TestAMNodeTracker {
       for (int i = 0; i < 5; i++) {
         containerIds[i] = mock(ContainerId.class);
         amNodeTracker
-            .handle(new AMNodeEventContainerAllocated(nodeId, 0, containerIds[i]));
+          .handle(new AMNodeEventContainerAllocated(nodeId, 0, containerIds[i]));
       }
       assertEquals(5, amNode.getContainers().size());
 
@@ -391,11 +397,10 @@ public class TestAMNodeTracker {
       amNodeTracker.dagComplete(mock(DAG.class));
       assertEquals(5, amNode.getContainers().size());
 
-
       // Mark 2 as complete. Finish 2nd dag.
       for (int i = 0; i < 2; i++) {
         amNodeTracker.handle(
-            new AMNodeEventContainerCompleted(nodeId, 0, containerIds[i]));
+          new AMNodeEventContainerCompleted(nodeId, 0, containerIds[i]));
       }
       amNodeTracker.dagComplete(mock(DAG.class));
       assertEquals(3, amNode.getContainers().size());
@@ -404,7 +409,7 @@ public class TestAMNodeTracker {
       for (int i = 5; i < 7; i++) {
         containerIds[i] = mock(ContainerId.class);
         amNodeTracker
-            .handle(new AMNodeEventContainerAllocated(nodeId, 0, containerIds[i]));
+          .handle(new AMNodeEventContainerAllocated(nodeId, 0, containerIds[i]));
       }
       assertEquals(5, amNode.getContainers().size());
       amNodeTracker.dagComplete(mock(DAG.class));
@@ -414,35 +419,32 @@ public class TestAMNodeTracker {
 
       for (int i = 2; i < 7; i++) {
         amNodeTracker.handle(
-            new AMNodeEventContainerCompleted(nodeId, 0, containerIds[i]));
+          new AMNodeEventContainerCompleted(nodeId, 0, containerIds[i]));
       }
       assertEquals(5, amNode.getContainers().size());
       amNodeTracker.dagComplete(mock(DAG.class));
       assertEquals(0, amNode.getContainers().size());
-
     } finally {
       amNodeTracker.stop();
     }
-
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testNodeUnhealthyRescheduleTasksEnabled() throws Exception {
     _testNodeUnhealthyRescheduleTasks(true, false);
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testNodeUnhealthyRescheduleTasksDisabled() throws Exception {
     _testNodeUnhealthyRescheduleTasks(false, false);
   }
 
-
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testNodeUnhealthyRescheduleTasksEnabledAMNode() throws Exception {
     _testNodeUnhealthyRescheduleTasks(true, true);
   }
 
-  @Test(timeout=10000)
+  @Test(timeout = 10000)
   public void testNodeUnhealthyRescheduleTasksDisabledAMNode() throws Exception {
     _testNodeUnhealthyRescheduleTasks(false, true);
   }
@@ -451,7 +453,7 @@ public class TestAMNodeTracker {
     AppContext appContext = mock(AppContext.class);
     Configuration conf = new Configuration(false);
     conf.setBoolean(TezConfiguration.TEZ_AM_NODE_UNHEALTHY_RESCHEDULE_TASKS,
-        rescheduleTasks);
+      rescheduleTasks);
     TestEventHandler handler = new TestEventHandler();
     AMNodeTracker amNodeTracker = new AMNodeTracker(handler, appContext);
     doReturn(amNodeTracker).when(appContext).getNodeTracker();
@@ -569,14 +571,13 @@ public class TestAMNodeTracker {
 
     assertEquals(4, handler.events.size());
     assertEquals(AMContainerEventType.C_NODE_FAILED, handler.events.get(0).getType());
-    assertEquals(cId1, ((AMContainerEventNodeFailed)handler.events.get(0)).getContainerId());
+    assertEquals(cId1, ((AMContainerEventNodeFailed) handler.events.get(0)).getContainerId());
     assertEquals(AMContainerEventType.C_NODE_FAILED, handler.events.get(1).getType());
-    assertEquals(cId2, ((AMContainerEventNodeFailed)handler.events.get(1)).getContainerId());
+    assertEquals(cId2, ((AMContainerEventNodeFailed) handler.events.get(1)).getContainerId());
     assertEquals(AMContainerEventType.C_NODE_FAILED, handler.events.get(2).getType());
-    assertEquals(cId3, ((AMContainerEventNodeFailed)handler.events.get(2)).getContainerId());
+    assertEquals(cId3, ((AMContainerEventNodeFailed) handler.events.get(2)).getContainerId());
     assertEquals(AMSchedulerEventType.S_NODE_BLACKLISTED, handler.events.get(3).getType());
-    assertEquals(node.getNodeId(), ((AMSchedulerEventNodeBlacklistUpdate)handler.events.get(3)).getNodeId());
-
+    assertEquals(node.getNodeId(), ((AMSchedulerEventNodeBlacklistUpdate) handler.events.get(3)).getNodeId());
 
     // Trigger one more node failure, which should cause BLACKLISTING to be disabled
     ContainerId cId4 = mock(ContainerId.class);
@@ -619,7 +620,6 @@ public class TestAMNodeTracker {
     // drain all previous events
     dispatcher.await();
 
-
     // Increase the number of nodes. BLACKLISTING should be re-enabled.
     // Node 1 and Node 2 should go into BLACKLISTED state
     handler.events.clear();
@@ -637,7 +637,7 @@ public class TestAMNodeTracker {
     int numNodeFailedEvents = 0;
     for (Event event : handler.events) {
       LOG.info("Logging event: index:" + index++
-          + " type: " + event.getType());
+        + " type: " + event.getType());
       if (event.getType() == AMNodeEventType.N_IGNORE_BLACKLISTING_DISABLED) {
         numIgnoreBlacklistingDisabledEvents++;
       } else if (event.getType() == AMSchedulerEventType.S_NODE_BLACKLISTED) {
@@ -646,7 +646,7 @@ public class TestAMNodeTracker {
         numNodeFailedEvents++;
         // Node2 is now blacklisted so the container's will be informed
         assertTrue(((AMContainerEventNodeFailed) event).getContainerId() == cId4 ||
-            ((AMContainerEventNodeFailed) event).getContainerId() == cId5);
+          ((AMContainerEventNodeFailed) event).getContainerId() == cId5);
       } else {
         fail("Unexpected event of type: " + event.getType());
       }
@@ -658,19 +658,14 @@ public class TestAMNodeTracker {
     amNodeTracker.stop();
   }
 
-  private static NodeReport generateNodeReport(NodeId nodeId, NodeState nodeState) {
-    NodeReport nodeReport = mock(NodeReport.class);
-    doReturn(nodeId).when(nodeReport).getNodeId();
-    doReturn(nodeState).when(nodeReport).getNodeState();
-    String httpAddress = nodeId.getHost() + ":3433";
-    doReturn(httpAddress).when(nodeReport).getHttpAddress();
-    doReturn("/default-rack").when(nodeReport).getRackName();
-    doReturn(Resource.newInstance(0, 0)).when(nodeReport).getUsed();
-    doReturn(Resource.newInstance(10240, 12)).when(nodeReport).getCapability();
-    doReturn(10).when(nodeReport).getNumContainers();
-    doReturn(nodeState.toString()).when(nodeReport).getHealthReport();
-    long healthReportTime = System.currentTimeMillis();
-    doReturn(healthReportTime).when(nodeReport).getLastHealthReportTime();
-    return nodeReport;
+  class TestEventHandler implements EventHandler {
+    List<Event> events = Lists.newLinkedList();
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void handle(Event event) {
+      events.add(event);
+      eventHandler.handle(event);
+    }
   }
 }

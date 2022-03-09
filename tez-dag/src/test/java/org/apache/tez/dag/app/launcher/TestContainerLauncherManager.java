@@ -14,7 +14,6 @@
 
 package org.apache.tez.dag.app.launcher;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -68,12 +67,16 @@ import org.apache.tez.serviceplugins.api.ContainerStopRequest;
 import org.apache.tez.serviceplugins.api.ServicePluginErrorDefaults;
 import org.apache.tez.serviceplugins.api.ServicePluginException;
 import org.apache.tez.serviceplugins.api.TaskCommunicatorDescriptor;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 public class TestContainerLauncherManager {
+
+  private static final String DAG_NAME = "dagName";
+  private static final int DAG_INDEX = 1;
 
   @Before
   @After
@@ -90,7 +93,7 @@ public class TestContainerLauncherManager {
     try {
 
       new ContainerLaucherRouterForMultipleLauncherTest(appContext, tal, null, null,
-          false);
+        false);
       fail("Expecting a failure without any launchers being specified");
     } catch (IllegalArgumentException e) {
 
@@ -110,13 +113,13 @@ public class TestContainerLauncherManager {
     bb.putInt(0, 3);
     UserPayload customPayload = UserPayload.create(bb);
     launcherDescriptors.add(
-        new NamedEntityDescriptor(customLauncherName, FakeContainerLauncher.class.getName())
-            .setUserPayload(customPayload));
+      new NamedEntityDescriptor(customLauncherName, FakeContainerLauncher.class.getName())
+        .setUserPayload(customPayload));
 
     ContainerLaucherRouterForMultipleLauncherTest clr =
-        new ContainerLaucherRouterForMultipleLauncherTest(appContext, tal, null,
-            launcherDescriptors,
-            true);
+      new ContainerLaucherRouterForMultipleLauncherTest(appContext, tal, null,
+        launcherDescriptors,
+        true);
     try {
       clr.init(conf);
       clr.start();
@@ -146,16 +149,16 @@ public class TestContainerLauncherManager {
     bb.putInt(0, 3);
     UserPayload customPayload = UserPayload.create(bb);
     launcherDescriptors.add(
-        new NamedEntityDescriptor(customLauncherName, FakeContainerLauncher.class.getName())
-            .setUserPayload(customPayload));
+      new NamedEntityDescriptor(customLauncherName, FakeContainerLauncher.class.getName())
+        .setUserPayload(customPayload));
     launcherDescriptors
-        .add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
-            .setUserPayload(userPayload));
+      .add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
+        .setUserPayload(userPayload));
 
     ContainerLaucherRouterForMultipleLauncherTest clr =
-        new ContainerLaucherRouterForMultipleLauncherTest(appContext, tal, null,
-            launcherDescriptors,
-            true);
+      new ContainerLaucherRouterForMultipleLauncherTest(appContext, tal, null,
+        launcherDescriptors,
+        true);
     try {
       clr.init(conf);
       clr.start();
@@ -168,7 +171,7 @@ public class TestContainerLauncherManager {
 
       assertEquals(TezConstants.getTezYarnServicePluginName(), clr.getContainerLauncherName(1));
       Configuration confParsed = TezUtils
-          .createConfFromUserPayload(clr.getContainerLauncherContext(1).getInitialUserPayload());
+        .createConfFromUserPayload(clr.getContainerLauncherContext(1).getInitialUserPayload());
       assertEquals("testvalue", confParsed.get("testkey"));
     } finally {
       clr.stop();
@@ -189,16 +192,16 @@ public class TestContainerLauncherManager {
     bb.putInt(0, 3);
     UserPayload customPayload = UserPayload.create(bb);
     launcherDescriptors.add(
-        new NamedEntityDescriptor(customLauncherName, FakeContainerLauncher.class.getName())
-            .setUserPayload(customPayload));
+      new NamedEntityDescriptor(customLauncherName, FakeContainerLauncher.class.getName())
+        .setUserPayload(customPayload));
     launcherDescriptors
-        .add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
-            .setUserPayload(userPayload));
+      .add(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
+        .setUserPayload(userPayload));
 
     ContainerLaucherRouterForMultipleLauncherTest clr =
-        new ContainerLaucherRouterForMultipleLauncherTest(appContext, tal, null,
-            launcherDescriptors,
-            true);
+      new ContainerLaucherRouterForMultipleLauncherTest(appContext, tal, null,
+        launcherDescriptors,
+        true);
     try {
       clr.init(conf);
       clr.start();
@@ -221,15 +224,14 @@ public class TestContainerLauncherManager {
       Container container2 = mock(Container.class);
 
       ContainerLauncherLaunchRequestEvent launchRequestEvent1 =
-          new ContainerLauncherLaunchRequestEvent(clc1, container1, 0, 0, 0);
+        new ContainerLauncherLaunchRequestEvent(clc1, container1, 0, 0, 0);
       ContainerLauncherLaunchRequestEvent launchRequestEvent2 =
-          new ContainerLauncherLaunchRequestEvent(clc2, container2, 1, 0, 0);
+        new ContainerLauncherLaunchRequestEvent(clc2, container2, 1, 0, 0);
 
       clr.handle(launchRequestEvent1);
 
-
       ArgumentCaptor<ContainerLaunchRequest> captor =
-          ArgumentCaptor.forClass(ContainerLaunchRequest.class);
+        ArgumentCaptor.forClass(ContainerLaunchRequest.class);
       verify(clr.getTestContainerLauncher(0)).launchContainer(captor.capture());
       assertEquals(1, captor.getAllValues().size());
       ContainerLaunchRequest launchRequest1 = captor.getValue();
@@ -241,7 +243,6 @@ public class TestContainerLauncherManager {
       assertEquals(1, captor.getAllValues().size());
       ContainerLaunchRequest launchRequest2 = captor.getValue();
       assertEquals(clc2, launchRequest2.getContainerLaunchContext());
-
     } finally {
       clr.stop();
       verify(clr.getTestContainerLauncher(0)).shutdown();
@@ -265,19 +266,18 @@ public class TestContainerLauncherManager {
     doReturn("testlauncher").when(appContext).getContainerLauncherName(0);
 
     NamedEntityDescriptor<TaskCommunicatorDescriptor> taskCommDescriptor =
-        new NamedEntityDescriptor<>("testlauncher", ContainerLauncherForTest.class.getName());
+      new NamedEntityDescriptor<>("testlauncher", ContainerLauncherForTest.class.getName());
     List<NamedEntityDescriptor> list = new LinkedList<>();
     list.add(taskCommDescriptor);
     ContainerLauncherManager containerLauncherManager =
-        new ContainerLauncherManager(appContext, mock(TaskCommunicatorManagerInterface.class), "",
-            list, false);
+      new ContainerLauncherManager(appContext, mock(TaskCommunicatorManagerInterface.class), "",
+        list, false);
 
     try {
       ContainerLaunchContext clc1 = mock(ContainerLaunchContext.class);
       Container container1 = mock(Container.class);
       ContainerLauncherLaunchRequestEvent launchRequestEvent =
-          new ContainerLauncherLaunchRequestEvent(clc1, container1, 0, 0, 0);
-
+        new ContainerLauncherLaunchRequestEvent(clc1, container1, 0, 0, 0);
 
       containerLauncherManager.handle(launchRequestEvent);
 
@@ -287,11 +287,11 @@ public class TestContainerLauncherManager {
       Event rawEvent = argumentCaptor.getValue();
       assertTrue(rawEvent instanceof DAGAppMasterEventUserServiceFatalError);
       DAGAppMasterEventUserServiceFatalError event =
-          (DAGAppMasterEventUserServiceFatalError) rawEvent;
+        (DAGAppMasterEventUserServiceFatalError) rawEvent;
       assertEquals(DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR, event.getType());
       assertTrue(event.getDiagnosticInfo().contains("ReportedFatalError"));
       assertTrue(
-          event.getDiagnosticInfo().contains(ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
+        event.getDiagnosticInfo().contains(ServicePluginErrorDefaults.INCONSISTENT_STATE.name()));
       assertTrue(event.getDiagnosticInfo().contains("[0:testlauncher]"));
 
       reset(eventHandler);
@@ -300,7 +300,7 @@ public class TestContainerLauncherManager {
       ContainerId containerId2 = mock(ContainerId.class);
       NodeId nodeId2 = mock(NodeId.class);
       ContainerLauncherStopRequestEvent stopRequestEvent =
-          new ContainerLauncherStopRequestEvent(containerId2, nodeId2, null, 0, 0, 0);
+        new ContainerLauncherStopRequestEvent(containerId2, nodeId2, null, 0, 0, 0);
 
       argumentCaptor = ArgumentCaptor.forClass(Event.class);
 
@@ -311,7 +311,7 @@ public class TestContainerLauncherManager {
       DAGEventTerminateDag killEvent = (DAGEventTerminateDag) rawEvent;
       assertTrue(killEvent.getDiagnosticInfo().contains("ReportError"));
       assertTrue(killEvent.getDiagnosticInfo()
-          .contains(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE.name()));
+        .contains(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE.name()));
       assertTrue(killEvent.getDiagnosticInfo().contains("[0:testlauncher]"));
     } finally {
       containerLauncherManager.stop();
@@ -332,7 +332,7 @@ public class TestContainerLauncherManager {
     Configuration conf = new Configuration(false);
 
     ContainerLauncherManager containerLauncherManager =
-        new ContainerLauncherManager(appContext);
+      new ContainerLauncherManager(appContext);
     containerLauncherManager.setContainerLauncher(containerLauncher);
     try {
       containerLauncherManager.init(conf);
@@ -340,12 +340,11 @@ public class TestContainerLauncherManager {
 
       // launch container
       doThrow(new RuntimeException("testexception")).when(containerLauncher)
-          .launchContainer(any(ContainerLaunchRequest.class));
+        .launchContainer(any(ContainerLaunchRequest.class));
       ContainerLaunchContext clc1 = mock(ContainerLaunchContext.class);
       Container container1 = mock(Container.class);
       ContainerLauncherLaunchRequestEvent launchRequestEvent =
-          new ContainerLauncherLaunchRequestEvent(clc1, container1, 0, 0, 0);
-
+        new ContainerLauncherLaunchRequestEvent(clc1, container1, 0, 0, 0);
 
       containerLauncherManager.handle(launchRequestEvent);
 
@@ -355,7 +354,7 @@ public class TestContainerLauncherManager {
       Event rawEvent = argumentCaptor.getValue();
       assertTrue(rawEvent instanceof DAGAppMasterEventUserServiceFatalError);
       DAGAppMasterEventUserServiceFatalError event =
-          (DAGAppMasterEventUserServiceFatalError) rawEvent;
+        (DAGAppMasterEventUserServiceFatalError) rawEvent;
       assertEquals(DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR, event.getType());
       assertTrue(event.getError().getMessage().contains("testexception"));
       assertTrue(event.getDiagnosticInfo().contains("launching container"));
@@ -365,11 +364,11 @@ public class TestContainerLauncherManager {
       // stop container
 
       doThrow(new RuntimeException("teststopexception")).when(containerLauncher)
-          .stopContainer(any(ContainerStopRequest.class));
+        .stopContainer(any(ContainerStopRequest.class));
       ContainerId containerId2 = mock(ContainerId.class);
       NodeId nodeId2 = mock(NodeId.class);
       ContainerLauncherStopRequestEvent stopRequestEvent =
-          new ContainerLauncherStopRequestEvent(containerId2, nodeId2, null, 0, 0, 0);
+        new ContainerLauncherStopRequestEvent(containerId2, nodeId2, null, 0, 0, 0);
 
       argumentCaptor = ArgumentCaptor.forClass(Event.class);
 
@@ -387,7 +386,7 @@ public class TestContainerLauncherManager {
   }
 
   private static class ContainerLaucherRouterForMultipleLauncherTest
-      extends ContainerLauncherManager {
+    extends ContainerLauncherManager {
 
     // All variables setup as static since methods being overridden are invoked by the ContainerLauncherRouter ctor,
     // and regular variables will not be initialized at this point.
@@ -399,10 +398,19 @@ public class TestContainerLauncherManager {
     private static final AtomicBoolean uberContainerLauncherCreated = new AtomicBoolean(false);
 
     private static final List<ContainerLauncherContext> containerLauncherContexts =
-        new LinkedList<>();
+      new LinkedList<>();
     private static final List<String> containerLauncherNames = new LinkedList<>();
     private static final List<ContainerLauncher> testContainerLaunchers = new LinkedList<>();
 
+    public ContainerLaucherRouterForMultipleLauncherTest(AppContext context,
+                                                         TaskCommunicatorManagerInterface taskCommunicatorManagerInterface,
+                                                         String workingDirectory,
+                                                         List<NamedEntityDescriptor> containerLauncherDescriptors,
+                                                         boolean isPureLocalMode) throws
+      UnknownHostException, TezException {
+      super(context, taskCommunicatorManagerInterface, workingDirectory,
+        containerLauncherDescriptors, isPureLocalMode);
+    }
 
     public static void reset() {
       numContainerLaunchers.set(0);
@@ -412,16 +420,6 @@ public class TestContainerLauncherManager {
       containerLauncherContexts.clear();
       containerLauncherNames.clear();
       testContainerLaunchers.clear();
-    }
-
-    public ContainerLaucherRouterForMultipleLauncherTest(AppContext context,
-                                                         TaskCommunicatorManagerInterface taskCommunicatorManagerInterface,
-                                                         String workingDirectory,
-                                                         List<NamedEntityDescriptor> containerLauncherDescriptors,
-                                                         boolean isPureLocalMode) throws
-        UnknownHostException, TezException {
-      super(context, taskCommunicatorManagerInterface, workingDirectory,
-          containerLauncherDescriptors, isPureLocalMode);
     }
 
     @Override
@@ -438,13 +436,13 @@ public class TestContainerLauncherManager {
       containerLauncherNames.add(containerLauncherDescriptor.getEntityName());
       containerLauncherContexts.add(containerLauncherContext);
       return super
-          .createContainerLauncher(containerLauncherDescriptor, context, containerLauncherContext,
-              taskCommunicatorManagerInterface, workingDirectory, containerLauncherIndex, isPureLocalMode);
+        .createContainerLauncher(containerLauncherDescriptor, context, containerLauncherContext,
+          taskCommunicatorManagerInterface, workingDirectory, containerLauncherIndex, isPureLocalMode);
     }
 
     @Override
     ContainerLauncher createYarnContainerLauncher(
-        ContainerLauncherContext containerLauncherContext) {
+      ContainerLauncherContext containerLauncherContext) {
       yarnContainerLauncherCreated.set(true);
       testContainerLaunchers.add(yarnContainerLauncher);
       return yarnContainerLauncher;
@@ -463,10 +461,10 @@ public class TestContainerLauncherManager {
 
     @Override
     ContainerLauncher createCustomContainerLauncher(
-        ContainerLauncherContext containerLauncherContext,
-        NamedEntityDescriptor containerLauncherDescriptor) throws TezException {
+      ContainerLauncherContext containerLauncherContext,
+      NamedEntityDescriptor containerLauncherDescriptor) throws TezException {
       ContainerLauncher spyLauncher = spy(super.createCustomContainerLauncher(
-          containerLauncherContext, containerLauncherDescriptor));
+        containerLauncherContext, containerLauncherDescriptor));
       testContainerLaunchers.add(spyLauncher);
       return spyLauncher;
     }
@@ -499,7 +497,7 @@ public class TestContainerLauncherManager {
   public static class FakeContainerLauncher extends ContainerLauncher {
 
     public FakeContainerLauncher(
-        ContainerLauncherContext containerLauncherContext) {
+      ContainerLauncherContext containerLauncherContext) {
       super(containerLauncherContext);
     }
 
@@ -514,26 +512,24 @@ public class TestContainerLauncherManager {
     }
   }
 
-  private static final String DAG_NAME = "dagName";
-  private static final int DAG_INDEX = 1;
   public static class ContainerLauncherForTest extends ContainerLauncher {
 
     public ContainerLauncherForTest(
-        ContainerLauncherContext containerLauncherContext) {
+      ContainerLauncherContext containerLauncherContext) {
       super(containerLauncherContext);
     }
 
     @Override
     public void launchContainer(ContainerLaunchRequest launchRequest) throws
-        ServicePluginException {
+      ServicePluginException {
       getContext().reportError(ServicePluginErrorDefaults.INCONSISTENT_STATE, "ReportedFatalError", null);
     }
 
     @Override
     public void stopContainer(ContainerStopRequest stopRequest) throws ServicePluginException {
       getContext()
-          .reportError(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE, "ReportError", new DagInfoImplForTest(DAG_INDEX, DAG_NAME));
+        .reportError(ServicePluginErrorDefaults.SERVICE_UNAVAILABLE, "ReportError",
+          new DagInfoImplForTest(DAG_INDEX, DAG_NAME));
     }
   }
-
 }

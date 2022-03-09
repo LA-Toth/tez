@@ -19,9 +19,12 @@
 package org.apache.tez.tools;
 
 import com.google.common.annotations.VisibleForTesting;
+
 import org.apache.commons.io.IOUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -45,18 +48,14 @@ import java.io.InputStreamReader;
 public class TFileRecordReader extends RecordReader<Text, Text> {
 
   private static final Logger LOG = LoggerFactory.getLogger(TFileRecordReader.class);
-
-  private long start, end;
-
   @VisibleForTesting
   protected Path splitPath;
-  private FSDataInputStream fin;
-
   @VisibleForTesting
   protected TFile.Reader reader;
   @VisibleForTesting
   protected TFile.Reader.Scanner scanner;
-
+  private long start, end;
+  private FSDataInputStream fin;
   private Text key = new Text();
   private Text value = new Text();
 
@@ -64,8 +63,9 @@ public class TFileRecordReader extends RecordReader<Text, Text> {
 
   private BufferedReader currentValueReader;
 
-  @Override public void initialize(InputSplit split, TaskAttemptContext context)
-      throws IOException, InterruptedException {
+  @Override
+  public void initialize(InputSplit split, TaskAttemptContext context)
+    throws IOException, InterruptedException {
     FileSplit fileSplit = (FileSplit) split;
     LOG.info("Initializing TFileRecordReader : " + fileSplit.getPath().toString());
     start = fileSplit.getStart();
@@ -75,7 +75,7 @@ public class TFileRecordReader extends RecordReader<Text, Text> {
     splitPath = fileSplit.getPath();
     fin = fs.open(splitPath);
     reader = new TFile.Reader(fin, fs.getFileStatus(splitPath).getLen(),
-        context.getConfiguration());
+      context.getConfiguration());
     scanner = reader.createScannerByByteRange(start, fileSplit.getLength());
   }
 
@@ -83,22 +83,23 @@ public class TFileRecordReader extends RecordReader<Text, Text> {
     entry.getKey(keyBytesWritable);
     //splitpath contains the machine name. Create the key as splitPath + realKey
     String keyStr = new StringBuilder()
-        .append(splitPath.getName()).append(":")
-        .append(new String(keyBytesWritable.getBytes()))
-        .toString();
+      .append(splitPath.getName()).append(":")
+      .append(new String(keyBytesWritable.getBytes()))
+      .toString();
 
     /**
      * In certain cases, values can be huge (files > 2 GB). Stream is
      * better to handle such scenarios.
      */
     currentValueReader = new BufferedReader(
-        new InputStreamReader(entry.getValueStream()));
+      new InputStreamReader(entry.getValueStream()));
     key.set(keyStr);
     String line = currentValueReader.readLine();
     value.set((line == null) ? "" : line);
   }
 
-  @Override public boolean nextKeyValue() throws IOException, InterruptedException {
+  @Override
+  public boolean nextKeyValue() throws IOException, InterruptedException {
     if (currentValueReader != null) {
       //Still at the old entry reading line by line
       String line = currentValueReader.readLine();
@@ -114,26 +115,30 @@ public class TFileRecordReader extends RecordReader<Text, Text> {
     try {
       populateKV(scanner.entry());
       return true;
-    } catch(EOFException eofException) {
+    } catch (EOFException eofException) {
       key = null;
       value = null;
       return false;
     }
   }
 
-  @Override public Text getCurrentKey() throws IOException, InterruptedException {
+  @Override
+  public Text getCurrentKey() throws IOException, InterruptedException {
     return key;
   }
 
-  @Override public Text getCurrentValue() throws IOException, InterruptedException {
+  @Override
+  public Text getCurrentValue() throws IOException, InterruptedException {
     return value;
   }
 
-  @Override public float getProgress() throws IOException, InterruptedException {
+  @Override
+  public float getProgress() throws IOException, InterruptedException {
     return ((fin.getPos() - start) * 1.0f) / ((end - start) * 1.0f);
   }
 
-  @Override public void close() throws IOException {
+  @Override
+  public void close() throws IOException {
     IOUtils.closeQuietly(scanner);
     IOUtils.closeQuietly(reader);
     IOUtils.closeQuietly(fin);

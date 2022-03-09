@@ -18,7 +18,7 @@
 
 package org.apache.tez.runtime.task;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,13 +32,13 @@ import org.apache.tez.hadoop.shim.DefaultHadoopShim;
 import org.apache.tez.runtime.api.impl.InputSpec;
 import org.apache.tez.runtime.api.impl.OutputSpec;
 import org.apache.tez.runtime.api.impl.TaskSpec;
+
 import org.junit.Assert;
 import org.junit.Test;
 
-
 public class TestTezTaskRunner2 {
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testTaskConfUsage() throws Exception {
     Configuration conf = new Configuration(false);
     conf.set("global", "global1");
@@ -51,17 +51,15 @@ public class TestTezTaskRunner2 {
     List<InputSpec> inputSpecList = new ArrayList<>();
     List<OutputSpec> outputSpecList = new ArrayList<>();
     TaskSpec taskSpec = new TaskSpec("dagName", "vertexName", 1, mock(ProcessorDescriptor.class),
-        inputSpecList, outputSpecList, null, taskConf);
+      inputSpecList, outputSpecList, null, taskConf);
     TezExecutors sharedExecutor = new TezSharedExecutor(conf);
     TezTaskRunner2 taskRunner2 = new TezTaskRunner2(conf, mock(UserGroupInformation.class),
-        localDirs, taskSpec, 1, null, null, null, mock(TaskReporter.class), null, null, "pid",
-        null, 1000, false, new DefaultHadoopShim(), sharedExecutor);
+      localDirs, taskSpec, 1, null, null, null, mock(TaskReporter.class), null, null, "pid",
+      null, 1000, false, new DefaultHadoopShim(), sharedExecutor);
 
     Assert.assertEquals("global1", taskRunner2.task.getTaskConf().get("global"));
     Assert.assertEquals("task1", taskRunner2.task.getTaskConf().get("global_override"));
     Assert.assertEquals("task1", taskRunner2.task.getTaskConf().get("task"));
     sharedExecutor.shutdownNow();
   }
-
-
 }

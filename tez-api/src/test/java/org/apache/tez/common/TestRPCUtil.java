@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,18 +21,17 @@ package org.apache.tez.common;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import org.apache.hadoop.ipc.RemoteException;
 import org.apache.tez.dag.api.SessionNotRunning;
 import org.apache.tez.dag.api.TezException;
-import org.junit.Assert;
-
-import org.apache.hadoop.ipc.RemoteException;
-import org.junit.Test;
 
 import com.google.protobuf.ServiceException;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TestRPCUtil {
 
-  @Test (timeout=1000)
+  @Test(timeout = 1000)
   public void testUnknownExceptionUnwrapping() {
     Class<? extends Throwable> exception = TezException.class;
     String className = "UnknownException.class";
@@ -56,7 +55,6 @@ public class TestRPCUtil {
   public void testRemoteTezExceptionUnwrapping() {
     Class<? extends Throwable> exception = TezException.class;
     verifyRemoteExceptionUnwrapping(exception, exception.getName());
-
   }
 
   @Test
@@ -126,7 +124,7 @@ public class TestRPCUtil {
     Throwable t = null;
     try {
       RPCUtil.unwrapAndThrowException(se);
-    }  catch (Throwable thrown) {
+    } catch (Throwable thrown) {
       t = thrown;
     }
 
@@ -135,14 +133,14 @@ public class TestRPCUtil {
   }
 
   private void verifyRemoteExceptionUnwrapping(
-      Class<? extends Throwable> expectedLocalException,
-      String realExceptionClassName) {
+    Class<? extends Throwable> expectedLocalException,
+    String realExceptionClassName) {
     verifyRemoteExceptionUnwrapping(expectedLocalException, realExceptionClassName, true);
   }
 
   private void verifyRemoteExceptionUnwrapping(
-      Class<? extends Throwable> expectedLocalException,
-      String realExceptionClassName, boolean allowIO) {
+    Class<? extends Throwable> expectedLocalException,
+    String realExceptionClassName, boolean allowIO) {
     String message = realExceptionClassName + "Message";
     RemoteException re = new RemoteException(realExceptionClassName, message);
     ServiceException se = new ServiceException(re);
@@ -159,23 +157,20 @@ public class TestRPCUtil {
     }
 
     Assert.assertTrue("Expected exception [" + expectedLocalException
-        + "] but found " + t, expectedLocalException.isInstance(t));
+      + "] but found " + t, expectedLocalException.isInstance(t));
     Assert.assertTrue(
-        "Expected message [" + message + "] but found " + t.getMessage(), t
-            .getMessage().contains(message));
+      "Expected message [" + message + "] but found " + t.getMessage(), t
+        .getMessage().contains(message));
   }
 
-
-  @Test (timeout=1000)
+  @Test(timeout = 1000)
   public void testRemoteNonIOExceptionUnwrapping() {
     Class<? extends Throwable> exception = TezException.class;
     verifyRemoteExceptionUnwrapping(exception, IOException.class.getName(), false);
   }
 
-
   private static class TezTestExceptionNoConstructor extends
-      Exception {
+    Exception {
     private static final long serialVersionUID = 1L;
   }
-
 }

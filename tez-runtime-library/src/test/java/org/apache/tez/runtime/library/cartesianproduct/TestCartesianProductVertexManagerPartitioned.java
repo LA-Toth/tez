@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,6 +16,22 @@
  * limitations under the License.
  */
 package org.apache.tez.runtime.library.cartesianproduct;
+
+import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.BROADCAST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.isNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.tez.dag.api.EdgeManagerPluginDescriptor;
 import org.apache.tez.dag.api.EdgeProperty;
@@ -33,28 +49,13 @@ import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.runtime.api.TaskAttemptIdentifier;
 import org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Matchers;
 import org.mockito.MockitoAnnotations;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.BROADCAST;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class TestCartesianProductVertexManagerPartitioned {
   @Captor
@@ -111,7 +112,7 @@ public class TestCartesianProductVertexManagerPartitioned {
     vertexManager.onVertexStateUpdated(new VertexStateUpdate("v0", VertexState.CONFIGURED));
     verify(context, times(1)).reconfigureVertex(parallelismCaptor.capture(),
       isNull(VertexLocationHint.class), edgePropertiesCaptor.capture());
-    assertEquals((int)parallelismCaptor.getValue(), parallelism);
+    assertEquals((int) parallelismCaptor.getValue(), parallelism);
     assertNull(edgePropertiesCaptor.getValue());
   }
 
@@ -130,7 +131,6 @@ public class TestCartesianProductVertexManagerPartitioned {
     vertexManager.onVertexStarted(null);
     vertexManager.onVertexStateUpdated(new VertexStateUpdate("v0", VertexState.CONFIGURED));
     vertexManager.onVertexStateUpdated(new VertexStateUpdate("v1", VertexState.CONFIGURED));
-
 
     vertexManager.onSourceTaskCompleted(allCompletions.get(0));
     vertexManager.onSourceTaskCompleted(allCompletions.get(1));
@@ -153,10 +153,10 @@ public class TestCartesianProductVertexManagerPartitioned {
 
     for (int i = 3; i < 6; i++) {
       vertexManager.onSourceTaskCompleted(allCompletions.get(i));
-      verify(context, times(i-1)).scheduleTasks(scheduleTaskRequestCaptor.capture());
+      verify(context, times(i - 1)).scheduleTasks(scheduleTaskRequestCaptor.capture());
       scheduleTaskRequests = scheduleTaskRequestCaptor.getValue();
       assertEquals(1, scheduleTaskRequests.size());
-      assertEquals(i-2, scheduleTaskRequests.get(0).getTaskIndex());
+      assertEquals(i - 2, scheduleTaskRequests.get(0).getTaskIndex());
     }
 
     for (int i = 6; i < 8; i++) {

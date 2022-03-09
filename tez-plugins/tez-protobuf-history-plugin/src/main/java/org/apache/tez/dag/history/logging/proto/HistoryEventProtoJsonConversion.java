@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,6 +26,7 @@ import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.history.logging.EntityTypes;
 import org.apache.tez.dag.history.logging.proto.HistoryLoggerProtos.HistoryEventProto;
 import org.apache.tez.dag.history.logging.proto.HistoryLoggerProtos.KVPair;
+
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -45,68 +46,68 @@ public final class HistoryEventProtoJsonConversion {
     JSONObject jsonObject = null;
 
     switch (historyEvent.getEventType()) {
-    case "APP_LAUNCHED":
-      jsonObject = convertAppLaunchedEvent(historyEvent);
-      break;
-    case "AM_LAUNCHED":
-      jsonObject = convertAMLaunchedEvent(historyEvent);
-      break;
-    case "AM_STARTED":
-      jsonObject = convertAMStartedEvent(historyEvent);
-      break;
-    case "CONTAINER_LAUNCHED":
-      jsonObject = convertContainerLaunchedEvent(historyEvent);
-      break;
-    case "CONTAINER_STOPPED":
-      jsonObject = convertContainerStoppedEvent(historyEvent);
-      break;
-    case "DAG_SUBMITTED":
-      jsonObject = convertDAGSubmittedEvent(historyEvent);
-      break;
-    case "DAG_INITIALIZED":
-      jsonObject = convertDAGInitializedEvent(historyEvent);
-      break;
-    case "DAG_STARTED":
-      jsonObject = convertDAGStartedEvent(historyEvent);
-      break;
-    case "DAG_FINISHED":
-      jsonObject = convertDAGFinishedEvent(historyEvent);
-      break;
-    case "VERTEX_INITIALIZED":
-      jsonObject = convertVertexInitializedEvent(historyEvent);
-      break;
-    case "VERTEX_STARTED":
-      jsonObject = convertVertexStartedEvent(historyEvent);
-      break;
-    case "VERTEX_FINISHED":
-      jsonObject = convertVertexFinishedEvent(historyEvent);
-      break;
-    case "TASK_STARTED":
-      jsonObject = convertTaskStartedEvent(historyEvent);
-      break;
-    case "TASK_FINISHED":
-      jsonObject = convertTaskFinishedEvent(historyEvent);
-      break;
-    case "TASK_ATTEMPT_STARTED":
-      jsonObject = convertTaskAttemptStartedEvent(historyEvent);
-      break;
-    case "TASK_ATTEMPT_FINISHED":
-      jsonObject = convertTaskAttemptFinishedEvent(historyEvent);
-      break;
-    case "VERTEX_CONFIGURE_DONE":
-      jsonObject = convertVertexReconfigureDoneEvent(historyEvent);
-      break;
-    case "DAG_RECOVERED":
-      jsonObject = convertDAGRecoveredEvent(historyEvent);
-      break;
-    case "VERTEX_COMMIT_STARTED":
-    case "VERTEX_GROUP_COMMIT_STARTED":
-    case "VERTEX_GROUP_COMMIT_FINISHED":
-    case "DAG_COMMIT_STARTED":
-      throw new UnsupportedOperationException(
+      case "APP_LAUNCHED":
+        jsonObject = convertAppLaunchedEvent(historyEvent);
+        break;
+      case "AM_LAUNCHED":
+        jsonObject = convertAMLaunchedEvent(historyEvent);
+        break;
+      case "AM_STARTED":
+        jsonObject = convertAMStartedEvent(historyEvent);
+        break;
+      case "CONTAINER_LAUNCHED":
+        jsonObject = convertContainerLaunchedEvent(historyEvent);
+        break;
+      case "CONTAINER_STOPPED":
+        jsonObject = convertContainerStoppedEvent(historyEvent);
+        break;
+      case "DAG_SUBMITTED":
+        jsonObject = convertDAGSubmittedEvent(historyEvent);
+        break;
+      case "DAG_INITIALIZED":
+        jsonObject = convertDAGInitializedEvent(historyEvent);
+        break;
+      case "DAG_STARTED":
+        jsonObject = convertDAGStartedEvent(historyEvent);
+        break;
+      case "DAG_FINISHED":
+        jsonObject = convertDAGFinishedEvent(historyEvent);
+        break;
+      case "VERTEX_INITIALIZED":
+        jsonObject = convertVertexInitializedEvent(historyEvent);
+        break;
+      case "VERTEX_STARTED":
+        jsonObject = convertVertexStartedEvent(historyEvent);
+        break;
+      case "VERTEX_FINISHED":
+        jsonObject = convertVertexFinishedEvent(historyEvent);
+        break;
+      case "TASK_STARTED":
+        jsonObject = convertTaskStartedEvent(historyEvent);
+        break;
+      case "TASK_FINISHED":
+        jsonObject = convertTaskFinishedEvent(historyEvent);
+        break;
+      case "TASK_ATTEMPT_STARTED":
+        jsonObject = convertTaskAttemptStartedEvent(historyEvent);
+        break;
+      case "TASK_ATTEMPT_FINISHED":
+        jsonObject = convertTaskAttemptFinishedEvent(historyEvent);
+        break;
+      case "VERTEX_CONFIGURE_DONE":
+        jsonObject = convertVertexReconfigureDoneEvent(historyEvent);
+        break;
+      case "DAG_RECOVERED":
+        jsonObject = convertDAGRecoveredEvent(historyEvent);
+        break;
+      case "VERTEX_COMMIT_STARTED":
+      case "VERTEX_GROUP_COMMIT_STARTED":
+      case "VERTEX_GROUP_COMMIT_FINISHED":
+      case "DAG_COMMIT_STARTED":
+        throw new UnsupportedOperationException(
           "Invalid Event, does not support history" + ", eventType=" + historyEvent.getEventType());
-    default:
-      throw new UnsupportedOperationException(
+      default:
+        throw new UnsupportedOperationException(
           "Unhandled Event" + ", eventType=" + historyEvent.getEventType());
     }
     return jsonObject;
@@ -129,7 +130,7 @@ public final class HistoryEventProtoJsonConversion {
     recoverEventInfo.put(ATSConstants.APPLICATION_ATTEMPT_ID, event.getAppAttemptId().toString());
     recoverEventInfo.put(ATSConstants.DAG_STATE, getDataValueByKey(event, ATSConstants.DAG_STATE));
     recoverEventInfo.put(ATSConstants.RECOVERY_FAILURE_REASON,
-        getDataValueByKey(event, ATSConstants.RECOVERY_FAILURE_REASON));
+      getDataValueByKey(event, ATSConstants.RECOVERY_FAILURE_REASON));
 
     recoverEvent.put(ATSConstants.EVENT_INFO, recoverEventInfo);
     events.put(recoverEvent);
@@ -183,7 +184,7 @@ public final class HistoryEventProtoJsonConversion {
     // Other info to tag with Tez AM
     JSONObject otherInfo = new JSONObject();
     otherInfo.put(ATSConstants.APP_SUBMIT_TIME,
-        getDataValueByKey(event, ATSConstants.APP_SUBMIT_TIME));
+      getDataValueByKey(event, ATSConstants.APP_SUBMIT_TIME));
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
     return jsonObject;
@@ -219,10 +220,10 @@ public final class HistoryEventProtoJsonConversion {
   }
 
   private static JSONObject convertContainerLaunchedEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY,
-        "tez_" + getDataValueByKey(event, ATSConstants.CONTAINER_ID));
+      "tez_" + getDataValueByKey(event, ATSConstants.CONTAINER_ID));
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_CONTAINER_ID.name());
 
     JSONArray relatedEntities = new JSONArray();
@@ -254,11 +255,11 @@ public final class HistoryEventProtoJsonConversion {
   }
 
   private static JSONObject convertContainerStoppedEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     // structure is identical to ContainerLaunchedEvent
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY,
-        "tez_" + getDataValueByKey(event, ATSConstants.CONTAINER_ID));
+      "tez_" + getDataValueByKey(event, ATSConstants.CONTAINER_ID));
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_CONTAINER_ID.name());
 
     JSONArray relatedEntities = new JSONArray();
@@ -322,7 +323,7 @@ public final class HistoryEventProtoJsonConversion {
     otherInfo.put(ATSConstants.DIAGNOSTICS, getDataValueByKey(event, ATSConstants.DIAGNOSTICS));
     otherInfo.put(ATSConstants.COUNTERS, getJSONDataValueByKey(event, ATSConstants.COUNTERS));
     otherInfo.put(ATSConstants.COMPLETION_APPLICATION_ATTEMPT_ID,
-        event.getAppAttemptId().toString());
+      event.getAppAttemptId().toString());
 
     // added all info to otherInfo in order to cover
     // all key/value pairs added from event.getDagTaskStats()
@@ -338,7 +339,7 @@ public final class HistoryEventProtoJsonConversion {
   }
 
   private static JSONObject convertDAGInitializedEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY, event.getDagId());
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_DAG_ID.name());
@@ -355,7 +356,7 @@ public final class HistoryEventProtoJsonConversion {
 
     JSONObject otherInfo = new JSONObject();
     otherInfo.put(ATSConstants.VERTEX_NAME_ID_MAPPING,
-        getJSONDataValueByKey(event, ATSConstants.VERTEX_NAME_ID_MAPPING));
+      getJSONDataValueByKey(event, ATSConstants.VERTEX_NAME_ID_MAPPING));
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
     return jsonObject;
@@ -415,11 +416,11 @@ public final class HistoryEventProtoJsonConversion {
     JSONObject primaryFilters = new JSONObject();
     primaryFilters.put(ATSConstants.DAG_NAME, getDataValueByKey(event, ATSConstants.DAG_NAME));
     primaryFilters.put(ATSConstants.CALLER_CONTEXT_ID,
-        getDataValueByKey(event, ATSConstants.CALLER_CONTEXT_ID));
+      getDataValueByKey(event, ATSConstants.CALLER_CONTEXT_ID));
     primaryFilters.put(ATSConstants.CALLER_CONTEXT_TYPE,
-        getDataValueByKey(event, ATSConstants.CALLER_CONTEXT_TYPE));
+      getDataValueByKey(event, ATSConstants.CALLER_CONTEXT_TYPE));
     primaryFilters.put(ATSConstants.DAG_QUEUE_NAME,
-        getDataValueByKey(event, ATSConstants.DAG_QUEUE_NAME));
+      getDataValueByKey(event, ATSConstants.DAG_QUEUE_NAME));
 
     jsonObject.put(ATSConstants.PRIMARY_FILTERS, primaryFilters);
 
@@ -437,11 +438,11 @@ public final class HistoryEventProtoJsonConversion {
     otherInfo.put(ATSConstants.DAG_PLAN, getJSONDataValueByKey(event, ATSConstants.DAG_PLAN));
 
     otherInfo.put(ATSConstants.CALLER_CONTEXT_ID,
-        getDataValueByKey(event, ATSConstants.CALLER_CONTEXT_ID));
+      getDataValueByKey(event, ATSConstants.CALLER_CONTEXT_ID));
     otherInfo.put(ATSConstants.CALLER_CONTEXT_TYPE,
-        getDataValueByKey(event, ATSConstants.CALLER_CONTEXT_TYPE));
+      getDataValueByKey(event, ATSConstants.CALLER_CONTEXT_TYPE));
     otherInfo.put(ATSConstants.DAG_QUEUE_NAME,
-        getDataValueByKey(event, ATSConstants.DAG_QUEUE_NAME));
+      getDataValueByKey(event, ATSConstants.DAG_QUEUE_NAME));
 
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
@@ -449,7 +450,7 @@ public final class HistoryEventProtoJsonConversion {
   }
 
   private static JSONObject convertTaskAttemptFinishedEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY, event.getTaskAttemptId());
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_TASK_ATTEMPT_ID.name());
@@ -467,32 +468,32 @@ public final class HistoryEventProtoJsonConversion {
 
     otherInfo.put(ATSConstants.CREATION_TIME, getDataValueByKey(event, ATSConstants.CREATION_TIME));
     otherInfo.put(ATSConstants.ALLOCATION_TIME,
-        getDataValueByKey(event, ATSConstants.ALLOCATION_TIME));
+      getDataValueByKey(event, ATSConstants.ALLOCATION_TIME));
     otherInfo.put(ATSConstants.START_TIME, startTime);
     otherInfo.put(ATSConstants.FINISH_TIME, event.getEventTime());
     otherInfo.put(ATSConstants.TIME_TAKEN, event.getEventTime() - startTime);
 
     otherInfo.put(ATSConstants.CREATION_CAUSAL_ATTEMPT,
-        getDataValueByKey(event, ATSConstants.CREATION_CAUSAL_ATTEMPT));
+      getDataValueByKey(event, ATSConstants.CREATION_CAUSAL_ATTEMPT));
     otherInfo.put(ATSConstants.STATUS, getDataValueByKey(event, ATSConstants.STATUS));
 
     otherInfo.put(ATSConstants.STATUS, getDataValueByKey(event, ATSConstants.STATUS));
     otherInfo.put(ATSConstants.TASK_ATTEMPT_ERROR_ENUM,
-        getDataValueByKey(event, ATSConstants.TASK_ATTEMPT_ERROR_ENUM));
+      getDataValueByKey(event, ATSConstants.TASK_ATTEMPT_ERROR_ENUM));
     otherInfo.put(ATSConstants.TASK_FAILURE_TYPE,
-        getDataValueByKey(event, ATSConstants.TASK_FAILURE_TYPE));
+      getDataValueByKey(event, ATSConstants.TASK_FAILURE_TYPE));
     otherInfo.put(ATSConstants.DIAGNOSTICS, getDataValueByKey(event, ATSConstants.DIAGNOSTICS));
     otherInfo.put(ATSConstants.COUNTERS, getJSONDataValueByKey(event, ATSConstants.COUNTERS));
     otherInfo.put(ATSConstants.LAST_DATA_EVENTS,
-        getJSONDataValueByKey(event, ATSConstants.LAST_DATA_EVENTS));
+      getJSONDataValueByKey(event, ATSConstants.LAST_DATA_EVENTS));
     otherInfo.put(ATSConstants.NODE_ID, getDataValueByKey(event, ATSConstants.NODE_ID));
     otherInfo.put(ATSConstants.CONTAINER_ID, getDataValueByKey(event, ATSConstants.CONTAINER_ID));
     otherInfo.put(ATSConstants.IN_PROGRESS_LOGS_URL,
-        getDataValueByKey(event, ATSConstants.IN_PROGRESS_LOGS_URL));
+      getDataValueByKey(event, ATSConstants.IN_PROGRESS_LOGS_URL));
     otherInfo.put(ATSConstants.COMPLETED_LOGS_URL,
-        getDataValueByKey(event, ATSConstants.COMPLETED_LOGS_URL));
+      getDataValueByKey(event, ATSConstants.COMPLETED_LOGS_URL));
     otherInfo.put(ATSConstants.NODE_HTTP_ADDRESS,
-        getDataValueByKey(event, ATSConstants.NODE_HTTP_ADDRESS));
+      getDataValueByKey(event, ATSConstants.NODE_HTTP_ADDRESS));
 
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
@@ -500,7 +501,7 @@ public final class HistoryEventProtoJsonConversion {
   }
 
   private static JSONObject convertTaskAttemptStartedEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY, event.getTaskAttemptId());
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_TASK_ATTEMPT_ID.name());
@@ -535,9 +536,9 @@ public final class HistoryEventProtoJsonConversion {
     // Other info
     JSONObject otherInfo = new JSONObject();
     otherInfo.put(ATSConstants.IN_PROGRESS_LOGS_URL,
-        getDataValueByKey(event, ATSConstants.IN_PROGRESS_LOGS_URL));
+      getDataValueByKey(event, ATSConstants.IN_PROGRESS_LOGS_URL));
     otherInfo.put(ATSConstants.COMPLETED_LOGS_URL,
-        getDataValueByKey(event, ATSConstants.COMPLETED_LOGS_URL));
+      getDataValueByKey(event, ATSConstants.COMPLETED_LOGS_URL));
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
     return jsonObject;
@@ -567,7 +568,7 @@ public final class HistoryEventProtoJsonConversion {
     otherInfo.put(ATSConstants.DIAGNOSTICS, getDataValueByKey(event, ATSConstants.DIAGNOSTICS));
     otherInfo.put(ATSConstants.COUNTERS, getJSONDataValueByKey(event, ATSConstants.COUNTERS));
     otherInfo.put(ATSConstants.SUCCESSFUL_ATTEMPT_ID,
-        getDataValueByKey(event, ATSConstants.SUCCESSFUL_ATTEMPT_ID));
+      getDataValueByKey(event, ATSConstants.SUCCESSFUL_ATTEMPT_ID));
 
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
@@ -600,14 +601,14 @@ public final class HistoryEventProtoJsonConversion {
     JSONObject otherInfo = new JSONObject();
     otherInfo.put(ATSConstants.START_TIME, event.getEventTime());
     otherInfo.put(ATSConstants.SCHEDULED_TIME,
-        getDataValueByKey(event, ATSConstants.SCHEDULED_TIME));
+      getDataValueByKey(event, ATSConstants.SCHEDULED_TIME));
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
     return jsonObject;
   }
 
   private static JSONObject convertVertexFinishedEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY, event.getVertexId());
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_VERTEX_ID.name());
@@ -642,7 +643,7 @@ public final class HistoryEventProtoJsonConversion {
     }
 
     otherInfo.put(ATSConstants.SERVICE_PLUGIN,
-        getJSONDataValueByKey(event, ATSConstants.SERVICE_PLUGIN));
+      getJSONDataValueByKey(event, ATSConstants.SERVICE_PLUGIN));
 
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
@@ -650,7 +651,7 @@ public final class HistoryEventProtoJsonConversion {
   }
 
   private static JSONObject convertVertexReconfigureDoneEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY, event.getVertexId());
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_VERTEX_ID.name());
@@ -664,7 +665,7 @@ public final class HistoryEventProtoJsonConversion {
     JSONObject eventInfo = new JSONObject();
     eventInfo.put(ATSConstants.NUM_TASKS, getDataValueByKey(event, ATSConstants.NUM_TASKS));
     eventInfo.put(ATSConstants.UPDATED_EDGE_MANAGERS,
-        getJSONDataValueByKey(event, ATSConstants.UPDATED_EDGE_MANAGERS));
+      getJSONDataValueByKey(event, ATSConstants.UPDATED_EDGE_MANAGERS));
     updateEvent.put(ATSConstants.EVENT_INFO, eventInfo);
     events.put(updateEvent);
     jsonObject.put(ATSConstants.EVENTS, events);
@@ -678,7 +679,7 @@ public final class HistoryEventProtoJsonConversion {
   }
 
   private static JSONObject convertVertexInitializedEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY, event.getVertexId());
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_VERTEX_ID.name());
@@ -704,20 +705,20 @@ public final class HistoryEventProtoJsonConversion {
     JSONObject otherInfo = new JSONObject();
     otherInfo.put(ATSConstants.VERTEX_NAME, getDataValueByKey(event, ATSConstants.VERTEX_NAME));
     otherInfo.put(ATSConstants.INIT_REQUESTED_TIME,
-        getDataValueByKey(event, ATSConstants.INIT_REQUESTED_TIME));
+      getDataValueByKey(event, ATSConstants.INIT_REQUESTED_TIME));
     otherInfo.put(ATSConstants.INIT_TIME, getDataValueByKey(event, ATSConstants.INIT_TIME));
     otherInfo.put(ATSConstants.NUM_TASKS, getDataValueByKey(event, ATSConstants.NUM_TASKS));
     otherInfo.put(ATSConstants.PROCESSOR_CLASS_NAME,
-        getDataValueByKey(event, ATSConstants.PROCESSOR_CLASS_NAME));
+      getDataValueByKey(event, ATSConstants.PROCESSOR_CLASS_NAME));
     otherInfo.put(ATSConstants.SERVICE_PLUGIN,
-        getJSONDataValueByKey(event, ATSConstants.SERVICE_PLUGIN));
+      getJSONDataValueByKey(event, ATSConstants.SERVICE_PLUGIN));
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
     return jsonObject;
   }
 
   private static JSONObject convertVertexStartedEvent(HistoryEventProto event)
-      throws JSONException {
+    throws JSONException {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(ATSConstants.ENTITY, event.getVertexId());
     jsonObject.put(ATSConstants.ENTITY_TYPE, EntityTypes.TEZ_VERTEX_ID.name());
@@ -742,7 +743,7 @@ public final class HistoryEventProtoJsonConversion {
     // TODO fix requested times to be events
     JSONObject otherInfo = new JSONObject();
     otherInfo.put(ATSConstants.START_REQUESTED_TIME,
-        getDataValueByKey(event, ATSConstants.START_REQUESTED_TIME));
+      getDataValueByKey(event, ATSConstants.START_REQUESTED_TIME));
     otherInfo.put(ATSConstants.START_TIME, event.getEventTime());
     jsonObject.put(ATSConstants.OTHER_INFO, otherInfo);
 
@@ -751,7 +752,7 @@ public final class HistoryEventProtoJsonConversion {
 
   private static String getDataValueByKey(HistoryEventProto event, String key) {
     Optional<KVPair> pair =
-        event.getEventDataList().stream().filter(p -> p.getKey().equals(key)).findAny();
+      event.getEventDataList().stream().filter(p -> p.getKey().equals(key)).findAny();
     return pair.isPresent() ? pair.get().getValue() : null;
   }
 
@@ -761,7 +762,7 @@ public final class HistoryEventProtoJsonConversion {
   }
 
   private static JSONObject getJSONDataValueByKey(HistoryEventProto event, String key)
-      throws JSONException {
+    throws JSONException {
     String value = getDataValueByKey(event, key);
     return (value == null || value.isEmpty()) ? null : new JSONObject(value);
   }

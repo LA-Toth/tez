@@ -14,7 +14,10 @@
 
 package org.apache.tez.runtime.task;
 
-import static org.apache.tez.runtime.task.TaskExecutionTestHelpers.*;
+import static org.apache.tez.runtime.task.TaskExecutionTestHelpers.createContainerId;
+import static org.apache.tez.runtime.task.TaskExecutionTestHelpers.createProcessorIOException;
+import static org.apache.tez.runtime.task.TaskExecutionTestHelpers.createProcessorTezException;
+import static org.apache.tez.runtime.task.TaskExecutionTestHelpers.createTaskReporter;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -37,18 +40,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezExecutors;
 import org.apache.tez.common.TezSharedExecutor;
 import org.apache.tez.common.counters.CounterGroup;
@@ -68,8 +65,8 @@ import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.hadoop.shim.DefaultHadoopShim;
 import org.apache.tez.runtime.LogicalIOProcessorRuntimeTask;
 import org.apache.tez.runtime.api.ExecutionContext;
-import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.ObjectRegistry;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.impl.ExecutionContextImpl;
 import org.apache.tez.runtime.api.impl.InputSpec;
 import org.apache.tez.runtime.api.impl.OutputSpec;
@@ -77,6 +74,12 @@ import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.runtime.common.resources.ScalingAllocator;
 import org.apache.tez.runtime.internals.api.TaskReporterInterface;
 import org.apache.tez.runtime.task.TaskExecutionTestHelpers.TestProcessor;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
@@ -99,20 +102,15 @@ public class TestTaskExecution2 {
   static {
     defaultConf.set("fs.defaultFS", "file:///");
     defaultConf.set(TezConfiguration.TEZ_TASK_SCALE_MEMORY_ALLOCATOR_CLASS,
-        ScalingAllocator.class.getName());
+      ScalingAllocator.class.getName());
     try {
       localFs = FileSystem.getLocal(defaultConf);
       Path wd = new Path(System.getProperty("test.build.data", "/tmp"),
-          TestTaskExecution2.class.getSimpleName());
+        TestTaskExecution2.class.getSimpleName());
       workDir = localFs.makeQualified(wd);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-  }
-
-  @Before
-  public void reset() {
-    TestProcessor.reset();
   }
 
   @AfterClass
@@ -120,23 +118,28 @@ public class TestTaskExecution2 {
     taskExecutor.shutdownNow();
   }
 
+  @Before
+  public void reset() {
+    TestProcessor.reset();
+  }
+
   @Test(timeout = 5000)
   public void testSingleSuccessfulTask() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
     ListeningExecutorService executor = null;
     try {
       ExecutorService rawExecutor = Executors.newFixedThreadPool(1);
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_EMPTY);
+        TestProcessor.CONF_EMPTY);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture = taskExecutor.submit(
-          new TaskRunnerCallable2ForTest(taskRunner));
+        new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.signal();
       TaskRunner2Result result = taskRunnerFuture.get();
@@ -151,7 +154,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testMultipleSuccessfulTasks() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -159,15 +162,15 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_EMPTY, true);
+        TestProcessor.CONF_EMPTY, true);
       LogicalIOProcessorRuntimeTask runtimeTask = taskRunner.task;
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture = taskExecutor.submit(
-          new TaskRunnerCallable2ForTest(taskRunner));
+        new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.signal();
       TaskRunner2Result result = taskRunnerFuture.get();
@@ -180,7 +183,7 @@ public class TestTaskExecution2 {
       verifySysCounters(tezCounters, 5, 5);
 
       taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_EMPTY, false);
+        TestProcessor.CONF_EMPTY, false);
       runtimeTask = taskRunner.task;
       // Setup the executor
       taskRunnerFuture = taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
@@ -198,11 +201,10 @@ public class TestTaskExecution2 {
     }
   }
 
-
   // test task failed due to exception in Processor
   @Test(timeout = 5000)
   public void testFailedTaskTezException() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -210,24 +212,25 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_THROW_TEZ_EXCEPTION);
+        TestProcessor.CONF_THROW_TEZ_EXCEPTION);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       TestProcessor.signal();
       TaskRunner2Result result = taskRunnerFuture.get();
-      verifyTaskRunnerResult(result, EndReason.TASK_ERROR, createProcessorTezException(), false, TaskFailureType.NON_FATAL);
+      verifyTaskRunnerResult(result, EndReason.TASK_ERROR, createProcessorTezException(), false,
+        TaskFailureType.NON_FATAL);
 
       assertNull(taskReporter.currentCallable);
       umbilical.verifyTaskFailedEvent(
-          FAILURE_START_STRING,
-          TezException.class.getName() + ": " + TezException.class.getSimpleName());
+        FAILURE_START_STRING,
+        TezException.class.getName() + ": " + TezException.class.getSimpleName());
       // Failure detected as a result of fall off from the run method. abort isn't required.
       assertFalse(TestProcessor.wasAborted());
       assertTrue(taskRunner.task.getCounters().countCounters() != 0);
@@ -236,11 +239,10 @@ public class TestTaskExecution2 {
     }
   }
 
-
   // Test task failed due to Processor class not found
   @Test(timeout = 5000)
   public void testFailedTask2() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -248,23 +250,23 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          "NotExitedProcessor", TestProcessor.CONF_EMPTY, false, true);
+        "NotExitedProcessor", TestProcessor.CONF_EMPTY, false, true);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
 
       TaskRunner2Result result = taskRunnerFuture.get();
       verifyTaskRunnerResult(result, EndReason.TASK_ERROR,
-          new TezReflectionException("TezReflectionException"), false, TaskFailureType.NON_FATAL);
+        new TezReflectionException("TezReflectionException"), false, TaskFailureType.NON_FATAL);
 
       assertNull(taskReporter.currentCallable);
       umbilical.verifyTaskFailedEvent(FAILURE_START_STRING,
-          ":org.apache.tez.dag.api.TezReflectionException: "
-              + "Unable to load class: NotExitedProcessor");
+        ":org.apache.tez.dag.api.TezReflectionException: "
+          + "Unable to load class: NotExitedProcessor");
       // Failure detected as a result of fall off from the run method. abort isn't required.
       assertFalse(TestProcessor.wasAborted());
       assertTrue(taskRunner.task.getCounters().countCounters() != 0);
@@ -276,7 +278,7 @@ public class TestTaskExecution2 {
   // test task failed due to exception in Processor
   @Test(timeout = 5000)
   public void testFailedTaskIOException() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -284,25 +286,25 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_THROW_IO_EXCEPTION);
+        TestProcessor.CONF_THROW_IO_EXCEPTION);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       TestProcessor.signal();
       TaskRunner2Result result = taskRunnerFuture.get();
-      verifyTaskRunnerResult(result, EndReason.TASK_ERROR, createProcessorIOException(), false, TaskFailureType.NON_FATAL);
-
+      verifyTaskRunnerResult(result, EndReason.TASK_ERROR, createProcessorIOException(), false,
+        TaskFailureType.NON_FATAL);
 
       assertNull(taskReporter.currentCallable);
       umbilical.verifyTaskFailedEvent(
-          FAILURE_START_STRING,
-          IOException.class.getName() + ": " + IOException.class.getSimpleName());
+        FAILURE_START_STRING,
+        IOException.class.getName() + ": " + IOException.class.getSimpleName());
       // Failure detected as a result of fall off from the run method. abort isn't required.
       assertFalse(TestProcessor.wasAborted());
       assertTrue(taskRunner.task.getCounters().countCounters() != 0);
@@ -314,7 +316,7 @@ public class TestTaskExecution2 {
   // test that makes sure errors aren't reported when the container is already failing
   @Test(timeout = 5000)
   public void testIgnoreErrorsDuringFailure() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -322,7 +324,7 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
 
       TaskReporter taskReporter = new TaskReporter(umbilical, 100, 1000, 100, new AtomicLong(0),
         createContainerId(appId).toString()) {
@@ -333,7 +335,7 @@ public class TestTaskExecution2 {
       };
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_THROW_IO_EXCEPTION);
+        TestProcessor.CONF_THROW_IO_EXCEPTION);
       // Setup the executor
 
       taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
@@ -350,7 +352,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testHeartbeatException() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -358,14 +360,14 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_EMPTY);
+        TestProcessor.CONF_EMPTY);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       umbilical.signalThrowException();
@@ -374,8 +376,8 @@ public class TestTaskExecution2 {
 
       TaskRunner2Result result = taskRunnerFuture.get();
       verifyTaskRunnerResult(result, EndReason.COMMUNICATION_FAILURE,
-          new IOException("IOException"),
-          TaskExecutionTestHelpers.HEARTBEAT_EXCEPTION_STRING, false, TaskFailureType.NON_FATAL);
+        new IOException("IOException"),
+        TaskExecutionTestHelpers.HEARTBEAT_EXCEPTION_STRING, false, TaskFailureType.NON_FATAL);
 
       TestProcessor.awaitCompletion();
       assertTrue(TestProcessor.wasInterrupted());
@@ -390,7 +392,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testHeartbeatShouldDie() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -398,14 +400,14 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_EMPTY);
+        TestProcessor.CONF_EMPTY);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       umbilical.signalSendShouldDie();
@@ -414,7 +416,6 @@ public class TestTaskExecution2 {
 
       TaskRunner2Result result = taskRunnerFuture.get();
       verifyTaskRunnerResult(result, EndReason.CONTAINER_STOP_REQUESTED, null, true, null);
-
 
       TestProcessor.awaitCompletion();
       assertTrue(TestProcessor.wasInterrupted());
@@ -431,7 +432,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testSignalDeprecatedFatalErrorAndLoop() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -439,14 +440,14 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_SIGNAL_DEPRECATEDFATAL_AND_LOOP);
+        TestProcessor.CONF_SIGNAL_DEPRECATEDFATAL_AND_LOOP);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       TestProcessor.signal();
@@ -455,14 +456,15 @@ public class TestTaskExecution2 {
       // The fatal error should have caused an interrupt.
 
       TaskRunner2Result result = taskRunnerFuture.get();
-      verifyTaskRunnerResult(result, EndReason.TASK_ERROR, createProcessorIOException(), false, TaskFailureType.NON_FATAL);
+      verifyTaskRunnerResult(result, EndReason.TASK_ERROR, createProcessorIOException(), false,
+        TaskFailureType.NON_FATAL);
 
       TestProcessor.awaitCompletion();
       assertTrue(TestProcessor.wasInterrupted());
       assertNull(taskReporter.currentCallable);
       umbilical.verifyTaskFailedEvent(
-          FAILURE_START_STRING,
-          IOException.class.getName() + ": " + IOException.class.getSimpleName());
+        FAILURE_START_STRING,
+        IOException.class.getName() + ": " + IOException.class.getSimpleName());
       // Signal fatal error should cause the processor to fail.
       assertTrue(TestProcessor.wasAborted());
     } finally {
@@ -472,7 +474,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testSignalFatalAndThrow() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -480,14 +482,14 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_SIGNAL_FATAL_AND_THROW);
+        TestProcessor.CONF_SIGNAL_FATAL_AND_THROW);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       TestProcessor.signal();
@@ -498,8 +500,8 @@ public class TestTaskExecution2 {
       TestProcessor.awaitCompletion();
       assertNull(taskReporter.currentCallable);
       umbilical.verifyTaskFailedEvent(
-          FAILURE_START_STRING,
-          IOException.class.getName() + ": " + IOException.class.getSimpleName(), TaskFailureType.FATAL);
+        FAILURE_START_STRING,
+        IOException.class.getName() + ": " + IOException.class.getSimpleName(), TaskFailureType.FATAL);
       assertTrue(TestProcessor.wasAborted());
     } finally {
       executor.shutdownNow();
@@ -508,7 +510,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testSignalNonFatalAndThrow() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -516,26 +518,27 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_SIGNAL_NON_FATAL_AND_THROW);
+        TestProcessor.CONF_SIGNAL_NON_FATAL_AND_THROW);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       TestProcessor.signal();
 
       TaskRunner2Result result = taskRunnerFuture.get();
-      verifyTaskRunnerResult(result, EndReason.TASK_ERROR, createProcessorIOException(), false, TaskFailureType.NON_FATAL);
+      verifyTaskRunnerResult(result, EndReason.TASK_ERROR, createProcessorIOException(), false,
+        TaskFailureType.NON_FATAL);
 
       TestProcessor.awaitCompletion();
       assertNull(taskReporter.currentCallable);
       umbilical.verifyTaskFailedEvent(
-          FAILURE_START_STRING,
-          IOException.class.getName() + ": " + IOException.class.getSimpleName(), TaskFailureType.NON_FATAL);
+        FAILURE_START_STRING,
+        IOException.class.getName() + ": " + IOException.class.getSimpleName(), TaskFailureType.NON_FATAL);
       assertTrue(TestProcessor.wasAborted());
     } finally {
       executor.shutdownNow();
@@ -544,7 +547,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testTaskSelfKill() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -552,27 +555,27 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_SELF_KILL_AND_COMPLETE);
+        TestProcessor.CONF_SELF_KILL_AND_COMPLETE);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       TestProcessor.signal();
 
       TaskRunner2Result result = taskRunnerFuture.get();
       verifyTaskRunnerResult(result, EndReason.TASK_KILL_REQUEST, createProcessorIOException(), false,
-          null);
+        null);
 
       TestProcessor.awaitCompletion();
       assertNull(taskReporter.currentCallable);
       umbilical.verifyTaskKilledEvent(
-          KILL_START_STRING,
-          IOException.class.getName() + ": " + IOException.class.getSimpleName());
+        KILL_START_STRING,
+        IOException.class.getName() + ": " + IOException.class.getSimpleName());
       assertTrue(TestProcessor.wasAborted());
     } finally {
       executor.shutdownNow();
@@ -581,7 +584,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testTaskKilled() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -589,14 +592,14 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2 taskRunner = createTaskRunner(appId, umbilical, taskReporter, executor,
-          TestProcessor.CONF_EMPTY);
+        TestProcessor.CONF_EMPTY);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
 
@@ -617,7 +620,7 @@ public class TestTaskExecution2 {
 
   @Test(timeout = 5000)
   public void testKilledAfterComplete() throws IOException, InterruptedException, TezException,
-      ExecutionException {
+    ExecutionException {
 
     ListeningExecutorService executor = null;
     try {
@@ -625,15 +628,15 @@ public class TestTaskExecution2 {
       executor = MoreExecutors.listeningDecorator(rawExecutor);
       ApplicationId appId = ApplicationId.newInstance(10000, 1);
       TaskExecutionTestHelpers.TezTaskUmbilicalForTest
-          umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
+        umbilical = new TaskExecutionTestHelpers.TezTaskUmbilicalForTest();
       TaskReporter taskReporter = createTaskReporter(appId, umbilical);
 
       TezTaskRunner2ForTest taskRunner =
-          createTaskRunnerForTest(appId, umbilical, taskReporter, executor,
-              TestProcessor.CONF_EMPTY);
+        createTaskRunnerForTest(appId, umbilical, taskReporter, executor,
+          TestProcessor.CONF_EMPTY);
       // Setup the executor
       Future<TaskRunner2Result> taskRunnerFuture =
-          taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
+        taskExecutor.submit(new TaskRunnerCallable2ForTest(taskRunner));
       // Signal the processor to go through
       TestProcessor.awaitStart();
       TestProcessor.signal();
@@ -657,7 +660,7 @@ public class TestTaskExecution2 {
 
     Preconditions.checkArgument((minTaskCounterCount > 0 && minFsCounterCount > 0) ||
         (minTaskCounterCount <= 0 && minFsCounterCount <= 0),
-        "Both targetCounter counts should be postitive or negative. A mix is not expected");
+      "Both targetCounter counts should be postitive or negative. A mix is not expected");
 
     int numTaskCounters = 0;
     int numFsCounters = 0;
@@ -688,7 +691,7 @@ public class TestTaskExecution2 {
                                       boolean wasShutdownRequested,
                                       TaskFailureType taskFailureType) {
     verifyTaskRunnerResult(taskRunner2Result, expectedEndReason, expectedThrowable, null,
-        wasShutdownRequested, taskFailureType);
+      wasShutdownRequested, taskFailureType);
   }
 
   private void verifyTaskRunnerResult(TaskRunner2Result taskRunner2Result,
@@ -708,12 +711,81 @@ public class TestTaskExecution2 {
       if (expectedExceptionMessage != null) {
         assertTrue(cause.getMessage().contains(expectedExceptionMessage));
       }
-
     }
     assertEquals(taskFailureType, taskRunner2Result.getTaskFailureType());
     assertEquals(wasShutdownRequested, taskRunner2Result.isContainerShutdownRequested());
   }
 
+  private TezTaskRunner2 createTaskRunner(ApplicationId appId,
+                                          TaskExecutionTestHelpers.TezTaskUmbilicalForTest umbilical,
+                                          TaskReporter taskReporter,
+                                          ListeningExecutorService executor, byte[] processorConf) throws
+    IOException {
+    return createTaskRunner(appId, umbilical, taskReporter, executor, processorConf, true);
+  }
+
+  private TezTaskRunner2 createTaskRunner(ApplicationId appId,
+                                          TaskExecutionTestHelpers.TezTaskUmbilicalForTest umbilical,
+                                          TaskReporter taskReporter,
+                                          ListeningExecutorService executor, byte[] processorConf,
+                                          boolean updateSysCounters)
+    throws IOException {
+    return createTaskRunner(appId, umbilical, taskReporter, executor, TestProcessor.class.getName(),
+      processorConf, false, updateSysCounters);
+  }
+
+  private TezTaskRunner2ForTest createTaskRunnerForTest(ApplicationId appId,
+                                                        TaskExecutionTestHelpers.TezTaskUmbilicalForTest umbilical,
+                                                        TaskReporter taskReporter,
+                                                        ListeningExecutorService executor,
+                                                        byte[] processorConf)
+    throws IOException {
+    return (TezTaskRunner2ForTest) createTaskRunner(appId, umbilical, taskReporter, executor,
+      TestProcessor.class.getName(),
+      processorConf, true, true);
+  }
+
+  private TezTaskRunner2 createTaskRunner(ApplicationId appId,
+                                          TaskExecutionTestHelpers.TezTaskUmbilicalForTest umbilical,
+                                          TaskReporter taskReporter,
+                                          ListeningExecutorService executor, String processorClass,
+                                          byte[] processorConf, boolean testRunner,
+                                          boolean updateSysCounters) throws
+    IOException {
+    TezConfiguration tezConf = new TezConfiguration(defaultConf);
+    UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
+    Path testDir = new Path(workDir, UUID.randomUUID().toString());
+    String[] localDirs = new String[]{testDir.toString()};
+
+    TezDAGID dagId = TezDAGID.getInstance(appId, 1);
+    TezVertexID vertexId = TezVertexID.getInstance(dagId, 1);
+    TezTaskID taskId = TezTaskID.getInstance(vertexId, 1);
+    TezTaskAttemptID taskAttemptId = TezTaskAttemptID.getInstance(taskId, 1);
+    ProcessorDescriptor processorDescriptor = ProcessorDescriptor.create(processorClass)
+      .setUserPayload(UserPayload.create(ByteBuffer.wrap(processorConf)));
+    TaskSpec taskSpec =
+      new TaskSpec(taskAttemptId, "dagName", "vertexName", -1, processorDescriptor,
+        new ArrayList<InputSpec>(), new ArrayList<OutputSpec>(), null, null);
+
+    TezExecutors sharedExecutor = new TezSharedExecutor(tezConf);
+    TezTaskRunner2 taskRunner;
+    if (testRunner) {
+      taskRunner = new TezTaskRunner2ForTest(tezConf, ugi, localDirs, taskSpec, 1,
+        new HashMap<String, ByteBuffer>(), new HashMap<String, String>(),
+        HashMultimap.<String, String>create(), taskReporter,
+        executor, null, "", new ExecutionContextImpl("localhost"),
+        Runtime.getRuntime().maxMemory(), updateSysCounters, sharedExecutor);
+    } else {
+      taskRunner = new TezTaskRunner2(tezConf, ugi, localDirs, taskSpec, 1,
+        new HashMap<String, ByteBuffer>(), new HashMap<String, String>(),
+        HashMultimap.<String, String>create(), taskReporter,
+        executor, null, "", new ExecutionContextImpl("localhost"),
+        Runtime.getRuntime().maxMemory(), updateSysCounters, new DefaultHadoopShim(),
+        sharedExecutor);
+    }
+
+    return taskRunner;
+  }
 
   private static class TaskRunnerCallable2ForTest implements Callable<TaskRunner2Result> {
     private final TezTaskRunner2 taskRunner;
@@ -726,78 +798,6 @@ public class TestTaskExecution2 {
     public TaskRunner2Result call() throws Exception {
       return taskRunner.run();
     }
-  }
-
-  private TezTaskRunner2 createTaskRunner(ApplicationId appId,
-                                          TaskExecutionTestHelpers.TezTaskUmbilicalForTest umbilical,
-                                          TaskReporter taskReporter,
-                                          ListeningExecutorService executor, byte[] processorConf) throws
-      IOException {
-    return createTaskRunner(appId, umbilical, taskReporter, executor, processorConf, true);
-
-  }
-
-  private TezTaskRunner2 createTaskRunner(ApplicationId appId,
-                                          TaskExecutionTestHelpers.TezTaskUmbilicalForTest umbilical,
-                                          TaskReporter taskReporter,
-                                          ListeningExecutorService executor, byte[] processorConf,
-                                          boolean updateSysCounters)
-      throws IOException {
-    return createTaskRunner(appId, umbilical, taskReporter, executor, TestProcessor.class.getName(),
-        processorConf, false, updateSysCounters);
-  }
-
-  private TezTaskRunner2ForTest createTaskRunnerForTest(ApplicationId appId,
-                                                        TaskExecutionTestHelpers.TezTaskUmbilicalForTest umbilical,
-                                                        TaskReporter taskReporter,
-                                                        ListeningExecutorService executor,
-                                                        byte[] processorConf)
-      throws IOException {
-    return (TezTaskRunner2ForTest) createTaskRunner(appId, umbilical, taskReporter, executor,
-        TestProcessor.class.getName(),
-        processorConf, true, true);
-  }
-
-  private TezTaskRunner2 createTaskRunner(ApplicationId appId,
-                                          TaskExecutionTestHelpers.TezTaskUmbilicalForTest umbilical,
-                                          TaskReporter taskReporter,
-                                          ListeningExecutorService executor, String processorClass,
-                                          byte[] processorConf, boolean testRunner,
-                                          boolean updateSysCounters) throws
-      IOException {
-    TezConfiguration tezConf = new TezConfiguration(defaultConf);
-    UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
-    Path testDir = new Path(workDir, UUID.randomUUID().toString());
-    String[] localDirs = new String[]{testDir.toString()};
-
-    TezDAGID dagId = TezDAGID.getInstance(appId, 1);
-    TezVertexID vertexId = TezVertexID.getInstance(dagId, 1);
-    TezTaskID taskId = TezTaskID.getInstance(vertexId, 1);
-    TezTaskAttemptID taskAttemptId = TezTaskAttemptID.getInstance(taskId, 1);
-    ProcessorDescriptor processorDescriptor = ProcessorDescriptor.create(processorClass)
-        .setUserPayload(UserPayload.create(ByteBuffer.wrap(processorConf)));
-    TaskSpec taskSpec =
-        new TaskSpec(taskAttemptId, "dagName", "vertexName", -1, processorDescriptor,
-            new ArrayList<InputSpec>(), new ArrayList<OutputSpec>(), null, null);
-
-    TezExecutors sharedExecutor = new TezSharedExecutor(tezConf);
-    TezTaskRunner2 taskRunner;
-    if (testRunner) {
-      taskRunner = new TezTaskRunner2ForTest(tezConf, ugi, localDirs, taskSpec, 1,
-          new HashMap<String, ByteBuffer>(), new HashMap<String, String>(),
-          HashMultimap.<String, String>create(), taskReporter,
-          executor, null, "", new ExecutionContextImpl("localhost"),
-          Runtime.getRuntime().maxMemory(), updateSysCounters, sharedExecutor);
-    } else {
-      taskRunner = new TezTaskRunner2(tezConf, ugi, localDirs, taskSpec, 1,
-          new HashMap<String, ByteBuffer>(), new HashMap<String, String>(),
-          HashMultimap.<String, String>create(), taskReporter,
-          executor, null, "", new ExecutionContextImpl("localhost"),
-          Runtime.getRuntime().maxMemory(), updateSysCounters, new DefaultHadoopShim(),
-          sharedExecutor);
-    }
-
-    return taskRunner;
   }
 
   public static class TezTaskRunner2ForTest extends TezTaskRunner2 {
@@ -822,11 +822,10 @@ public class TestTaskExecution2 {
                                  boolean updateSysCounters,
                                  TezExecutors sharedExecutor) throws IOException {
       super(tezConf, ugi, localDirs, taskSpec, appAttemptNumber, serviceConsumerMetadata,
-          serviceProviderEnvMap, startedInputsMap, taskReporter, executor, objectRegistry, pid,
-          executionContext, memAvailable, updateSysCounters, new DefaultHadoopShim(),
-          sharedExecutor);
+        serviceProviderEnvMap, startedInputsMap, taskReporter, executor, objectRegistry, pid,
+        executionContext, memAvailable, updateSysCounters, new DefaultHadoopShim(),
+        sharedExecutor);
     }
-
 
     @Override
     @VisibleForTesting
@@ -852,5 +851,4 @@ public class TestTaskExecution2 {
       }
     }
   }
-
 }

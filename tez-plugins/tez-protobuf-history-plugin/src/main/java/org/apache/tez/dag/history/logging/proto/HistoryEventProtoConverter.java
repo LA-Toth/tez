@@ -58,6 +58,7 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 import org.apache.tez.dag.records.TezVertexID;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +68,7 @@ import org.slf4j.LoggerFactory;
  */
 public class HistoryEventProtoConverter {
   private static final Logger log =
-      LoggerFactory.getLogger(HistoryEventProtoConverter.class);
+    LoggerFactory.getLogger(HistoryEventProtoConverter.class);
 
   private final ObjectMapper mapper = new ObjectMapper();
 
@@ -77,66 +78,67 @@ public class HistoryEventProtoConverter {
   public HistoryEventProto convert(HistoryEvent historyEvent) {
     validateEvent(historyEvent);
     switch (historyEvent.getEventType()) {
-    case APP_LAUNCHED:
-      return convertAppLaunchedEvent((AppLaunchedEvent) historyEvent);
-    case AM_LAUNCHED:
-      return convertAMLaunchedEvent((AMLaunchedEvent) historyEvent);
-    case AM_STARTED:
-      return convertAMStartedEvent((AMStartedEvent) historyEvent);
-    case CONTAINER_LAUNCHED:
-      return convertContainerLaunchedEvent((ContainerLaunchedEvent) historyEvent);
-    case CONTAINER_STOPPED:
-      return convertContainerStoppedEvent((ContainerStoppedEvent) historyEvent);
-    case DAG_SUBMITTED:
-      return convertDAGSubmittedEvent((DAGSubmittedEvent) historyEvent);
-    case DAG_INITIALIZED:
-      return convertDAGInitializedEvent((DAGInitializedEvent) historyEvent);
-    case DAG_STARTED:
-      return convertDAGStartedEvent((DAGStartedEvent) historyEvent);
-    case DAG_FINISHED:
-      return convertDAGFinishedEvent((DAGFinishedEvent) historyEvent);
-    case VERTEX_INITIALIZED:
-      return convertVertexInitializedEvent((VertexInitializedEvent) historyEvent);
-    case VERTEX_STARTED:
-      return convertVertexStartedEvent((VertexStartedEvent) historyEvent);
-    case VERTEX_FINISHED:
-      return convertVertexFinishedEvent((VertexFinishedEvent) historyEvent);
-    case TASK_STARTED:
-      return convertTaskStartedEvent((TaskStartedEvent) historyEvent);
-    case TASK_FINISHED:
-      return convertTaskFinishedEvent((TaskFinishedEvent) historyEvent);
-    case TASK_ATTEMPT_STARTED:
-      return convertTaskAttemptStartedEvent((TaskAttemptStartedEvent) historyEvent);
-    case TASK_ATTEMPT_FINISHED:
-      return convertTaskAttemptFinishedEvent((TaskAttemptFinishedEvent) historyEvent);
-    case VERTEX_CONFIGURE_DONE:
-      return convertVertexReconfigureDoneEvent((VertexConfigurationDoneEvent) historyEvent);
-    case DAG_RECOVERED:
-      return convertDAGRecoveredEvent((DAGRecoveredEvent) historyEvent);
-    case VERTEX_COMMIT_STARTED:
-    case VERTEX_GROUP_COMMIT_STARTED:
-    case VERTEX_GROUP_COMMIT_FINISHED:
-    case DAG_COMMIT_STARTED:
-    case DAG_KILL_REQUEST:
-      throw new UnsupportedOperationException("Invalid Event, does not support history, eventType="
+      case APP_LAUNCHED:
+        return convertAppLaunchedEvent((AppLaunchedEvent) historyEvent);
+      case AM_LAUNCHED:
+        return convertAMLaunchedEvent((AMLaunchedEvent) historyEvent);
+      case AM_STARTED:
+        return convertAMStartedEvent((AMStartedEvent) historyEvent);
+      case CONTAINER_LAUNCHED:
+        return convertContainerLaunchedEvent((ContainerLaunchedEvent) historyEvent);
+      case CONTAINER_STOPPED:
+        return convertContainerStoppedEvent((ContainerStoppedEvent) historyEvent);
+      case DAG_SUBMITTED:
+        return convertDAGSubmittedEvent((DAGSubmittedEvent) historyEvent);
+      case DAG_INITIALIZED:
+        return convertDAGInitializedEvent((DAGInitializedEvent) historyEvent);
+      case DAG_STARTED:
+        return convertDAGStartedEvent((DAGStartedEvent) historyEvent);
+      case DAG_FINISHED:
+        return convertDAGFinishedEvent((DAGFinishedEvent) historyEvent);
+      case VERTEX_INITIALIZED:
+        return convertVertexInitializedEvent((VertexInitializedEvent) historyEvent);
+      case VERTEX_STARTED:
+        return convertVertexStartedEvent((VertexStartedEvent) historyEvent);
+      case VERTEX_FINISHED:
+        return convertVertexFinishedEvent((VertexFinishedEvent) historyEvent);
+      case TASK_STARTED:
+        return convertTaskStartedEvent((TaskStartedEvent) historyEvent);
+      case TASK_FINISHED:
+        return convertTaskFinishedEvent((TaskFinishedEvent) historyEvent);
+      case TASK_ATTEMPT_STARTED:
+        return convertTaskAttemptStartedEvent((TaskAttemptStartedEvent) historyEvent);
+      case TASK_ATTEMPT_FINISHED:
+        return convertTaskAttemptFinishedEvent((TaskAttemptFinishedEvent) historyEvent);
+      case VERTEX_CONFIGURE_DONE:
+        return convertVertexReconfigureDoneEvent((VertexConfigurationDoneEvent) historyEvent);
+      case DAG_RECOVERED:
+        return convertDAGRecoveredEvent((DAGRecoveredEvent) historyEvent);
+      case VERTEX_COMMIT_STARTED:
+      case VERTEX_GROUP_COMMIT_STARTED:
+      case VERTEX_GROUP_COMMIT_FINISHED:
+      case DAG_COMMIT_STARTED:
+      case DAG_KILL_REQUEST:
+        throw new UnsupportedOperationException("Invalid Event, does not support history, eventType="
           + historyEvent.getEventType());
-      // Do not add default, if a new event type is added, we'll get a warning for the
-      // switch.
+        // Do not add default, if a new event type is added, we'll get a warning for the
+        // switch.
     }
     throw new UnsupportedOperationException(
-        "Unhandled Event, eventType=" + historyEvent.getEventType());
+      "Unhandled Event, eventType=" + historyEvent.getEventType());
   }
 
   private void validateEvent(HistoryEvent event) {
     if (!event.isHistoryEvent()) {
       throw new UnsupportedOperationException(
-          "Invalid Event, does not support history" + ", eventType=" + event.getEventType());
+        "Invalid Event, does not support history" + ", eventType=" + event.getEventType());
     }
   }
 
   private HistoryEventProto.Builder makeBuilderForEvent(HistoryEvent event, long time,
-      TezDAGID dagId, ApplicationId appId, ApplicationAttemptId appAttemptId, TezVertexID vertexId,
-      TezTaskID taskId, TezTaskAttemptID taskAttemptId, String user) {
+                                                        TezDAGID dagId, ApplicationId appId,
+                                                        ApplicationAttemptId appAttemptId, TezVertexID vertexId,
+                                                        TezTaskID taskId, TezTaskAttemptID taskAttemptId, String user) {
     HistoryEventProto.Builder builder = HistoryEventProto.newBuilder();
     builder.setEventType(event.getEventType().name());
     builder.setEventTime(time);
@@ -185,10 +187,10 @@ public class HistoryEventProtoConverter {
   }
 
   private void addEventData(HistoryEventProto.Builder builder, String key,
-      Map<String, Object> value) {
+                            Map<String, Object> value) {
     try {
       builder.addEventData(
-          KVPair.newBuilder().setKey(key).setValue(mapper.writeValueAsString(value)));
+        KVPair.newBuilder().setKey(key).setValue(mapper.writeValueAsString(value)));
     } catch (IOException e) {
       log.error("Error converting value for key {} to json: ", key, e);
     }
@@ -196,14 +198,14 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertAppLaunchedEvent(AppLaunchedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getLaunchTime(), null,
-        event.getApplicationId(), null, null, null, null, event.getUser());
+      event.getApplicationId(), null, null, null, null, event.getUser());
     // This is ok as long as we do not modify the underlying map.
-    @SuppressWarnings({ "unchecked", "rawtypes" })
-    Map<String, Object> confMap = (Map)DAGUtils.convertConfigurationToATSMap(event.getConf());
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    Map<String, Object> confMap = (Map) DAGUtils.convertConfigurationToATSMap(event.getConf());
     addEventData(builder, ATSConstants.CONFIG, confMap);
     if (event.getVersion() != null) {
       addEventData(builder, ATSConstants.TEZ_VERSION,
-          DAGUtils.convertTezVersionToATSMap(event.getVersion()));
+        DAGUtils.convertTezVersionToATSMap(event.getVersion()));
     }
     addEventData(builder, ATSConstants.DAG_AM_WEB_SERVICE_VERSION, AMWebController.VERSION);
     return builder.build();
@@ -211,27 +213,27 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertAMLaunchedEvent(AMLaunchedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getLaunchTime(), null,
-        null, event.getApplicationAttemptId(), null, null, null, event.getUser());
+      null, event.getApplicationAttemptId(), null, null, null, event.getUser());
     addEventData(builder, ATSConstants.APP_SUBMIT_TIME, event.getAppSubmitTime());
     return builder.build();
   }
 
   private HistoryEventProto convertAMStartedEvent(AMStartedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getStartTime(), null,
-        null, event.getApplicationAttemptId(), null, null, null, event.getUser());
+      null, event.getApplicationAttemptId(), null, null, null, event.getUser());
     return builder.build();
   }
 
   private HistoryEventProto convertContainerLaunchedEvent(ContainerLaunchedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getLaunchTime(), null,
-        null, event.getApplicationAttemptId(), null, null, null, null);
+      null, event.getApplicationAttemptId(), null, null, null, null);
     addEventData(builder, ATSConstants.CONTAINER_ID, event.getContainerId().toString());
     return builder.build();
   }
 
   private HistoryEventProto convertContainerStoppedEvent(ContainerStoppedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getStoppedTime(), null,
-        null, event.getApplicationAttemptId(), null, null, null, null);
+      null, event.getApplicationAttemptId(), null, null, null, null);
     addEventData(builder, ATSConstants.CONTAINER_ID, event.getContainerId().toString());
     addEventData(builder, ATSConstants.EXIT_STATUS, event.getExitStatus());
     addEventData(builder, ATSConstants.FINISH_TIME, event.getStoppedTime());
@@ -240,11 +242,11 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertDAGSubmittedEvent(DAGSubmittedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getSubmitTime(),
-        event.getDAGID(), null, event.getApplicationAttemptId(), null, null, null,
-        event.getUser());
+      event.getDAGID(), null, event.getApplicationAttemptId(), null, null, null,
+      event.getUser());
     addEventData(builder, ATSConstants.DAG_NAME, event.getDAGName());
     if (event.getDAGPlan().hasCallerContext() &&
-        event.getDAGPlan().getCallerContext().hasCallerId()) {
+      event.getDAGPlan().getCallerContext().hasCallerId()) {
       CallerContextProto callerContext = event.getDagPlan().getCallerContext();
       addEventData(builder, ATSConstants.CALLER_CONTEXT_ID, callerContext.getCallerId());
       addEventData(builder, ATSConstants.CALLER_CONTEXT_TYPE, callerContext.getCallerType());
@@ -255,10 +257,10 @@ public class HistoryEventProtoConverter {
     }
     addEventData(builder, ATSConstants.DAG_AM_WEB_SERVICE_VERSION, AMWebController.VERSION);
     addEventData(builder, ATSConstants.IN_PROGRESS_LOGS_URL + "_" +
-        event.getApplicationAttemptId().getAttemptId(), event.getContainerLogs());
+      event.getApplicationAttemptId().getAttemptId(), event.getContainerLogs());
     try {
       addEventData(builder, ATSConstants.DAG_PLAN,
-          DAGUtils.convertDAGPlanToATSMap(event.getDAGPlan()));
+        DAGUtils.convertDAGPlanToATSMap(event.getDAGPlan()));
     } catch (IOException e) {
       throw new TezUncheckedException(e);
     }
@@ -267,7 +269,7 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertDAGInitializedEvent(DAGInitializedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getInitTime(),
-        event.getDAGID(), null, null, null, null, null, event.getUser());
+      event.getDAGID(), null, null, null, null, null, event.getUser());
     addEventData(builder, ATSConstants.DAG_NAME, event.getDagName());
 
     if (event.getVertexNameIDMap() != null) {
@@ -282,7 +284,7 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertDAGStartedEvent(DAGStartedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getStartTime(),
-        event.getDAGID(), null, null, null, null, null, event.getUser());
+      event.getDAGID(), null, null, null, null, null, event.getUser());
 
     addEventData(builder, ATSConstants.DAG_NAME, event.getDagName());
     addEventData(builder, ATSConstants.STATUS, event.getDagState().name());
@@ -292,17 +294,17 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertDAGFinishedEvent(DAGFinishedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getFinishTime(),
-        event.getDAGID(), null, event.getApplicationAttemptId(), null, null, null,
-        event.getUser());
+      event.getDAGID(), null, event.getApplicationAttemptId(), null, null, null,
+      event.getUser());
     addEventData(builder, ATSConstants.DAG_NAME, event.getDagName());
     if (event.getDAGPlan().hasCallerContext()) {
       if (event.getDAGPlan().getCallerContext().hasCallerType()) {
         addEventData(builder, ATSConstants.CALLER_CONTEXT_TYPE,
-            event.getDAGPlan().getCallerContext().getCallerType());
+          event.getDAGPlan().getCallerContext().getCallerType());
       }
       if (event.getDAGPlan().getCallerContext().hasCallerId()) {
         addEventData(builder, ATSConstants.CALLER_CONTEXT_ID,
-            event.getDAGPlan().getCallerContext().getCallerId());
+          event.getDAGPlan().getCallerContext().getCallerId());
       }
     }
     addEventData(builder, ATSConstants.START_TIME, event.getStartTime());
@@ -310,9 +312,9 @@ public class HistoryEventProtoConverter {
     addEventData(builder, ATSConstants.STATUS, event.getState().name());
     addEventData(builder, ATSConstants.DIAGNOSTICS, event.getDiagnostics());
     addEventData(builder, ATSConstants.COMPLETION_APPLICATION_ATTEMPT_ID,
-        event.getApplicationAttemptId().toString());
+      event.getApplicationAttemptId().toString());
     addEventData(builder, ATSConstants.COUNTERS,
-        DAGUtils.convertCountersToATSMap(event.getTezCounters()));
+      DAGUtils.convertCountersToATSMap(event.getTezCounters()));
     Map<String, Integer> dagTaskStats = event.getDagTaskStats();
     if (dagTaskStats != null) {
       for (Entry<String, Integer> entry : dagTaskStats.entrySet()) {
@@ -324,7 +326,7 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertTaskAttemptStartedEvent(TaskAttemptStartedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getStartTime(),
-        null, null, null, null, null, event.getTaskAttemptID(), null);
+      null, null, null, null, null, event.getTaskAttemptID(), null);
     if (event.getInProgressLogsUrl() != null) {
       addEventData(builder, ATSConstants.IN_PROGRESS_LOGS_URL, event.getInProgressLogsUrl());
     }
@@ -341,7 +343,7 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertTaskAttemptFinishedEvent(TaskAttemptFinishedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getFinishTime(),
-        null, null, null, null, null, event.getTaskAttemptID(), null);
+      null, null, null, null, null, event.getTaskAttemptID(), null);
 
     addEventData(builder, ATSConstants.STATUS, event.getState().name());
     if (event.getTaskFailureType() != null) {
@@ -354,21 +356,21 @@ public class HistoryEventProtoConverter {
 
     if (event.getCreationCausalTA() != null) {
       addEventData(builder, ATSConstants.CREATION_CAUSAL_ATTEMPT,
-          event.getCreationCausalTA().toString());
+        event.getCreationCausalTA().toString());
     }
     addEventData(builder, ATSConstants.TIME_TAKEN, (event.getFinishTime() - event.getStartTime()));
     addEventData(builder, ATSConstants.STATUS, event.getState().name());
 
     if (event.getTaskAttemptError() != null) {
       addEventData(builder, ATSConstants.TASK_ATTEMPT_ERROR_ENUM,
-          event.getTaskAttemptError().name());
+        event.getTaskAttemptError().name());
     }
     addEventData(builder, ATSConstants.DIAGNOSTICS, event.getDiagnostics());
     addEventData(builder, ATSConstants.COUNTERS,
-        DAGUtils.convertCountersToATSMap(event.getCounters()));
+      DAGUtils.convertCountersToATSMap(event.getCounters()));
     if (event.getDataEvents() != null && !event.getDataEvents().isEmpty()) {
       addEventData(builder, ATSConstants.LAST_DATA_EVENTS,
-          DAGUtils.convertDataEventDependecyInfoToATS(event.getDataEvents()));
+        DAGUtils.convertDataEventDependecyInfoToATS(event.getDataEvents()));
     }
     if (event.getNodeId() != null) {
       addEventData(builder, ATSConstants.NODE_ID, event.getNodeId().toString());
@@ -391,26 +393,26 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertTaskFinishedEvent(TaskFinishedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getFinishTime(),
-        null, null, null, null, event.getTaskID(), null, null);
+      null, null, null, null, event.getTaskID(), null, null);
 
     addEventData(builder, ATSConstants.TIME_TAKEN, (event.getFinishTime() - event.getStartTime()));
     addEventData(builder, ATSConstants.STATUS, event.getState().name());
     addEventData(builder, ATSConstants.NUM_FAILED_TASKS_ATTEMPTS, event.getNumFailedAttempts());
     if (event.getSuccessfulAttemptID() != null) {
       addEventData(builder, ATSConstants.SUCCESSFUL_ATTEMPT_ID,
-          event.getSuccessfulAttemptID().toString());
+        event.getSuccessfulAttemptID().toString());
     }
 
     addEventData(builder, ATSConstants.DIAGNOSTICS, event.getDiagnostics());
     addEventData(builder, ATSConstants.COUNTERS,
-        DAGUtils.convertCountersToATSMap(event.getTezCounters()));
+      DAGUtils.convertCountersToATSMap(event.getTezCounters()));
 
     return builder.build();
   }
 
   private HistoryEventProto convertTaskStartedEvent(TaskStartedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getStartTime(),
-        null, null, null, null, event.getTaskID(), null, null);
+      null, null, null, null, event.getTaskID(), null, null);
 
     addEventData(builder, ATSConstants.SCHEDULED_TIME, event.getScheduledTime());
     addEventData(builder, ATSConstants.STATUS, event.getState().name());
@@ -420,19 +422,19 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertVertexFinishedEvent(VertexFinishedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getFinishTime(),
-        null, null, null, event.getVertexID(), null, null, null);
+      null, null, null, event.getVertexID(), null, null, null);
 
     addEventData(builder, ATSConstants.STATUS, event.getState().name());
     addEventData(builder, ATSConstants.VERTEX_NAME, event.getVertexName());
     addEventData(builder, ATSConstants.TIME_TAKEN, (event.getFinishTime() - event.getStartTime()));
     addEventData(builder, ATSConstants.DIAGNOSTICS, event.getDiagnostics());
     addEventData(builder, ATSConstants.COUNTERS,
-        DAGUtils.convertCountersToATSMap(event.getTezCounters()));
+      DAGUtils.convertCountersToATSMap(event.getTezCounters()));
     addEventData(builder, ATSConstants.STATS,
-        DAGUtils.convertVertexStatsToATSMap(event.getVertexStats()));
+      DAGUtils.convertVertexStatsToATSMap(event.getVertexStats()));
     if (event.getServicePluginInfo() != null) {
       addEventData(builder, ATSConstants.SERVICE_PLUGIN,
-          DAGUtils.convertServicePluginToATSMap(event.getServicePluginInfo()));
+        DAGUtils.convertServicePluginToATSMap(event.getServicePluginInfo()));
     }
 
     final Map<String, Integer> vertexTaskStats = event.getVertexTaskStats();
@@ -447,7 +449,7 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertVertexInitializedEvent(VertexInitializedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getInitedTime(),
-        null, null, null, event.getVertexID(), null, null, null);
+      null, null, null, event.getVertexID(), null, null, null);
     addEventData(builder, ATSConstants.VERTEX_NAME, event.getVertexName());
     addEventData(builder, ATSConstants.INIT_REQUESTED_TIME, event.getInitRequestedTime());
     addEventData(builder, ATSConstants.INIT_TIME, event.getInitedTime());
@@ -455,7 +457,7 @@ public class HistoryEventProtoConverter {
     addEventData(builder, ATSConstants.PROCESSOR_CLASS_NAME, event.getProcessorName());
     if (event.getServicePluginInfo() != null) {
       addEventData(builder, ATSConstants.SERVICE_PLUGIN,
-          DAGUtils.convertServicePluginToATSMap(event.getServicePluginInfo()));
+        DAGUtils.convertServicePluginToATSMap(event.getServicePluginInfo()));
     }
 
     return builder.build();
@@ -463,7 +465,7 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertVertexStartedEvent(VertexStartedEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getStartTime(),
-        null, null, null, event.getVertexID(), null, null, null);
+      null, null, null, event.getVertexID(), null, null, null);
     addEventData(builder, ATSConstants.START_REQUESTED_TIME, event.getStartRequestedTime());
     addEventData(builder, ATSConstants.STATUS, event.getVertexState().name());
     return builder.build();
@@ -471,7 +473,7 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertVertexReconfigureDoneEvent(VertexConfigurationDoneEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getReconfigureDoneTime(),
-        null, null, null, event.getVertexID(), null, null, null);
+      null, null, null, event.getVertexID(), null, null, null);
     if (event.getSourceEdgeProperties() != null && !event.getSourceEdgeProperties().isEmpty()) {
       Map<String, Object> updatedEdgeManagers = new HashMap<>();
       for (Entry<String, EdgeProperty> entry : event.getSourceEdgeProperties().entrySet()) {
@@ -485,18 +487,18 @@ public class HistoryEventProtoConverter {
 
   private HistoryEventProto convertDAGRecoveredEvent(DAGRecoveredEvent event) {
     HistoryEventProto.Builder builder = makeBuilderForEvent(event, event.getRecoveredTime(),
-        event.getDagID(), null, event.getApplicationAttemptId(), null, null, null,
-        event.getUser());
+      event.getDagID(), null, event.getApplicationAttemptId(), null, null, null,
+      event.getUser());
     addEventData(builder, ATSConstants.DAG_NAME, event.getDagName());
     if (event.getRecoveredDagState() != null) {
       addEventData(builder, ATSConstants.DAG_STATE, event.getRecoveredDagState().name());
     }
     if (event.getRecoveryFailureReason() != null) {
       addEventData(builder, ATSConstants.RECOVERY_FAILURE_REASON,
-          event.getRecoveryFailureReason());
+        event.getRecoveryFailureReason());
     }
     addEventData(builder, ATSConstants.IN_PROGRESS_LOGS_URL + "_" +
-        event.getApplicationAttemptId().getAttemptId(), event.getContainerLogs());
+      event.getApplicationAttemptId().getAttemptId(), event.getContainerLogs());
     return builder.build();
   }
 }

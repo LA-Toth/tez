@@ -32,7 +32,7 @@ public class SplitLocationProviderMapReduce implements SplitLocationProviderWrap
 
   @Override
   public String[] getPreferredLocations(SplitContainer rawContainer) throws IOException,
-      InterruptedException {
+    InterruptedException {
     MapReduceSplitContainer splitContainer = (MapReduceSplitContainer) rawContainer;
     return locationProvider.getLocations(splitContainer.getRawSplit());
   }

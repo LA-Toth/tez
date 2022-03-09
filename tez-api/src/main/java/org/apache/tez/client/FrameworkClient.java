@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -46,10 +46,10 @@ import org.apache.tez.dag.api.client.rpc.DAGClientAMProtocolRPC.GetAMStatusRespo
 import org.apache.tez.dag.api.client.rpc.DAGClientAMProtocolRPC.ShutdownSessionRequestProto;
 import org.apache.tez.dag.api.client.rpc.DAGClientAMProtocolRPC.SubmitDAGRequestProto;
 import org.apache.tez.dag.api.client.rpc.DAGClientAMProtocolRPC.SubmitDAGResponseProto;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.protobuf.ServiceException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Private
 public abstract class FrameworkClient {
@@ -88,7 +88,7 @@ public abstract class FrameworkClient {
   public abstract YarnClientApplication createApplication() throws YarnException, IOException;
 
   public abstract ApplicationId submitApplication(ApplicationSubmissionContext appSubmissionContext)
-      throws YarnException, IOException, TezException;
+    throws YarnException, IOException, TezException;
 
   public abstract void killApplication(ApplicationId appId) throws YarnException, IOException;
 
@@ -97,20 +97,21 @@ public abstract class FrameworkClient {
   public abstract boolean isRunning() throws IOException;
 
   public TezAppMasterStatus getAMStatus(Configuration conf, ApplicationId appId,
-      UserGroupInformation ugi) throws TezException, ServiceException, IOException {
+                                        UserGroupInformation ugi) throws TezException, ServiceException, IOException {
     DAGClientAMProtocolBlockingPB proxy = getProxy(conf, appId, ugi);
 
     if (proxy == null) {
       return TezAppMasterStatus.INITIALIZING;
     }
     GetAMStatusResponseProto response =
-        proxy.getAMStatus(null, GetAMStatusRequestProto.newBuilder().build());
+      proxy.getAMStatus(null, GetAMStatusRequestProto.newBuilder().build());
     return DagTypeConverters.convertTezAppMasterStatusFromProto(response.getStatus());
   }
 
   public DAGClient submitDag(DAG dag, SubmitDAGRequestProto request, String clientName,
-      ApplicationId sessionAppId, long clientTimeout, UserGroupInformation ugi, TezConfiguration tezConf)
-      throws IOException, TezException, DAGSubmissionTimedOut {
+                             ApplicationId sessionAppId, long clientTimeout, UserGroupInformation ugi,
+                             TezConfiguration tezConf)
+    throws IOException, TezException, DAGSubmissionTimedOut {
     DAGClientAMProtocolBlockingPB proxy = null;
     try {
       proxy = waitForProxy(clientTimeout, tezConf, sessionAppId, ugi);
@@ -125,7 +126,7 @@ public abstract class FrameworkClient {
         LOG.info("Got an exception when trying to stop session", t);
       }
       throw new DAGSubmissionTimedOut("Could not submit DAG to Tez Session"
-          + ", timed out after " + clientTimeout + " seconds");
+        + ", timed out after " + clientTimeout + " seconds");
     }
 
     String dagId = null;
@@ -141,16 +142,16 @@ public abstract class FrameworkClient {
     }
 
     LOG.info("Submitted dag to TezSession"
-        + ", sessionName=" + clientName
-        + ", applicationId=" + sessionAppId
-        + ", dagId=" + dagId
-        + ", dagName=" + dag.getName());
+      + ", sessionName=" + clientName
+      + ", applicationId=" + sessionAppId
+      + ", dagId=" + dagId
+      + ", dagName=" + dag.getName());
     return new DAGClientImpl(sessionAppId, dagId, tezConf, this, ugi);
   }
 
   protected DAGClientAMProtocolBlockingPB waitForProxy(long clientTimeout, Configuration conf,
-      ApplicationId sessionAppId, UserGroupInformation ugi)
-      throws IOException, TezException, InterruptedException {
+                                                       ApplicationId sessionAppId, UserGroupInformation ugi)
+    throws IOException, TezException, InterruptedException {
     long startTime = System.currentTimeMillis();
     long endTime = startTime + (clientTimeout * 1000);
     DAGClientAMProtocolBlockingPB proxy = null;
@@ -172,7 +173,7 @@ public abstract class FrameworkClient {
    * that proxy a shutdownSession was called.
    */
   public boolean shutdownSession(Configuration conf, ApplicationId sessionAppId,
-      UserGroupInformation ugi) throws TezException, IOException, ServiceException {
+                                 UserGroupInformation ugi) throws TezException, IOException, ServiceException {
     DAGClientAMProtocolBlockingPB proxy = getProxy(conf, sessionAppId, ugi);
     if (proxy != null) {
       ShutdownSessionRequestProto request = ShutdownSessionRequestProto.newBuilder().build();
@@ -183,7 +184,7 @@ public abstract class FrameworkClient {
   }
 
   protected DAGClientAMProtocolBlockingPB getProxy(Configuration conf, ApplicationId sessionAppId,
-      UserGroupInformation ugi) throws TezException, IOException {
+                                                   UserGroupInformation ugi) throws TezException, IOException {
     return TezClientUtils.getAMProxy(this, conf, sessionAppId, ugi);
   }
 }

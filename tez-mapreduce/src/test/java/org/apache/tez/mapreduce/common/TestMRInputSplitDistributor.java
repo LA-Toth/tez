@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,9 +17,6 @@
  */
 
 package org.apache.tez.mapreduce.common;
-
-import org.apache.tez.common.TezUtils;
-import org.apache.tez.dag.api.UserPayload;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -34,6 +31,8 @@ import java.util.List;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.InputSplit;
+import org.apache.tez.common.TezUtils;
+import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.mapreduce.TezTestUtils;
 import org.apache.tez.mapreduce.hadoop.MRInputHelpers;
 import org.apache.tez.mapreduce.hadoop.MRJobConfig;
@@ -45,9 +44,9 @@ import org.apache.tez.runtime.api.Event;
 import org.apache.tez.runtime.api.InputInitializerContext;
 import org.apache.tez.runtime.api.events.InputDataInformationEvent;
 import org.apache.tez.runtime.api.events.InputUpdatePayloadEvent;
-import org.junit.Test;
 
 import com.google.protobuf.ByteString;
+import org.junit.Test;
 
 public class TestMRInputSplitDistributor {
 
@@ -68,10 +67,10 @@ public class TestMRInputSplitDistributor {
     payloadProto.setSplits(splitsProtoBuilder.build());
     payloadProto.setConfigurationBytes(confByteString);
     UserPayload userPayload =
-        UserPayload.create(payloadProto.build().toByteString().asReadOnlyByteBuffer());
+      UserPayload.create(payloadProto.build().toByteString().asReadOnlyByteBuffer());
 
     InputInitializerContext context = new TezTestUtils.TezRootInputInitializerContextForTest(userPayload,
-        new Configuration(false));
+      new Configuration(false));
     MRInputSplitDistributor splitDist = new MRInputSplitDistributor(context);
 
     List<Event> events = splitDist.initialize();
@@ -118,10 +117,10 @@ public class TestMRInputSplitDistributor {
     payloadProto.setSplits(splitsProtoBuilder.build());
     payloadProto.setConfigurationBytes(confByteString);
     UserPayload userPayload =
-        UserPayload.create(payloadProto.build().toByteString().asReadOnlyByteBuffer());
+      UserPayload.create(payloadProto.build().toByteString().asReadOnlyByteBuffer());
 
     InputInitializerContext context = new TezTestUtils.TezRootInputInitializerContextForTest(userPayload,
-        new Configuration(false));
+      new Configuration(false));
     MRInputSplitDistributor splitDist = new MRInputSplitDistributor(context);
 
     List<Event> events = splitDist.initialize();
@@ -180,6 +179,5 @@ public class TestMRInputSplitDistributor {
     public String[] getLocations() throws IOException {
       return null;
     }
-
   }
 }

@@ -19,18 +19,19 @@ import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.apache.tez.common.Preconditions;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezExecutors;
 import org.apache.tez.common.TezSharedExecutor;
+import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.service.ContainerRunner;
 import org.apache.tez.shufflehandler.ShuffleHandler;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.RunContainerRequestProto;
+
 import org.slf4j.LoggerFactory;
 
 public class TezTestService extends AbstractService implements ContainerRunner {
@@ -46,7 +47,6 @@ public class TezTestService extends AbstractService implements ContainerRunner {
 
   private final AtomicInteger numSubmissions = new AtomicInteger(0);
 
-
   private final AtomicReference<InetSocketAddress> address = new AtomicReference<InetSocketAddress>();
 
   private final TezExecutors sharedExecutor;
@@ -60,17 +60,17 @@ public class TezTestService extends AbstractService implements ContainerRunner {
     long jvmMax = Runtime.getRuntime().maxMemory();
 
     LOG.info(TezTestService.class.getSimpleName() + " created with the following configuration: " +
-        "numExecutors=" + numExecutors +
-        ", workDirs=" + Arrays.toString(localDirs) +
-        ", memoryAvailable=" + memoryAvailable +
-        ", jvmMaxMemory=" + jvmMax);
+      "numExecutors=" + numExecutors +
+      ", workDirs=" + Arrays.toString(localDirs) +
+      ", memoryAvailable=" + memoryAvailable +
+      ", jvmMaxMemory=" + jvmMax);
 
     Preconditions.checkArgument(this.numExecutors > 0);
     Preconditions.checkArgument(this.localDirs != null && this.localDirs.length > 0,
-        "Work dirs must be specified");
+      "Work dirs must be specified");
     Preconditions.checkState(jvmMax >= memoryAvailableBytes,
-        "Invalid configuration. Xmx value too small. maxAvailable=" + jvmMax + ", configured=" +
-            memoryAvailableBytes);
+      "Invalid configuration. Xmx value too small. maxAvailable=" + jvmMax + ", configured=" +
+        memoryAvailableBytes);
 
     this.shuffleHandlerConf = new Configuration(conf);
     // Start Shuffle on a random port
@@ -80,7 +80,7 @@ public class TezTestService extends AbstractService implements ContainerRunner {
     this.server = new TezTestServiceProtocolServerImpl(this, address);
     this.sharedExecutor = new TezSharedExecutor(conf);
     this.containerRunner = new ContainerRunnerImpl(numExecutors, localDirs, address,
-        memoryAvailableBytes, sharedExecutor);
+      memoryAvailableBytes, sharedExecutor);
   }
 
   @Override
@@ -93,7 +93,7 @@ public class TezTestService extends AbstractService implements ContainerRunner {
   public void serviceStart() throws Exception {
     ShuffleHandler.initializeAndStart(shuffleHandlerConf);
     String auxiliaryService = getConfig().get(TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID,
-        TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
+      TezConfiguration.TEZ_AM_SHUFFLE_AUXILIARY_SERVICE_ID_DEFAULT);
     containerRunner.setShufflePort(auxiliaryService, ShuffleHandler.get().getPort());
     server.start();
     containerRunner.start();
@@ -114,8 +114,6 @@ public class TezTestService extends AbstractService implements ContainerRunner {
     return ShuffleHandler.get().getPort();
   }
 
-
-
   @Override
   public void queueContainer(RunContainerRequestProto request) throws TezException {
     numSubmissions.incrementAndGet();
@@ -124,7 +122,7 @@ public class TezTestService extends AbstractService implements ContainerRunner {
 
   @Override
   public void submitWork(TezTestServiceProtocolProtos.SubmitWorkRequestProto request) throws
-      TezException {
+    TezException {
     numSubmissions.incrementAndGet();
     containerRunner.submitWork(request);
   }

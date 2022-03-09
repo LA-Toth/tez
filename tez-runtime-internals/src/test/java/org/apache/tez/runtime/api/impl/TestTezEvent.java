@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -36,11 +36,11 @@ import org.apache.tez.runtime.api.events.DataMovementEvent;
 import org.apache.tez.runtime.api.events.TaskAttemptCompletedEvent;
 import org.apache.tez.runtime.api.events.TaskStatusUpdateEvent;
 import org.apache.tez.runtime.api.impl.EventMetaData.EventProducerConsumerType;
-import org.junit.Assert;
-import org.junit.Test;
 
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TestTezEvent {
 
@@ -54,25 +54,25 @@ public class TestTezEvent {
     conf.set("testKey", confVal);
     UserPayload payload = TezUtils.createUserPayloadFromConf(conf);
     TezTaskAttemptID srcTAID = TezTaskAttemptID.getInstance(
-        TezTaskID.fromString("task_1454468251169_866787_1_02_000000"), 1000);
+      TezTaskID.fromString("task_1454468251169_866787_1_02_000000"), 1000);
     TezTaskAttemptID destTAID = TezTaskAttemptID.getInstance(
-        TezTaskID.fromString("task_1454468251169_866787_1_02_000000"), 2000);
+      TezTaskID.fromString("task_1454468251169_866787_1_02_000000"), 2000);
     EventMetaData srcInfo = new EventMetaData(EventProducerConsumerType.OUTPUT,
-        "v1", "v2", srcTAID);
+      "v1", "v2", srcTAID);
     EventMetaData destInfo = new EventMetaData(EventProducerConsumerType.OUTPUT,
-        "v3", "v4", destTAID);
+      "v3", "v4", destTAID);
 
     // Case of size less than 4K and parsing skipped during deserialization
     events.add(new TezEvent(new TaskAttemptCompletedEvent(), new EventMetaData(
-        EventProducerConsumerType.PROCESSOR, "v1", "v2", srcTAID)));
+      EventProducerConsumerType.PROCESSOR, "v1", "v2", srcTAID)));
     TezEvent dmeEvent = new TezEvent(DataMovementEvent.create(1000, 3, 1,
-        payload.getPayload()), srcInfo, System.currentTimeMillis());
+      payload.getPayload()), srcInfo, System.currentTimeMillis());
     dmeEvent.setDestinationInfo(destInfo);
     events.add(dmeEvent);
     // Different code path
     events.add(new TezEvent(new TaskStatusUpdateEvent(null, 0.1f, null, false),
-        new EventMetaData(EventProducerConsumerType.PROCESSOR, "v5", "v6",
-            srcTAID)));
+      new EventMetaData(EventProducerConsumerType.PROCESSOR, "v5", "v6",
+        srcTAID)));
 
     // Serialize to different types of DataOutput
     // One that implements OutputStream and one that does not
@@ -98,7 +98,6 @@ public class TestTezEvent {
     actual2 = deserializeEvents(dis);
     assertEventEquals(events, actual1);
     assertEventEquals(events, actual2);
-
   }
 
   private void serializeEvents(ArrayList<TezEvent> events, DataOutput out) throws IOException {
@@ -148,5 +147,4 @@ public class TestTezEvent {
       }
     }
   }
-
 }

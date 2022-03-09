@@ -27,13 +27,12 @@ public class TestHistoryEventType {
   public void testDAGSpecificEventCheck() {
     for (HistoryEventType eventType : HistoryEventType.values()) {
       if (eventType.name().startsWith("AM_")
-          || eventType.name().startsWith("APP_")
-          || eventType.name().startsWith("CONTAINER_")) {
+        || eventType.name().startsWith("APP_")
+        || eventType.name().startsWith("CONTAINER_")) {
         Assert.assertFalse(HistoryEventType.isDAGSpecificEvent(eventType));
       } else {
         Assert.assertTrue(HistoryEventType.isDAGSpecificEvent(eventType));
       }
     }
   }
-
 }

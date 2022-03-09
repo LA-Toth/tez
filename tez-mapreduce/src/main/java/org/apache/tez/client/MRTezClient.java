@@ -20,9 +20,10 @@
 
 package org.apache.tez.client;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Map;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.security.Credentials;
@@ -41,14 +42,14 @@ public class MRTezClient extends TezClient {
     super(name, tezConf, isSession, localResources, credentials);
   }
 
-  // To be used only by YarnRunner
-  public DAGClient submitDAGApplication(ApplicationId appId, org.apache.tez.dag.api.DAG dag)
-      throws TezException, IOException {
-    return super.submitDAGApplication(appId, dag);
+  public static MRDAGClient getDAGClient(ApplicationId appId, TezConfiguration tezConf, FrameworkClient frameworkClient)
+    throws IOException, TezException {
+    return new MRDAGClient(TezClient.getDAGClient(appId, tezConf, frameworkClient));
   }
 
-  public static MRDAGClient getDAGClient(ApplicationId appId, TezConfiguration tezConf, FrameworkClient frameworkClient)
-      throws IOException, TezException {
-    return new MRDAGClient(TezClient.getDAGClient(appId, tezConf, frameworkClient));
+  // To be used only by YarnRunner
+  public DAGClient submitDAGApplication(ApplicationId appId, org.apache.tez.dag.api.DAG dag)
+    throws TezException, IOException {
+    return super.submitDAGApplication(appId, dag);
   }
 }

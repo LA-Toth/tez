@@ -14,13 +14,12 @@
 
 package org.apache.tez.mapreduce.grouper;
 
-
 import java.util.List;
 
-import com.google.common.collect.Lists;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.tez.dag.api.TezUncheckedException;
 
+import com.google.common.collect.Lists;
 
 /**
  * An entity to hold grouped splits - either mapred or mapreduce.
@@ -41,7 +40,6 @@ public class GroupedSplitContainer {
     this.locations = locations;
     this.rack = rack;
   }
-
 
   public void addSplit(SplitContainer splitContainer) {
     wrappedSplits.add(splitContainer);

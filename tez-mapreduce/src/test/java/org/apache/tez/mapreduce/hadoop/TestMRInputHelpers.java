@@ -42,6 +42,7 @@ import org.apache.hadoop.mapreduce.split.SplitMetaInfoReader;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.tez.dag.api.DataSourceDescriptor;
 import org.apache.tez.dag.api.TaskLocationHint;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,22 +58,21 @@ public class TestMRInputHelpers {
   private static Path newSplitsDir;
 
   private static String TEST_ROOT_DIR = "target"
-      + Path.SEPARATOR + TestMRHelpers.class.getName() + "-tmpDir";
+    + Path.SEPARATOR + TestMRHelpers.class.getName() + "-tmpDir";
 
   @BeforeClass
   public static void setup() throws IOException {
     try {
       conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, TEST_ROOT_DIR);
       dfsCluster = new MiniDFSCluster.Builder(conf).numDataNodes(2)
-          .format(true).racks(null).build();
+        .format(true).racks(null).build();
       remoteFs = dfsCluster.getFileSystem();
     } catch (IOException io) {
       throw new RuntimeException("problem starting mini dfs cluster", io);
     }
 
     Configuration testConf = new Configuration(
-        dfsCluster.getFileSystem().getConf());
-
+      dfsCluster.getFileSystem().getConf());
 
     FSDataOutputStream dataOutputStream = null;
     try {
@@ -100,19 +100,18 @@ public class TestMRInputHelpers {
     newSplitsDir = remoteFs.makeQualified(new Path("/tmp/splitsDirNew/"));
   }
 
-
   @Test(timeout = 5000)
   public void testNewSplitsGen() throws Exception {
 
     DataSourceDescriptor dataSource = generateDataSourceDescriptorMapReduce(newSplitsDir);
 
     Assert.assertTrue(dataSource.getAdditionalLocalFiles()
-        .containsKey(MRInputHelpers.JOB_SPLIT_RESOURCE_NAME));
+      .containsKey(MRInputHelpers.JOB_SPLIT_RESOURCE_NAME));
     Assert.assertTrue(dataSource.getAdditionalLocalFiles()
-        .containsKey(MRInputHelpers.JOB_SPLIT_METAINFO_RESOURCE_NAME));
+      .containsKey(MRInputHelpers.JOB_SPLIT_METAINFO_RESOURCE_NAME));
 
     RemoteIterator<LocatedFileStatus> files =
-        remoteFs.listFiles(newSplitsDir, false);
+      remoteFs.listFiles(newSplitsDir, false);
 
     boolean foundSplitsFile = false;
     boolean foundMetaFile = false;
@@ -143,12 +142,12 @@ public class TestMRInputHelpers {
   public void testOldSplitsGen() throws Exception {
     DataSourceDescriptor dataSource = generateDataSourceDescriptorMapRed(oldSplitsDir);
     Assert.assertTrue(
-        dataSource.getAdditionalLocalFiles().containsKey(MRInputHelpers.JOB_SPLIT_RESOURCE_NAME));
+      dataSource.getAdditionalLocalFiles().containsKey(MRInputHelpers.JOB_SPLIT_RESOURCE_NAME));
     Assert.assertTrue(dataSource.getAdditionalLocalFiles()
-        .containsKey(MRInputHelpers.JOB_SPLIT_METAINFO_RESOURCE_NAME));
+      .containsKey(MRInputHelpers.JOB_SPLIT_METAINFO_RESOURCE_NAME));
 
     RemoteIterator<LocatedFileStatus> files =
-        remoteFs.listFiles(oldSplitsDir, false);
+      remoteFs.listFiles(oldSplitsDir, false);
 
     boolean foundSplitsFile = false;
     boolean foundMetaFile = false;
@@ -183,24 +182,24 @@ public class TestMRInputHelpers {
 
     Assert.assertEquals(2, localResources.size());
     Assert.assertTrue(localResources.containsKey(
-        MRInputHelpers.JOB_SPLIT_RESOURCE_NAME));
+      MRInputHelpers.JOB_SPLIT_RESOURCE_NAME));
     Assert.assertTrue(localResources.containsKey(
-        MRInputHelpers.JOB_SPLIT_METAINFO_RESOURCE_NAME));
+      MRInputHelpers.JOB_SPLIT_METAINFO_RESOURCE_NAME));
   }
 
   private void verifyLocationHints(Path inputSplitsDir,
                                    List<TaskLocationHint> actual) throws Exception {
     JobID jobId = new JobID("dummy", 1);
     JobSplit.TaskSplitMetaInfo[] splitsInfo =
-        SplitMetaInfoReader.readSplitMetaInfo(jobId, remoteFs,
-            conf, inputSplitsDir);
+      SplitMetaInfoReader.readSplitMetaInfo(jobId, remoteFs,
+        conf, inputSplitsDir);
     int splitsCount = splitsInfo.length;
     List<TaskLocationHint> locationHints =
-        new ArrayList<TaskLocationHint>(splitsCount);
+      new ArrayList<TaskLocationHint>(splitsCount);
     for (int i = 0; i < splitsCount; ++i) {
       locationHints.add(
-          TaskLocationHint.createTaskLocationHint(new HashSet<String>(
-              Arrays.asList(splitsInfo[i].getLocations())), null)
+        TaskLocationHint.createTaskLocationHint(new HashSet<String>(
+          Arrays.asList(splitsInfo[i].getLocations())), null)
       );
     }
 
@@ -208,19 +207,18 @@ public class TestMRInputHelpers {
   }
 
   private DataSourceDescriptor generateDataSourceDescriptorMapReduce(Path inputSplitsDir)
-      throws Exception {
+    throws Exception {
     JobConf jobConf = new JobConf(dfsCluster.getFileSystem().getConf());
     jobConf.setUseNewMapper(true);
     jobConf.setClass(org.apache.hadoop.mapreduce.MRJobConfig.INPUT_FORMAT_CLASS_ATTR, TextInputFormat.class,
-        InputFormat.class);
+      InputFormat.class);
     jobConf.set(TextInputFormat.INPUT_DIR, testFilePath.toString());
 
     return MRInputHelpers.configureMRInputWithLegacySplitGeneration(jobConf, inputSplitsDir, true);
   }
 
-
   private DataSourceDescriptor generateDataSourceDescriptorMapRed(Path inputSplitsDir)
-      throws Exception {
+    throws Exception {
     JobConf jobConf = new JobConf(dfsCluster.getFileSystem().getConf());
     jobConf.setUseNewMapper(false);
     jobConf.setInputFormat(org.apache.hadoop.mapred.TextInputFormat.class);
@@ -233,7 +231,7 @@ public class TestMRInputHelpers {
   public void testInputSplitLocalResourceCreationWithDifferentFS() throws Exception {
     FileSystem localFs = FileSystem.getLocal(conf);
     Path LOCAL_TEST_ROOT_DIR = new Path("target"
-        + Path.SEPARATOR + TestMRHelpers.class.getName() + "-localtmpDir");
+      + Path.SEPARATOR + TestMRHelpers.class.getName() + "-localtmpDir");
 
     try {
       localFs.mkdirs(LOCAL_TEST_ROOT_DIR);
@@ -246,9 +244,9 @@ public class TestMRInputHelpers {
 
       Assert.assertEquals(2, localResources.size());
       Assert.assertTrue(localResources.containsKey(
-          MRInputHelpers.JOB_SPLIT_RESOURCE_NAME));
+        MRInputHelpers.JOB_SPLIT_RESOURCE_NAME));
       Assert.assertTrue(localResources.containsKey(
-          MRInputHelpers.JOB_SPLIT_METAINFO_RESOURCE_NAME));
+        MRInputHelpers.JOB_SPLIT_METAINFO_RESOURCE_NAME));
 
       for (LocalResource lr : localResources.values()) {
         Assert.assertFalse(lr.getResource().getScheme().contains(remoteFs.getScheme()));
@@ -257,5 +255,4 @@ public class TestMRInputHelpers {
       localFs.delete(LOCAL_TEST_ROOT_DIR, true);
     }
   }
-
 }

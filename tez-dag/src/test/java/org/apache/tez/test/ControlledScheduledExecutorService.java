@@ -18,9 +18,6 @@
 
 package org.apache.tez.test;
 
-import org.apache.tez.dag.app.MockClock;
-import org.apache.tez.dag.app.MockClock.MockClockListener;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -39,7 +36,12 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** A scheduled executor service with timing that can be controlled for unit tests. */
+import org.apache.tez.dag.app.MockClock;
+import org.apache.tez.dag.app.MockClock.MockClockListener;
+
+/**
+ * A scheduled executor service with timing that can be controlled for unit tests.
+ */
 public class ControlledScheduledExecutorService implements ScheduledExecutorService, MockClockListener {
   private final MockClock clock;
   private final PriorityQueue<ScheduledFutureTask<?>> queue = new PriorityQueue<>();
@@ -68,7 +70,7 @@ public class ControlledScheduledExecutorService implements ScheduledExecutorServ
   @Override
   public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
     ScheduledFutureTask<Void> task = new ScheduledFutureTask<>(command, null,
-        toTimestamp(initialDelay, unit), unit.toMillis(delay));
+      toTimestamp(initialDelay, unit), unit.toMillis(delay));
     schedule(task);
     return task;
   }
@@ -152,12 +154,12 @@ public class ControlledScheduledExecutorService implements ScheduledExecutorServ
 
   @Override
   public void onTimeUpdated(long newTime) {
-     ScheduledFutureTask<?> task = queue.peek();
-     while (task != null && task.timestamp <= newTime) {
-       task = queue.poll();
-       runTask(task);
-       task = queue.peek();
-     }
+    ScheduledFutureTask<?> task = queue.peek();
+    while (task != null && task.timestamp <= newTime) {
+      task = queue.poll();
+      runTask(task);
+      task = queue.peek();
+    }
   }
 
   private long now() {

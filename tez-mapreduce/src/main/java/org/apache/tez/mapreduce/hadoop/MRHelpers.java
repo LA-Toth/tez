@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Vector;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 import org.apache.hadoop.conf.Configuration;
@@ -38,6 +36,8 @@ import org.apache.tez.mapreduce.combine.MRCombiner;
 import org.apache.tez.mapreduce.partition.MRPartitioner;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class contains helper methods for frameworks which migrate from MapReduce to Tez, and need
@@ -48,7 +48,6 @@ import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 public class MRHelpers {
 
   private static final Logger LOG = LoggerFactory.getLogger(MRHelpers.class);
-
 
   /**
    * Translate MapReduce configuration keys to the equivalent Tez keys in the provided
@@ -74,7 +73,6 @@ public class MRHelpers {
   public static void translateMRConfToTez(Configuration conf, boolean preferTez) {
     convertVertexConfToTez(conf, preferTez);
   }
-
 
   /**
    * Update the provided configuration to use the new API (mapreduce) or the old API (mapred) based
@@ -113,7 +111,7 @@ public class MRHelpers {
   private static void setupMRComponents(Configuration conf) {
     if (conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_PARTITIONER_CLASS) == null) {
       conf.set(TezRuntimeConfiguration.TEZ_RUNTIME_PARTITIONER_CLASS,
-          MRPartitioner.class.getName());
+        MRPartitioner.class.getName());
     }
 
     if (conf.get(TezRuntimeConfiguration.TEZ_RUNTIME_COMBINER_CLASS) == null) {
@@ -147,13 +145,13 @@ public class MRHelpers {
         // Create jobConf only if required.
         jobConf = new JobConf(baseConf);
         conf.set(MRJobConfig.MAP_OUTPUT_KEY_CLASS, jobConf
-            .getMapOutputKeyClass().getName());
+          .getMapOutputKeyClass().getName());
 
         if (LOG.isDebugEnabled()) {
           LOG.debug("Setting " + MRJobConfig.MAP_OUTPUT_KEY_CLASS
-              + " for stage: " + stage
-              + " based on job level configuration. Value: "
-              + conf.get(MRJobConfig.MAP_OUTPUT_KEY_CLASS));
+            + " for stage: " + stage
+            + " based on job level configuration. Value: "
+            + conf.get(MRJobConfig.MAP_OUTPUT_KEY_CLASS));
         }
       }
     }
@@ -165,12 +163,12 @@ public class MRHelpers {
           jobConf = new JobConf(baseConf);
         }
         conf.set(MRJobConfig.MAP_OUTPUT_VALUE_CLASS, jobConf
-            .getMapOutputValueClass().getName());
+          .getMapOutputValueClass().getName());
         if (LOG.isDebugEnabled()) {
           LOG.debug("Setting " + MRJobConfig.MAP_OUTPUT_VALUE_CLASS
-              + " for stage: " + stage
-              + " based on job level configuration. Value: "
-              + conf.get(MRJobConfig.MAP_OUTPUT_VALUE_CLASS));
+            + " for stage: " + stage
+            + " based on job level configuration. Value: "
+            + conf.get(MRJobConfig.MAP_OUTPUT_VALUE_CLASS));
         }
       }
     }
@@ -192,9 +190,9 @@ public class MRHelpers {
         }
         if (LOG.isDebugEnabled()) {
           LOG.debug("Config: mr(unset):" + dep.getKey() + ", mr initial value="
-              + mrValue
-              + ", tez(original):" + dep.getValue() + "=" + tezValue
-              + ", tez(final):" + dep.getValue() + "=" + conf.get(dep.getValue()));
+            + mrValue
+            + ", tez(original):" + dep.getValue() + "=" + tezValue
+            + ", tez(final):" + dep.getValue() + "=" + conf.get(dep.getValue()));
         }
       }
     }
@@ -203,26 +201,26 @@ public class MRHelpers {
   private static String getChildLogLevel(Configuration conf, boolean isMap) {
     if (isMap) {
       return conf.get(
-          MRJobConfig.MAP_LOG_LEVEL,
-          MRJobConfig.DEFAULT_LOG_LEVEL
-          );
+        MRJobConfig.MAP_LOG_LEVEL,
+        MRJobConfig.DEFAULT_LOG_LEVEL
+      );
     } else {
       return conf.get(
-          MRJobConfig.REDUCE_LOG_LEVEL,
-          MRJobConfig.DEFAULT_LOG_LEVEL
-          );
+        MRJobConfig.REDUCE_LOG_LEVEL,
+        MRJobConfig.DEFAULT_LOG_LEVEL
+      );
     }
   }
 
   private static void ensureNotSet(Configuration conf, String attr, String msg)
-      throws IOException {
+    throws IOException {
     if (conf.get(attr) != null) {
       throw new IOException(attr + " is incompatible with " + msg + " mode.");
     }
   }
 
   private static String getLog4jCmdLineProperties(Configuration conf,
-      boolean isMap) {
+                                                  boolean isMap) {
     Vector<String> logProps = new Vector<String>(4);
     TezUtils.addLog4jSystemProperties(getChildLogLevel(conf, isMap), logProps);
     StringBuilder sb = new StringBuilder();
@@ -245,14 +243,14 @@ public class MRHelpers {
   public static String getJavaOptsForMRAM(Configuration conf) {
     // Admin opts
     String mrAppMasterAdminOptions = conf.get(
-        MRJobConfig.MR_AM_ADMIN_COMMAND_OPTS,
-        MRJobConfig.DEFAULT_MR_AM_ADMIN_COMMAND_OPTS);
+      MRJobConfig.MR_AM_ADMIN_COMMAND_OPTS,
+      MRJobConfig.DEFAULT_MR_AM_ADMIN_COMMAND_OPTS);
     // Add AM user command opts
     String mrAppMasterUserOptions = conf.get(MRJobConfig.MR_AM_COMMAND_OPTS,
-        MRJobConfig.DEFAULT_MR_AM_COMMAND_OPTS);
+      MRJobConfig.DEFAULT_MR_AM_COMMAND_OPTS);
 
     return mrAppMasterAdminOptions.trim()
-        + " " + mrAppMasterUserOptions.trim();
+      + " " + mrAppMasterUserOptions.trim();
   }
 
   /**
@@ -271,17 +269,17 @@ public class MRHelpers {
   @SuppressWarnings("deprecation")
   public static String getJavaOptsForMRMapper(Configuration conf) {
     String adminOpts = conf.get(
-        MRJobConfig.MAPRED_MAP_ADMIN_JAVA_OPTS,
-        MRJobConfig.DEFAULT_MAPRED_ADMIN_JAVA_OPTS);
+      MRJobConfig.MAPRED_MAP_ADMIN_JAVA_OPTS,
+      MRJobConfig.DEFAULT_MAPRED_ADMIN_JAVA_OPTS);
 
     String userOpts = conf.get(
-        MRJobConfig.MAP_JAVA_OPTS,
-        conf.get(
-            JobConf.MAPRED_TASK_JAVA_OPTS,
-            JobConf.DEFAULT_MAPRED_TASK_JAVA_OPTS));
+      MRJobConfig.MAP_JAVA_OPTS,
+      conf.get(
+        JobConf.MAPRED_TASK_JAVA_OPTS,
+        JobConf.DEFAULT_MAPRED_TASK_JAVA_OPTS));
 
     return adminOpts.trim() + " " + userOpts.trim() + " "
-        + getLog4jCmdLineProperties(conf, true);
+      + getLog4jCmdLineProperties(conf, true);
   }
 
   /**
@@ -300,17 +298,17 @@ public class MRHelpers {
   @SuppressWarnings("deprecation")
   public static String getJavaOptsForMRReducer(Configuration conf) {
     String adminOpts = conf.get(
-        MRJobConfig.MAPRED_REDUCE_ADMIN_JAVA_OPTS,
-        MRJobConfig.DEFAULT_MAPRED_ADMIN_JAVA_OPTS);
+      MRJobConfig.MAPRED_REDUCE_ADMIN_JAVA_OPTS,
+      MRJobConfig.DEFAULT_MAPRED_ADMIN_JAVA_OPTS);
 
     String userOpts = conf.get(
-        MRJobConfig.REDUCE_JAVA_OPTS,
-        conf.get(
-            JobConf.MAPRED_TASK_JAVA_OPTS,
-            JobConf.DEFAULT_MAPRED_TASK_JAVA_OPTS));
+      MRJobConfig.REDUCE_JAVA_OPTS,
+      conf.get(
+        JobConf.MAPRED_TASK_JAVA_OPTS,
+        JobConf.DEFAULT_MAPRED_TASK_JAVA_OPTS));
 
     return adminOpts.trim() + " " + userOpts.trim() + " "
-        + getLog4jCmdLineProperties(conf, false);
+      + getLog4jCmdLineProperties(conf, false);
   }
 
   /**
@@ -328,9 +326,9 @@ public class MRHelpers {
    * running Map tasks
    */
   public static Resource getResourceForMRMapper(Configuration conf) {
-    JobConf jobConf = conf instanceof JobConf ? (JobConf)conf : new JobConf(conf);
-    return Resource.newInstance((int)jobConf.getMemoryForMapTask(),
-        jobConf.getInt(MRJobConfig.MAP_CPU_VCORES, MRJobConfig.DEFAULT_MAP_CPU_VCORES));
+    JobConf jobConf = conf instanceof JobConf ? (JobConf) conf : new JobConf(conf);
+    return Resource.newInstance((int) jobConf.getMemoryForMapTask(),
+      jobConf.getInt(MRJobConfig.MAP_CPU_VCORES, MRJobConfig.DEFAULT_MAP_CPU_VCORES));
   }
 
   /**
@@ -350,9 +348,9 @@ public class MRHelpers {
    * running Reduce tasks
    */
   public static Resource getResourceForMRReducer(Configuration conf) {
-    JobConf jobConf = conf instanceof JobConf ? (JobConf)conf : new JobConf(conf);
-    return Resource.newInstance((int)jobConf.getMemoryForReduceTask(),
-        conf.getInt(MRJobConfig.REDUCE_CPU_VCORES, MRJobConfig.DEFAULT_REDUCE_CPU_VCORES));
+    JobConf jobConf = conf instanceof JobConf ? (JobConf) conf : new JobConf(conf);
+    return Resource.newInstance((int) jobConf.getMemoryForReduceTask(),
+      conf.getInt(MRJobConfig.REDUCE_CPU_VCORES, MRJobConfig.DEFAULT_REDUCE_CPU_VCORES));
   }
 
   /**
@@ -367,28 +365,28 @@ public class MRHelpers {
                                                Map<String, String> environment, boolean isMap) {
     // Shell
     environment.put(Environment.SHELL.name(), conf.get(
-        MRJobConfig.MAPRED_ADMIN_USER_SHELL, MRJobConfig.DEFAULT_SHELL));
+      MRJobConfig.MAPRED_ADMIN_USER_SHELL, MRJobConfig.DEFAULT_SHELL));
 
     // Add pwd to LD_LIBRARY_PATH, add this before adding anything else
     TezYARNUtils.addToEnvironment(environment, Environment.LD_LIBRARY_PATH.name(),
-        Environment.PWD.$(), File.pathSeparator);
+      Environment.PWD.$(), File.pathSeparator);
 
     // Add the env variables passed by the admin
     TezYARNUtils.appendToEnvFromInputString(environment, conf.get(
         MRJobConfig.MAPRED_ADMIN_USER_ENV,
         MRJobConfig.DEFAULT_MAPRED_ADMIN_USER_ENV),
-        File.pathSeparator);
+      File.pathSeparator);
 
     // Add the env variables passed by the user
     String mapredChildEnv = (isMap ?
-        conf.get(MRJobConfig.MAP_ENV, conf.get("mapred.child.env"))
-        : conf.get(MRJobConfig.REDUCE_ENV, conf.get("mapred.child.env")));
+      conf.get(MRJobConfig.MAP_ENV, conf.get("mapred.child.env"))
+      : conf.get(MRJobConfig.REDUCE_ENV, conf.get("mapred.child.env")));
     TezYARNUtils.appendToEnvFromInputString(environment, mapredChildEnv, File.pathSeparator);
 
     // Set logging level in the environment.
     environment.put(
-        "HADOOP_ROOT_LOGGER",
-        getChildLogLevel(conf, isMap) + ",CLA");
+      "HADOOP_ROOT_LOGGER",
+      getChildLogLevel(conf, isMap) + ",CLA");
   }
 
   /**
@@ -398,9 +396,8 @@ public class MRHelpers {
    */
   public static void updateEnvBasedOnMRAMEnv(Configuration conf, Map<String, String> environment) {
     TezYARNUtils.appendToEnvFromInputString(environment, conf.get(MRJobConfig.MR_AM_ADMIN_USER_ENV),
-        File.pathSeparator);
+      File.pathSeparator);
     TezYARNUtils.appendToEnvFromInputString(environment, conf.get(MRJobConfig.MR_AM_ENV),
-        File.pathSeparator);
+      File.pathSeparator);
   }
-
 }

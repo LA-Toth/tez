@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,22 +23,20 @@ import java.util.LinkedHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.hadoop.conf.Configuration;
-import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
-import org.junit.Assert;
-import org.junit.Test;
-
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Priority;
-
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.app.rm.LocalTaskSchedulerService.AllocatedTask;
 import org.apache.tez.dag.app.rm.LocalTaskSchedulerService.AsyncDelegateRequestHandler;
 import org.apache.tez.dag.app.rm.LocalTaskSchedulerService.LocalContainerFactory;
 import org.apache.tez.dag.app.rm.LocalTaskSchedulerService.SchedulerRequest;
+import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class TestLocalTaskScheduler {
-
 
   @Test(timeout = 5000)
   public void maxTasksAllocationsCannotBeExceeded() {
@@ -51,8 +49,8 @@ public class TestLocalTaskScheduler {
     ApplicationAttemptId appAttemptId = ApplicationAttemptId.newInstance(appId, 1);
 
     TaskSchedulerContext
-        mockContext = TestTaskSchedulerHelpers.setupMockTaskSchedulerContext("", 0, "", true,
-        appAttemptId, 1000l, null, new Configuration());
+      mockContext = TestTaskSchedulerHelpers.setupMockTaskSchedulerContext("", 0, "", true,
+      appAttemptId, 1000l, null, new Configuration());
 
     LocalContainerFactory containerFactory = new LocalContainerFactory(appAttemptId, 1000);
 
@@ -62,10 +60,10 @@ public class TestLocalTaskScheduler {
     // Object under test
     AsyncDelegateRequestHandler requestHandler =
       new AsyncDelegateRequestHandler(clientRequestQueue,
-          containerFactory,
-          taskAllocations,
-          mockContext,
-          tezConf);
+        containerFactory,
+        taskAllocations,
+        mockContext,
+        tezConf);
 
     // Allocate up to max tasks
     for (int i = 0; i < MAX_TASKS; i++) {

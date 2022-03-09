@@ -18,28 +18,28 @@
 
 package org.apache.tez.test;
 
-import org.apache.tez.common.Preconditions;
-import com.google.protobuf.ByteString;
+import java.io.IOException;
+import java.util.EnumSet;
+import java.util.Objects;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.api.VertexManagerPluginContext;
 import org.apache.tez.dag.api.event.VertexState;
 import org.apache.tez.dag.api.event.VertexStateUpdate;
 import org.apache.tez.dag.library.vertexmanager.ShuffleVertexManager;
+
+import com.google.protobuf.ByteString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.EnumSet;
-import java.util.Objects;
 
 /**
  * A shuffle vertex manager that will set the vertex's parallelism upon
  * completion of its single grandparent simulating a very simplified
  * version of PigGraceShuffleVertexManager for testing purposes.
- *
+ * <p>
  * This manager plugin should only be used for vertices that have a single
  * grandparent.
  */
@@ -54,6 +54,10 @@ public final class GraceShuffleVertexManagerForTest extends ShuffleVertexManager
     super(context);
   }
 
+  public static GraceConfBuilder newConfBuilder() {
+    return new GraceConfBuilder();
+  }
+
   @Override
   public void initialize() {
     try {
@@ -63,7 +67,7 @@ public final class GraceShuffleVertexManagerForTest extends ShuffleVertexManager
       throw new TezUncheckedException(e);
     }
     getContext().registerForVertexStateUpdates(graceConf.grandparentVertex,
-        EnumSet.of(VertexState.SUCCEEDED));
+      EnumSet.of(VertexState.SUCCEEDED));
     logger.info("Watching {}", graceConf.grandparentVertex);
     super.initialize();
   }
@@ -76,8 +80,8 @@ public final class GraceShuffleVertexManagerForTest extends ShuffleVertexManager
     VertexState vertexState = stateUpdate.getVertexState();
 
     Preconditions.checkState(graceConf != null,
-        "Received state notification {} for vertex {} in vertex {} before manager was initialized",
-        vertexState, vertexName, getContext().getVertexName());
+      "Received state notification {} for vertex {} in vertex {} before manager was initialized",
+      vertexState, vertexName, getContext().getVertexName());
 
     if (!shouldSetParallelism(stateUpdate)) {
       return;
@@ -86,13 +90,13 @@ public final class GraceShuffleVertexManagerForTest extends ShuffleVertexManager
     isParallelismSet = true;
 
     logger.info("Initialize parallelism for {} to {}",
-        getContext().getVertexName(), graceConf.desiredParallelism);
+      getContext().getVertexName(), graceConf.desiredParallelism);
   }
 
   private boolean shouldSetParallelism(VertexStateUpdate update) {
     return !isParallelismSet &&
-        update.getVertexState().equals(VertexState.SUCCEEDED) &&
-        update.getVertexName().equals(graceConf.grandparentVertex);
+      update.getVertexState().equals(VertexState.SUCCEEDED) &&
+      update.getVertexName().equals(graceConf.grandparentVertex);
   }
 
   private static final class GraceConf {
@@ -110,9 +114,9 @@ public final class GraceShuffleVertexManagerForTest extends ShuffleVertexManager
 
     static GraceConf fromConfiguration(Configuration conf) {
       return newConfBuilder()
-          .setGrandparentVertex(conf.get(TEST_GRACE_GRANDPARENT_VERTEX))
-          .setDesiredParallelism(conf.getInt(TEST_GRACE_DESIRED_PARALLELISM, -1))
-          .build();
+        .setGrandparentVertex(conf.get(TEST_GRACE_GRANDPARENT_VERTEX))
+        .setDesiredParallelism(conf.getInt(TEST_GRACE_DESIRED_PARALLELISM, -1))
+        .build();
     }
 
     Configuration toConfiguration() {
@@ -121,10 +125,6 @@ public final class GraceShuffleVertexManagerForTest extends ShuffleVertexManager
       conf.setInt(TEST_GRACE_DESIRED_PARALLELISM, desiredParallelism);
       return conf;
     }
-  }
-
-  public static GraceConfBuilder newConfBuilder() {
-    return new GraceConfBuilder();
   }
 
   public static final class GraceConfBuilder {
@@ -151,9 +151,9 @@ public final class GraceShuffleVertexManagerForTest extends ShuffleVertexManager
 
     private GraceConf build() {
       Objects.requireNonNull(grandparentVertex,
-          "Grandparent vertex is required");
+        "Grandparent vertex is required");
       Preconditions.checkArgument(desiredParallelism > 0,
-          "Desired parallelism must be greater than 0");
+        "Desired parallelism must be greater than 0");
       return new GraceConf(this);
     }
   }

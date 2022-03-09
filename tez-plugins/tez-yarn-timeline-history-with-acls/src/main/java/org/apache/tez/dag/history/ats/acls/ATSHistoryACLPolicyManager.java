@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,8 +25,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.hadoop.service.Service;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -45,14 +47,13 @@ import org.apache.tez.dag.api.TezUncheckedException;
 
 public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
 
+  final static String DOMAIN_ID_PREFIX = "Tez_ATS_";
   private final static Logger LOG = LoggerFactory.getLogger(ATSHistoryACLPolicyManager.class);
-
+  private static final String atsHistoryLoggingServiceClassName =
+    "org.apache.tez.dag.history.logging.ats.ATSHistoryLoggingService";
   TimelineClient timelineClient;
   Configuration conf;
   String user;
-  final static String DOMAIN_ID_PREFIX = "Tez_ATS_";
-  private static final String atsHistoryLoggingServiceClassName =
-      "org.apache.tez.dag.history.logging.ats.ATSHistoryLoggingService";
 
   private void initializeTimelineClient() {
     if (this.conf == null) {
@@ -70,10 +71,10 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
     } else {
       this.timelineClient = null;
       if (conf.get(TezConfiguration.TEZ_HISTORY_LOGGING_SERVICE_CLASS, "")
-         .equals(atsHistoryLoggingServiceClassName)) {
+        .equals(atsHistoryLoggingServiceClassName)) {
         LOG.warn(atsHistoryLoggingServiceClassName
-            + " is disabled due to Timeline Service being disabled, "
-            + YarnConfiguration.TIMELINE_SERVICE_ENABLED + " set to false");
+          + " is disabled due to Timeline Service being disabled, "
+          + YarnConfiguration.TIMELINE_SERVICE_ENABLED + " set to false");
       }
     }
     try {
@@ -84,7 +85,7 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
   }
 
   private String getMergedViewACLs(ACLConfigurationParser parser,
-      DAGAccessControls dagAccessControls) {
+                                   DAGAccessControls dagAccessControls) {
     Map<ACLType, Set<String>> allowedUsers = parser.getAllowedUsers();
     Map<ACLType, Set<String>> allowedGroups = parser.getAllowedGroups();
 
@@ -110,11 +111,11 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
     }
 
     return ACLManager.toCommaSeparatedString(viewUsers) + " " +
-        ACLManager.toCommaSeparatedString(viewGroups);
+      ACLManager.toCommaSeparatedString(viewGroups);
   }
 
   private void createTimelineDomain(String domainId, Configuration tezConf,
-      DAGAccessControls dagAccessControls) throws IOException, HistoryACLPolicyException {
+                                    DAGAccessControls dagAccessControls) throws IOException, HistoryACLPolicyException {
     TimelineDomain timelineDomain = new TimelineDomain();
     timelineDomain.setId(domainId);
 
@@ -133,23 +134,22 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
     }
   }
 
-
   private Map<String, String> createSessionDomain(Configuration tezConf,
-      ApplicationId applicationId, DAGAccessControls dagAccessControls)
-      throws IOException, HistoryACLPolicyException {
+                                                  ApplicationId applicationId, DAGAccessControls dagAccessControls)
+    throws IOException, HistoryACLPolicyException {
     String domainId =
-        tezConf.get(TezConfiguration.YARN_ATS_ACL_SESSION_DOMAIN_ID);
+      tezConf.get(TezConfiguration.YARN_ATS_ACL_SESSION_DOMAIN_ID);
     if (!tezConf.getBoolean(TezConfiguration.TEZ_AM_ACLS_ENABLED,
-        TezConfiguration.TEZ_AM_ACLS_ENABLED_DEFAULT)) {
+      TezConfiguration.TEZ_AM_ACLS_ENABLED_DEFAULT)) {
       if (domainId != null) {
         throw new TezUncheckedException("ACLs disabled but DomainId is specified"
-            + ", aclsEnabled=true, domainId=" + domainId);
+          + ", aclsEnabled=true, domainId=" + domainId);
       }
       return null;
     }
 
     boolean autoCreateDomain = tezConf.getBoolean(TezConfiguration.YARN_ATS_ACL_DOMAINS_AUTO_CREATE,
-        TezConfiguration.YARN_ATS_ACL_DOMAINS_AUTO_CREATE_DEFAULT);
+      TezConfiguration.YARN_ATS_ACL_DOMAINS_AUTO_CREATE_DEFAULT);
 
     if (domainId != null) {
       // do nothing
@@ -158,7 +158,7 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
       if (!autoCreateDomain) {
         // Error - Cannot fallback to default as that leaves ACLs open
         throw new TezUncheckedException("Timeline DomainId is not specified and auto-create"
-            + " Domains is disabled");
+          + " Domains is disabled");
       }
       domainId = DOMAIN_ID_PREFIX + applicationId.toString();
       createTimelineDomain(domainId, tezConf, dagAccessControls);
@@ -168,21 +168,22 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
   }
 
   private Map<String, String> createDAGDomain(Configuration tezConf,
-      ApplicationId applicationId, String dagName, DAGAccessControls dagAccessControls)
-      throws IOException, HistoryACLPolicyException {
+                                              ApplicationId applicationId, String dagName,
+                                              DAGAccessControls dagAccessControls)
+    throws IOException, HistoryACLPolicyException {
     String domainId =
-        tezConf.get(TezConfiguration.YARN_ATS_ACL_DAG_DOMAIN_ID);
+      tezConf.get(TezConfiguration.YARN_ATS_ACL_DAG_DOMAIN_ID);
     if (!tezConf.getBoolean(TezConfiguration.TEZ_AM_ACLS_ENABLED,
-        TezConfiguration.TEZ_AM_ACLS_ENABLED_DEFAULT)) {
+      TezConfiguration.TEZ_AM_ACLS_ENABLED_DEFAULT)) {
       if (domainId != null) {
         throw new TezUncheckedException("ACLs disabled but domainId for DAG is specified"
-            + ", aclsEnabled=true, domainId=" + domainId);
+          + ", aclsEnabled=true, domainId=" + domainId);
       }
       return null;
     }
 
     boolean autoCreateDomain = tezConf.getBoolean(TezConfiguration.YARN_ATS_ACL_DOMAINS_AUTO_CREATE,
-        TezConfiguration.YARN_ATS_ACL_DOMAINS_AUTO_CREATE_DEFAULT);
+      TezConfiguration.YARN_ATS_ACL_DOMAINS_AUTO_CREATE_DEFAULT);
 
     if (domainId != null) {
       // do nothing
@@ -191,7 +192,7 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
       if (!autoCreateDomain) {
         // Error - Cannot fallback to default as that leaves ACLs open
         throw new TezUncheckedException("Timeline DomainId is not specified and auto-create"
-            + " Domains is disabled");
+          + " Domains is disabled");
       }
 
       // Create a domain only if dagAccessControls has been specified.
@@ -206,31 +207,32 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
   }
 
   @Override
+  public Configuration getConf() {
+    return this.conf;
+  }
+
+  @Override
   public void setConf(Configuration conf) {
     this.conf = conf;
     initializeTimelineClient();
   }
 
   @Override
-  public Configuration getConf() {
-    return this.conf;
-  }
-
-  @Override
   public Map<String, String> setupSessionACLs(Configuration conf, ApplicationId applicationId)
-      throws IOException, HistoryACLPolicyException {
+    throws IOException, HistoryACLPolicyException {
     return createSessionDomain(conf, applicationId, null);
   }
 
   @Override
   public Map<String, String> setupNonSessionACLs(Configuration conf, ApplicationId applicationId,
-      DAGAccessControls dagAccessControls) throws IOException, HistoryACLPolicyException {
+                                                 DAGAccessControls dagAccessControls) throws IOException,
+    HistoryACLPolicyException {
     return createSessionDomain(conf, applicationId, dagAccessControls);
   }
 
   @Override
   public Map<String, String> setupSessionDAGACLs(Configuration conf, ApplicationId applicationId,
-      String dagName, DAGAccessControls dagAccessControls) throws IOException, HistoryACLPolicyException {
+                                                 String dagName, DAGAccessControls dagAccessControls) throws IOException, HistoryACLPolicyException {
     return createDAGDomain(conf, applicationId, dagName, dagAccessControls);
   }
 
@@ -238,7 +240,7 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
   public void updateTimelineEntityDomain(Object timelineEntity, String domainId) {
     if (!(timelineEntity instanceof TimelineEntity)) {
       throw new UnsupportedOperationException("Invalid object provided of type"
-          + timelineEntity.getClass().getName());
+        + timelineEntity.getClass().getName());
     }
     TimelineEntity entity = (TimelineEntity) timelineEntity;
     entity.setDomainId(domainId);
@@ -250,5 +252,4 @@ public class ATSHistoryACLPolicyManager implements HistoryACLPolicyManager {
       timelineClient.stop();
     }
   }
-
 }

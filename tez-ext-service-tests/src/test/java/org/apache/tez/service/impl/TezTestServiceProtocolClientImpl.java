@@ -17,8 +17,6 @@ package org.apache.tez.service.impl;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.ProtobufRpcEngine;
 import org.apache.hadoop.ipc.RPC;
@@ -28,13 +26,14 @@ import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.RunContainerRequestProto;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.RunContainerResponseProto;
 
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 
 public class TezTestServiceProtocolClientImpl implements TezTestServiceProtocolBlockingPB {
 
   private final Configuration conf;
   private final InetSocketAddress serverAddr;
   TezTestServiceProtocolBlockingPB proxy;
-
 
   public TezTestServiceProtocolClientImpl(Configuration conf, String hostname, int port) {
     this.conf = conf;
@@ -44,7 +43,7 @@ public class TezTestServiceProtocolClientImpl implements TezTestServiceProtocolB
   @Override
   public RunContainerResponseProto runContainer(RpcController controller,
                                                 RunContainerRequestProto request) throws
-      ServiceException {
+    ServiceException {
     try {
       return getProxy().runContainer(null, request);
     } catch (IOException e) {
@@ -55,14 +54,13 @@ public class TezTestServiceProtocolClientImpl implements TezTestServiceProtocolB
   @Override
   public TezTestServiceProtocolProtos.SubmitWorkResponseProto submitWork(RpcController controller,
                                                                          TezTestServiceProtocolProtos.SubmitWorkRequestProto request) throws
-      ServiceException {
+    ServiceException {
     try {
       return getProxy().submitWork(null, request);
     } catch (IOException e) {
       throw new ServiceException(e);
     }
   }
-
 
   public TezTestServiceProtocolBlockingPB getProxy() throws IOException {
     if (proxy == null) {
@@ -76,7 +74,7 @@ public class TezTestServiceProtocolClientImpl implements TezTestServiceProtocolB
     // TODO Fix security
     RPC.setProtocolEngine(conf, TezTestServiceProtocolBlockingPB.class, ProtobufRpcEngine.class);
     p = (TezTestServiceProtocolBlockingPB) RPC
-        .getProxy(TezTestServiceProtocolBlockingPB.class, 0, serverAddr, conf);
+      .getProxy(TezTestServiceProtocolBlockingPB.class, 0, serverAddr, conf);
     return p;
   }
 }

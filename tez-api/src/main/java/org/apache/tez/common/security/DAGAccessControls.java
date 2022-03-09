@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -84,7 +84,11 @@ public class DAGAccessControls {
     if (allowedGroups.containsKey(ACLType.DAG_MODIFY_ACL)) {
       this.groupsWithModifyACLs.addAll(allowedGroups.get(ACLType.DAG_MODIFY_ACL));
     }
+  }
 
+  @Private
+  public synchronized Set<String> getUsersWithViewACLs() {
+    return Collections.unmodifiableSet(usersWithViewACLs);
   }
 
   /**
@@ -99,6 +103,11 @@ public class DAGAccessControls {
     return this;
   }
 
+  @Private
+  public synchronized Set<String> getUsersWithModifyACLs() {
+    return Collections.unmodifiableSet(usersWithModifyACLs);
+  }
+
   /**
    * Sets the list of users with modify permissions on the DAG. If all users are allowed,
    * pass in a single entry "*"
@@ -109,6 +118,11 @@ public class DAGAccessControls {
     this.usersWithModifyACLs.clear();
     this.usersWithModifyACLs.addAll(users);
     return this;
+  }
+
+  @Private
+  public synchronized Set<String> getGroupsWithViewACLs() {
+    return Collections.unmodifiableSet(groupsWithViewACLs);
   }
 
   /**
@@ -122,6 +136,11 @@ public class DAGAccessControls {
     return this;
   }
 
+  @Private
+  public synchronized Set<String> getGroupsWithModifyACLs() {
+    return Collections.unmodifiableSet(groupsWithModifyACLs);
+  }
+
   /**
    * Sets the list of groups with modify permissions on the DAG.
    * @param groups Set of groups with modify permissions
@@ -133,26 +152,6 @@ public class DAGAccessControls {
     return this;
   }
 
-  @Private
-  public synchronized Set<String> getUsersWithViewACLs() {
-    return Collections.unmodifiableSet(usersWithViewACLs);
-  }
-
-  @Private
-  public synchronized Set<String> getUsersWithModifyACLs() {
-    return Collections.unmodifiableSet(usersWithModifyACLs);
-  }
-
-  @Private
-  public synchronized Set<String> getGroupsWithViewACLs() {
-    return Collections.unmodifiableSet(groupsWithViewACLs);
-  }
-
-  @Private
-  public synchronized Set<String> getGroupsWithModifyACLs() {
-    return Collections.unmodifiableSet(groupsWithModifyACLs);
-  }
-
   /**
    * Merge the dag acls with the AM acls in the configuration object. The config object will contain
    * the updated acls.
@@ -162,9 +161,9 @@ public class DAGAccessControls {
   public synchronized void mergeIntoAmAcls(Configuration conf) {
     ACLConfigurationParser parser = new ACLConfigurationParser(conf, false);
     parser.addAllowedGroups(ImmutableMap.of(
-        ACLType.AM_VIEW_ACL, groupsWithViewACLs, ACLType.AM_MODIFY_ACL, groupsWithModifyACLs));
+      ACLType.AM_VIEW_ACL, groupsWithViewACLs, ACLType.AM_MODIFY_ACL, groupsWithModifyACLs));
     parser.addAllowedUsers(ImmutableMap.of(
-        ACLType.AM_VIEW_ACL, usersWithViewACLs, ACLType.AM_MODIFY_ACL, usersWithModifyACLs));
+      ACLType.AM_VIEW_ACL, usersWithViewACLs, ACLType.AM_MODIFY_ACL, usersWithModifyACLs));
 
     Set<String> viewUsers = parser.getAllowedUsers().get(ACLType.AM_VIEW_ACL);
     Set<String> viewGroups = parser.getAllowedGroups().get(ACLType.AM_VIEW_ACL);

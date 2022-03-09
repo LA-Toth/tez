@@ -19,6 +19,7 @@
 package org.apache.tez.analyzer.utils;
 
 import com.sun.istack.Nullable;
+
 import org.apache.tez.dag.utils.Graph;
 import org.apache.tez.history.parser.datamodel.AdditionalInputOutputDetails;
 import org.apache.tez.history.parser.datamodel.DagInfo;
@@ -48,51 +49,49 @@ public class Utils {
   }
 
   public static void generateDAGVizFile(DagInfo dagInfo, String fileName,
-      @Nullable List<String> criticalVertices) throws IOException {
+                                        @Nullable List<String> criticalVertices) throws IOException {
     Graph graph = new Graph(sanitizeLabelForViz(dagInfo.getName()));
 
     for (VertexInfo v : dagInfo.getVertices()) {
       String nodeLabel = sanitizeLabelForViz(v.getVertexName())
-          + "[" + getShortClassName(v.getProcessorClassName()
-          + ", tasks=" + v.getTasks().size() + ", time=" + v.getTimeTaken() +" ms]");
+        + "[" + getShortClassName(v.getProcessorClassName()
+        + ", tasks=" + v.getTasks().size() + ", time=" + v.getTimeTaken() + " ms]");
       Graph.Node n = graph.newNode(sanitizeLabelForViz(v.getVertexName()), nodeLabel);
 
       boolean criticalVertex = (criticalVertices != null) ? criticalVertices.contains(v
-          .getVertexName()) : false;
+        .getVertexName()) : false;
       if (criticalVertex) {
         n.setColor("red");
       }
 
-
       for (AdditionalInputOutputDetails input : v.getAdditionalInputInfoList()) {
         Graph.Node inputNode = graph.getNode(sanitizeLabelForViz(v.getVertexName())
-            + "_" + sanitizeLabelForViz(input.getName()));
+          + "_" + sanitizeLabelForViz(input.getName()));
         inputNode.setLabel(sanitizeLabelForViz(v.getVertexName())
-            + "[" + sanitizeLabelForViz(input.getName()) + "]");
+          + "[" + sanitizeLabelForViz(input.getName()) + "]");
         inputNode.setShape("box");
         inputNode.addEdge(n, "Input name=" + input.getName()
-            + " [inputClass=" + getShortClassName(input.getClazz())
-            + ", initializer=" + getShortClassName(input.getInitializer()) + "]");
+          + " [inputClass=" + getShortClassName(input.getClazz())
+          + ", initializer=" + getShortClassName(input.getInitializer()) + "]");
       }
       for (AdditionalInputOutputDetails output : v.getAdditionalOutputInfoList()) {
         Graph.Node outputNode = graph.getNode(sanitizeLabelForViz(v.getVertexName())
-            + "_" + sanitizeLabelForViz(output.getName()));
+          + "_" + sanitizeLabelForViz(output.getName()));
         outputNode.setLabel(sanitizeLabelForViz(v.getVertexName())
-            + "[" + sanitizeLabelForViz(output.getName()) + "]");
+          + "[" + sanitizeLabelForViz(output.getName()) + "]");
         outputNode.setShape("box");
         n.addEdge(outputNode, "Output name=" + output.getName()
-            + " [outputClass=" + getShortClassName(output.getClazz())
-            + ", committer=" + getShortClassName(output.getInitializer()) + "]");
+          + " [outputClass=" + getShortClassName(output.getClazz())
+          + ", committer=" + getShortClassName(output.getInitializer()) + "]");
       }
-
     }
 
     for (EdgeInfo e : dagInfo.getEdges()) {
       Graph.Node n = graph.getNode(sanitizeLabelForViz(e.getInputVertexName()));
       n.addEdge(graph.getNode(sanitizeLabelForViz(e.getOutputVertexName())),
-          "[input=" + getShortClassName(e.getEdgeSourceClass())
-              + ", output=" + getShortClassName(e.getEdgeDestinationClass())
-              + ", dataMovement=" + e.getDataMovementType().trim() + "]");
+        "[input=" + getShortClassName(e.getEdgeSourceClass())
+          + ", output=" + getShortClassName(e.getEdgeDestinationClass())
+          + ", dataMovement=" + e.getDataMovementType().trim() + "]");
     }
 
     graph.save(fileName);

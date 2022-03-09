@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,17 +21,17 @@ package org.apache.tez.runtime.common.resources;
 import java.text.DecimalFormat;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.dag.api.TezConfiguration;
 
 import com.google.common.base.Function;
-import org.apache.tez.common.Preconditions;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Public
 @Unstable
@@ -43,7 +43,7 @@ public class ScalingAllocator implements InitialMemoryAllocator {
 
   @Override
   public Iterable<Long> assignMemory(long availableForAllocation, int numTotalInputs,
-      int numTotalOutputs, Iterable<InitialMemoryRequestContext> requests) {
+                                     int numTotalOutputs, Iterable<InitialMemoryRequestContext> requests) {
 
     int numRequests = 0;
     long totalRequested = 0;
@@ -54,25 +54,25 @@ public class ScalingAllocator implements InitialMemoryAllocator {
 
     // Take a certain amount of memory away for general usage.
     double reserveFraction = conf.getDouble(TezConfiguration.TEZ_TASK_SCALE_MEMORY_RESERVE_FRACTION,
-        TezConfiguration.TEZ_TASK_SCALE_MEMORY_RESERVE_FRACTION_DEFAULT);
+      TezConfiguration.TEZ_TASK_SCALE_MEMORY_RESERVE_FRACTION_DEFAULT);
     Preconditions.checkState(reserveFraction >= 0.0d && reserveFraction <= 1.0d);
     availableForAllocation = (long) (availableForAllocation - (reserveFraction * availableForAllocation));
 
     long totalJvmMem = Runtime.getRuntime().maxMemory();
     double ratio = totalRequested / (double) totalJvmMem;
     LOG.info("Scaling Requests. TotalRequested: " + totalRequested + ", TotalJVMHeap: "
-        + totalJvmMem + ", TotalAvailable: " + availableForAllocation
-        + ", TotalRequested/TotalJVMHeap:" + new DecimalFormat("0.00").format(ratio));
+      + totalJvmMem + ", TotalAvailable: " + availableForAllocation
+      + ", TotalRequested/TotalJVMHeap:" + new DecimalFormat("0.00").format(ratio));
 
     if (totalRequested < availableForAllocation || totalRequested == 0) {
       // Not scaling up requests. Assuming things were setup correctly by
       // users in this case, keeping Processor, caching etc in mind.
       return Lists.newArrayList(Iterables.transform(requests,
-          new Function<InitialMemoryRequestContext, Long>() {
-        public Long apply(InitialMemoryRequestContext requestContext) {
-          return requestContext.getRequestedSize();
-        }
-      }));
+        new Function<InitialMemoryRequestContext, Long>() {
+          public Long apply(InitialMemoryRequestContext requestContext) {
+            return requestContext.getRequestedSize();
+          }
+        }));
     }
 
     List<Long> allocations = Lists.newArrayListWithCapacity(numRequests);
@@ -84,19 +84,19 @@ public class ScalingAllocator implements InitialMemoryAllocator {
       } else {
         long allocated = (long) ((requestedSize / (double) totalRequested) * availableForAllocation);
         allocations.add(allocated);
-        LOG.debug("Scaling requested: {} to allocated: {}", requestedSize, allocated);  
+        LOG.debug("Scaling requested: {} to allocated: {}", requestedSize, allocated);
       }
     }
     return allocations;
   }
 
   @Override
-  public void setConf(Configuration conf) {
-    this.conf = conf;
+  public Configuration getConf() {
+    return this.conf;
   }
 
   @Override
-  public Configuration getConf() {
-    return this.conf;
+  public void setConf(Configuration conf) {
+    this.conf = conf;
   }
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,8 +17,6 @@
  */
 
 package org.apache.tez.mapreduce.input;
-
-import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -30,18 +28,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.google.common.base.Function;
-import org.apache.tez.common.Preconditions;
-import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
+import javax.annotation.Nullable;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Evolving;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.counters.TaskCounter;
 import org.apache.tez.mapreduce.input.base.MRInputBase;
 import org.apache.tez.mapreduce.lib.MRInputUtils;
@@ -50,26 +44,30 @@ import org.apache.tez.mapreduce.lib.MRReaderMapReduce;
 import org.apache.tez.mapreduce.lib.MRReaderMapred;
 import org.apache.tez.mapreduce.protos.MRRuntimeProtos.MRSplitProto;
 import org.apache.tez.runtime.api.Event;
-import org.apache.tez.runtime.api.Reader;
 import org.apache.tez.runtime.api.InputContext;
+import org.apache.tez.runtime.api.Reader;
 import org.apache.tez.runtime.api.events.InputDataInformationEvent;
 import org.apache.tez.runtime.library.api.KeyValueReader;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Public
 @Evolving
 public class MultiMRInput extends MRInputBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(MultiMRInput.class);
+  private final ReentrantLock lock = new ReentrantLock();
+  private final Condition condition = lock.newCondition();
+  private final AtomicInteger eventCount = new AtomicInteger(0);
+  private List<MRReader> readers = new LinkedList<MRReader>();
 
   public MultiMRInput(InputContext inputContext, int numPhysicalInputs) {
     super(inputContext, numPhysicalInputs);
   }
-
-  private final ReentrantLock lock = new ReentrantLock();
-  private final Condition condition = lock.newCondition();
-  private final AtomicInteger eventCount = new AtomicInteger(0);
-
-  private List<MRReader> readers = new LinkedList<MRReader>();
 
   /**
    * Create an {@link MultiMRInputConfigBuilder} to configure a {@link MultiMRInput}</p>
@@ -94,24 +92,18 @@ public class MultiMRInput extends MRInputBase {
    * @return {@link MultiMRInputConfigBuilder}
    */
   public static MultiMRInputConfigBuilder createConfigBuilder(Configuration conf,
-                                                                 @Nullable Class<?> inputFormat) {
+                                                              @Nullable Class<?> inputFormat) {
     MultiMRInputConfigBuilder configBuilder = new MultiMRInputConfigBuilder(conf, inputFormat);
     configBuilder.setInputClassName(MultiMRInput.class.getName()).groupSplits(false);
-    
+
     return configBuilder;
-  }
-  
-  public static class MultiMRInputConfigBuilder extends MRInput.MRInputConfigBuilder {
-    private MultiMRInputConfigBuilder(Configuration conf, Class<?> inputFormat) {
-      super(conf, inputFormat);
-    }
   }
 
   @Override
   public List<Event> initialize() throws IOException {
     super.initialize();
     LOG.info(getContext().getInputOutputVertexNames() + " using newmapreduce API=" + useNewApi +
-        ", numPhysicalInputs=" + getNumPhysicalInputs());
+      ", numPhysicalInputs=" + getNumPhysicalInputs());
     if (getNumPhysicalInputs() == 0) {
       getContext().inputIsReady();
     }
@@ -128,12 +120,12 @@ public class MultiMRInput extends MRInputBase {
       lock.unlock();
     }
     return Collections
-        .unmodifiableCollection(Lists.transform(readers, new Function<MRReader, KeyValueReader>() {
-          @Override
-          public KeyValueReader apply(MRReader input) {
-            return input;
-          }
-        }));
+      .unmodifiableCollection(Lists.transform(readers, new Function<MRReader, KeyValueReader>() {
+        @Override
+        public KeyValueReader apply(MRReader input) {
+          return input;
+        }
+      }));
   }
 
   @Override
@@ -147,10 +139,10 @@ public class MultiMRInput extends MRInputBase {
     try {
       if (getNumPhysicalInputs() == 0) {
         throw new IllegalStateException(
-            "Unexpected event. MultiMRInput has been setup to receive 0 events");
+          "Unexpected event. MultiMRInput has been setup to receive 0 events");
       }
       Preconditions.checkState(eventCount.get() + inputEvents.size() <= getNumPhysicalInputs(),
-          "Unexpected event. All physical sources already initialized");
+        "Unexpected event. All physical sources already initialized");
       for (Event event : inputEvents) {
         MRReader reader = initFromEvent((InputDataInformationEvent) event);
         readers.add(reader);
@@ -181,28 +173,28 @@ public class MultiMRInput extends MRInputBase {
         LOG.warn("Got interrupted while reading split length: ", e);
       }
       reader = new MRReaderMapReduce(localJobConf, split,
-          getContext().getCounters(), inputRecordCounter, getContext().getApplicationId()
-          .getClusterTimestamp(), getContext().getTaskVertexIndex(), getContext()
-          .getApplicationId().getId(), getContext().getTaskIndex(), getContext()
-          .getTaskAttemptNumber(), getContext());
+        getContext().getCounters(), inputRecordCounter, getContext().getApplicationId()
+        .getClusterTimestamp(), getContext().getTaskVertexIndex(), getContext()
+        .getApplicationId().getId(), getContext().getTaskIndex(), getContext()
+        .getTaskAttemptNumber(), getContext());
       if (LOG.isDebugEnabled()) {
         LOG.debug(getContext().getInputOutputVertexNames() + " split Details -> SplitClass: " +
-            split.getClass().getName() + ", NewSplit: " + split + ", length: " + splitLength);
+          split.getClass().getName() + ", NewSplit: " + split + ", length: " + splitLength);
       }
     } else {
       org.apache.hadoop.mapred.InputSplit split =
-          MRInputUtils.getOldSplitDetailsFromEvent(splitProto, localJobConf);
+        MRInputUtils.getOldSplitDetailsFromEvent(splitProto, localJobConf);
       splitLength = split.getLength();
       reader = new MRReaderMapred(localJobConf, split,
-          getContext().getCounters(), inputRecordCounter, getContext());
+        getContext().getCounters(), inputRecordCounter, getContext());
       if (LOG.isDebugEnabled()) {
         LOG.debug(getContext().getInputOutputVertexNames() + " split Details -> SplitClass: " +
-            split.getClass().getName() + ", OldSplit: " + split + ", length: " + splitLength);
+          split.getClass().getName() + ", OldSplit: " + split + ", length: " + splitLength);
       }
     }
     if (splitLength != -1) {
       getContext().getCounters().findCounter(TaskCounter.INPUT_SPLIT_LENGTH_BYTES)
-          .increment(splitLength);
+        .increment(splitLength);
     }
     LOG.info(getContext().getInputOutputVertexNames() + " initialized RecordReader from event");
     return reader;
@@ -214,7 +206,7 @@ public class MultiMRInput extends MRInputBase {
       reader.close();
     }
     long inputRecords = getContext().getCounters()
-        .findCounter(TaskCounter.INPUT_RECORDS_PROCESSED).getValue();
+      .findCounter(TaskCounter.INPUT_RECORDS_PROCESSED).getValue();
     getContext().getStatisticsReporter().reportItemsProcessed(inputRecords);
 
     return null;
@@ -223,5 +215,11 @@ public class MultiMRInput extends MRInputBase {
   @Override
   public void start() throws Exception {
     Preconditions.checkState(getNumPhysicalInputs() >= 0, "Expecting zero or more physical inputs");
+  }
+
+  public static class MultiMRInputConfigBuilder extends MRInput.MRInputConfigBuilder {
+    private MultiMRInputConfigBuilder(Configuration conf, Class<?> inputFormat) {
+      super(conf, inputFormat);
+    }
   }
 }

@@ -18,10 +18,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.BlockingService;
-import com.google.protobuf.RpcController;
-import com.google.protobuf.ServiceException;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.ipc.ProtobufRpcEngine;
@@ -36,18 +32,22 @@ import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.RunContainer
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.RunContainerResponseProto;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.SubmitWorkRequestProto;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.SubmitWorkResponseProto;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.protobuf.BlockingService;
+import com.google.protobuf.RpcController;
+import com.google.protobuf.ServiceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TezTestServiceProtocolServerImpl extends AbstractService
-    implements TezTestServiceProtocolBlockingPB {
+  implements TezTestServiceProtocolBlockingPB {
 
   private static final Logger LOG = LoggerFactory.getLogger(TezTestServiceProtocolServerImpl.class);
 
   private final ContainerRunner containerRunner;
-  private RPC.Server server;
   private final AtomicReference<InetSocketAddress> bindAddress;
-
+  private RPC.Server server;
 
   public TezTestServiceProtocolServerImpl(ContainerRunner containerRunner,
                                           AtomicReference<InetSocketAddress> address) {
@@ -59,7 +59,7 @@ public class TezTestServiceProtocolServerImpl extends AbstractService
   @Override
   public RunContainerResponseProto runContainer(RpcController controller,
                                                 RunContainerRequestProto request) throws
-      ServiceException {
+    ServiceException {
     LOG.info("Received request: " + request);
     try {
       containerRunner.queueContainer(request);
@@ -71,7 +71,7 @@ public class TezTestServiceProtocolServerImpl extends AbstractService
 
   @Override
   public SubmitWorkResponseProto submitWork(RpcController controller, SubmitWorkRequestProto request) throws
-      ServiceException {
+    ServiceException {
     LOG.info("Received submitWork request: " + request);
     try {
       containerRunner.submitWork(request);
@@ -80,7 +80,6 @@ public class TezTestServiceProtocolServerImpl extends AbstractService
     }
     return SubmitWorkResponseProto.getDefaultInstance();
   }
-
 
   @Override
   public void serviceStart() {
@@ -91,7 +90,7 @@ public class TezTestServiceProtocolServerImpl extends AbstractService
 
     try {
       server = createServer(TezTestServiceProtocolBlockingPB.class, addr, conf, numHandlers,
-          TezTestServiceProtocolProtos.TezTestServiceProtocol.newReflectiveBlockingService(this));
+        TezTestServiceProtocolProtos.TezTestServiceProtocol.newReflectiveBlockingService(this));
       server.start();
     } catch (IOException e) {
       LOG.error("Failed to run RPC Server", e);
@@ -100,8 +99,8 @@ public class TezTestServiceProtocolServerImpl extends AbstractService
 
     InetSocketAddress serverBindAddress = NetUtils.getConnectAddress(server);
     this.bindAddress.set(NetUtils.createSocketAddrForHost(
-        serverBindAddress.getAddress().getCanonicalHostName(),
-        serverBindAddress.getPort()));
+      serverBindAddress.getAddress().getCanonicalHostName(),
+      serverBindAddress.getPort()));
     LOG.info("Instantiated TestTestServiceListener at " + bindAddress);
   }
 
@@ -120,15 +119,15 @@ public class TezTestServiceProtocolServerImpl extends AbstractService
 
   private RPC.Server createServer(Class<?> pbProtocol, InetSocketAddress addr, Configuration conf,
                                   int numHandlers, BlockingService blockingService) throws
-      IOException {
+    IOException {
     RPC.setProtocolEngine(conf, pbProtocol, ProtobufRpcEngine.class);
     RPC.Server server = new RPC.Builder(conf)
-        .setProtocol(pbProtocol)
-        .setInstance(blockingService)
-        .setBindAddress(addr.getHostName())
-        .setPort(0)
-        .setNumHandlers(numHandlers)
-        .build();
+      .setProtocol(pbProtocol)
+      .setInstance(blockingService)
+      .setBindAddress(addr.getHostName())
+      .setPort(0)
+      .setNumHandlers(numHandlers)
+      .build();
     // TODO Add security.
     return server;
   }

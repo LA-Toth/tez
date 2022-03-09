@@ -1,16 +1,16 @@
 /*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.dag.app;
 
@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import com.google.common.collect.Lists;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.security.Credentials;
@@ -45,28 +43,22 @@ import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.Container;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.event.Event;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.common.ContainerContext;
 import org.apache.tez.common.ContainerTask;
+import org.apache.tez.common.TezTaskUmbilicalProtocol;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.common.security.JobTokenIdentifier;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.common.security.TokenCache;
 import org.apache.tez.dag.api.NamedEntityDescriptor;
-import org.apache.tez.serviceplugins.api.TaskCommunicator;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.api.TezConstants;
+import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.api.UserPayload;
-import org.apache.tez.serviceplugins.api.ContainerEndReason;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
-import org.apache.tez.serviceplugins.api.TaskHeartbeatRequest;
-import org.apache.tez.serviceplugins.api.TaskHeartbeatResponse;
-import org.apache.tez.dag.api.TezException;
-import org.apache.hadoop.yarn.api.records.NodeId;
-import org.apache.tez.common.TezTaskUmbilicalProtocol;
-import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
 import org.apache.tez.dag.app.dag.DAG;
 import org.apache.tez.dag.app.dag.Vertex;
 import org.apache.tez.dag.app.dag.event.TaskAttemptEvent;
@@ -91,15 +83,20 @@ import org.apache.tez.runtime.api.impl.EventMetaData.EventProducerConsumerType;
 import org.apache.tez.runtime.api.impl.EventType;
 import org.apache.tez.runtime.api.impl.TaskSpec;
 import org.apache.tez.runtime.api.impl.TezEvent;
+import org.apache.tez.serviceplugins.api.ContainerEndReason;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
+import org.apache.tez.serviceplugins.api.TaskCommunicator;
+import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
+import org.apache.tez.serviceplugins.api.TaskHeartbeatRequest;
+import org.apache.tez.serviceplugins.api.TaskHeartbeatResponse;
+
+import com.google.common.collect.Lists;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 @SuppressWarnings("unchecked")
 public class TestTaskCommunicatorManager1 {
-  private ApplicationId appId;
-  private ApplicationAttemptId appAttemptId;
-  private AppContext appContext;
   Credentials credentials;
   AMContainerMap amContainerMap;
   EventHandler eventHandler;
@@ -108,10 +105,12 @@ public class TestTaskCommunicatorManager1 {
   ContainerTask containerTask;
   AMContainerTask amContainerTask;
   TaskSpec taskSpec;
-
   TezVertexID vertexID;
   TezTaskID taskID;
   TezTaskAttemptID taskAttemptID;
+  private ApplicationId appId;
+  private ApplicationAttemptId appAttemptId;
+  private AppContext appContext;
 
   @Before
   public void setUp() throws TezException {
@@ -130,14 +129,14 @@ public class TestTaskCommunicatorManager1 {
     eventHandler = mock(EventHandler.class);
 
     MockClock clock = new MockClock();
-    
+
     appContext = mock(AppContext.class);
     doReturn(eventHandler).when(appContext).getEventHandler();
     doReturn(dag).when(appContext).getCurrentDAG();
     doReturn(appAcls).when(appContext).getApplicationACLs();
     doReturn(amContainerMap).when(appContext).getAllContainers();
     doReturn(clock).when(appContext).getClock();
-    
+
     doReturn(appAttemptId).when(appContext).getApplicationAttemptId();
     doReturn(credentials).when(appContext).getAppCredentials();
     NodeId nodeId = NodeId.newInstance("localhost", 0);
@@ -155,10 +154,10 @@ public class TestTaskCommunicatorManager1 {
       throw new TezUncheckedException(e);
     }
     taskAttemptListener = new TaskCommunicatorManagerInterfaceImplForTest(appContext,
-        mock(TaskHeartbeatHandler.class), mock(ContainerHeartbeatHandler.class),
-        Lists.newArrayList(
-            new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
-                .setUserPayload(defaultPayload)));
+      mock(TaskHeartbeatHandler.class), mock(ContainerHeartbeatHandler.class),
+      Lists.newArrayList(
+        new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
+          .setUserPayload(defaultPayload)));
 
     taskSpec = mock(TaskSpec.class);
     doReturn(taskAttemptID).when(taskSpec).getTaskAttemptID();
@@ -170,7 +169,7 @@ public class TestTaskCommunicatorManager1 {
   public void testGetTask() throws IOException {
 
     TezTaskCommunicatorImpl taskCommunicator =
-        (TezTaskCommunicatorImpl) taskAttemptListener.getTaskCommunicator(0).getTaskCommunicator();
+      (TezTaskCommunicatorImpl) taskAttemptListener.getTaskCommunicator(0).getTaskCommunicator();
     TezTaskUmbilicalProtocol tezUmbilical = taskCommunicator.getUmbilical();
 
     ContainerId containerId1 = createContainerId(appId, 1);
@@ -218,7 +217,7 @@ public class TestTaskCommunicatorManager1 {
   @Test(timeout = 5000)
   public void testGetTaskMultiplePulls() throws IOException {
     TezTaskCommunicatorImpl taskCommunicator =
-        (TezTaskCommunicatorImpl) taskAttemptListener.getTaskCommunicator(0).getTaskCommunicator();
+      (TezTaskCommunicatorImpl) taskAttemptListener.getTaskCommunicator(0).getTaskCommunicator();
     TezTaskUmbilicalProtocol tezUmbilical = taskCommunicator.getUmbilical();
 
     ContainerId containerId1 = createContainerId(appId, 1);
@@ -239,15 +238,17 @@ public class TestTaskCommunicatorManager1 {
     assertNull(containerTask);
   }
 
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testTaskEventRouting() throws Exception {
-    List<TezEvent> events =  Arrays.asList(
-      new TezEvent(new TaskStatusUpdateEvent(null, 0.0f, null, false), new EventMetaData(EventProducerConsumerType.PROCESSOR,
+    List<TezEvent> events = Arrays.asList(
+      new TezEvent(new TaskStatusUpdateEvent(null, 0.0f, null, false),
+        new EventMetaData(EventProducerConsumerType.PROCESSOR,
           "v1", "v2", taskAttemptID)),
-      new TezEvent(DataMovementEvent.create(0, ByteBuffer.wrap(new byte[0])), new EventMetaData(EventProducerConsumerType.OUTPUT,
+      new TezEvent(DataMovementEvent.create(0, ByteBuffer.wrap(new byte[0])),
+        new EventMetaData(EventProducerConsumerType.OUTPUT,
           "v1", "v2", taskAttemptID)),
       new TezEvent(new TaskAttemptCompletedEvent(), new EventMetaData(EventProducerConsumerType.SYSTEM,
-          "v1", "v2", taskAttemptID))
+        "v1", "v2", taskAttemptID))
     );
 
     generateHeartbeat(events, 0, 1, 0, new ArrayList<TezEvent>());
@@ -258,30 +259,30 @@ public class TestTaskCommunicatorManager1 {
 
     final Event statusUpdateEvent = argAllValues.get(0);
     assertEquals("First event should be status update", TaskAttemptEventType.TA_STATUS_UPDATE,
-        statusUpdateEvent.getType());
-    assertEquals(false, ((TaskAttemptEventStatusUpdate)statusUpdateEvent).getReadErrorReported());
+      statusUpdateEvent.getType());
+    assertEquals(false, ((TaskAttemptEventStatusUpdate) statusUpdateEvent).getReadErrorReported());
 
-    final TaskAttemptEventTezEventUpdate taEvent = (TaskAttemptEventTezEventUpdate)argAllValues.get(1);
+    final TaskAttemptEventTezEventUpdate taEvent = (TaskAttemptEventTezEventUpdate) argAllValues.get(1);
     assertEquals(1, taEvent.getTezEvents().size());
     assertEquals(EventType.DATA_MOVEMENT_EVENT,
-        taEvent.getTezEvents().get(0).getEventType());
-    
-    final TaskAttemptEvent taCompleteEvent = (TaskAttemptEvent)argAllValues.get(2);
+      taEvent.getTezEvents().get(0).getEventType());
+
+    final TaskAttemptEvent taCompleteEvent = (TaskAttemptEvent) argAllValues.get(2);
     assertEquals(TaskAttemptEventType.TA_DONE, taCompleteEvent.getType());
-    final VertexEventRouteEvent vertexRouteEvent = (VertexEventRouteEvent)argAllValues.get(3);
+    final VertexEventRouteEvent vertexRouteEvent = (VertexEventRouteEvent) argAllValues.get(3);
     assertEquals(1, vertexRouteEvent.getEvents().size());
     assertEquals(EventType.DATA_MOVEMENT_EVENT,
-        vertexRouteEvent.getEvents().get(0).getEventType());
+      vertexRouteEvent.getEvents().get(0).getEventType());
   }
-  
-  @Test (timeout = 5000)
+
+  @Test(timeout = 5000)
   public void testTaskEventRoutingWithReadError() throws Exception {
-    List<TezEvent> events =  Arrays.asList(
+    List<TezEvent> events = Arrays.asList(
       new TezEvent(new TaskStatusUpdateEvent(null, 0.0f, null, false), null),
       new TezEvent(InputReadErrorEvent.create("", 0, 0), new EventMetaData(EventProducerConsumerType.INPUT,
-          "v2", "v1", taskAttemptID)),
+        "v2", "v1", taskAttemptID)),
       new TezEvent(new TaskAttemptCompletedEvent(), new EventMetaData(EventProducerConsumerType.SYSTEM,
-          "v1", "v2", taskAttemptID))
+        "v1", "v2", taskAttemptID))
     );
 
     generateHeartbeat(events, 0, 1, 0, new ArrayList<TezEvent>());
@@ -292,27 +293,26 @@ public class TestTaskCommunicatorManager1 {
 
     final Event statusUpdateEvent = argAllValues.get(0);
     assertEquals("First event should be status update", TaskAttemptEventType.TA_STATUS_UPDATE,
-        statusUpdateEvent.getType());
-    assertEquals(true, ((TaskAttemptEventStatusUpdate)statusUpdateEvent).getReadErrorReported());
+      statusUpdateEvent.getType());
+    assertEquals(true, ((TaskAttemptEventStatusUpdate) statusUpdateEvent).getReadErrorReported());
 
     final Event taFinishedEvent = argAllValues.get(1);
     assertEquals("Second event should be TA_DONE", TaskAttemptEventType.TA_DONE,
-        taFinishedEvent.getType());
+      taFinishedEvent.getType());
 
     final Event vertexEvent = argAllValues.get(2);
-    final VertexEventRouteEvent vertexRouteEvent = (VertexEventRouteEvent)vertexEvent;
+    final VertexEventRouteEvent vertexRouteEvent = (VertexEventRouteEvent) vertexEvent;
     assertEquals("Third event should be routed to vertex", VertexEventType.V_ROUTE_EVENT,
-        vertexEvent.getType());
+      vertexEvent.getType());
     assertEquals(EventType.INPUT_READ_ERROR_EVENT,
-        vertexRouteEvent.getEvents().get(0).getEventType());
+      vertexRouteEvent.getEvents().get(0).getEventType());
   }
 
-
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testTaskEventRoutingTaskAttemptOnly() throws Exception {
     List<TezEvent> events = Arrays.asList(
       new TezEvent(new TaskAttemptCompletedEvent(), new EventMetaData(EventProducerConsumerType.SYSTEM,
-          "v1", "v2", taskAttemptID))
+        "v1", "v2", taskAttemptID))
     );
     generateHeartbeat(events, 0, 1, 0, new ArrayList<TezEvent>());
 
@@ -323,21 +323,21 @@ public class TestTaskCommunicatorManager1 {
     final Event event = argAllValues.get(0);
     // Route to TaskAttempt directly rather than through Vertex
     assertEquals("only event should be route event", TaskAttemptEventType.TA_DONE,
-        event.getType());
+      event.getType());
   }
-  
-  @Test (timeout = 5000)
+
+  @Test(timeout = 5000)
   public void testTaskHeartbeatResponse() throws Exception {
     List<TezEvent> events = new ArrayList<TezEvent>();
     List<TezEvent> eventsToSend = new ArrayList<TezEvent>();
     TaskHeartbeatResponse response = generateHeartbeat(events, 0, 1, 2, eventsToSend);
-    
+
     assertEquals(2, response.getNextFromEventId());
     assertEquals(eventsToSend, response.getEvents());
   }
 
   //try 10 times to allocate random port, fail it if no one is succeed.
-  @Test (timeout = 5000)
+  @Test(timeout = 5000)
   public void testPortRange() {
     boolean succeedToAllocate = false;
     Random rand = new Random();
@@ -354,20 +354,20 @@ public class TestTaskCommunicatorManager1 {
   }
 
   // TODO TEZ-2003 Move this into TestTezTaskCommunicator. Potentially other tests as well.
-  @Test (timeout= 5000)
+  @Test(timeout = 5000)
   public void testPortRange_NotSpecified() throws IOException, TezException {
     Configuration conf = new Configuration();
     JobTokenIdentifier identifier = new JobTokenIdentifier(new Text(
-        "fakeIdentifier"));
+      "fakeIdentifier"));
     Token<JobTokenIdentifier> sessionToken = new Token<JobTokenIdentifier>(identifier,
-        new JobTokenSecretManager());
+      new JobTokenSecretManager());
     sessionToken.setService(identifier.getJobId());
     TokenCache.setSessionToken(sessionToken, credentials);
     UserPayload userPayload = TezUtils.createUserPayloadFromConf(conf);
     taskAttemptListener = new TaskCommunicatorManager(appContext,
-        mock(TaskHeartbeatHandler.class), mock(ContainerHeartbeatHandler.class), Lists.newArrayList(
-        new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
-            .setUserPayload(userPayload)));
+      mock(TaskHeartbeatHandler.class), mock(ContainerHeartbeatHandler.class), Lists.newArrayList(
+      new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
+        .setUserPayload(userPayload)));
     // no exception happen, should started properly
     taskAttemptListener.init(conf);
     taskAttemptListener.start();
@@ -377,11 +377,11 @@ public class TestTaskCommunicatorManager1 {
     boolean succeedToAllocate = true;
     try {
       Configuration conf = new Configuration();
-      
+
       JobTokenIdentifier identifier = new JobTokenIdentifier(new Text(
-          "fakeIdentifier"));
+        "fakeIdentifier"));
       Token<JobTokenIdentifier> sessionToken = new Token<JobTokenIdentifier>(identifier,
-          new JobTokenSecretManager());
+        new JobTokenSecretManager());
       sessionToken.setService(identifier.getJobId());
       TokenCache.setSessionToken(sessionToken, credentials);
 
@@ -389,9 +389,9 @@ public class TestTaskCommunicatorManager1 {
       UserPayload userPayload = TezUtils.createUserPayloadFromConf(conf);
 
       taskAttemptListener = new TaskCommunicatorManager(appContext,
-          mock(TaskHeartbeatHandler.class), mock(ContainerHeartbeatHandler.class), Lists
-          .newArrayList(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
-              .setUserPayload(userPayload)));
+        mock(TaskHeartbeatHandler.class), mock(ContainerHeartbeatHandler.class), Lists
+        .newArrayList(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
+          .setUserPayload(userPayload)));
       taskAttemptListener.init(conf);
       taskAttemptListener.start();
       int resultedPort = taskAttemptListener.getTaskCommunicator(0).getAddress().getPort();
@@ -412,8 +412,8 @@ public class TestTaskCommunicatorManager1 {
   }
 
   private TaskHeartbeatResponse generateHeartbeat(List<TezEvent> events,
-      int fromEventId, int maxEvents, int nextFromEventId,
-      List<TezEvent> sendEvents) throws IOException, TezException {
+                                                  int fromEventId, int maxEvents, int nextFromEventId,
+                                                  List<TezEvent> sendEvents) throws IOException, TezException {
     ContainerId containerId = createContainerId(appId, 1);
     Vertex vertex = mock(Vertex.class);
 
@@ -455,13 +455,12 @@ public class TestTaskCommunicatorManager1 {
     TaskCommunicator createDefaultTaskCommunicator(TaskCommunicatorContext taskCommunicatorContext) {
       return new TezTaskCommunicatorImplForTest(taskCommunicatorContext);
     }
-
   }
 
   private static class TezTaskCommunicatorImplForTest extends TezTaskCommunicatorImpl {
 
     public TezTaskCommunicatorImplForTest(
-        TaskCommunicatorContext taskCommunicatorContext) {
+      TaskCommunicatorContext taskCommunicatorContext) {
       super(taskCommunicatorContext);
     }
 

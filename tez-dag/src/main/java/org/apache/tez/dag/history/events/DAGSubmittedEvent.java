@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,11 +22,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
-import org.apache.tez.dag.records.DAGIDAware;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.LocalResource;
@@ -37,11 +32,16 @@ import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.history.SummaryEvent;
+import org.apache.tez.dag.records.DAGIDAware;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.DAGSubmittedProto;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.SummaryEventProto;
 import org.apache.tez.dag.utils.ProtoUtils;
 
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DAGSubmittedEvent implements HistoryEvent, SummaryEvent, DAGIDAware {
 
@@ -65,9 +65,9 @@ public class DAGSubmittedEvent implements HistoryEvent, SummaryEvent, DAGIDAware
   }
 
   public DAGSubmittedEvent(TezDAGID dagID, long submitTime,
-      DAGProtos.DAGPlan dagPlan, ApplicationAttemptId applicationAttemptId,
-      Map<String, LocalResource> cumulativeAdditionalLocalResources,
-      String user, Configuration conf, String containerLogs, String queueName) {
+                           DAGProtos.DAGPlan dagPlan, ApplicationAttemptId applicationAttemptId,
+                           Map<String, LocalResource> cumulativeAdditionalLocalResources,
+                           String user, Configuration conf, String containerLogs, String queueName) {
     this.dagID = dagID;
     this.dagName = dagPlan.getName();
     this.submitTime = submitTime;
@@ -96,17 +96,17 @@ public class DAGSubmittedEvent implements HistoryEvent, SummaryEvent, DAGIDAware
   }
 
   public DAGSubmittedProto toProto() {
-    DAGSubmittedProto.Builder builder =DAGSubmittedProto.newBuilder()
-        .setDagId(dagID.toString())
-        .setApplicationAttemptId(applicationAttemptId.toString())
-        .setDagPlan(dagPlan)
-        .setSubmitTime(submitTime);
+    DAGSubmittedProto.Builder builder = DAGSubmittedProto.newBuilder()
+      .setDagId(dagID.toString())
+      .setApplicationAttemptId(applicationAttemptId.toString())
+      .setDagPlan(dagPlan)
+      .setSubmitTime(submitTime);
     if (queueName != null) {
       builder.setQueueName(queueName);
     }
     if (cumulativeAdditionalLocalResources != null && !cumulativeAdditionalLocalResources.isEmpty()) {
       builder.setCumulativeAdditionalAmResources(DagTypeConverters
-          .convertFromLocalResources(cumulativeAdditionalLocalResources));
+        .convertFromLocalResources(cumulativeAdditionalLocalResources));
     }
     return builder.build();
   }
@@ -117,13 +117,13 @@ public class DAGSubmittedEvent implements HistoryEvent, SummaryEvent, DAGIDAware
     this.dagName = this.dagPlan.getName();
     this.submitTime = proto.getSubmitTime();
     this.applicationAttemptId = ConverterUtils.toApplicationAttemptId(
-        proto.getApplicationAttemptId());
+      proto.getApplicationAttemptId());
     if (proto.hasQueueName()) {
       this.queueName = proto.getQueueName();
     }
     if (proto.hasCumulativeAdditionalAmResources()) {
       this.cumulativeAdditionalLocalResources = DagTypeConverters.convertFromPlanLocalResources(proto
-          .getCumulativeAdditionalAmResources());
+        .getCumulativeAdditionalAmResources());
     }
   }
 
@@ -144,15 +144,15 @@ public class DAGSubmittedEvent implements HistoryEvent, SummaryEvent, DAGIDAware
   @Override
   public String toString() {
     return "dagID=" + dagID
-        + ", submitTime=" + submitTime
-        + ", queueName=" + queueName;
+      + ", submitTime=" + submitTime
+      + ", queueName=" + queueName;
   }
 
   @Override
   public void toSummaryProtoStream(OutputStream outputStream) throws IOException {
     ProtoUtils.toSummaryEventProto(dagID, submitTime,
         HistoryEventType.DAG_SUBMITTED, dagName.getBytes(CHARSET_NAME))
-        .writeDelimitedTo(outputStream);
+      .writeDelimitedTo(outputStream);
   }
 
   @Override
@@ -204,12 +204,12 @@ public class DAGSubmittedEvent implements HistoryEvent, SummaryEvent, DAGIDAware
     return conf;
   }
 
-  public void setHistoryLoggingEnabled(boolean loggingEnabled) {
-    historyLoggingEnabled = loggingEnabled;
-  }
-
   public boolean isHistoryLoggingEnabled() {
     return historyLoggingEnabled;
+  }
+
+  public void setHistoryLoggingEnabled(boolean loggingEnabled) {
+    historyLoggingEnabled = loggingEnabled;
   }
 
   public String getContainerLogs() {

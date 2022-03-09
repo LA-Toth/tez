@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,9 +20,6 @@ package org.apache.tez.mapreduce.examples.processor;
 
 import java.util.List;
 
-import org.apache.tez.common.ProgressHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.tez.mapreduce.output.MROutput;
 import org.apache.tez.mapreduce.processor.SimpleMRProcessor;
 import org.apache.tez.mapreduce.processor.map.MapProcessor;
@@ -34,6 +31,8 @@ import org.apache.tez.runtime.library.api.KeyValueReader;
 import org.apache.tez.runtime.library.api.KeyValueWriter;
 import org.apache.tez.runtime.library.input.UnorderedKVInput;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FilterByWordOutputProcessor extends SimpleMRProcessor {
 
@@ -42,7 +41,6 @@ public class FilterByWordOutputProcessor extends SimpleMRProcessor {
   public FilterByWordOutputProcessor(ProcessorContext context) {
     super(context);
   }
-
 
   @Override
   public void handleEvents(List<Event> processorEvents) {
@@ -57,7 +55,7 @@ public class FilterByWordOutputProcessor extends SimpleMRProcessor {
 
   @Override
   public void run() throws Exception {
-    
+
     if (inputs.size() != 1) {
       throw new IllegalStateException("FilterByWordOutputProcessor processor can only work with a single input");
     }
@@ -74,12 +72,13 @@ public class FilterByWordOutputProcessor extends SimpleMRProcessor {
     }
 
     LogicalInput li = inputs.values().iterator().next();
-    if (! (li instanceof UnorderedKVInput)) {
-      throw new IllegalStateException("FilterByWordOutputProcessor processor can only work with ShuffledUnorderedKVInput");
+    if (!(li instanceof UnorderedKVInput)) {
+      throw new IllegalStateException(
+        "FilterByWordOutputProcessor processor can only work with ShuffledUnorderedKVInput");
     }
 
     LogicalOutput lo = outputs.values().iterator().next();
-    if (! (lo instanceof MROutput)) {
+    if (!(lo instanceof MROutput)) {
       throw new IllegalStateException("FilterByWordOutputProcessor processor can only work with MROutput");
     }
 

@@ -18,7 +18,6 @@
 
 package org.apache.tez.runtime.library.utils;
 
-
 public enum DATA_RANGE_IN_MB {
   THOUSAND(1000), HUNDRED(100), TEN(10), ONE(1), ZERO(0);
 
@@ -26,10 +25,6 @@ public enum DATA_RANGE_IN_MB {
 
   private DATA_RANGE_IN_MB(int sizeInMB) {
     this.sizeInMB = sizeInMB;
-  }
-
-  public final int getSizeInMB() {
-    return sizeInMB;
   }
 
   static long ceil(long a, long b) {
@@ -44,5 +39,9 @@ public enum DATA_RANGE_IN_MB {
       }
     }
     return ZERO;
+  }
+
+  public final int getSizeInMB() {
+    return sizeInMB;
   }
 }

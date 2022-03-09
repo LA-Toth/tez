@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,6 +37,7 @@ import org.apache.tez.runtime.api.MergedInputContext;
 import org.apache.tez.runtime.api.Reader;
 import org.apache.tez.runtime.library.api.KeyValueReader;
 import org.apache.tez.runtime.library.api.KeyValuesReader;
+
 import org.junit.Test;
 
 public class TestSortedGroupedMergedInput {
@@ -44,17 +45,17 @@ public class TestSortedGroupedMergedInput {
   MergedInputContext createMergedInputContext() {
     return mock(MergedInputContext.class);
   }
-  
+
   @Test(timeout = 5000)
   public void testSimple() throws Exception {
-    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
     SortedTestInput sInput1 = new SortedTestInput(kvsReader1);
     SortedTestInput sInput2 = new SortedTestInput(kvsReader2);
@@ -92,7 +93,7 @@ public class TestSortedGroupedMergedInput {
     try {
       boolean hasNext = kvsReader.next();
       fail();
-    } catch(IOException e) {
+    } catch (IOException e) {
       assertTrue(e.getMessage().contains("For usage, please refer to"));
     }
   }
@@ -100,15 +101,14 @@ public class TestSortedGroupedMergedInput {
   @Test(timeout = 5000)
   public void testSkippedKey() throws Exception {
 
+    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
-
-    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
     SortedTestInput sInput1 = new SortedTestInput(kvsReader1);
     SortedTestInput sInput2 = new SortedTestInput(kvsReader2);
@@ -120,7 +120,7 @@ public class TestSortedGroupedMergedInput {
     sInputs.add(sInput3);
 
     OrderedGroupedMergedKVInput input = new OrderedGroupedMergedKVInput(
-        createMergedInputContext(), sInputs);
+      createMergedInputContext(), sInputs);
 
     KeyValuesReader kvsReader = input.getReader();
     int keyCount = 0;
@@ -146,14 +146,14 @@ public class TestSortedGroupedMergedInput {
   @Test(timeout = 5000)
   public void testPartialValuesSkip() throws Exception {
 
-    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
     SortedTestInput sInput1 = new SortedTestInput(kvsReader1);
     SortedTestInput sInput2 = new SortedTestInput(kvsReader2);
@@ -193,14 +193,14 @@ public class TestSortedGroupedMergedInput {
   @Test(timeout = 5000)
   public void testOrdering() throws Exception {
 
-    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[] { 2, 4 },
-        new int[][] { { 2, 2 }, { 4, 4 } });
+    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[]{2, 4},
+      new int[][]{{2, 2}, {4, 4}});
 
-    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[] { 4, 5, 6, 7 },
-        new int[][] { { 4, 4 }, { 5, 5 }, { 6, 6 }, { 7, 7 } });
+    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[]{4, 5, 6, 7},
+      new int[][]{{4, 4}, {5, 5}, {6, 6}, {7, 7}});
 
     SortedTestInput sInput1 = new SortedTestInput(kvsReader1);
     SortedTestInput sInput2 = new SortedTestInput(kvsReader2);
@@ -245,14 +245,14 @@ public class TestSortedGroupedMergedInput {
   @Test(timeout = 5000)
   public void testSkippedKey2() throws Exception {
 
-    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[] { 2, 4 },
-        new int[][] { { 2, 2 }, { 4, 4 } });
+    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[]{2, 4},
+      new int[][]{{2, 2}, {4, 4}});
 
-    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[] { 4, 5, 6, 7 },
-        new int[][] { { 4, 4 }, { 5, 5 }, { 6, 6 }, { 7, 7 } });
+    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[]{4, 5, 6, 7},
+      new int[][]{{4, 4}, {5, 5}, {6, 6}, {7, 7}});
 
     SortedTestInput sInput1 = new SortedTestInput(kvsReader1);
     SortedTestInput sInput2 = new SortedTestInput(kvsReader2);
@@ -296,19 +296,19 @@ public class TestSortedGroupedMergedInput {
     }
     getNextFromFinishedReader(kvsReader);
   }
-  
+
   // Reads all values for a key, but doesn't trigger the last hasNext() call.
   @Test(timeout = 5000)
   public void testSkippedKey3() throws Exception {
 
-    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3, 4 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, {4, 4} });
+    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[]{1, 2, 3, 4},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
 
-    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3, 4 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, {4, 4} });
+    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[]{1, 2, 3, 4},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
 
-    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3, 4 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 }, {4, 4} });
+    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[]{1, 2, 3, 4},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}, {4, 4}});
 
     SortedTestInput sInput1 = new SortedTestInput(kvsReader1);
     SortedTestInput sInput2 = new SortedTestInput(kvsReader2);
@@ -348,14 +348,14 @@ public class TestSortedGroupedMergedInput {
   @Test(timeout = 5000)
   public void testEmptySources() throws Exception {
 
-    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[] {},
-        new int[][] {});
+    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[]{},
+      new int[][]{});
 
-    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[] {},
-        new int[][] {});
+    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[]{},
+      new int[][]{});
 
-    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[] {},
-        new int[][] {});
+    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[]{},
+      new int[][]{});
 
     SortedTestInput sInput1 = new SortedTestInput(kvsReader1);
     SortedTestInput sInput2 = new SortedTestInput(kvsReader2);
@@ -402,14 +402,14 @@ public class TestSortedGroupedMergedInput {
 
   @Test(timeout = 5000)
   public void testSimpleConcatenatedMergedKeyValuesInput() throws Exception {
-    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader1 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader2 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
-    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[] { 1, 2, 3 },
-        new int[][] { { 1, 1 }, { 2, 2 }, { 3, 3 } });
+    SortedTestKeyValuesReader kvsReader3 = new SortedTestKeyValuesReader(new int[]{1, 2, 3},
+      new int[][]{{1, 1}, {2, 2}, {3, 3}});
 
     SortedTestInput sInput1 = new SortedTestInput(kvsReader1);
     SortedTestInput sInput2 = new SortedTestInput(kvsReader2);
@@ -446,7 +446,7 @@ public class TestSortedGroupedMergedInput {
     try {
       boolean hasNext = kvReader.next();
       fail();
-    } catch(IOException e) {
+    } catch (IOException e) {
       assertTrue(e.getMessage().contains("For usage, please refer to"));
     }
   }
@@ -566,7 +566,6 @@ public class TestSortedGroupedMergedInput {
     }
   }
 
-
   private static class RawComparatorForTest implements RawComparator<Integer> {
 
     @Override
@@ -579,5 +578,4 @@ public class TestSortedGroupedMergedInput {
       throw new UnsupportedOperationException();
     }
   }
-
 }

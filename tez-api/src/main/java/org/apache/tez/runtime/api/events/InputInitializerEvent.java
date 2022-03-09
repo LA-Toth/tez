@@ -26,14 +26,14 @@ import java.util.Objects;
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
-import org.apache.tez.runtime.api.InputInitializer;
 import org.apache.tez.runtime.api.Event;
+import org.apache.tez.runtime.api.InputInitializer;
 
 /**
  * An event that is routed to the specified {@link InputInitializer}.
  * This can be used to send information/metadata to the {@link InputInitializer}
  * <p/>
- *
+ * <p>
  * These events are routed to the InputInitializer, only after the task which generated the event
  * succeeds. Also, the events will only be sent once per task - irrespective of how many attempts
  * were run, or succeeded. An example of this is when a task is retried because the node on which it
@@ -97,23 +97,24 @@ public class InputInitializerEvent extends Event {
     return eventPayload == null ? null : eventPayload.asReadOnlyBuffer();
   }
 
-  @InterfaceAudience.Private
-  public void setSourceVertexName(String srcVertexName) {
-    this.sourceVertexName = srcVertexName;
-  }
-
   /**
    * Returns the name of the vertex which generated the event. This will only be populated after
    * the event has been routed by the AM.
+   *
    * @return the name of the source vertex
    */
   public String getSourceVertexName() {
     return this.sourceVertexName;
   }
 
+  @InterfaceAudience.Private
+  public void setSourceVertexName(String srcVertexName) {
+    this.sourceVertexName = srcVertexName;
+  }
+
   @Override
   public String toString() {
     return "[TargetVertexName=" + targetVertexName + ", TargetInputName=" + targetInputName +
-        ", SourceVertexName=" + sourceVertexName + " Payload=" + eventPayload + "]";
+      ", SourceVertexName=" + sourceVertexName + " Payload=" + eventPayload + "]";
   }
 }

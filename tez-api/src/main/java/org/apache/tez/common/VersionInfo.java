@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,31 +22,28 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.classification.InterfaceStability.Unstable;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.util.ClassUtil;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Private
 @Unstable
 public class VersionInfo {
+  public static final String UNKNOWN = "Unknown";
   private static final Logger LOG = LoggerFactory.getLogger(VersionInfo.class);
-
-  private final Properties info;
-  private final String component;
-
   private static final String VERSION = "version";
   private static final String REVISION = "revision";
   private static final String BUILD_TIME = "buildtime";
   private static final String BUILD_USER = "builduser";
   private static final String BUILD_JAVA_VERSION = "buildjavaversion";
   private static final String SCM_URL = "scmurl";
-
-  public static final String UNKNOWN = "Unknown";
+  private final Properties info;
+  private final String component;
 
   protected VersionInfo(String component) {
     this.component = component;
@@ -69,7 +66,7 @@ public class VersionInfo {
   @VisibleForTesting
   @Private
   protected VersionInfo(String component, String version, String revision, String buildTime,
-      String scmUrl) {
+                        String scmUrl) {
     this.info = new Properties();
     this.component = component;
     info.setProperty(VERSION, version);
@@ -78,6 +75,18 @@ public class VersionInfo {
     info.setProperty(BUILD_USER, System.getProperty("user.name"));
     info.setProperty(BUILD_JAVA_VERSION, System.getProperty("java.version"));
     info.setProperty(SCM_URL, scmUrl);
+  }
+
+  public static void main(String[] args) {
+    if (args.length != 1) {
+      System.err.println("Invalid no. of args. Usage: VersionInfo <component-name>");
+      System.exit(-1);
+    }
+
+    VersionInfo versionInfo = new VersionInfo(args[0]);
+    System.out.println("VersionInfo: " + versionInfo.toString());
+    System.out.println("This command was run using " +
+      ClassUtil.findContainingJar(VersionInfo.class));
   }
 
   public String getVersion() {
@@ -107,25 +116,12 @@ public class VersionInfo {
   @Override
   public String toString() {
     return "[ component=" + component
-        + ", version=" + getVersion()
-        + ", revision=" + getRevision()
-        + ", SCM-URL=" + getSCMURL()
-        + ", buildTime=" + getBuildTime()
-        + ", buildUser=" + getBuildUser()
-        + ", buildJavaVersion=" + getBuildJavaVersion()
-        + " ]";
+      + ", version=" + getVersion()
+      + ", revision=" + getRevision()
+      + ", SCM-URL=" + getSCMURL()
+      + ", buildTime=" + getBuildTime()
+      + ", buildUser=" + getBuildUser()
+      + ", buildJavaVersion=" + getBuildJavaVersion()
+      + " ]";
   }
-
-  public static void main(String[] args) {
-    if (args.length != 1) {
-      System.err.println("Invalid no. of args. Usage: VersionInfo <component-name>");
-      System.exit(-1);
-    }
-
-    VersionInfo versionInfo = new VersionInfo(args[0]);
-    System.out.println("VersionInfo: " + versionInfo.toString());
-    System.out.println("This command was run using " +
-        ClassUtil.findContainingJar(VersionInfo.class));
-  }
-
 }

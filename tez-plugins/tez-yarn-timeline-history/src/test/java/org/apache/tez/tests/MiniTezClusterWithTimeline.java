@@ -1,20 +1,20 @@
 /**
-* Licensed to the Apache Software Foundation (ASF) under one
-* or more contributor license agreements.  See the NOTICE file
-* distributed with this work for additional information
-* regarding copyright ownership.  The ASF licenses this file
-* to you under the Apache License, Version 2.0 (the
-* "License"); you may not use this file except in compliance
-* with the License.  You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.apache.tez.tests;
 
@@ -30,6 +30,7 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FileContext;
@@ -84,12 +85,12 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
   }
 
   public MiniTezClusterWithTimeline(String testName, int noOfNMs,
-      int numLocalDirs, int numLogDirs)  {
+                                    int numLocalDirs, int numLogDirs) {
     super(testName, noOfNMs, numLocalDirs, numLogDirs);
   }
 
   public MiniTezClusterWithTimeline(String testName, int noOfNMs,
-                        int numLocalDirs, int numLogDirs, boolean enableAHS)  {
+                                    int numLocalDirs, int numLogDirs, boolean enableAHS) {
     super(testName, 1, noOfNMs, numLocalDirs, numLogDirs, enableAHS);
   }
 
@@ -108,29 +109,29 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
     conf.setBoolean(TezConfiguration.TEZ_AM_NODE_BLACKLISTING_ENABLED, false);
     if (conf.get(MRJobConfig.MR_AM_STAGING_DIR) == null) {
       conf.set(MRJobConfig.MR_AM_STAGING_DIR, new File(getTestWorkDir(),
-          "apps_staging_dir" + Path.SEPARATOR).getAbsolutePath());
+        "apps_staging_dir" + Path.SEPARATOR).getAbsolutePath());
     }
-    
+
     if (conf.get(YarnConfiguration.DEBUG_NM_DELETE_DELAY_SEC) == null) {
       // nothing defined. set quick delete value
       conf.setLong(YarnConfiguration.DEBUG_NM_DELETE_DELAY_SEC, 0l);
     }
 
     maxTimeToWaitForAppsOnShutdown = conf.getLong(
-        TezConfiguration.TEZ_TEST_MINI_CLUSTER_APP_WAIT_ON_SHUTDOWN_SECS,
-        TezConfiguration.TEZ_TEST_MINI_CLUSTER_APP_WAIT_ON_SHUTDOWN_SECS_DEFAULT);
+      TezConfiguration.TEZ_TEST_MINI_CLUSTER_APP_WAIT_ON_SHUTDOWN_SECS,
+      TezConfiguration.TEZ_TEST_MINI_CLUSTER_APP_WAIT_ON_SHUTDOWN_SECS_DEFAULT);
 
     File appJarLocalFile = new File(MiniTezClusterWithTimeline.APPJAR);
 
     if (!appJarLocalFile.exists()) {
       String message = "TezAppJar " + MiniTezClusterWithTimeline.APPJAR
-          + " not found. Exiting.";
+        + " not found. Exiting.";
       LOG.info(message);
       throw new TezUncheckedException(message);
     } else {
       LOG.info("Using Tez AppJar: " + appJarLocalFile.getAbsolutePath());
     }
-    
+
     FileSystem fs = FileSystem.get(conf);
     Path testRootDir = fs.makeQualified(new Path("target", getName() + "-tmpDir"));
     Path appRemoteJar = new Path(testRootDir, "TezAppJar.jar");
@@ -146,11 +147,11 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
     conf.setBoolean(YarnConfiguration.NM_PMEM_CHECK_ENABLED, false);
     conf.setBoolean(YarnConfiguration.NM_VMEM_CHECK_ENABLED, false);
 
-    conf.set(CommonConfigurationKeys.FS_PERMISSIONS_UMASK_KEY,  "000");
+    conf.set(CommonConfigurationKeys.FS_PERMISSIONS_UMASK_KEY, "000");
 
     try {
       Path stagingPath = FileContext.getFileContext(conf).makeQualified(
-          new Path(conf.get(MRJobConfig.MR_AM_STAGING_DIR)));
+        new Path(conf.get(MRJobConfig.MR_AM_STAGING_DIR)));
       /*
        * Re-configure the staging path on Windows if the file system is localFs.
        * We need to use a absolute path that contains the drive letter. The unit
@@ -162,11 +163,11 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
       if (Path.WINDOWS) {
         if (LocalFileSystem.class.isInstance(stagingPath.getFileSystem(conf))) {
           conf.set(MRJobConfig.MR_AM_STAGING_DIR,
-              new File(conf.get(MRJobConfig.MR_AM_STAGING_DIR))
-                  .getAbsolutePath());
+            new File(conf.get(MRJobConfig.MR_AM_STAGING_DIR))
+              .getAbsolutePath());
         }
       }
-      FileContext fc=FileContext.getFileContext(stagingPath.toUri(), conf);
+      FileContext fc = FileContext.getFileContext(stagingPath.toUri(), conf);
       if (fc.util().exists(stagingPath)) {
         LOG.info(stagingPath + " exists! deleting...");
         fc.delete(stagingPath, true);
@@ -176,7 +177,7 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
 
       //mkdir done directory as well
       String doneDir =
-          JobHistoryUtils.getConfiguredHistoryServerDoneDirPrefix(conf);
+        JobHistoryUtils.getConfiguredHistoryServerDoneDirPrefix(conf);
       Path doneDirPath = fc.makeQualified(new Path(doneDir));
       fc.mkdir(doneDirPath, null, true);
     } catch (IOException e) {
@@ -186,16 +187,16 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
 
     //configure the shuffle service in NM
     conf.setStrings(YarnConfiguration.NM_AUX_SERVICES,
-        new String[] { ShuffleHandler.MAPREDUCE_SHUFFLE_SERVICEID });
+      new String[]{ShuffleHandler.MAPREDUCE_SHUFFLE_SERVICEID});
     conf.setClass(String.format(YarnConfiguration.NM_AUX_SERVICE_FMT,
         ShuffleHandler.MAPREDUCE_SHUFFLE_SERVICEID), ShuffleHandler.class,
-        Service.class);
+      Service.class);
 
     // Non-standard shuffle port
     conf.setInt(ShuffleHandler.SHUFFLE_PORT_CONFIG_KEY, 0);
 
     conf.setClass(YarnConfiguration.NM_CONTAINER_EXECUTOR,
-        DefaultContainerExecutor.class, ContainerExecutor.class);
+      DefaultContainerExecutor.class, ContainerExecutor.class);
 
     // TestMRJobs is for testing non-uberized operation only; see TestUberAM
     // for corresponding uberized tests.
@@ -223,9 +224,9 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
     }
     confFilePath = new Path(confFile.getAbsolutePath());
     conf.setStrings(YarnConfiguration.YARN_APPLICATION_CLASSPATH,
-        workDir.getAbsolutePath(), System.getProperty("java.class.path"));
+      workDir.getAbsolutePath(), System.getProperty("java.class.path"));
     LOG.info("Setting yarn-site.xml via YARN-APP-CP at: "
-        + conf.get(YarnConfiguration.YARN_APPLICATION_CLASSPATH));
+      + conf.get(YarnConfiguration.YARN_APPLICATION_CLASSPATH));
   }
 
   @Override
@@ -237,7 +238,7 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
   private void waitForAppsToFinish() {
     long waitStartTime = System.currentTimeMillis();
     long waitEndTime = maxTimeToWaitForAppsOnShutdown == -1 ?
-        -1 : (waitStartTime + (1000 * maxTimeToWaitForAppsOnShutdown));
+      -1 : (waitStartTime + (1000 * maxTimeToWaitForAppsOnShutdown));
 
     YarnClient yarnClient = YarnClient.createYarnClient();
     yarnClient.init(getConfig());
@@ -251,56 +252,55 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
           public boolean apply(ApplicationReport appReport) {
             return EnumSet.of(YarnApplicationState.NEW, YarnApplicationState.NEW_SAVING,
                 YarnApplicationState.SUBMITTED, YarnApplicationState.ACCEPTED, YarnApplicationState.RUNNING)
-                .contains(appReport.getYarnApplicationState());
+              .contains(appReport.getYarnApplicationState());
           }
         });
         if (unCompletedApps.isEmpty()) {
           break;
         }
         LOG.info("Waiting for applications to finish in MiniTezClusterWithTimeline"
-            + ", incompleteAppsCount=" + unCompletedApps.size());
+          + ", incompleteAppsCount=" + unCompletedApps.size());
         Thread.sleep(1000);
       } while (waitEndTime != -1 && waitEndTime > System.currentTimeMillis());
 
       if (unCompletedApps != null && !unCompletedApps.isEmpty()) {
         LOG.info("Killing incomplete applications in MiniTezCluster"
-            + ", incompleteAppsCount=" + unCompletedApps.size());
+          + ", incompleteAppsCount=" + unCompletedApps.size());
         Set<ApplicationId> incompleteAppIds =
-            new HashSet<ApplicationId>();
+          new HashSet<ApplicationId>();
         for (ApplicationReport appReport : unCompletedApps) {
           try {
             LOG.info("Killing application, id=" + appReport.getApplicationId()
-                + ", appName=" + appReport.getName());
+              + ", appName=" + appReport.getName());
             yarnClient.killApplication(appReport.getApplicationId());
             incompleteAppIds.add(appReport.getApplicationId());
           } catch (Exception e) {
             LOG.warn("Failed to kill app on MiniTezCluster shutdown"
-                + ", appId=" + appReport.getApplicationId()
-                + ", appName=" + appReport.getName());
+              + ", appId=" + appReport.getApplicationId()
+              + ", appName=" + appReport.getName());
           }
         }
 
         // Wait for RM to report back that incomplete apps are killed
         waitStartTime = System.currentTimeMillis();
         waitEndTime = maxTimeToWaitForAppsOnShutdown == -1 ?
-            -1 : (waitStartTime + (1000 * maxTimeToWaitForAppsOnShutdown));
+          -1 : (waitStartTime + (1000 * maxTimeToWaitForAppsOnShutdown));
         do {
           Iterator<ApplicationId> iter = incompleteAppIds.iterator();
           while (iter.hasNext()) {
             ApplicationId applicationId = iter.next();
             ApplicationReport report = yarnClient.getApplicationReport(applicationId);
             if (EnumSet.of(YarnApplicationState.FINISHED, YarnApplicationState.FAILED,
-                YarnApplicationState.KILLED).contains(report.getYarnApplicationState())) {
+              YarnApplicationState.KILLED).contains(report.getYarnApplicationState())) {
               iter.remove();
               LOG.info("Application completed, id=" + report.getApplicationId()
-                  + ", yarnState=" + report.getYarnApplicationState());
+                + ", yarnState=" + report.getYarnApplicationState());
             }
           }
           if (incompleteAppIds.isEmpty()) {
             break;
           }
         } while (waitEndTime != -1 && waitEndTime > System.currentTimeMillis());
-
       }
     } catch (Exception e) {
       e.printStackTrace();
@@ -308,9 +308,8 @@ public class MiniTezClusterWithTimeline extends MiniYARNCluster {
       yarnClient.stop();
     }
   }
-  
+
   public Path getConfigFilePath() {
     return confFilePath;
   }
-
 }

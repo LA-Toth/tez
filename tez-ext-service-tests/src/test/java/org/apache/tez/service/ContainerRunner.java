@@ -14,15 +14,13 @@
 
 package org.apache.tez.service;
 
-import java.io.IOException;
-
 import org.apache.tez.dag.api.TezException;
-import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.RunContainerRequestProto;
 import org.apache.tez.test.service.rpc.TezTestServiceProtocolProtos.SubmitWorkRequestProto;
 
 public interface ContainerRunner {
 
   void queueContainer(RunContainerRequestProto request) throws TezException;
+
   void submitWork(SubmitWorkRequestProto request) throws TezException;
 }

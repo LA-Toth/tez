@@ -23,8 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.apache.tez.common.Preconditions;
-import com.google.common.primitives.Ints;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
@@ -33,20 +31,22 @@ import org.apache.hadoop.yarn.api.records.ContainerId;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.api.records.Priority;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.TezUtils;
 import org.apache.tez.dag.api.TezUncheckedException;
-import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.service.TezTestServiceConfConstants;
+import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.serviceplugins.api.TaskScheduler;
 import org.apache.tez.serviceplugins.api.TaskSchedulerContext;
+
+import com.google.common.primitives.Ints;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class TezTestServiceTaskSchedulerService extends TaskScheduler {
 
   private static final Logger
-      LOG = LoggerFactory.getLogger(TezTestServiceTaskSchedulerService.class);
+    LOG = LoggerFactory.getLogger(TezTestServiceTaskSchedulerService.class);
 
   private final List<String> serviceHosts;
   private final ContainerFactory containerFactory;
@@ -55,7 +55,7 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
   private final int containerPort;
 
   private final ConcurrentMap<Object, ContainerId> runningTasks =
-      new ConcurrentHashMap<Object, ContainerId>();
+    new ConcurrentHashMap<Object, ContainerId>();
 
   // AppIdIdentifier to avoid conflicts with other containers in the system.
 
@@ -67,7 +67,6 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
   // Per Executor Thread
   private final Resource resourcePerContainer;
 
-
   // Not registering with the RM. Assuming the main TezScheduler will always run (except local mode),
   // and take care of YARN registration.
   public TezTestServiceTaskSchedulerService(TaskSchedulerContext taskSchedulerContext) {
@@ -75,7 +74,7 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
     super(taskSchedulerContext);
     this.serviceHosts = new LinkedList<String>();
     this.containerFactory = new ContainerFactory(taskSchedulerContext.getApplicationAttemptId(),
-        taskSchedulerContext.getCustomClusterIdentifier());
+      taskSchedulerContext.getCustomClusterIdentifier());
 
     Configuration conf = null;
     try {
@@ -84,25 +83,25 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
       throw new TezUncheckedException(e);
     }
     this.memoryPerInstance = conf
-        .getInt(TezTestServiceConfConstants.TEZ_TEST_SERVICE_MEMORY_PER_INSTANCE_MB, -1);
+      .getInt(TezTestServiceConfConstants.TEZ_TEST_SERVICE_MEMORY_PER_INSTANCE_MB, -1);
     Preconditions.checkArgument(memoryPerInstance > 0,
-        TezTestServiceConfConstants.TEZ_TEST_SERVICE_MEMORY_PER_INSTANCE_MB +
-            " must be configured");
+      TezTestServiceConfConstants.TEZ_TEST_SERVICE_MEMORY_PER_INSTANCE_MB +
+        " must be configured");
 
     this.executorsPerInstance = conf.getInt(
-        TezTestServiceConfConstants.TEZ_TEST_SERVICE_NUM_EXECUTORS_PER_INSTANCE,
-        -1);
+      TezTestServiceConfConstants.TEZ_TEST_SERVICE_NUM_EXECUTORS_PER_INSTANCE,
+      -1);
     Preconditions.checkArgument(executorsPerInstance > 0,
-        TezTestServiceConfConstants.TEZ_TEST_SERVICE_NUM_EXECUTORS_PER_INSTANCE +
-            " must be configured");
+      TezTestServiceConfConstants.TEZ_TEST_SERVICE_NUM_EXECUTORS_PER_INSTANCE +
+        " must be configured");
 
     this.coresPerInstance = conf
-        .getInt(TezTestServiceConfConstants.TEZ_TEST_SERVICE_VCPUS_PER_INSTANCE,
-            executorsPerInstance);
+      .getInt(TezTestServiceConfConstants.TEZ_TEST_SERVICE_VCPUS_PER_INSTANCE,
+        executorsPerInstance);
 
     this.containerPort = conf.getInt(TezTestServiceConfConstants.TEZ_TEST_SERVICE_RPC_PORT, -1);
     Preconditions.checkArgument(executorsPerInstance > 0,
-        TezTestServiceConfConstants.TEZ_TEST_SERVICE_RPC_PORT + " must be configured");
+      TezTestServiceConfConstants.TEZ_TEST_SERVICE_RPC_PORT + " must be configured");
 
     int memoryPerContainer = (int) (memoryPerInstance / (float) executorsPerInstance);
     int coresPerContainer = (int) (coresPerInstance / (float) executorsPerInstance);
@@ -117,20 +116,20 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
     }
 
     LOG.info("Running with configuration: " +
-        "memoryPerInstance=" + memoryPerInstance +
-        ", vcoresPerInstance=" + coresPerInstance +
-        ", executorsPerInstance=" + executorsPerInstance +
-        ", resourcePerContainerInferred=" + resourcePerContainer +
-        ", hosts=" + serviceHosts.toString());
-
+      "memoryPerInstance=" + memoryPerInstance +
+      ", vcoresPerInstance=" + coresPerInstance +
+      ", executorsPerInstance=" + executorsPerInstance +
+      ", resourcePerContainerInferred=" + resourcePerContainer +
+      ", hosts=" + serviceHosts.toString());
   }
 
   @Override
   public Resource getAvailableResources() {
-    // TODO This needs information about all running executors, and the amount of memory etc available across the cluster.
+    // TODO This needs information about all running executors, and the amount of memory etc available across the
+    //  cluster.
     return Resource
-        .newInstance(Ints.checkedCast(serviceHosts.size() * memoryPerInstance),
-            serviceHosts.size() * coresPerInstance);
+      .newInstance(Ints.checkedCast(serviceHosts.size() * memoryPerInstance),
+        serviceHosts.size() * coresPerInstance);
   }
 
   @Override
@@ -145,8 +144,8 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
   @Override
   public Resource getTotalResources() {
     return Resource
-        .newInstance(Ints.checkedCast(serviceHosts.size() * memoryPerInstance),
-            serviceHosts.size() * coresPerInstance);
+      .newInstance(Ints.checkedCast(serviceHosts.size() * memoryPerInstance),
+        serviceHosts.size() * coresPerInstance);
   }
 
   @Override
@@ -164,29 +163,29 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
                            Priority priority, Object containerSignature, Object clientCookie) {
     String host = selectHost(hosts);
     Container container =
-        containerFactory.createContainer(resourcePerContainer, priority, host, containerPort);
+      containerFactory.createContainer(resourcePerContainer, priority, host, containerPort);
     runningTasks.put(task, container.getId());
     getContext().taskAllocated(task, clientCookie, container);
   }
-
 
   @Override
   public void allocateTask(Object task, Resource capability, ContainerId containerId,
                            Priority priority, Object containerSignature, Object clientCookie) {
     String host = selectHost(null);
     Container container =
-        containerFactory.createContainer(resourcePerContainer, priority, host, containerPort);
+      containerFactory.createContainer(resourcePerContainer, priority, host, containerPort);
     runningTasks.put(task, container.getId());
     getContext().taskAllocated(task, clientCookie, container);
   }
 
   @Override
-  public boolean deallocateTask(Object task, boolean taskSucceeded, TaskAttemptEndReason endReason, String diagnostics) {
+  public boolean deallocateTask(Object task, boolean taskSucceeded, TaskAttemptEndReason endReason,
+                                String diagnostics) {
     ContainerId containerId = runningTasks.remove(task);
     if (containerId == null) {
       LOG.error("Could not determine ContainerId for task: " + task +
-          " . Could have hit a race condition. Ignoring." +
-          " The query may hang since this \"unknown\" container is now taking up a slot permanently");
+        " . Could have hit a race condition. Ignoring." +
+        " The query may hang since this \"unknown\" container is now taking up a slot permanently");
       return false;
     }
     getContext().containerBeingReleased(containerId);
@@ -224,15 +223,15 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
   }
 
   static class ContainerFactory {
-    AtomicInteger nextId;
     final ApplicationAttemptId customAppAttemptId;
+    AtomicInteger nextId;
 
     public ContainerFactory(ApplicationAttemptId appAttemptId, long appIdLong) {
       this.nextId = new AtomicInteger(1);
       ApplicationId appId = ApplicationId
-          .newInstance(appIdLong, appAttemptId.getApplicationId().getId());
+        .newInstance(appIdLong, appAttemptId.getApplicationId().getId());
       this.customAppAttemptId = ApplicationAttemptId
-          .newInstance(appId, appAttemptId.getAttemptId());
+        .newInstance(appId, appAttemptId.getAttemptId());
     }
 
     @SuppressWarnings("deprecation")
@@ -242,11 +241,11 @@ public class TezTestServiceTaskSchedulerService extends TaskScheduler {
       String nodeHttpAddress = "hostname:0";
 
       Container container = Container.newInstance(containerId,
-          nodeId,
-          nodeHttpAddress,
-          capability,
-          priority,
-          null);
+        nodeId,
+        nodeHttpAddress,
+        capability,
+        priority,
+        null);
 
       return container;
     }

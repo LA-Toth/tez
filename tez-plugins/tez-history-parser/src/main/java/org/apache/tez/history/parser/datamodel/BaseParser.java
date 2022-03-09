@@ -19,9 +19,11 @@
 package org.apache.tez.history.parser.datamodel;
 
 import org.apache.tez.common.Preconditions;
+
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.dag.records.TezTaskID;
 
@@ -31,20 +33,18 @@ import java.util.Map;
 
 public abstract class BaseParser {
 
-  protected DagInfo dagInfo;
-  protected VersionInfo versionInfo;
-  protected Map<String, String> config;
   protected final List<VertexInfo> vertexList;
   protected final List<TaskInfo> taskList;
   protected final List<TaskAttemptInfo> attemptList;
-
+  protected DagInfo dagInfo;
+  protected VersionInfo versionInfo;
+  protected Map<String, String> config;
 
   public BaseParser() {
     vertexList = Lists.newLinkedList();
     taskList = Lists.newLinkedList();
     attemptList = Lists.newLinkedList();
   }
-
 
   protected boolean checkFiles(List<File> files) {
     if (files.isEmpty()) {
@@ -57,7 +57,6 @@ public abstract class BaseParser {
     }
     return true;
   }
-
 
   protected void addRawDataToDagInfo() {
     dagInfo.addMeta("vertices", vertexList);
@@ -81,7 +80,7 @@ public abstract class BaseParser {
       String vertexId = TezTaskID.fromString(taskInfo.getTaskId()).getVertexID().toString();
       VertexInfo vertexInfo = dagInfo.getVertexFromId(vertexId);
       Preconditions.checkState(vertexInfo != null, "VertexInfo for " + vertexId + " can't be "
-          + "null");
+        + "null");
       taskInfo.setVertexInfo(vertexInfo);
     }
 
@@ -89,10 +88,10 @@ public abstract class BaseParser {
     for (TaskAttemptInfo attemptInfo : attemptList) {
       //Link task to task attempt
       TezTaskAttemptID taskAttemptId = TezTaskAttemptID.fromString(attemptInfo
-          .getTaskAttemptId());
+        .getTaskAttemptId());
       VertexInfo vertexInfo = dagInfo.getVertexFromId(taskAttemptId.getVertexID().toString());
       Preconditions.checkState(vertexInfo != null, "Vertex " + taskAttemptId
-          .getVertexID().toString() + " is not present in DAG");
+        .getVertexID().toString() + " is not present in DAG");
       TaskInfo taskInfo = vertexInfo.getTask(taskAttemptId.getTaskID().toString());
       attemptInfo.setTaskInfo(taskInfo);
     }
@@ -103,7 +102,6 @@ public abstract class BaseParser {
         dagInfo.addContainerMapping(taskAttemptInfo.getContainer(), taskAttemptInfo);
       }
     }
-
 
     //Set reference time for all events
     for (VertexInfo vertexInfo : dagInfo.getVertices()) {
@@ -128,7 +126,8 @@ public abstract class BaseParser {
    */
   private void setReferenceTime(List<Event> eventList, final long referenceTime) {
     Iterables.all(eventList, new Predicate<Event>() {
-      @Override public boolean apply(Event input) {
+      @Override
+      public boolean apply(Event input) {
         input.setReferenceTime(referenceTime);
         return false;
       }

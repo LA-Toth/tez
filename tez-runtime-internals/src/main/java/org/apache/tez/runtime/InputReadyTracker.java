@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,21 +30,19 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.runtime.api.Input;
 import org.apache.tez.runtime.api.MergedLogicalInput;
 
-import org.apache.tez.common.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 public class InputReadyTracker {
 
   private final ConcurrentMap<Input, Boolean> readyInputs;
-  
-  private ConcurrentMap<Input, List<MergedLogicalInput>> inputToGroupMap;
-  
   private final ReentrantLock lock = new ReentrantLock();
   private final Condition condition = lock.newCondition();
+  private ConcurrentMap<Input, List<MergedLogicalInput>> inputToGroupMap;
 
   public InputReadyTracker() {
     readyInputs = Maps.newConcurrentMap();
@@ -66,7 +64,6 @@ public class InputReadyTracker {
     }
   }
 
-
   private void informGroupedInputs(Input input) {
     if (inputToGroupMap != null) {
       List<MergedLogicalInput> mergedInputList = inputToGroupMap.get(input);
@@ -84,7 +81,7 @@ public class InputReadyTracker {
 
   public Input waitForAnyInputReady(Collection<Input> inputs, long timeoutMillis) throws InterruptedException {
     Preconditions.checkArgument(inputs != null && inputs.size() > 0,
-        "At least one input should be specified");
+      "At least one input should be specified");
     InputReadyMonitor inputReadyMonitor = new InputReadyMonitor(inputs, true);
     try {
       return inputReadyMonitor.awaitCondition(timeoutMillis);
@@ -99,7 +96,7 @@ public class InputReadyTracker {
 
   public boolean waitForAllInputsReady(Collection<Input> inputs, long timeoutMillis) throws InterruptedException {
     Preconditions.checkArgument(inputs != null && inputs.size() > 0,
-        "At least one input should be specified");
+      "At least one input should be specified");
     boolean succeeded = true;
     InputReadyMonitor inputReadyMonitor = new InputReadyMonitor(inputs, false);
 
@@ -109,6 +106,31 @@ public class InputReadyTracker {
       succeeded = false;
     }
     return succeeded;
+  }
+
+  public void setGroupedInputs(Collection<MergedLogicalInput> inputGroups) {
+    lock.lock();
+    try {
+      if (inputGroups != null) {
+        inputToGroupMap = Maps.newConcurrentMap();
+        for (MergedLogicalInput mergedInput : inputGroups) {
+          for (Input dest : mergedInput.getInputs()) {
+            // Check already ready Inputs - may have become ready during initialize
+            if (readyInputs.containsKey(dest)) {
+              mergedInput.setConstituentInputIsReady(dest);
+            }
+            List<MergedLogicalInput> mergedList = inputToGroupMap.get(dest);
+            if (mergedList == null) {
+              mergedList = Lists.newArrayList();
+              inputToGroupMap.put(dest, mergedList);
+            }
+            mergedList.add(mergedInput);
+          }
+        }
+      }
+    } finally {
+      lock.unlock();
+    }
   }
 
   private class InputReadyMonitor {
@@ -152,31 +174,6 @@ public class InputReadyTracker {
         lock.unlock();
       }
       return null;
-    }
-  }
-
-  public void setGroupedInputs(Collection<MergedLogicalInput> inputGroups) {
-    lock.lock();
-    try {
-      if (inputGroups != null) {
-        inputToGroupMap = Maps.newConcurrentMap();
-        for (MergedLogicalInput mergedInput : inputGroups) {
-          for (Input dest : mergedInput.getInputs()) {
-            // Check already ready Inputs - may have become ready during initialize
-            if (readyInputs.containsKey(dest)) {
-              mergedInput.setConstituentInputIsReady(dest);
-            }
-            List<MergedLogicalInput> mergedList = inputToGroupMap.get(dest);
-            if (mergedList == null) {
-              mergedList = Lists.newArrayList();
-              inputToGroupMap.put(dest, mergedList);
-            }
-            mergedList.add(mergedInput);
-          }
-        }
-      }
-    } finally {
-      lock.unlock();
     }
   }
 }

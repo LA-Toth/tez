@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,6 @@ package org.apache.tez.examples;
 
 import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,6 +29,7 @@ import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.tez.client.TezClient;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.dag.api.DAG;
 import org.apache.tez.dag.api.Edge;
 import org.apache.tez.dag.api.ProcessorDescriptor;
@@ -50,7 +49,8 @@ import org.apache.tez.runtime.library.api.KeyValuesReader;
 import org.apache.tez.runtime.library.conf.OrderedPartitionedKVEdgeConfig;
 import org.apache.tez.runtime.library.partitioner.HashPartitioner;
 
-import org.apache.tez.common.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple example of joining 2 data sets using <a
@@ -88,12 +88,12 @@ public class SortMergeJoinExample extends TezExampleBase {
   @Override
   protected void printUsage() {
     System.err.println("Usage: "
-        + "sortmergejoin <file1> <file2> <numPartitions> <outPath>");
+      + "sortmergejoin <file1> <file2> <numPartitions> <outPath>");
   }
 
   @Override
   protected int runJob(String[] args, TezConfiguration tezConf,
-      TezClient tezClient) throws Exception {
+                       TezClient tezClient) throws Exception {
 
     String inputDir1 = args[0];
     String inputDir2 = args[1];
@@ -116,7 +116,7 @@ public class SortMergeJoinExample extends TezExampleBase {
       return 4;
     }
     DAG dag =
-        createDag(tezConf, inputPath1, inputPath2, outputPath, numPartitions);
+      createDag(tezConf, inputPath1, inputPath2, outputPath, numPartitions);
     LOG.info("Running SortMergeJoinExample");
     return runDag(dag, isCountersLog(), LOG);
   }
@@ -133,7 +133,7 @@ public class SortMergeJoinExample extends TezExampleBase {
    * v1 v2 <br>
    * &nbsp;\&nbsp;/ <br>
    * &nbsp;&nbsp;v3 <br>
-   * 
+   *
    * @param tezConf
    * @param inputPath1
    * @param inputPath2
@@ -143,7 +143,7 @@ public class SortMergeJoinExample extends TezExampleBase {
    * @throws IOException
    */
   private DAG createDag(TezConfiguration tezConf, Path inputPath1,
-      Path inputPath2, Path outPath, int numPartitions) throws IOException {
+                        Path inputPath2, Path outPath, int numPartitions) throws IOException {
     DAG dag = DAG.create("SortMergeJoinExample");
 
     /**
@@ -152,15 +152,15 @@ public class SortMergeJoinExample extends TezExampleBase {
      * downstream as is.
      */
     Vertex inputVertex1 =
-        Vertex.create("input1",
-            ProcessorDescriptor.create(ForwardingProcessor.class.getName()))
-            .addDataSource(
-                inputFile,
-                MRInput
-                    .createConfigBuilder(new Configuration(tezConf),
-                        TextInputFormat.class, inputPath1.toUri().toString())
-                    .groupSplits(!isDisableSplitGrouping())
-                    .generateSplitsInAM(!isGenerateSplitInClient()).build());
+      Vertex.create("input1",
+          ProcessorDescriptor.create(ForwardingProcessor.class.getName()))
+        .addDataSource(
+          inputFile,
+          MRInput
+            .createConfigBuilder(new Configuration(tezConf),
+              TextInputFormat.class, inputPath1.toUri().toString())
+            .groupSplits(!isDisableSplitGrouping())
+            .generateSplitsInAM(!isGenerateSplitInClient()).build());
 
     /**
      * The other vertex represents the other side of the join. It reads text
@@ -168,15 +168,15 @@ public class SortMergeJoinExample extends TezExampleBase {
      * data downstream as is.
      */
     Vertex inputVertex2 =
-        Vertex.create("input2",
-            ProcessorDescriptor.create(ForwardingProcessor.class.getName()))
-            .addDataSource(
-                inputFile,
-                MRInput
-                    .createConfigBuilder(new Configuration(tezConf),
-                        TextInputFormat.class, inputPath2.toUri().toString())
-                    .groupSplits(!isDisableSplitGrouping())
-                    .generateSplitsInAM(!isGenerateSplitInClient()).build());
+      Vertex.create("input2",
+          ProcessorDescriptor.create(ForwardingProcessor.class.getName()))
+        .addDataSource(
+          inputFile,
+          MRInput
+            .createConfigBuilder(new Configuration(tezConf),
+              TextInputFormat.class, inputPath2.toUri().toString())
+            .groupSplits(!isDisableSplitGrouping())
+            .generateSplitsInAM(!isGenerateSplitInClient()).build());
 
     /**
      * This vertex represents the join operation. It writes the join output as
@@ -185,15 +185,15 @@ public class SortMergeJoinExample extends TezExampleBase {
      * is load balanced across numPartitions.
      */
     Vertex joinVertex = Vertex
-        .create(joiner, ProcessorDescriptor.create(SortMergeJoinProcessor.class.getName()),
-            numPartitions)
-        .setVertexManagerPlugin(
-            ShuffleVertexManager.createConfigBuilder(tezConf).setAutoReduceParallelism(true)
-                .build())
-        .addDataSink(
-            joinOutput,
-            MROutput.createConfigBuilder(new Configuration(tezConf), TextOutputFormat.class,
-                outPath.toUri().toString()).build());
+      .create(joiner, ProcessorDescriptor.create(SortMergeJoinProcessor.class.getName()),
+        numPartitions)
+      .setVertexManagerPlugin(
+        ShuffleVertexManager.createConfigBuilder(tezConf).setAutoReduceParallelism(true)
+          .build())
+      .addDataSink(
+        joinOutput,
+        MROutput.createConfigBuilder(new Configuration(tezConf), TextOutputFormat.class,
+          outPath.toUri().toString()).build());
 
     /**
      * The output of inputVertex1 and inputVertex2 will be partitioned into
@@ -207,10 +207,10 @@ public class SortMergeJoinExample extends TezExampleBase {
      * invoke setFromConfiguration to override these config options via commandline arguments.
      */
     OrderedPartitionedKVEdgeConfig edgeConf =
-        OrderedPartitionedKVEdgeConfig
-            .newBuilder(Text.class.getName(), NullWritable.class.getName(),
-                HashPartitioner.class.getName()).setFromConfiguration(tezConf)
-            .build();
+      OrderedPartitionedKVEdgeConfig
+        .newBuilder(Text.class.getName(), NullWritable.class.getName(),
+          HashPartitioner.class.getName()).setFromConfiguration(tezConf)
+        .build();
 
     /**
      * Connect the join vertex with inputVertex1 with the EdgeProperty created
@@ -218,19 +218,19 @@ public class SortMergeJoinExample extends TezExampleBase {
      * inputVertex1 is sorted before feeding it to JoinProcessor
      */
     Edge e1 =
-        Edge.create(inputVertex1, joinVertex,
-            edgeConf.createDefaultEdgeProperty());
+      Edge.create(inputVertex1, joinVertex,
+        edgeConf.createDefaultEdgeProperty());
     /**
      * Connect the join vertex with inputVertex2 with the EdgeProperty created
      * from {@link OrderedPartitionedKVEdgeConfig} so that the output of
      * inputVertex1 is sorted before feeding it to JoinProcessor
      */
     Edge e2 =
-        Edge.create(inputVertex2, joinVertex,
-            edgeConf.createDefaultEdgeProperty());
+      Edge.create(inputVertex2, joinVertex,
+        edgeConf.createDefaultEdgeProperty());
 
     dag.addVertex(inputVertex1).addVertex(inputVertex2).addVertex(joinVertex)
-        .addEdge(e1).addEdge(e2);
+      .addEdge(e1).addEdge(e2);
     return dag;
   }
 
@@ -263,20 +263,20 @@ public class SortMergeJoinExample extends TezExampleBase {
       KeyValueWriter writer = (KeyValueWriter) lo.getWriter();
 
       join((KeyValuesReader) inputReader1, (KeyValuesReader) inputReader2,
-          writer);
+        writer);
     }
 
     /**
      * Join 2 sorted inputs both from {@link KeyValuesReader} and write output
      * using {@link KeyValueWriter}
-     * 
+     *
      * @param inputReader1
      * @param inputReader2
      * @param writer
      * @throws IOException
      */
     private void join(KeyValuesReader inputReader1,
-        KeyValuesReader inputReader2, KeyValueWriter writer) throws IOException {
+                      KeyValuesReader inputReader2, KeyValueWriter writer) throws IOException {
 
       while (inputReader1.next() && inputReader2.next()) {
         Text value1 = (Text) inputReader1.getCurrentKey();

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -35,41 +35,42 @@ import org.apache.tez.dag.api.UserPayload;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.InputReadyTracker;
 import org.apache.tez.runtime.LogicalIOProcessorRuntimeTask;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.apache.tez.runtime.api.ExecutionContext;
 import org.apache.tez.runtime.api.Event;
+import org.apache.tez.runtime.api.ExecutionContext;
 import org.apache.tez.runtime.api.Input;
 import org.apache.tez.runtime.api.ObjectRegistry;
 import org.apache.tez.runtime.api.ProcessorContext;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.impl.EventMetaData.EventProducerConsumerType;
 import org.apache.tez.runtime.common.resources.MemoryDistributor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TezProcessorContextImpl extends TezTaskContextImpl implements ProcessorContext {
 
   private static final Logger LOG = LoggerFactory.getLogger(TezProcessorContextImpl.class);
-
+  private final EventMetaData sourceInfo;
   private volatile UserPayload userPayload;
   private volatile InputReadyTracker inputReadyTracker;
-  private final EventMetaData sourceInfo;
 
   public TezProcessorContextImpl(Configuration conf, String[] workDirs, int appAttemptNumber,
-      TezUmbilical tezUmbilical, String dagName, String vertexName,
-      int vertexParallelism, TezTaskAttemptID taskAttemptID,
-      @Nullable UserPayload userPayload, LogicalIOProcessorRuntimeTask runtimeTask,
-      Map<String, ByteBuffer> serviceConsumerMetadata,
-      Map<String, String> auxServiceEnv, MemoryDistributor memDist,
-      ProcessorDescriptor processorDescriptor, InputReadyTracker inputReadyTracker, ObjectRegistry objectRegistry,
-      ExecutionContext ExecutionContext, long memAvailable, TezExecutors sharedExecutor) {
+                                 TezUmbilical tezUmbilical, String dagName, String vertexName,
+                                 int vertexParallelism, TezTaskAttemptID taskAttemptID,
+                                 @Nullable UserPayload userPayload, LogicalIOProcessorRuntimeTask runtimeTask,
+                                 Map<String, ByteBuffer> serviceConsumerMetadata,
+                                 Map<String, String> auxServiceEnv, MemoryDistributor memDist,
+                                 ProcessorDescriptor processorDescriptor, InputReadyTracker inputReadyTracker,
+                                 ObjectRegistry objectRegistry,
+                                 ExecutionContext ExecutionContext, long memAvailable, TezExecutors sharedExecutor) {
     super(conf, workDirs, appAttemptNumber, dagName, vertexName, vertexParallelism, taskAttemptID,
-        runtimeTask.addAndGetTezCounter(vertexName), runtimeTask, tezUmbilical, serviceConsumerMetadata,
-        auxServiceEnv, memDist, processorDescriptor, objectRegistry, ExecutionContext, memAvailable,
-        sharedExecutor);
+      runtimeTask.addAndGetTezCounter(vertexName), runtimeTask, tezUmbilical, serviceConsumerMetadata,
+      auxServiceEnv, memDist, processorDescriptor, objectRegistry, ExecutionContext, memAvailable,
+      sharedExecutor);
     Objects.requireNonNull(inputReadyTracker, "inputReadyTracker is null");
     this.userPayload = userPayload;
     this.sourceInfo = new EventMetaData(EventProducerConsumerType.PROCESSOR,
-        taskVertexName, "", taskAttemptID);
+      taskVertexName, "", taskAttemptID);
     this.inputReadyTracker = inputReadyTracker;
   }
 
@@ -145,5 +146,4 @@ public class TezProcessorContextImpl extends TezTaskContextImpl implements Proce
     this.inputReadyTracker = null;
     LOG.debug("Cleared TezProcessorContextImpl related information");
   }
-
 }

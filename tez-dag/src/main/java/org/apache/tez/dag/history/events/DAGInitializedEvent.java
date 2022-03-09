@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,8 +21,6 @@ package org.apache.tez.dag.history.events;
 import java.io.IOException;
 import java.util.Map;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.records.DAGIDAware;
@@ -30,6 +28,9 @@ import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.dag.recovery.records.RecoveryProtos;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.DAGInitializedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class DAGInitializedEvent implements HistoryEvent, DAGIDAware {
 
@@ -43,7 +44,7 @@ public class DAGInitializedEvent implements HistoryEvent, DAGIDAware {
   }
 
   public DAGInitializedEvent(TezDAGID dagID, long initTime,
-      String user, String dagName, Map<String, TezVertexID> vertexNameIDMap) {
+                             String user, String dagName, Map<String, TezVertexID> vertexNameIDMap) {
     this.dagID = dagID;
     this.initTime = initTime;
     this.user = user;
@@ -69,14 +70,14 @@ public class DAGInitializedEvent implements HistoryEvent, DAGIDAware {
   @Override
   public String toString() {
     return "dagID=" + dagID
-        + ", initTime=" + initTime;
+      + ", initTime=" + initTime;
   }
 
   public RecoveryProtos.DAGInitializedProto toProto() {
     return RecoveryProtos.DAGInitializedProto.newBuilder()
-        .setDagId(dagID.toString())
-        .setInitTime(initTime)
-        .build();
+      .setDagId(dagID.toString())
+      .setInitTime(initTime)
+      .build();
   }
 
   public void fromProto(RecoveryProtos.DAGInitializedProto proto) {
@@ -118,5 +119,4 @@ public class DAGInitializedEvent implements HistoryEvent, DAGIDAware {
   public Map<String, TezVertexID> getVertexNameIDMap() {
     return vertexNameIDMap;
   }
-
 }

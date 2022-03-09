@@ -36,16 +36,17 @@ import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.api.AbstractLogicalIOProcessor;
 import org.apache.tez.runtime.api.Event;
-import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.LogicalInput;
 import org.apache.tez.runtime.api.LogicalOutput;
 import org.apache.tez.runtime.api.ProcessorContext;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.events.TaskAttemptCompletedEvent;
 import org.apache.tez.runtime.api.events.TaskAttemptFailedEvent;
 import org.apache.tez.runtime.api.events.TaskAttemptKilledEvent;
 import org.apache.tez.runtime.api.impl.TezEvent;
 import org.apache.tez.runtime.api.impl.TezHeartbeatRequest;
 import org.apache.tez.runtime.api.impl.TezHeartbeatResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,31 +54,51 @@ public class TaskExecutionTestHelpers {
 
   public static final String HEARTBEAT_EXCEPTION_STRING = "HeartbeatException";
 
+  public static TezException createProcessorTezException() {
+    return new TezException("TezException");
+  }
+
+  public static IOException createProcessorIOException() {
+    return new IOException("IOException");
+  }
+
+  @SuppressWarnings("deprecation")
+  public static ContainerId createContainerId(ApplicationId appId) {
+    ApplicationAttemptId appAttemptId = ApplicationAttemptId.newInstance(appId, 1);
+    ContainerId containerId = ContainerId.newInstance(appAttemptId, 1);
+    return containerId;
+  }
+
+  public static TaskReporter createTaskReporter(ApplicationId appId, TezTaskUmbilicalForTest umbilical) {
+    TaskReporter taskReporter = new TaskReporter(umbilical, 100, 1000, 100, new AtomicLong(0),
+      createContainerId(appId).toString());
+    return taskReporter;
+  }
+
   // Uses static fields for signaling. Ensure only used by one test at a time.
   public static class TestProcessor extends AbstractLogicalIOProcessor {
 
     private static final int EMPTY = 0;
-    private static final int THROW_IO_EXCEPTION = 1;
-    private static final int THROW_TEZ_EXCEPTION = 2;
-    private static final int SIGNAL_DEPRECATEDFATAL_AND_THROW = 3;
-    private static final int SIGNAL_DEPRECATEDFATAL_AND_LOOP = 4;
-    private static final int SIGNAL_DEPRECATEDFATAL_AND_COMPLETE = 5;
-    private static final int SIGNAL_FATAL_AND_THROW = 6;
-    private static final int SIGNAL_NON_FATAL_AND_THROW = 7;
-    private static final int SELF_KILL_AND_COMPLETE = 8;
-
     public static final byte[] CONF_EMPTY = new byte[]{EMPTY};
+    private static final int THROW_IO_EXCEPTION = 1;
     public static final byte[] CONF_THROW_IO_EXCEPTION = new byte[]{THROW_IO_EXCEPTION};
+    private static final int THROW_TEZ_EXCEPTION = 2;
     public static final byte[] CONF_THROW_TEZ_EXCEPTION = new byte[]{THROW_TEZ_EXCEPTION};
+    private static final int SIGNAL_DEPRECATEDFATAL_AND_THROW = 3;
     public static final byte[] CONF_SIGNAL_DEPRECATEDFATAL_AND_THROW =
-        new byte[]{SIGNAL_DEPRECATEDFATAL_AND_THROW};
+      new byte[]{SIGNAL_DEPRECATEDFATAL_AND_THROW};
+    private static final int SIGNAL_DEPRECATEDFATAL_AND_LOOP = 4;
     public static final byte[] CONF_SIGNAL_DEPRECATEDFATAL_AND_LOOP =
-        new byte[]{SIGNAL_DEPRECATEDFATAL_AND_LOOP};
+      new byte[]{SIGNAL_DEPRECATEDFATAL_AND_LOOP};
+    private static final int SIGNAL_DEPRECATEDFATAL_AND_COMPLETE = 5;
     public static final byte[] CONF_SIGNAL_DEPRECATEDFATAL_AND_COMPLETE =
-        new byte[]{SIGNAL_DEPRECATEDFATAL_AND_COMPLETE};
+      new byte[]{SIGNAL_DEPRECATEDFATAL_AND_COMPLETE};
+    private static final int SIGNAL_FATAL_AND_THROW = 6;
     public static final byte[] CONF_SIGNAL_FATAL_AND_THROW = new byte[]{SIGNAL_FATAL_AND_THROW};
+    private static final int SIGNAL_NON_FATAL_AND_THROW = 7;
     public static final byte[] CONF_SIGNAL_NON_FATAL_AND_THROW =
-        new byte[]{SIGNAL_NON_FATAL_AND_THROW};
+      new byte[]{SIGNAL_NON_FATAL_AND_THROW};
+    private static final int SELF_KILL_AND_COMPLETE = 8;
     public static final byte[] CONF_SELF_KILL_AND_COMPLETE = new byte[]{SELF_KILL_AND_COMPLETE};
 
     private static final Logger LOG = LoggerFactory.getLogger(TestProcessor.class);
@@ -106,33 +127,6 @@ public class TaskExecutionTestHelpers {
 
     public TestProcessor(ProcessorContext context) {
       super(context);
-    }
-
-    @Override
-    public void initialize() throws Exception {
-      parseConf(getContext().getUserPayload().deepCopyAsArray());
-    }
-
-    @Override
-    public void handleEvents(List<Event> processorEvents) {
-
-    }
-
-    @Override
-    public void close() throws Exception {
-
-    }
-
-    private void parseConf(byte[] bytes) {
-      byte b = bytes[0];
-      throwIOException = (b == THROW_IO_EXCEPTION);
-      throwTezException = (b == THROW_TEZ_EXCEPTION);
-      signalDeprecatedFatalAndThrow = (b == SIGNAL_DEPRECATEDFATAL_AND_THROW);
-      signalDeprecatedFatalAndLoop = (b == SIGNAL_DEPRECATEDFATAL_AND_LOOP);
-      signalDeprecatedFatalAndComplete = (b == SIGNAL_DEPRECATEDFATAL_AND_COMPLETE);
-      signalFatalAndThrow = (b == SIGNAL_FATAL_AND_THROW);
-      signalNonFatalAndThrow = (b == SIGNAL_NON_FATAL_AND_THROW);
-      selfKillAndComplete = (b == SELF_KILL_AND_COMPLETE);
     }
 
     public static void reset() {
@@ -213,6 +207,33 @@ public class TaskExecutionTestHelpers {
     }
 
     @Override
+    public void initialize() throws Exception {
+      parseConf(getContext().getUserPayload().deepCopyAsArray());
+    }
+
+    @Override
+    public void handleEvents(List<Event> processorEvents) {
+
+    }
+
+    @Override
+    public void close() throws Exception {
+
+    }
+
+    private void parseConf(byte[] bytes) {
+      byte b = bytes[0];
+      throwIOException = (b == THROW_IO_EXCEPTION);
+      throwTezException = (b == THROW_TEZ_EXCEPTION);
+      signalDeprecatedFatalAndThrow = (b == SIGNAL_DEPRECATEDFATAL_AND_THROW);
+      signalDeprecatedFatalAndLoop = (b == SIGNAL_DEPRECATEDFATAL_AND_LOOP);
+      signalDeprecatedFatalAndComplete = (b == SIGNAL_DEPRECATEDFATAL_AND_COMPLETE);
+      signalFatalAndThrow = (b == SIGNAL_FATAL_AND_THROW);
+      signalNonFatalAndThrow = (b == SIGNAL_NON_FATAL_AND_THROW);
+      selfKillAndComplete = (b == SELF_KILL_AND_COMPLETE);
+    }
+
+    @Override
     public void abort() {
       wasAborted = true;
     }
@@ -220,7 +241,7 @@ public class TaskExecutionTestHelpers {
     @SuppressWarnings("deprecation")
     @Override
     public void run(Map<String, LogicalInput> inputs, Map<String, LogicalOutput> outputs) throws
-        Exception {
+      Exception {
       processorLock.lock();
       running = true;
       runningCondition.signal();
@@ -283,14 +304,6 @@ public class TaskExecutionTestHelpers {
     }
   }
 
-  public static TezException createProcessorTezException() {
-    return new TezException("TezException");
-  }
-
-  public static IOException createProcessorIOException() {
-    return new IOException("IOException");
-  }
-
   public static class TezTaskUmbilicalForTest implements TezTaskUmbilicalProtocol {
 
     private static final Logger LOG = LoggerFactory.getLogger(TezTaskUmbilicalForTest.class);
@@ -299,11 +312,9 @@ public class TaskExecutionTestHelpers {
 
     private final ReentrantLock umbilicalLock = new ReentrantLock();
     private final Condition eventCondition = umbilicalLock.newCondition();
+    volatile int getTaskInvocations = 0;
     private boolean pendingEvent = false;
     private boolean eventEnacted = false;
-
-    volatile int getTaskInvocations = 0;
-
     private boolean shouldThrowException = false;
     private boolean shouldSendDieSignal = false;
 
@@ -375,7 +386,7 @@ public class TaskExecutionTestHelpers {
               return;
             } else {
               fail("Diagnostic message does not match expected message. Found [" +
-                  failedEvent.getDiagnostics() + "], Expected: [" + diagnostics + "]");
+                failedEvent.getDiagnostics() + "], Expected: [" + diagnostics + "]");
             }
           }
         }
@@ -402,12 +413,12 @@ public class TaskExecutionTestHelpers {
                   return;
                 } else {
                   fail("Diagnostic message does not contain expected message. Found [" +
-                      failedEvent.getDiagnostics() + "], Expected: [" + diagContains + "]");
+                    failedEvent.getDiagnostics() + "], Expected: [" + diagContains + "]");
                 }
               }
             } else {
               fail("Diagnostic message does not start with expected message. Found [" +
-                  failedEvent.getDiagnostics() + "], Expected: [" + diagStart + "]");
+                failedEvent.getDiagnostics() + "], Expected: [" + diagStart + "]");
             }
           }
         }
@@ -423,19 +434,19 @@ public class TaskExecutionTestHelpers {
         for (TezEvent event : requestEvents) {
           if (event.getEvent() instanceof TaskAttemptKilledEvent) {
             TaskAttemptKilledEvent killedEvent =
-                (TaskAttemptKilledEvent) event.getEvent();
+              (TaskAttemptKilledEvent) event.getEvent();
             if (killedEvent.getDiagnostics().startsWith(diagStart)) {
               if (diagContains != null) {
                 if (killedEvent.getDiagnostics().contains(diagContains)) {
                   return;
                 } else {
                   fail("Diagnostic message does not contain expected message. Found [" +
-                      killedEvent.getDiagnostics() + "], Expected: [" + diagContains + "]");
+                    killedEvent.getDiagnostics() + "], Expected: [" + diagContains + "]");
                 }
               }
             } else {
               fail("Diagnostic message does not start with expected message. Found [" +
-                  killedEvent.getDiagnostics() + "], Expected: [" + diagStart + "]");
+                killedEvent.getDiagnostics() + "], Expected: [" + diagStart + "]");
             }
           }
         }
@@ -443,7 +454,6 @@ public class TaskExecutionTestHelpers {
       } finally {
         umbilicalLock.unlock();
       }
-
     }
 
     public void verifyTaskSuccessEvent() {
@@ -485,7 +495,7 @@ public class TaskExecutionTestHelpers {
 
     @Override
     public TezHeartbeatResponse heartbeat(TezHeartbeatRequest request) throws IOException,
-        TezException {
+      TezException {
       umbilicalLock.lock();
       if (request.getEvents() != null) {
         requestEvents.addAll(request.getEvents());
@@ -511,18 +521,5 @@ public class TaskExecutionTestHelpers {
         umbilicalLock.unlock();
       }
     }
-  }
-
-  @SuppressWarnings("deprecation")
-  public static ContainerId createContainerId(ApplicationId appId) {
-    ApplicationAttemptId appAttemptId = ApplicationAttemptId.newInstance(appId, 1);
-    ContainerId containerId = ContainerId.newInstance(appAttemptId, 1);
-    return containerId;
-  }
-
-  public static TaskReporter createTaskReporter(ApplicationId appId, TezTaskUmbilicalForTest umbilical) {
-    TaskReporter taskReporter = new TaskReporter(umbilical, 100, 1000, 100, new AtomicLong(0),
-        createContainerId(appId).toString());
-    return taskReporter;
   }
 }

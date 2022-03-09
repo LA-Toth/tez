@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,14 +17,7 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
-import com.google.common.primitives.Ints;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.hadoop.classification.InterfaceStability.Evolving;
-import org.apache.tez.dag.api.TezConfiguration;
-import org.apache.tez.dag.api.UserPayload;
+import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,7 +26,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
+import org.apache.hadoop.classification.InterfaceStability.Evolving;
+import org.apache.tez.common.Preconditions;
+import org.apache.tez.dag.api.TezConfiguration;
+import org.apache.tez.dag.api.UserPayload;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.primitives.Ints;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 
 /**
  * <class>CartesianProductConfig</class> is used to configure both
@@ -47,8 +48,8 @@ import static org.apache.tez.runtime.library.cartesianproduct.CartesianProductUs
 public class CartesianProductConfig {
   private final boolean isPartitioned;
   private final String[] sources;
- // numPartition[i] means how many partitions sourceVertices[i] will generate
- // (not used in fair cartesian product)
+  // numPartition[i] means how many partitions sourceVertices[i] will generate
+  // (not used in fair cartesian product)
   private final int[] numPartitions;
   private final CartesianProductFilterDescriptor filterDescriptor;
 
@@ -136,6 +137,39 @@ public class CartesianProductConfig {
     this.numPartitions = numPartitions;
     this.sources = sources;
     this.filterDescriptor = filterDescriptor;
+  }
+
+  protected static CartesianProductConfigProto userPayloadToProto(UserPayload payload)
+    throws InvalidProtocolBufferException {
+    Preconditions.checkArgument(payload != null, "UserPayload is null");
+    Preconditions.checkArgument(payload.getPayload() != null, "UserPayload carreis null payload");
+    return
+      CartesianProductConfigProto.parseFrom(ByteString.copyFrom(payload.getPayload()));
+  }
+
+  protected static CartesianProductConfig fromUserPayload(UserPayload payload)
+    throws InvalidProtocolBufferException {
+    return fromProto(userPayloadToProto(payload));
+  }
+
+  protected static CartesianProductConfig fromProto(
+    CartesianProductConfigProto proto) {
+    if (!proto.getIsPartitioned()) {
+      return new CartesianProductConfig(proto.getSourcesList());
+    } else {
+      String[] sourceVertices = new String[proto.getSourcesList().size()];
+      proto.getSourcesList().toArray(sourceVertices);
+      CartesianProductFilterDescriptor filterDescriptor = null;
+      if (proto.hasFilterClassName()) {
+        filterDescriptor = new CartesianProductFilterDescriptor(proto.getFilterClassName());
+        if (proto.hasFilterUserPayload()) {
+          filterDescriptor.setUserPayload(
+            UserPayload.create(ByteBuffer.wrap(proto.getFilterUserPayload().toByteArray())));
+        }
+      }
+      return new CartesianProductConfig(Ints.toArray(proto.getNumPartitionsList()),
+        sourceVertices, filterDescriptor);
+    }
   }
 
   @VisibleForTesting
@@ -241,38 +275,5 @@ public class CartesianProductConfig {
       "Min ops per worker must be positive, currently is " + builder.getMinOpsPerWorker());
 
     return builder.build();
-  }
-
-  protected static CartesianProductConfigProto userPayloadToProto(UserPayload payload)
-    throws InvalidProtocolBufferException {
-    Preconditions.checkArgument(payload != null, "UserPayload is null");
-    Preconditions.checkArgument(payload.getPayload() != null, "UserPayload carreis null payload");
-    return
-      CartesianProductConfigProto.parseFrom(ByteString.copyFrom(payload.getPayload()));
-  }
-
-  protected static CartesianProductConfig fromUserPayload(UserPayload payload)
-    throws InvalidProtocolBufferException {
-    return fromProto(userPayloadToProto(payload));
-  }
-
-  protected static CartesianProductConfig fromProto(
-    CartesianProductConfigProto proto) {
-    if (!proto.getIsPartitioned()) {
-      return new CartesianProductConfig(proto.getSourcesList());
-    } else {
-      String[] sourceVertices = new String[proto.getSourcesList().size()];
-      proto.getSourcesList().toArray(sourceVertices);
-      CartesianProductFilterDescriptor filterDescriptor = null;
-      if (proto.hasFilterClassName()) {
-        filterDescriptor = new CartesianProductFilterDescriptor(proto.getFilterClassName());
-        if (proto.hasFilterUserPayload()) {
-          filterDescriptor.setUserPayload(
-            UserPayload.create(ByteBuffer.wrap(proto.getFilterUserPayload().toByteArray())));
-        }
-      }
-      return new CartesianProductConfig(Ints.toArray(proto.getNumPartitionsList()),
-        sourceVertices, filterDescriptor);
-    }
   }
 }

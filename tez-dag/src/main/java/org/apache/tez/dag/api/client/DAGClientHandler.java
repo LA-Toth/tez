@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,27 +25,27 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.ipc.Server;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.tez.client.TezAppMasterStatus;
+import org.apache.tez.common.security.ACLManager;
 import org.apache.tez.dag.api.DAGNotRunningException;
 import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.records.DAGProtos.DAGPlan;
 import org.apache.tez.dag.app.DAGAppMaster;
 import org.apache.tez.dag.app.dag.DAG;
-import org.apache.tez.common.security.ACLManager;
 import org.apache.tez.dag.records.TezDAGID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DAGClientHandler {
 
-  private Logger LOG = LoggerFactory.getLogger(DAGClientHandler.class);
-
-  private DAGAppMaster dagAppMaster;
   private final AtomicLong lastHeartbeatTime;
-  
+  private Logger LOG = LoggerFactory.getLogger(DAGClientHandler.class);
+  private DAGAppMaster dagAppMaster;
+
   public DAGClientHandler(DAGAppMaster dagAppMaster) {
     this.dagAppMaster = dagAppMaster;
     this.lastHeartbeatTime = new AtomicLong(dagAppMaster.getContext().getClock().getTime());
@@ -64,19 +64,19 @@ public class DAGClientHandler {
   }
 
   public DAGStatus getDAGStatus(String dagIdStr,
-      Set<StatusGetOpts> statusOptions) throws TezException {
+                                Set<StatusGetOpts> statusOptions) throws TezException {
     return getDAG(dagIdStr).getDAGStatus(statusOptions);
   }
 
   public DAGStatus getDAGStatus(String dagIdStr,
-      Set<StatusGetOpts> statusOptions, long timeout) throws TezException {
+                                Set<StatusGetOpts> statusOptions, long timeout) throws TezException {
     return getDAG(dagIdStr).getDAGStatus(statusOptions, timeout);
   }
 
   public VertexStatus getVertexStatus(String dagIdStr, String vertexName,
-      Set<StatusGetOpts> statusOptions) throws TezException {
+                                      Set<StatusGetOpts> statusOptions) throws TezException {
     VertexStatus status =
-        getDAG(dagIdStr).getVertexStatus(vertexName, statusOptions);
+      getDAG(dagIdStr).getVertexStatus(vertexName, statusOptions);
     if (status == null) {
       throw new TezException("Unknown vertexName: " + vertexName);
     }
@@ -102,10 +102,10 @@ public class DAGClientHandler {
       if (getAllDagIDs().contains(dagIdStr)) {
         LOG.debug("Looking for finished dagId {} current dag is {}", dagIdStr, currentDAGIdStr);
         throw new DAGNotRunningException("DAG " + dagIdStr + " Not running, current dag is " +
-            currentDAGIdStr);
+          currentDAGIdStr);
       } else {
         LOG.warn("Current DAGID : " + currentDAGIdStr + ", Looking for string (not found): " +
-            dagIdStr + ", dagIdObj: " + dagId);
+          dagIdStr + ", dagIdObj: " + dagId);
         throw new TezException("Unknown dagId: " + dagIdStr);
       }
     }
@@ -122,7 +122,7 @@ public class DAGClientHandler {
       throw new TezException(ie);
     }
     String message = callerUGI.toString();
-    if(null != Server.getRemoteAddress()) {
+    if (null != Server.getRemoteAddress()) {
       message += " at " + Server.getRemoteAddress();
     }
     return message;
@@ -131,13 +131,13 @@ public class DAGClientHandler {
   public void tryKillDAG(String dagIdStr) throws TezException {
     DAG dag = getDAG(dagIdStr);
     String message = "Sending client kill from " + getClientInfo() +
-        " to dag " + dagIdStr;
+      " to dag " + dagIdStr;
     LOG.info(message);
     dagAppMaster.tryKillDAG(dag, message);
   }
 
   public synchronized String submitDAG(DAGPlan dagPlan,
-      Map<String, LocalResource> additionalAmResources) throws TezException {
+                                       Map<String, LocalResource> additionalAmResources) throws TezException {
     return dagAppMaster.submitDAGToAppMaster(dagPlan, additionalAmResources);
   }
 
@@ -152,19 +152,19 @@ public class DAGClientHandler {
 
   public synchronized TezAppMasterStatus getTezAppMasterStatus() throws TezException {
     switch (dagAppMaster.getState()) {
-    case NEW:
-    case INITED:
-      return TezAppMasterStatus.INITIALIZING;
-    case IDLE:
-      return TezAppMasterStatus.READY;
-    case RECOVERING:
-    case RUNNING:
-      return TezAppMasterStatus.RUNNING;
-    case ERROR:
-    case FAILED:
-    case SUCCEEDED:
-    case KILLED:
-      return TezAppMasterStatus.SHUTDOWN;
+      case NEW:
+      case INITED:
+        return TezAppMasterStatus.INITIALIZING;
+      case IDLE:
+        return TezAppMasterStatus.READY;
+      case RECOVERING:
+      case RUNNING:
+        return TezAppMasterStatus.RUNNING;
+      case ERROR:
+      case FAILED:
+      case SUCCEEDED:
+      case KILLED:
+        return TezAppMasterStatus.SHUTDOWN;
     }
     return TezAppMasterStatus.INITIALIZING;
   }
@@ -185,5 +185,4 @@ public class DAGClientHandler {
   public long getLastHeartbeatTime() {
     return lastHeartbeatTime.get();
   }
-
 }

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,6 @@ package org.apache.tez.mapreduce.lib;
 
 import java.io.IOException;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.hadoop.classification.InterfaceAudience.Private;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -39,6 +37,9 @@ import org.apache.tez.common.counters.TezCounter;
 import org.apache.tez.mapreduce.hadoop.MRInputHelpers;
 import org.apache.tez.mapreduce.protos.MRRuntimeProtos.MRSplitProto;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Helper methods for InputFormat based Inputs. Private to Tez.
  */
@@ -49,21 +50,21 @@ public class MRInputUtils {
 
   public static TaskSplitMetaInfo getSplits(Configuration conf, int index) throws IOException {
     TaskSplitMetaInfo taskSplitMInfo = SplitMetaInfoReaderTez
-        .getSplitMetaInfo(conf, FileSystem.getLocal(conf), index);
+      .getSplitMetaInfo(conf, FileSystem.getLocal(conf), index);
     return taskSplitMInfo;
   }
 
   public static org.apache.hadoop.mapreduce.InputSplit getNewSplitDetailsFromEvent(
-      MRSplitProto splitProto, Configuration conf) throws IOException {
+    MRSplitProto splitProto, Configuration conf) throws IOException {
     SerializationFactory serializationFactory = new SerializationFactory(conf);
     return MRInputHelpers.createNewFormatSplitFromUserPayload(
-        splitProto, serializationFactory);
+      splitProto, serializationFactory);
   }
-  
+
   @SuppressWarnings("unchecked")
   public static org.apache.hadoop.mapreduce.InputSplit getNewSplitDetailsFromDisk(
-      TaskSplitIndex splitMetaInfo, JobConf jobConf, TezCounter splitBytesCounter)
-      throws IOException {
+    TaskSplitIndex splitMetaInfo, JobConf jobConf, TezCounter splitBytesCounter)
+    throws IOException {
     Path file = new Path(splitMetaInfo.getSplitLocation());
     long offset = splitMetaInfo.getStartOffset();
 
@@ -83,8 +84,9 @@ public class MRInputUtils {
       throw wrap;
     }
     SerializationFactory factory = new SerializationFactory(jobConf);
-    Deserializer<org.apache.hadoop.mapreduce.InputSplit> deserializer = (Deserializer<org.apache.hadoop.mapreduce.InputSplit>) factory
-        .getDeserializer(cls);
+    Deserializer<org.apache.hadoop.mapreduce.InputSplit> deserializer =
+      (Deserializer<org.apache.hadoop.mapreduce.InputSplit>) factory
+      .getDeserializer(cls);
     deserializer.open(inFile);
     org.apache.hadoop.mapreduce.InputSplit split = deserializer.deserialize(null);
     long pos = inFile.getPos();
@@ -97,7 +99,7 @@ public class MRInputUtils {
 
   @SuppressWarnings("unchecked")
   public static InputSplit getOldSplitDetailsFromDisk(TaskSplitIndex splitMetaInfo,
-      JobConf jobConf, TezCounter splitBytesCounter) throws IOException {
+                                                      JobConf jobConf, TezCounter splitBytesCounter) throws IOException {
     Path file = new Path(splitMetaInfo.getSplitLocation());
     FileSystem fs = FileSystem.getLocal(jobConf);
     file = fs.makeQualified(file);
@@ -116,8 +118,9 @@ public class MRInputUtils {
       throw wrap;
     }
     SerializationFactory factory = new SerializationFactory(jobConf);
-    Deserializer<org.apache.hadoop.mapred.InputSplit> deserializer = (Deserializer<org.apache.hadoop.mapred.InputSplit>) factory
-        .getDeserializer(cls);
+    Deserializer<org.apache.hadoop.mapred.InputSplit> deserializer =
+      (Deserializer<org.apache.hadoop.mapred.InputSplit>) factory
+      .getDeserializer(cls);
     deserializer.open(inFile);
     org.apache.hadoop.mapred.InputSplit split = deserializer.deserialize(null);
     long pos = inFile.getPos();
@@ -127,10 +130,10 @@ public class MRInputUtils {
     inFile.close();
     return split;
   }
-  
+
   @Private
   public static InputSplit getOldSplitDetailsFromEvent(MRSplitProto splitProto, Configuration conf)
-      throws IOException {
+    throws IOException {
     SerializationFactory serializationFactory = new SerializationFactory(conf);
     return MRInputHelpers.createOldFormatSplitFromUserPayload(splitProto, serializationFactory);
   }

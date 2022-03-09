@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,6 +34,7 @@ import org.apache.tez.history.parser.datamodel.Constants;
 import org.apache.tez.history.parser.datamodel.Event;
 import org.apache.tez.history.parser.datamodel.TaskAttemptInfo.DataDependencyEvent;
 import org.apache.tez.util.StringInterner;
+
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -47,7 +48,6 @@ public class Utils {
   private static final String LOG4J_CONFIGURATION = "log4j.configuration";
   private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(Utils.class);
 
-
   /**
    * Parse tez counters from json
    *
@@ -56,7 +56,7 @@ public class Utils {
    * @throws JSONException
    */
   public static TezCounters parseTezCountersFromJSON(JSONObject jsonObject)
-      throws JSONException {
+    throws JSONException {
     TezCounters counters = new TezCounters();
 
     if (jsonObject == null) {
@@ -69,7 +69,7 @@ public class Utils {
         JSONObject counterGroupNode = counterGroupNodes.optJSONObject(i);
         final String groupName = counterGroupNode.optString(Constants.COUNTER_GROUP_NAME);
         final String groupDisplayName = counterGroupNode.optString(
-            Constants.COUNTER_GROUP_DISPLAY_NAME, groupName);
+          Constants.COUNTER_GROUP_DISPLAY_NAME, groupName);
 
         CounterGroup group = counters.addGroup(groupName, groupDisplayName);
 
@@ -80,7 +80,7 @@ public class Utils {
           JSONObject counterNode = counterNodes.optJSONObject(j);
           final String counterName = counterNode.getString(Constants.COUNTER_NAME);
           final String counterDisplayName =
-              counterNode.optString(Constants.COUNTER_DISPLAY_NAME, counterName);
+            counterNode.optString(Constants.COUNTER_DISPLAY_NAME, counterName);
           final long counterValue = counterNode.getLong(Constants.COUNTER_VALUE);
           addCounter(group, counterName, counterDisplayName, counterValue);
         }
@@ -90,24 +90,24 @@ public class Utils {
   }
 
   private static void addCounter(CounterGroup group, String counterName, String displayName,
-      long counterValue) {
+                                 long counterValue) {
     try {
       TezCounter counter = group.findCounter(counterName, displayName);
       counter.setValue(counterValue);
-    } catch(IllegalArgumentException e) {
+    } catch (IllegalArgumentException e) {
       LOG.debug("Error finding {} in {} with displayName {}", counterName, group, displayName);
     }
   }
-  
-  public static List<DataDependencyEvent> parseDataEventDependencyFromJSON(JSONObject jsonObject) 
-      throws JSONException {
+
+  public static List<DataDependencyEvent> parseDataEventDependencyFromJSON(JSONObject jsonObject)
+    throws JSONException {
     List<DataDependencyEvent> events = Lists.newArrayList();
     JSONArray fields = jsonObject.optJSONArray(Constants.LAST_DATA_EVENTS);
-    for (int i=0; i<fields.length(); i++) {
+    for (int i = 0; i < fields.length(); i++) {
       JSONObject eventMap = fields.getJSONObject(i);
       events.add(new DataDependencyEvent(
-          StringInterner.intern(eventMap.optString(EntityTypes.TEZ_TASK_ATTEMPT_ID.name())),
-          eventMap.optLong(Constants.TIMESTAMP)));
+        StringInterner.intern(eventMap.optString(EntityTypes.TEZ_TASK_ATTEMPT_ID.name())),
+        eventMap.optLong(Constants.TIMESTAMP)));
     }
     return events;
   }
@@ -120,7 +120,7 @@ public class Utils {
    * @throws JSONException
    */
   public static void parseEvents(JSONArray eventNodes, List<Event> eventList) throws
-      JSONException {
+    JSONException {
     if (eventNodes == null) {
       return;
     }
@@ -129,7 +129,7 @@ public class Utils {
       final String eventInfo = eventNode.optString(Constants.EVENT_INFO);
       final String eventType = eventNode.optString(Constants.EVENT_TYPE);
       final long time = eventNode.optLong(Constants.EVENT_TIME_STAMP) == 0
-          ? eventNode.optLong(Constants.TIMESTAMP) : eventNode.optLong(Constants.EVENT_TIME_STAMP);
+        ? eventNode.optLong(Constants.TIMESTAMP) : eventNode.optLong(Constants.EVENT_TIME_STAMP);
 
       Event event = new Event(eventInfo, eventType, time);
 
@@ -141,9 +141,8 @@ public class Utils {
     if (Strings.isNullOrEmpty(System.getProperty(LOG4J_CONFIGURATION))) {
       //By default print to console with INFO level
       Logger.getRootLogger().
-          addAppender(new ConsoleAppender(new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
+        addAppender(new ConsoleAppender(new PatternLayout(PatternLayout.TTCC_CONVERSION_PATTERN)));
       Logger.getRootLogger().setLevel(Level.INFO);
     }
   }
-
 }

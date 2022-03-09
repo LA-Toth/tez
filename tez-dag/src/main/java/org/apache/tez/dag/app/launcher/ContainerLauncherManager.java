@@ -17,55 +17,52 @@ package org.apache.tez.dag.app.launcher;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.tez.common.Preconditions;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.service.AbstractService;
 import org.apache.hadoop.yarn.api.records.NodeId;
 import org.apache.hadoop.yarn.event.Event;
 import org.apache.hadoop.yarn.event.EventHandler;
 import org.apache.tez.Utils;
+import org.apache.tez.common.Preconditions;
 import org.apache.tez.common.ReflectionUtils;
 import org.apache.tez.common.security.JobTokenSecretManager;
 import org.apache.tez.dag.api.NamedEntityDescriptor;
 import org.apache.tez.dag.api.TezConstants;
 import org.apache.tez.dag.api.TezException;
+import org.apache.tez.dag.api.TezUncheckedException;
 import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.dag.app.AppContext;
+import org.apache.tez.dag.app.ContainerLauncherContextImpl;
 import org.apache.tez.dag.app.ServicePluginLifecycleAbstractService;
+import org.apache.tez.dag.app.TaskCommunicatorManagerInterface;
 import org.apache.tez.dag.app.dag.event.DAGAppMasterEventType;
 import org.apache.tez.dag.app.dag.event.DAGAppMasterEventUserServiceFatalError;
+import org.apache.tez.dag.app.rm.ContainerLauncherEvent;
+import org.apache.tez.dag.app.rm.ContainerLauncherLaunchRequestEvent;
 import org.apache.tez.dag.records.TezDAGID;
 import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.serviceplugins.api.ContainerLaunchRequest;
 import org.apache.tez.serviceplugins.api.ContainerLauncher;
 import org.apache.tez.serviceplugins.api.ContainerLauncherContext;
 import org.apache.tez.serviceplugins.api.ContainerStopRequest;
-import org.apache.tez.dag.api.TezUncheckedException;
-import org.apache.tez.dag.app.AppContext;
-import org.apache.tez.dag.app.ContainerLauncherContextImpl;
-import org.apache.tez.dag.app.TaskCommunicatorManagerInterface;
-import org.apache.tez.dag.app.rm.ContainerLauncherEvent;
-import org.apache.tez.dag.app.rm.ContainerLauncherLaunchRequestEvent;
 import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.ServicePluginError;
+
+import com.google.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ContainerLauncherManager extends AbstractService
-    implements EventHandler<ContainerLauncherEvent> {
+  implements EventHandler<ContainerLauncherEvent> {
 
   static final Logger LOG = LoggerFactory.getLogger(TezContainerLauncherImpl.class);
-
+  protected final ServicePluginLifecycleAbstractService[] containerLauncherServiceWrappers;
   @VisibleForTesting
   final ContainerLauncherWrapper containerLaunchers[];
   @VisibleForTesting
   final ContainerLauncherContext containerLauncherContexts[];
-  protected final ServicePluginLifecycleAbstractService[] containerLauncherServiceWrappers;
   private final AppContext appContext;
   private final boolean isIncompleteCtor;
-
-
 
   // Accepting conf to setup final parameters, if required.
   public ContainerLauncherManager(AppContext context,
@@ -84,15 +81,16 @@ public class ContainerLauncherManager extends AbstractService
     containerLaunchers = new ContainerLauncherWrapper[containerLauncherDescriptors.size()];
     containerLauncherServiceWrappers = new ServicePluginLifecycleAbstractService[containerLauncherDescriptors.size()];
 
-
     for (int i = 0; i < containerLauncherDescriptors.size(); i++) {
       UserPayload userPayload = containerLauncherDescriptors.get(i).getUserPayload();
       ContainerLauncherContext containerLauncherContext =
-          new ContainerLauncherContextImpl(context, this, taskCommunicatorManagerInterface, userPayload, i);
+        new ContainerLauncherContextImpl(context, this, taskCommunicatorManagerInterface, userPayload, i);
       containerLauncherContexts[i] = containerLauncherContext;
-      containerLaunchers[i] = new ContainerLauncherWrapper(createContainerLauncher(containerLauncherDescriptors.get(i), context,
+      containerLaunchers[i] = new ContainerLauncherWrapper(
+        createContainerLauncher(containerLauncherDescriptors.get(i), context,
           containerLauncherContext, taskCommunicatorManagerInterface, workingDirectory, i, isLocalMode));
-      containerLauncherServiceWrappers[i] = new ServicePluginLifecycleAbstractService<>(containerLaunchers[i].getContainerLauncher());
+      containerLauncherServiceWrappers[i] = new ServicePluginLifecycleAbstractService<>(
+        containerLaunchers[i].getContainerLauncher());
     }
   }
 
@@ -117,21 +115,21 @@ public class ContainerLauncherManager extends AbstractService
 
   @VisibleForTesting
   ContainerLauncher createContainerLauncher(
-      NamedEntityDescriptor containerLauncherDescriptor,
-      AppContext context,
-      ContainerLauncherContext containerLauncherContext,
-      TaskCommunicatorManagerInterface taskCommunicatorManagerInterface,
-      String workingDirectory,
-      int containerLauncherIndex,
-      boolean isPureLocalMode) throws TezException {
+    NamedEntityDescriptor containerLauncherDescriptor,
+    AppContext context,
+    ContainerLauncherContext containerLauncherContext,
+    TaskCommunicatorManagerInterface taskCommunicatorManagerInterface,
+    String workingDirectory,
+    int containerLauncherIndex,
+    boolean isPureLocalMode) throws TezException {
     if (containerLauncherDescriptor.getEntityName().equals(
-        TezConstants.getTezYarnServicePluginName())) {
+      TezConstants.getTezYarnServicePluginName())) {
       return createYarnContainerLauncher(containerLauncherContext);
     } else if (containerLauncherDescriptor.getEntityName()
-        .equals(TezConstants.getTezUberServicePluginName())) {
+      .equals(TezConstants.getTezUberServicePluginName())) {
       return createUberContainerLauncher(containerLauncherContext, context,
-          taskCommunicatorManagerInterface,
-          workingDirectory, isPureLocalMode);
+        taskCommunicatorManagerInterface,
+        workingDirectory, isPureLocalMode);
     } else {
       return createCustomContainerLauncher(containerLauncherContext, containerLauncherDescriptor);
     }
@@ -155,9 +153,9 @@ public class ContainerLauncherManager extends AbstractService
     // some kind of runtime binding of parameters in the payload to work correctly.
     try {
       return
-          new LocalContainerLauncher(containerLauncherContext, context,
-              taskCommunicatorManagerInterface,
-              workingDirectory, isLocalMode);
+        new LocalContainerLauncher(containerLauncherContext, context,
+          taskCommunicatorManagerInterface,
+          workingDirectory, isLocalMode);
     } catch (UnknownHostException e) {
       throw new TezUncheckedException(e);
     }
@@ -167,37 +165,37 @@ public class ContainerLauncherManager extends AbstractService
   @SuppressWarnings("unchecked")
   ContainerLauncher createCustomContainerLauncher(ContainerLauncherContext containerLauncherContext,
                                                   NamedEntityDescriptor containerLauncherDescriptor)
-                                                      throws TezException {
+    throws TezException {
     LOG.info("Creating container launcher {}:{} ", containerLauncherDescriptor.getEntityName(),
-        containerLauncherDescriptor.getClassName());
+      containerLauncherDescriptor.getClassName());
     return ReflectionUtils.createClazzInstance(containerLauncherDescriptor.getClassName(),
-        new Class[]{ContainerLauncherContext.class},
-        new Object[]{containerLauncherContext});
+      new Class[]{ContainerLauncherContext.class},
+      new Object[]{containerLauncherContext});
   }
 
   @Override
   public void serviceInit(Configuration conf) {
-    for (int i = 0 ; i < containerLaunchers.length ; i++) {
+    for (int i = 0; i < containerLaunchers.length; i++) {
       containerLauncherServiceWrappers[i].init(conf);
     }
   }
 
   @Override
   public void serviceStart() {
-    for (int i = 0 ; i < containerLaunchers.length ; i++) {
+    for (int i = 0; i < containerLaunchers.length; i++) {
       containerLauncherServiceWrappers[i].start();
     }
   }
 
   @Override
   public void serviceStop() {
-    for (int i = 0 ; i < containerLaunchers.length ; i++) {
+    for (int i = 0; i < containerLaunchers.length; i++) {
       containerLauncherServiceWrappers[i].stop();
     }
   }
 
   public void dagComplete(TezDAGID dag, JobTokenSecretManager secretManager) {
-    for (int i = 0 ; i < containerLaunchers.length ; i++) {
+    for (int i = 0; i < containerLaunchers.length; i++) {
       containerLaunchers[i].dagComplete(dag, secretManager);
     }
   }
@@ -213,7 +211,6 @@ public class ContainerLauncherManager extends AbstractService
     // the context has updated information.
   }
 
-
   @Override
   public void handle(ContainerLauncherEvent event) {
     int launcherId = event.getLauncherId();
@@ -223,40 +220,40 @@ public class ContainerLauncherManager extends AbstractService
       case CONTAINER_LAUNCH_REQUEST:
         ContainerLauncherLaunchRequestEvent launchEvent = (ContainerLauncherLaunchRequestEvent) event;
         ContainerLaunchRequest launchRequest =
-            new ContainerLaunchRequest(launchEvent.getNodeId(), launchEvent.getContainerId(),
-                launchEvent.getContainerToken(), launchEvent.getContainerLaunchContext(),
-                launchEvent.getContainer(), schedulerName,
-                taskCommName);
+          new ContainerLaunchRequest(launchEvent.getNodeId(), launchEvent.getContainerId(),
+            launchEvent.getContainerToken(), launchEvent.getContainerLaunchContext(),
+            launchEvent.getContainer(), schedulerName,
+            taskCommName);
         try {
           containerLaunchers[launcherId].launchContainer(launchRequest);
         } catch (Exception e) {
           String msg = "Error when launching container"
-              + ", containerLauncher=" + Utils.getContainerLauncherIdentifierString(launcherId, appContext)
-              + ", scheduler=" + Utils.getTaskSchedulerIdentifierString(event.getSchedulerId(), appContext)
-              + ", taskCommunicator=" + Utils.getTaskCommIdentifierString(event.getTaskCommId(), appContext);
+            + ", containerLauncher=" + Utils.getContainerLauncherIdentifierString(launcherId, appContext)
+            + ", scheduler=" + Utils.getTaskSchedulerIdentifierString(event.getSchedulerId(), appContext)
+            + ", taskCommunicator=" + Utils.getTaskCommIdentifierString(event.getTaskCommId(), appContext);
           LOG.error(msg, e);
           sendEvent(
-              new DAGAppMasterEventUserServiceFatalError(
-                  DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR,
-                  msg, e));
+            new DAGAppMasterEventUserServiceFatalError(
+              DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR,
+              msg, e));
         }
         break;
       case CONTAINER_STOP_REQUEST:
         ContainerStopRequest stopRequest =
-            new ContainerStopRequest(event.getNodeId(), event.getContainerId(),
-                event.getContainerToken(), schedulerName, taskCommName);
+          new ContainerStopRequest(event.getNodeId(), event.getContainerId(),
+            event.getContainerToken(), schedulerName, taskCommName);
         try {
           containerLaunchers[launcherId].stopContainer(stopRequest);
         } catch (Exception e) {
           String msg = "Error when stopping container"
-              + ", containerLauncher=" + Utils.getContainerLauncherIdentifierString(launcherId, appContext)
-              + ", scheduler=" + Utils.getTaskSchedulerIdentifierString(event.getSchedulerId(), appContext)
-              + ", taskCommunicator=" + Utils.getTaskCommIdentifierString(event.getTaskCommId(), appContext);
+            + ", containerLauncher=" + Utils.getContainerLauncherIdentifierString(launcherId, appContext)
+            + ", scheduler=" + Utils.getTaskSchedulerIdentifierString(event.getSchedulerId(), appContext)
+            + ", taskCommunicator=" + Utils.getTaskCommIdentifierString(event.getTaskCommId(), appContext);
           LOG.error(msg, e);
           sendEvent(
-              new DAGAppMasterEventUserServiceFatalError(
-                  DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR,
-                  msg, e));
+            new DAGAppMasterEventUserServiceFatalError(
+              DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR,
+              msg, e));
         }
         break;
     }
@@ -267,22 +264,22 @@ public class ContainerLauncherManager extends AbstractService
                           DagInfo dagInfo) {
     if (servicePluginError.getErrorType() == ServicePluginError.ErrorType.PERMANENT) {
       String msg = "Fatal Error reported by ContainerLauncher"
-          + ", containerLauncher=" +
-          Utils.getContainerLauncherIdentifierString(containerLauncherIndex, appContext)
-          + ", servicePluginError=" + servicePluginError
-          + ", diagnostics= " + (diagnostics == null ? "" : diagnostics);
+        + ", containerLauncher=" +
+        Utils.getContainerLauncherIdentifierString(containerLauncherIndex, appContext)
+        + ", servicePluginError=" + servicePluginError
+        + ", diagnostics= " + (diagnostics == null ? "" : diagnostics);
       LOG.error(msg);
       sendEvent(
-          new DAGAppMasterEventUserServiceFatalError(
-              DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR,
-              msg, null));
+        new DAGAppMasterEventUserServiceFatalError(
+          DAGAppMasterEventType.CONTAINER_LAUNCHER_SERVICE_FATAL_ERROR,
+          msg, null));
     } else {
       Utils
-          .processNonFatalServiceErrorReport(
-              Utils.getContainerLauncherIdentifierString(containerLauncherIndex, appContext),
-              servicePluginError,
-              diagnostics, dagInfo,
-              appContext, "ContainerLauncher");
+        .processNonFatalServiceErrorReport(
+          Utils.getContainerLauncherIdentifierString(containerLauncherIndex, appContext),
+          servicePluginError,
+          diagnostics, dagInfo,
+          appContext, "ContainerLauncher");
     }
   }
 

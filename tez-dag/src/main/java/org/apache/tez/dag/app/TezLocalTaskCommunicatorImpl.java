@@ -18,8 +18,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
 import org.apache.tez.dag.api.TezUncheckedException;
+import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,7 @@ public class TezLocalTaskCommunicatorImpl extends TezTaskCommunicatorImpl {
   private static final Logger LOG = LoggerFactory.getLogger(TezLocalTaskCommunicatorImpl.class);
 
   public TezLocalTaskCommunicatorImpl(
-      TaskCommunicatorContext taskCommunicatorContext) {
+    TaskCommunicatorContext taskCommunicatorContext) {
     super(taskCommunicatorContext);
   }
 

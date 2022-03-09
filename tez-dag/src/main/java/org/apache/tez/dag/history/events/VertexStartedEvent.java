@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,14 +20,15 @@ package org.apache.tez.dag.history.events;
 
 import java.io.IOException;
 
-import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import org.apache.tez.dag.app.dag.VertexState;
 import org.apache.tez.dag.history.HistoryEvent;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.dag.records.TezVertexID;
 import org.apache.tez.dag.records.VertexIDAware;
 import org.apache.tez.dag.recovery.records.RecoveryProtos.VertexStartedProto;
+
+import com.google.protobuf.CodedInputStream;
+import com.google.protobuf.CodedOutputStream;
 
 public class VertexStartedEvent implements HistoryEvent, VertexIDAware {
 
@@ -39,7 +40,7 @@ public class VertexStartedEvent implements HistoryEvent, VertexIDAware {
   }
 
   public VertexStartedEvent(TezVertexID vertexId,
-      long startRequestedTime, long startTime) {
+                            long startRequestedTime, long startTime) {
     this.vertexID = vertexId;
     this.startRequestedTime = startRequestedTime;
     this.startTime = startTime;
@@ -62,10 +63,10 @@ public class VertexStartedEvent implements HistoryEvent, VertexIDAware {
 
   public VertexStartedProto toProto() {
     return VertexStartedProto.newBuilder()
-        .setVertexId(vertexID.toString())
-        .setStartRequestedTime(startRequestedTime)
-        .setStartTime(startTime)
-        .build();
+      .setVertexId(vertexID.toString())
+      .setStartRequestedTime(startRequestedTime)
+      .setStartTime(startTime)
+      .build();
   }
 
   public void fromProto(VertexStartedProto proto) {
@@ -91,8 +92,8 @@ public class VertexStartedEvent implements HistoryEvent, VertexIDAware {
   @Override
   public String toString() {
     return "vertexId=" + vertexID
-        + ", startRequestedTime=" + startRequestedTime
-        + ", startedTime=" + startTime;
+      + ", startRequestedTime=" + startRequestedTime
+      + ", startedTime=" + startTime;
   }
 
   @Override

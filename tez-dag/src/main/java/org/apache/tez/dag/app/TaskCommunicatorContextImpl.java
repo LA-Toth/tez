@@ -14,24 +14,29 @@
 
 package org.apache.tez.dag.app;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.Objects;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Function;
-import org.apache.tez.common.Preconditions;
-import com.google.common.collect.Iterables;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
 import org.apache.hadoop.yarn.api.records.ContainerId;
+import org.apache.tez.common.Preconditions;
+import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.UserPayload;
+import org.apache.tez.dag.api.event.VertexState;
+import org.apache.tez.dag.api.event.VertexStateUpdate;
+import org.apache.tez.dag.app.dag.DAG;
 import org.apache.tez.dag.app.dag.Task;
+import org.apache.tez.dag.app.dag.Vertex;
+import org.apache.tez.dag.app.dag.VertexStateUpdateListener;
 import org.apache.tez.dag.app.rm.container.AMContainer;
+import org.apache.tez.dag.records.TezTaskAttemptID;
 import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.serviceplugins.api.DagInfo;
 import org.apache.tez.serviceplugins.api.ServicePluginError;
@@ -39,13 +44,10 @@ import org.apache.tez.serviceplugins.api.TaskAttemptEndReason;
 import org.apache.tez.serviceplugins.api.TaskCommunicatorContext;
 import org.apache.tez.serviceplugins.api.TaskHeartbeatRequest;
 import org.apache.tez.serviceplugins.api.TaskHeartbeatResponse;
-import org.apache.tez.dag.api.TezException;
-import org.apache.tez.dag.api.event.VertexState;
-import org.apache.tez.dag.api.event.VertexStateUpdate;
-import org.apache.tez.dag.app.dag.DAG;
-import org.apache.tez.dag.app.dag.Vertex;
-import org.apache.tez.dag.app.dag.VertexStateUpdateListener;
-import org.apache.tez.dag.records.TezTaskAttemptID;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
 
 @InterfaceAudience.Private
 public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, VertexStateUpdateListener {
@@ -98,7 +100,7 @@ public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, Ver
 
   @Override
   public TaskHeartbeatResponse heartbeat(TaskHeartbeatRequest request) throws IOException,
-      TezException {
+    TezException {
     return taskCommunicatorManager.heartbeat(request);
   }
 
@@ -106,7 +108,7 @@ public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, Ver
   public boolean isKnownContainer(ContainerId containerId) {
     AMContainer amContainer = context.getAllContainers().get(containerId);
     if (amContainer == null ||
-        amContainer.getTaskCommunicatorIdentifier() != taskCommunicatorIndex) {
+      amContainer.getTaskCommunicatorIdentifier() != taskCommunicatorIndex) {
       return false;
     } else {
       return true;
@@ -152,7 +154,7 @@ public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, Ver
                          TaskAttemptEndReason taskAttemptEndReason,
                          @Nullable String diagnostics) {
     taskCommunicatorManager
-        .taskFailed(taskAttemptId, taskFailureType, taskAttemptEndReason, diagnostics);
+      .taskFailed(taskAttemptId, taskFailureType, taskAttemptEndReason, diagnostics);
   }
 
   @Override
@@ -161,7 +163,7 @@ public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, Ver
     Objects.requireNonNull(vertexName, "VertexName cannot be null: " + vertexName);
     DAG dag = getDag();
     dag.getStateChangeNotifier().registerForVertexUpdates(vertexName, stateSet,
-        this);
+      this);
   }
 
   @Override
@@ -216,7 +218,7 @@ public class TaskCommunicatorContextImpl implements TaskCommunicatorContext, Ver
   @Override
   public long getFirstAttemptStartTime(String vertexName, int taskIndex) {
     Objects.requireNonNull(vertexName, "VertexName must be specified");
-    Preconditions.checkArgument(taskIndex >=0, "TaskIndex must be > 0");
+    Preconditions.checkArgument(taskIndex >= 0, "TaskIndex must be > 0");
     DAG dag = getDag();
     Vertex vertex = dag.getVertex(vertexName);
     Task task = vertex.getTask(taskIndex);

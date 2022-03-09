@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,19 +24,20 @@ import java.util.Objects;
 
 import javax.annotation.Nullable;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
+import org.apache.hadoop.classification.InterfaceAudience.Public;
+import org.apache.hadoop.classification.InterfaceStability.Evolving;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.tez.mapreduce.grouper.GroupedSplitContainer;
 import org.apache.tez.mapreduce.grouper.MapReduceSplitContainer;
 import org.apache.tez.mapreduce.grouper.SplitContainer;
 import org.apache.tez.mapreduce.grouper.SplitSizeEstimatorWrapperMapReduce;
 import org.apache.tez.mapreduce.grouper.TezSplitGrouper;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.hadoop.classification.InterfaceAudience.Public;
-import org.apache.hadoop.classification.InterfaceStability.Evolving;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.InputSplit;
 
 /**
  * Helper that provides a grouping of input splits based 
@@ -46,14 +47,11 @@ import org.apache.hadoop.mapreduce.InputSplit;
 @Public
 @Evolving
 public class TezMapReduceSplitsGrouper extends TezSplitGrouper {
-  private static final Logger LOG = LoggerFactory.getLogger(TezMapReduceSplitsGrouper.class);
-
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
   @Deprecated
   public static final String TEZ_GROUPING_SPLIT_COUNT = TezSplitGrouper.TEZ_GROUPING_SPLIT_COUNT;
-
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
@@ -63,8 +61,8 @@ public class TezMapReduceSplitsGrouper extends TezSplitGrouper {
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
   @Deprecated
-  public static final boolean TEZ_GROUPING_SPLIT_BY_LENGTH_DEFAULT = TezSplitGrouper.TEZ_GROUPING_SPLIT_BY_LENGTH_DEFAULT;
-
+  public static final boolean TEZ_GROUPING_SPLIT_BY_LENGTH_DEFAULT =
+    TezSplitGrouper.TEZ_GROUPING_SPLIT_BY_LENGTH_DEFAULT;
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
@@ -75,7 +73,6 @@ public class TezMapReduceSplitsGrouper extends TezSplitGrouper {
    */
   @Deprecated
   public static final boolean TEZ_GROUPING_SPLIT_BY_COUNT_DEFAULT = TezSplitGrouper.TEZ_GROUPING_SPLIT_BY_COUNT_DEFAULT;
-
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
@@ -86,7 +83,6 @@ public class TezMapReduceSplitsGrouper extends TezSplitGrouper {
    */
   @Deprecated
   public static final float TEZ_GROUPING_SPLIT_WAVES_DEFAULT = TezSplitGrouper.TEZ_GROUPING_SPLIT_WAVES_DEFAULT;
-
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
@@ -97,7 +93,6 @@ public class TezMapReduceSplitsGrouper extends TezSplitGrouper {
    */
   @Deprecated
   public static final long TEZ_GROUPING_SPLIT_MAX_SIZE_DEFAULT = TezSplitGrouper.TEZ_GROUPING_SPLIT_MAX_SIZE_DEFAULT;
-
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
@@ -108,19 +103,18 @@ public class TezMapReduceSplitsGrouper extends TezSplitGrouper {
    */
   @Deprecated
   public static final long TEZ_GROUPING_SPLIT_MIN_SIZE_DEFAULT = TezSplitGrouper.TEZ_GROUPING_SPLIT_MIN_SIZE_DEFAULT;
-
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
   @Deprecated
-  public static final String TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION = 
-                                              TezSplitGrouper.TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION;
+  public static final String TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION =
+    TezSplitGrouper.TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION;
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
   @Deprecated
-  public static final float TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION_DEFAULT = TezSplitGrouper.TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION_DEFAULT;
-
+  public static final float TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION_DEFAULT =
+    TezSplitGrouper.TEZ_GROUPING_RACK_SPLIT_SIZE_REDUCTION_DEFAULT;
   /**
    * @deprecated See equivalent in {@link TezSplitGrouper}
    */
@@ -131,63 +125,7 @@ public class TezMapReduceSplitsGrouper extends TezSplitGrouper {
    */
   @Deprecated
   public static final boolean TEZ_GROUPING_REPEATABLE_DEFAULT = TezSplitGrouper.TEZ_GROUPING_REPEATABLE_DEFAULT;
-
-
-  public List<InputSplit> getGroupedSplits(Configuration conf,
-      List<InputSplit> originalSplits, int desiredNumSplits,
-      String wrappedInputFormatName) throws IOException, InterruptedException {
-    return getGroupedSplits(conf, originalSplits, desiredNumSplits,
-        wrappedInputFormatName, null);
-  }
-
-  public List<InputSplit> getGroupedSplits(Configuration conf,
-                                           List<InputSplit> originalSplits, int desiredNumSplits,
-                                           String wrappedInputFormatName,
-                                           SplitSizeEstimator estimator) throws IOException,
-      InterruptedException {
-    return getGroupedSplits(conf, originalSplits, desiredNumSplits, wrappedInputFormatName, estimator, null);
-  }
-
-  public List<InputSplit> getGroupedSplits(Configuration conf,
-                                           List<InputSplit> originalSplits, int desiredNumSplits,
-                                           String wrappedInputFormatName,
-                                           SplitSizeEstimator estimator,
-                                           SplitLocationProvider locationProvider) throws IOException,
-      InterruptedException {
-    Objects.requireNonNull(originalSplits, "Splits must be specified");
-    List<SplitContainer> originalSplitContainers = Lists.transform(originalSplits,
-        new Function<InputSplit, SplitContainer>() {
-          @Override
-          public SplitContainer apply(InputSplit input) {
-            return new MapReduceSplitContainer(input);
-          }
-        });
-
-
-    return Lists.transform(super
-            .getGroupedSplits(conf, originalSplitContainers, desiredNumSplits,
-                wrappedInputFormatName, estimator == null ? null :
-                    new SplitSizeEstimatorWrapperMapReduce(estimator),
-                locationProvider == null ? null :
-                    new SplitLocationProviderMapReduce(locationProvider)),
-        new Function<GroupedSplitContainer, InputSplit>() {
-          @Override
-          public InputSplit apply(GroupedSplitContainer input) {
-
-            List<InputSplit> underlyingSplits = Lists.transform(input.getWrappedSplitContainers(),
-                new Function<SplitContainer, InputSplit>() {
-                  @Override
-                  public InputSplit apply(SplitContainer input) {
-                    return ((MapReduceSplitContainer) input).getRawSplit();
-                  }
-                });
-
-            return new TezGroupedSplit(underlyingSplits, input.getWrappedInputFormatName(),
-                input.getLocations(), input.getRack(), input.getLength());
-
-          }
-        });
-  }
+  private static final Logger LOG = LoggerFactory.getLogger(TezMapReduceSplitsGrouper.class);
 
   /**
    * Builder that can be used to configure grouping in Tez
@@ -205,6 +143,60 @@ public class TezMapReduceSplitsGrouper extends TezSplitGrouper {
   @Deprecated
   public static TezMRSplitsGrouperConfigBuilder createConfigBuilder(Configuration conf) {
     return new TezMRSplitsGrouperConfigBuilder(conf);
+  }
+
+  public List<InputSplit> getGroupedSplits(Configuration conf,
+                                           List<InputSplit> originalSplits, int desiredNumSplits,
+                                           String wrappedInputFormatName) throws IOException, InterruptedException {
+    return getGroupedSplits(conf, originalSplits, desiredNumSplits,
+      wrappedInputFormatName, null);
+  }
+
+  public List<InputSplit> getGroupedSplits(Configuration conf,
+                                           List<InputSplit> originalSplits, int desiredNumSplits,
+                                           String wrappedInputFormatName,
+                                           SplitSizeEstimator estimator) throws IOException,
+    InterruptedException {
+    return getGroupedSplits(conf, originalSplits, desiredNumSplits, wrappedInputFormatName, estimator, null);
+  }
+
+  public List<InputSplit> getGroupedSplits(Configuration conf,
+                                           List<InputSplit> originalSplits, int desiredNumSplits,
+                                           String wrappedInputFormatName,
+                                           SplitSizeEstimator estimator,
+                                           SplitLocationProvider locationProvider) throws IOException,
+    InterruptedException {
+    Objects.requireNonNull(originalSplits, "Splits must be specified");
+    List<SplitContainer> originalSplitContainers = Lists.transform(originalSplits,
+      new Function<InputSplit, SplitContainer>() {
+        @Override
+        public SplitContainer apply(InputSplit input) {
+          return new MapReduceSplitContainer(input);
+        }
+      });
+
+    return Lists.transform(super
+        .getGroupedSplits(conf, originalSplitContainers, desiredNumSplits,
+          wrappedInputFormatName, estimator == null ? null :
+            new SplitSizeEstimatorWrapperMapReduce(estimator),
+          locationProvider == null ? null :
+            new SplitLocationProviderMapReduce(locationProvider)),
+      new Function<GroupedSplitContainer, InputSplit>() {
+        @Override
+        public InputSplit apply(GroupedSplitContainer input) {
+
+          List<InputSplit> underlyingSplits = Lists.transform(input.getWrappedSplitContainers(),
+            new Function<SplitContainer, InputSplit>() {
+              @Override
+              public InputSplit apply(SplitContainer input) {
+                return ((MapReduceSplitContainer) input).getRawSplit();
+              }
+            });
+
+          return new TezGroupedSplit(underlyingSplits, input.getWrappedInputFormatName(),
+            input.getLocations(), input.getRack(), input.getLength());
+        }
+      });
   }
 
   /**

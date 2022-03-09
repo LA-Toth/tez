@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.tez.dag.api.TezConfiguration;
 import org.apache.tez.dag.history.logging.proto.HistoryLoggerProtos.ManifestEntryProto;
+
 import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,21 +63,25 @@ public class DagManifesFileScanner implements Closeable {
   public DagManifesFileScanner(DatePartitionedLogger<ManifestEntryProto> manifestLogger) {
     this.manifestLogger = manifestLogger;
     this.syncTime = manifestLogger.getConfig().getLong(
-        TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_SYNC_WINDOWN_SECS,
-        TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_SYNC_WINDOWN_SECS_DEFAULT);
+      TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_SYNC_WINDOWN_SECS,
+      TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_SYNC_WINDOWN_SECS_DEFAULT);
     this.withDoas = manifestLogger.getConfig().getBoolean(
-        TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_DOAS,
-        TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_DOAS_DEFAULT);
+      TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_DOAS,
+      TezConfiguration.TEZ_HISTORY_LOGGING_PROTO_DOAS_DEFAULT);
     this.setOffset(LocalDate.ofEpochDay(0));
   }
 
-  // Update the offset version and checks below to ensure correct versions are supported.
-  // All public to simplify json conversion.
-  public static class DagManifestOffset {
-    public int version;
-    public String scanDir;
-    public Map<String, Long> offsets;
-    public Map<String, Integer> retryCount;
+  public String getOffset() {
+    try {
+      DagManifestOffset offset = new DagManifestOffset();
+      offset.version = SCANNER_OFFSET_VERSION;
+      offset.scanDir = scanDir;
+      offset.offsets = offsets;
+      offset.retryCount = retryCount;
+      return mapper.writeValueAsString(offset);
+    } catch (IOException e) {
+      throw new RuntimeException("Unexpected exception while converting to json.", e);
+    }
   }
 
   public void setOffset(String offset) {
@@ -99,19 +104,6 @@ public class DagManifesFileScanner implements Closeable {
     this.offsets = new HashMap<>();
     this.retryCount = new HashMap<>();
     this.newFiles = new ArrayList<>();
-  }
-
-  public String getOffset() {
-    try {
-      DagManifestOffset offset = new DagManifestOffset();
-      offset.version = SCANNER_OFFSET_VERSION;
-      offset.scanDir = scanDir;
-      offset.offsets = offsets;
-      offset.retryCount = retryCount;
-      return mapper.writeValueAsString(offset);
-    } catch (IOException e) {
-      throw new RuntimeException("Unexpected exception while converting to json.", e);
-    }
   }
 
   public ManifestEntryProto getNext() throws IOException {
@@ -164,7 +156,7 @@ public class DagManifesFileScanner implements Closeable {
     };
     if (withDoas) {
       UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(
-          status.getOwner(), UserGroupInformation.getCurrentUser());
+        status.getOwner(), UserGroupInformation.getCurrentUser());
       return proxyUser.doAs(action);
     } else {
       return action.run();
@@ -221,5 +213,14 @@ public class DagManifesFileScanner implements Closeable {
       loadNewFiles(todayDir);
     }
     return true;
+  }
+
+  // Update the offset version and checks below to ensure correct versions are supported.
+  // All public to simplify json conversion.
+  public static class DagManifestOffset {
+    public int version;
+    public String scanDir;
+    public Map<String, Long> offsets;
+    public Map<String, Integer> retryCount;
   }
 }

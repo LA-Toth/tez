@@ -18,62 +18,64 @@
 
 package org.apache.tez.common;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
 import org.apache.tez.runtime.api.AbstractLogicalInput;
 import org.apache.tez.runtime.api.LogicalInput;
 import org.apache.tez.runtime.api.ProcessorContext;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class ProgressHelper {
   private static final Logger LOG =
-      LoggerFactory.getLogger(ProgressHelper.class);
+    LoggerFactory.getLogger(ProgressHelper.class);
   private static final float MIN_PROGRESS_VAL = 0.0f;
   private static final float MAX_PROGRESS_VAL = 1.0f;
-  private final String processorName;
   protected final Map<String, LogicalInput> inputs;
+  private final String processorName;
   private final ProcessorContext processorContext;
   private final AtomicReference<ScheduledFuture<?>> periodicMonitorTaskRef;
   private long monitorExecPeriod;
   private volatile ScheduledExecutorService scheduledExecutorService;
 
-  public static final float processProgress(float val) {
-    return (Float.isNaN(val)) ? MIN_PROGRESS_VAL
-        : Math.max(MIN_PROGRESS_VAL, Math.min(MAX_PROGRESS_VAL, val));
-  }
-
-  public static final boolean isProgressWithinRange(float val) {
-    return (val <= MAX_PROGRESS_VAL && val >= MIN_PROGRESS_VAL);
-  }
-
   public ProgressHelper(Map<String, LogicalInput> inputsParam,
-      ProcessorContext context, String processorName) {
+                        ProcessorContext context, String processorName) {
     this.periodicMonitorTaskRef = new AtomicReference<>(null);
     this.inputs = inputsParam;
     this.processorContext = context;
     this.processorName = processorName;
   }
 
+  public static final float processProgress(float val) {
+    return (Float.isNaN(val)) ? MIN_PROGRESS_VAL
+      : Math.max(MIN_PROGRESS_VAL, Math.min(MAX_PROGRESS_VAL, val));
+  }
+
+  public static final boolean isProgressWithinRange(float val) {
+    return (val <= MAX_PROGRESS_VAL && val >= MIN_PROGRESS_VAL);
+  }
+
   public void scheduleProgressTaskService(long delay, long period) {
     monitorExecPeriod = period;
     scheduledExecutorService =
-        Executors.newScheduledThreadPool(1,
-            new ThreadFactoryBuilder().setDaemon(true).setNameFormat(
-                "TaskProgressService{" + processorName + ":" + processorContext
-                    .getTaskVertexName()
-                    + "} #%d").build());
+      Executors.newScheduledThreadPool(1,
+        new ThreadFactoryBuilder().setDaemon(true).setNameFormat(
+          "TaskProgressService{" + processorName + ":" + processorContext
+            .getTaskVertexName()
+            + "} #%d").build());
     try {
       createPeriodicTask(delay);
     } catch (RejectedExecutionException | IllegalArgumentException ex) {
       LOG.error("Could not create periodic scheduled task for processor={}",
-          processorName, ex);
+        processorName, ex);
     }
   }
 
@@ -96,16 +98,16 @@ public class ProgressHelper {
                 continue;
               }
               final float inputProgress =
-                  ((AbstractLogicalInput) input).getProgress();
+                ((AbstractLogicalInput) input).getProgress();
               if (!isProgressWithinRange(inputProgress)) {
                 final int invalidSnapshot = ++invalidInput;
                 if (LOG.isDebugEnabled()) {
                   LOG.debug(
-                      "progress update: Incorrect value in progress helper in "
-                          + "processor={}, inputProgress={}, inputsSize={}, "
-                          + "invalidInput={}",
-                      processorName, inputProgress, inputs.size(),
-                      invalidSnapshot);
+                    "progress update: Incorrect value in progress helper in "
+                      + "processor={}, inputProgress={}, inputsSize={}, "
+                      + "invalidInput={}",
+                    processorName, inputProgress, inputs.size(),
+                    invalidSnapshot);
                 }
               }
               progSum += processProgress(inputProgress);
@@ -118,7 +120,7 @@ public class ProgressHelper {
           processorContext.setProgress(progressVal);
         } catch (Throwable th) {
           LOG.debug("progress update: Encountered InterruptedException during"
-              + " Processor={}", processorName, th);
+            + " Processor={}", processorName, th);
           if (th instanceof InterruptedException) {
             // set interrupt flag to true sand exit
             Thread.currentThread().interrupt();
@@ -130,19 +132,19 @@ public class ProgressHelper {
   }
 
   private boolean createPeriodicTask(long delay)
-      throws RejectedExecutionException, IllegalArgumentException {
+    throws RejectedExecutionException, IllegalArgumentException {
     stopPeriodicMonitor();
     final Runnable runnableMonitor = createRunnableMonitor();
     ScheduledFuture<?> futureTask = scheduledExecutorService
-        .scheduleWithFixedDelay(runnableMonitor, delay, monitorExecPeriod,
-            TimeUnit.MILLISECONDS);
+      .scheduleWithFixedDelay(runnableMonitor, delay, monitorExecPeriod,
+        TimeUnit.MILLISECONDS);
     periodicMonitorTaskRef.set(futureTask);
     return true;
   }
 
   private void stopPeriodicMonitor() {
     ScheduledFuture<?> scheduledMonitorRes =
-        this.periodicMonitorTaskRef.get();
+      this.periodicMonitorTaskRef.get();
     if (scheduledMonitorRes != null && !scheduledMonitorRes.isCancelled()) {
       scheduledMonitorRes.cancel(true);
       this.periodicMonitorTaskRef.set(null);
@@ -155,12 +157,12 @@ public class ProgressHelper {
       scheduledExecutorService.shutdown();
       try {
         if (!scheduledExecutorService.awaitTermination(monitorExecPeriod,
-            TimeUnit.MILLISECONDS)) {
+          TimeUnit.MILLISECONDS)) {
           scheduledExecutorService.shutdownNow();
         }
       } catch (InterruptedException e) {
         LOG.debug("Interrupted exception while shutting down the "
-            + "executor service for the processor name={}", processorName);
+          + "executor service for the processor name={}", processorName);
       }
       scheduledExecutorService.shutdownNow();
     }

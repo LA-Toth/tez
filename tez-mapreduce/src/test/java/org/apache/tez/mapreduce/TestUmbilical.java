@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,14 +22,15 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-import com.google.common.collect.Lists;
-import org.apache.tez.runtime.api.TaskFailureType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.apache.tez.dag.records.TezTaskAttemptID;
+import org.apache.tez.runtime.api.TaskFailureType;
 import org.apache.tez.runtime.api.impl.EventMetaData;
 import org.apache.tez.runtime.api.impl.TezEvent;
 import org.apache.tez.runtime.api.impl.TezUmbilical;
+
+import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestUmbilical implements TezUmbilical {
 
@@ -55,15 +56,15 @@ public class TestUmbilical implements TezUmbilical {
   public void signalFailure(TezTaskAttemptID taskAttemptID, TaskFailureType taskFailureType, Throwable t,
                             String message, EventMetaData sourceInfo) {
     LOG.info("Received failure from task: " + taskAttemptID
-        + ", Message: " + message
-        + ", taskFailureType=" + taskFailureType);
+      + ", Message: " + message
+      + ", taskFailureType=" + taskFailureType);
   }
 
   @Override
   public void signalKillSelf(TezTaskAttemptID taskAttemptID, Throwable t, String message,
                              EventMetaData sourceInfo) {
     LOG.info("Received kill from task: " + taskAttemptID
-        + ", Message: " + message);
+      + ", Message: " + message);
   }
 
   public List<TezEvent> getEvents() {
@@ -75,5 +76,4 @@ public class TestUmbilical implements TezUmbilical {
     LOG.info("Got canCommit from task: " + taskAttemptID);
     return true;
   }
-
 }

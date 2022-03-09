@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,33 +37,20 @@ public final class CompositeRoutedDataMovementEvent extends Event {
    * For a Processor-generated event, this is ignored.
    */
   private final int sourceIndex;
-
+  /**
+   * User Payload for this Event
+   */
+  private final ByteBuffer userPayload;
   /**
    * Index(i) of the i-th (physical) Input or Output that is meant to receive
    * this Event. For a Processor event, this is ignored.
    */
   private int targetIndex;
   private int count;
-
-  /**
-   * User Payload for this Event
-   */
-  private final ByteBuffer userPayload;
-
   /**
    * Version number to indicate what attempt generated this Event
    */
   private int version;
-
-
-  @Private
-  public static CompositeRoutedDataMovementEvent create(int sourceIndex,
-                                                        int targetIndex,
-                                                        int count,
-                                                        int version,
-                                                        ByteBuffer userPayload) {
-    return new CompositeRoutedDataMovementEvent(sourceIndex, targetIndex, count, version, userPayload);
-  }
 
   @Private
   CompositeRoutedDataMovementEvent(int sourceIndex,
@@ -76,6 +63,15 @@ public final class CompositeRoutedDataMovementEvent extends Event {
     this.version = version;
     this.targetIndex = targetIndex;
     this.count = count;
+  }
+
+  @Private
+  public static CompositeRoutedDataMovementEvent create(int sourceIndex,
+                                                        int targetIndex,
+                                                        int count,
+                                                        int version,
+                                                        ByteBuffer userPayload) {
+    return new CompositeRoutedDataMovementEvent(sourceIndex, targetIndex, count, version, userPayload);
   }
 
   public ByteBuffer getUserPayload() {
@@ -116,7 +112,7 @@ public final class CompositeRoutedDataMovementEvent extends Event {
   @Override
   public String toString() {
     return "CompositeRoutedDataMovementEvent [sourceIndex=" + sourceIndex + ", targetIndex="
-        + targetIndex + ", count=" + count + ", version=" + version + "]";
+      + targetIndex + ", count=" + count + ", version=" + version + "]";
   }
 
   @Private

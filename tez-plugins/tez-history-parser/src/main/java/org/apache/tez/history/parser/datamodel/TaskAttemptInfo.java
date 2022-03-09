@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,7 @@
 package org.apache.tez.history.parser.datamodel;
 
 import org.apache.tez.common.Preconditions;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -34,6 +35,7 @@ import org.apache.tez.dag.api.oldrecords.TaskAttemptState;
 import org.apache.tez.dag.history.HistoryEventType;
 import org.apache.tez.history.parser.utils.Utils;
 import org.apache.tez.util.StringInterner;
+
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
@@ -74,28 +76,13 @@ public class TaskAttemptInfo extends BaseInfo {
   private TaskInfo taskInfo;
 
   private Container container;
-  
-  public static class DataDependencyEvent {
-    String taId;
-    long timestamp;
-    public DataDependencyEvent(String id, long time) {
-      taId = id;
-      timestamp = time;
-    }
-    public long getTimestamp() {
-      return timestamp;
-    }
-    public String getTaskAttemptId() {
-      return taId;
-    }
-  }
 
   TaskAttemptInfo(JSONObject jsonObject) throws JSONException {
     super(jsonObject);
 
     Preconditions.checkArgument(
-        jsonObject.getString(Constants.ENTITY_TYPE).equalsIgnoreCase
-            (Constants.TEZ_TASK_ATTEMPT_ID));
+      jsonObject.getString(Constants.ENTITY_TYPE).equalsIgnoreCase
+        (Constants.TEZ_TASK_ATTEMPT_ID));
 
     taskAttemptId = StringInterner.intern(jsonObject.optString(Constants.ENTITY));
 
@@ -106,26 +93,26 @@ public class TaskAttemptInfo extends BaseInfo {
     long eTime = otherInfoNode.optLong(Constants.FINISH_TIME);
     if (eTime < sTime) {
       LOG.warn("TaskAttemptInfo has got wrong start/end values. "
-          + "startTime=" + sTime + ", endTime=" + eTime + ". Will check "
-          + "timestamps in DAG started/finished events");
+        + "startTime=" + sTime + ", endTime=" + eTime + ". Will check "
+        + "timestamps in DAG started/finished events");
 
       // Check if events TASK_STARTED, TASK_FINISHED can be made use of
-      for(Event event : eventList) {
+      for (Event event : eventList) {
         switch (HistoryEventType.valueOf(event.getType())) {
-        case TASK_ATTEMPT_STARTED:
-          sTime = event.getAbsoluteTime();
-          break;
-        case TASK_ATTEMPT_FINISHED:
-          eTime = event.getAbsoluteTime();
-          break;
-        default:
-          break;
+          case TASK_ATTEMPT_STARTED:
+            sTime = event.getAbsoluteTime();
+            break;
+          case TASK_ATTEMPT_FINISHED:
+            eTime = event.getAbsoluteTime();
+            break;
+          default:
+            break;
         }
       }
 
       if (eTime < sTime) {
         LOG.warn("TaskAttemptInfo has got wrong start/end values in events as well. "
-            + "startTime=" + sTime + ", endTime=" + eTime);
+          + "startTime=" + sTime + ", endTime=" + eTime);
       }
     }
     startTime = sTime;
@@ -134,7 +121,7 @@ public class TaskAttemptInfo extends BaseInfo {
     diagnostics = otherInfoNode.optString(Constants.DIAGNOSTICS);
     creationTime = otherInfoNode.optLong(Constants.CREATION_TIME);
     creationCausalTA = StringInterner.intern(
-        otherInfoNode.optString(Constants.CREATION_CAUSAL_ATTEMPT));
+      otherInfoNode.optString(Constants.CREATION_CAUSAL_ATTEMPT));
     allocationTime = otherInfoNode.optLong(Constants.ALLOCATION_TIME);
     containerId = StringInterner.intern(otherInfoNode.optString(Constants.CONTAINER_ID));
     String id = otherInfoNode.optString(Constants.NODE_ID);
@@ -145,7 +132,7 @@ public class TaskAttemptInfo extends BaseInfo {
     container = new Container(containerId, nodeId);
     if (otherInfoNode.has(Constants.LAST_DATA_EVENTS)) {
       List<DataDependencyEvent> eventInfo = Utils.parseDataEventDependencyFromJSON(
-          otherInfoNode.optJSONObject(Constants.LAST_DATA_EVENTS));
+        otherInfoNode.optJSONObject(Constants.LAST_DATA_EVENTS));
       long lastTime = 0;
       for (DataDependencyEvent item : eventInfo) {
         // check these are in time order
@@ -155,23 +142,22 @@ public class TaskAttemptInfo extends BaseInfo {
       }
     }
     terminationCause = StringInterner
-        .intern(otherInfoNode.optString(ATSConstants.TASK_ATTEMPT_ERROR_ENUM));
+      .intern(otherInfoNode.optString(ATSConstants.TASK_ATTEMPT_ERROR_ENUM));
     executionTimeInterval = (endTime > startTime) ? (endTime - startTime) : 0;
   }
-  
+
   public static Ordering<TaskAttemptInfo> orderingOnAllocationTime() {
     return Ordering.from(new Comparator<TaskAttemptInfo>() {
       @Override
       public int compare(TaskAttemptInfo o1, TaskAttemptInfo o2) {
         return (o1.getAllocationTime() < o2.getAllocationTime() ? -1
-            : o1.getAllocationTime() > o2.getAllocationTime() ? 1 : 0);
+          : o1.getAllocationTime() > o2.getAllocationTime() ? 1 : 0);
       }
     });
   }
 
-  void setTaskInfo(TaskInfo taskInfo) {
-    this.taskInfo = Objects.requireNonNull(taskInfo, "Provide valid taskInfo");
-    taskInfo.addTaskAttemptInfo(this);
+  public static TaskAttemptInfo create(JSONObject taskInfoObject) throws JSONException {
+    return new TaskAttemptInfo(taskInfoObject);
   }
 
   @Override
@@ -183,26 +169,26 @@ public class TaskAttemptInfo extends BaseInfo {
   public final long getFinishTimeInterval() {
     return endTime - (getTaskInfo().getVertexInfo().getDagInfo().getStartTime());
   }
-  
+
   public final boolean isSucceeded() {
     return status.equals(SUCCEEDED);
   }
-  
+
   public final List<DataDependencyEvent> getLastDataEvents() {
     return lastDataEvents;
   }
-  
+
   public final long getExecutionTimeInterval() {
     return executionTimeInterval;
   }
-  
+
   public final long getPostDataExecutionTimeInterval() {
     if (getStartTime() > 0 && getFinishTime() > 0) {
       // start time defaults to the actual start time
       long postDataStartTime = startTime;
       if (getLastDataEvents() != null && !getLastDataEvents().isEmpty()) {
         // if last data event is after the start time then use last data event time
-        long lastEventTime = getLastDataEvents().get(getLastDataEvents().size()-1).getTimestamp();
+        long lastEventTime = getLastDataEvents().get(getLastDataEvents().size() - 1).getTimestamp();
         postDataStartTime = startTime > lastEventTime ? startTime : lastEventTime;
       }
       return (getFinishTime() - postDataStartTime);
@@ -213,11 +199,11 @@ public class TaskAttemptInfo extends BaseInfo {
   public final long getAllocationToEndTimeInterval() {
     return (endTime - allocationTime);
   }
-  
+
   public final long getAllocationToStartTimeInterval() {
     return (startTime - allocationTime);
   }
-  
+
   public final long getCreationToAllocationTimeInterval() {
     return (allocationTime - creationTime);
   }
@@ -233,9 +219,9 @@ public class TaskAttemptInfo extends BaseInfo {
   public final long getCreationTime() {
     return creationTime;
   }
-  
+
   public final DataDependencyEvent getLastDataEventInfo(long timeThreshold) {
-    for (int i=lastDataEvents.size()-1; i>=0; i--) {
+    for (int i = lastDataEvents.size() - 1; i >= 0; i--) {
       // walk back in time until we get first event that happened before the threshold
       DataDependencyEvent item = lastDataEvents.get(i);
       if (item.getTimestamp() < timeThreshold) {
@@ -244,7 +230,7 @@ public class TaskAttemptInfo extends BaseInfo {
     }
     return null;
   }
-  
+
   public final long getTimeTaken() {
     return getFinishTimeInterval() - getStartTimeInterval();
   }
@@ -252,7 +238,7 @@ public class TaskAttemptInfo extends BaseInfo {
   public final long getCreationTimeInterval() {
     return creationTime - (getTaskInfo().getVertexInfo().getDagInfo().getStartTime());
   }
-  
+
   public final String getCreationCausalTA() {
     return creationCausalTA;
   }
@@ -260,40 +246,36 @@ public class TaskAttemptInfo extends BaseInfo {
   public final long getAllocationTime() {
     return allocationTime;
   }
-  
+
   public final String getShortName() {
-    return getTaskInfo().getVertexInfo().getVertexName() + " : " + 
-    taskAttemptId.substring(taskAttemptId.lastIndexOf('_', taskAttemptId.lastIndexOf('_') - 1) + 1);
+    return getTaskInfo().getVertexInfo().getVertexName() + " : " +
+      taskAttemptId.substring(taskAttemptId.lastIndexOf('_', taskAttemptId.lastIndexOf('_') - 1) + 1);
   }
 
   @Override
   public final String getDiagnostics() {
     return diagnostics;
   }
-  
+
   public final String getTerminationCause() {
     return terminationCause;
   }
 
-  public static TaskAttemptInfo create(JSONObject taskInfoObject) throws JSONException {
-    return new TaskAttemptInfo(taskInfoObject);
-  }
-
   public final boolean isLocalityInfoAvailable() {
     Map<String, TezCounter> dataLocalTask = getCounter(DAGCounter.class.getName(),
-        DAGCounter.DATA_LOCAL_TASKS.toString());
+      DAGCounter.DATA_LOCAL_TASKS.toString());
     Map<String, TezCounter> rackLocalTask = getCounter(DAGCounter.class.getName(),
-        DAGCounter.RACK_LOCAL_TASKS.toString());
+      DAGCounter.RACK_LOCAL_TASKS.toString());
 
     Map<String, TezCounter> otherLocalTask = getCounter(DAGCounter.class.getName(),
-        DAGCounter.OTHER_LOCAL_TASKS.toString());
+      DAGCounter.OTHER_LOCAL_TASKS.toString());
 
     if (!dataLocalTask.isEmpty() || !rackLocalTask.isEmpty() || !otherLocalTask.isEmpty()) {
       return true;
     }
     return false;
   }
-  
+
   public final String getDetailedStatus() {
     if (!Strings.isNullOrEmpty(getTerminationCause())) {
       return getStatus() + ":" + getTerminationCause();
@@ -303,11 +285,11 @@ public class TaskAttemptInfo extends BaseInfo {
 
   public final TezCounter getLocalityInfo() {
     Map<String, TezCounter> dataLocalTask = getCounter(DAGCounter.class.getName(),
-        DAGCounter.DATA_LOCAL_TASKS.toString());
+      DAGCounter.DATA_LOCAL_TASKS.toString());
     Map<String, TezCounter> rackLocalTask = getCounter(DAGCounter.class.getName(),
-        DAGCounter.RACK_LOCAL_TASKS.toString());
+      DAGCounter.RACK_LOCAL_TASKS.toString());
     Map<String, TezCounter> otherLocalTask = getCounter(DAGCounter.class.getName(),
-        DAGCounter.OTHER_LOCAL_TASKS.toString());
+      DAGCounter.OTHER_LOCAL_TASKS.toString());
 
     if (!dataLocalTask.isEmpty()) {
       return dataLocalTask.get(DAGCounter.class.getName());
@@ -325,6 +307,11 @@ public class TaskAttemptInfo extends BaseInfo {
 
   public final TaskInfo getTaskInfo() {
     return taskInfo;
+  }
+
+  void setTaskInfo(TaskInfo taskInfo) {
+    this.taskInfo = Objects.requireNonNull(taskInfo, "Provide valid taskInfo");
+    taskInfo.addTaskAttemptInfo(this);
   }
 
   public final String getTaskAttemptId() {
@@ -408,5 +395,23 @@ public class TaskAttemptInfo extends BaseInfo {
     sb.append("status=").append(getDetailedStatus());
     sb.append("]");
     return sb.toString();
+  }
+
+  public static class DataDependencyEvent {
+    String taId;
+    long timestamp;
+
+    public DataDependencyEvent(String id, long time) {
+      taId = id;
+      timestamp = time;
+    }
+
+    public long getTimestamp() {
+      return timestamp;
+    }
+
+    public String getTaskAttemptId() {
+      return taId;
+    }
   }
 }

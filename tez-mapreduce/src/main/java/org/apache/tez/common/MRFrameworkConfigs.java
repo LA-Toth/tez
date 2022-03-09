@@ -25,17 +25,15 @@ import org.apache.hadoop.classification.InterfaceAudience;
 @InterfaceAudience.Private
 public class MRFrameworkConfigs {
 
+  public static final String TASK_LOCAL_RESOURCE_DIR_DEFAULT = "/tmp";
   /**
    * One local dir for the specific job.
    */
 
   private static final String MR_FRAMEWORK_PREFIX = "tez.mr.framework.";
-
   /**
    * The directory which contains the localized files for this task.
    */
   public static final String TASK_LOCAL_RESOURCE_DIR = MR_FRAMEWORK_PREFIX + "task-local-resource.dir";
-  public static final String TASK_LOCAL_RESOURCE_DIR_DEFAULT = "/tmp";
-
   public static final String JOB_LOCAL_DIR = MR_FRAMEWORK_PREFIX + "job.local.dir";
 }

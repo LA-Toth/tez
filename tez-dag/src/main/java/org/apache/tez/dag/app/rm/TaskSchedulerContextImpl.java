@@ -14,11 +14,12 @@
 
 package org.apache.tez.dag.app.rm;
 
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+
+import javax.annotation.Nullable;
 
 import org.apache.hadoop.yarn.api.records.ApplicationAccessType;
 import org.apache.hadoop.yarn.api.records.ApplicationAttemptId;
@@ -58,7 +59,6 @@ public class TaskSchedulerContextImpl implements TaskSchedulerContext {
     this.appHostName = appHostname;
     this.clientPort = clientPort;
     this.initialUserPayload = initialUserPayload;
-
   }
 
   // this may end up being called for a task+container pair that the app
@@ -95,7 +95,7 @@ public class TaskSchedulerContextImpl implements TaskSchedulerContext {
                                              ByteBuffer clientAMSecretKey,
                                              String queueName) {
     taskSchedulerManager.setApplicationRegistrationData(schedulerId, maxContainerCapability,
-        appAcls, clientAMSecretKey, queueName);
+      appAcls, clientAMSecretKey, queueName);
   }
 
   @Override
@@ -117,7 +117,6 @@ public class TaskSchedulerContextImpl implements TaskSchedulerContext {
   public UserPayload getInitialUserPayload() {
     return initialUserPayload;
   }
-
 
   @Override
   public String getAppTrackingUrl() {

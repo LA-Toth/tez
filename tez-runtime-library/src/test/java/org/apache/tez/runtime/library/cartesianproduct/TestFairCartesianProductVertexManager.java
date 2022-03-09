@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,9 +17,26 @@
  */
 package org.apache.tez.runtime.library.cartesianproduct;
 
-import com.google.common.primitives.Ints;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.InvalidProtocolBufferException;
+import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.BROADCAST;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyMapOf;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.tez.dag.api.EdgeManagerPluginDescriptor;
 import org.apache.tez.dag.api.EdgeProperty;
 import org.apache.tez.dag.api.VertexLocationHint;
@@ -36,31 +53,15 @@ import org.apache.tez.runtime.api.TaskAttemptIdentifier;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
 import org.apache.tez.runtime.library.cartesianproduct.CartesianProductUserPayload.CartesianProductConfigProto;
 import org.apache.tez.runtime.library.shuffle.impl.ShuffleUserPayloads.VertexManagerEventPayloadProto;
+
+import com.google.common.primitives.Ints;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.tez.dag.api.EdgeProperty.DataMovementType.BROADCAST;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class TestFairCartesianProductVertexManager {
   @Captor
@@ -151,7 +152,7 @@ public class TestFairCartesianProductVertexManager {
   private Map<String, EdgeProperty> getEdgePropertyMap(int numSrcV) {
     Map<String, EdgeProperty> edgePropertyMap = new HashMap<>();
     for (int i = 0; i < numSrcV; i++) {
-      edgePropertyMap.put("v"+i, EdgeProperty.create(EdgeManagerPluginDescriptor.create(
+      edgePropertyMap.put("v" + i, EdgeProperty.create(EdgeManagerPluginDescriptor.create(
         CartesianProductEdgeManager.class.getName()), null, null, null, null));
     }
     return edgePropertyMap;
@@ -160,7 +161,7 @@ public class TestFairCartesianProductVertexManager {
   private void setSrcParallelism(VertexManagerPluginContext ctx, int multiplier, int... numTasks) {
     int i = 0;
     for (int numTask : numTasks) {
-      when(ctx.getVertexNumTasks(eq("v"+i))).thenReturn(numTask * multiplier);
+      when(ctx.getVertexNumTasks(eq("v" + i))).thenReturn(numTask * multiplier);
       i++;
     }
   }
@@ -363,7 +364,6 @@ public class TestFairCartesianProductVertexManager {
     verifyScheduleRequest(1, 0, 1, 6, 7);
   }
 
-
   @Test(timeout = 5000)
   public void testOnVertexStart() throws Exception {
     setupDAGVertexOnly(6, 1, 6, 1);
@@ -418,6 +418,7 @@ public class TestFairCartesianProductVertexManager {
     vertexManager.onVertexStateUpdated(new VertexStateUpdate("v0", VertexState.CONFIGURED));
     vertexManager.onVertexStateUpdated(new VertexStateUpdate("v1", VertexState.CONFIGURED));
   }
+
   @Test(timeout = 5000)
   public void testGroupingFraction() throws Exception {
     setupGroupingFractionTest();

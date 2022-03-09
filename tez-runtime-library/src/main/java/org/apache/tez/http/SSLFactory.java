@@ -18,11 +18,21 @@
 
 package org.apache.tez.http;
 
-import org.asynchttpclient.DefaultAsyncHttpClientConfig;
+import static org.apache.hadoop.security.ssl.SSLFactory.KEYSTORES_FACTORY_CLASS_KEY;
+import static org.apache.hadoop.security.ssl.SSLFactory.SSL_CLIENT_CONF_KEY;
+import static org.apache.hadoop.security.ssl.SSLFactory.SSL_HOSTNAME_VERIFIER_KEY;
+import static org.apache.hadoop.security.ssl.SSLFactory.SSL_REQUIRE_CLIENT_CERT_KEY;
+import static org.apache.hadoop.security.ssl.SSLFactory.SSL_SERVER_CONF_KEY;
 
-import io.netty.handler.ssl.ClientAuth;
-import io.netty.handler.ssl.JdkSslContext;
-import io.netty.handler.ssl.SupportedCipherSuiteFilter;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.security.GeneralSecurityException;
+import java.util.Objects;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.apache.hadoop.classification.InterfaceAudience;
 import org.apache.hadoop.classification.InterfaceStability;
@@ -34,20 +44,10 @@ import org.apache.hadoop.security.ssl.SSLFactory.Mode;
 import org.apache.hadoop.security.ssl.SSLHostnameVerifier;
 import org.apache.hadoop.util.ReflectionUtils;
 
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.security.GeneralSecurityException;
-import java.util.Objects;
-
-import static org.apache.hadoop.security.ssl.SSLFactory.KEYSTORES_FACTORY_CLASS_KEY;
-import static org.apache.hadoop.security.ssl.SSLFactory.SSL_CLIENT_CONF_KEY;
-import static org.apache.hadoop.security.ssl.SSLFactory.SSL_HOSTNAME_VERIFIER_KEY;
-import static org.apache.hadoop.security.ssl.SSLFactory.SSL_REQUIRE_CLIENT_CERT_KEY;
-import static org.apache.hadoop.security.ssl.SSLFactory.SSL_SERVER_CONF_KEY;
+import io.netty.handler.ssl.ClientAuth;
+import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SupportedCipherSuiteFilter;
+import org.asynchttpclient.DefaultAsyncHttpClientConfig;
 
 /**
  * Factory that creates SSLEngine and SSLSocketFactory instances using
@@ -88,15 +88,35 @@ public class SSLFactory implements ConnectionConfigurator {
     this.conf = Objects.requireNonNull(conf);
     this.mode = Objects.requireNonNull(mode, "mode cannot be NULL");
     requireClientCert = conf.getBoolean(SSL_REQUIRE_CLIENT_CERT_KEY,
-        DEFAULT_SSL_REQUIRE_CLIENT_CERT);
+      DEFAULT_SSL_REQUIRE_CLIENT_CERT);
     // Rest of ssl configs are pre-populated in incoming conf payload
     conf.setBoolean(SSL_REQUIRE_CLIENT_CERT_KEY, requireClientCert);
 
     Class<? extends KeyStoresFactory> klass
-        = conf.getClass(KEYSTORES_FACTORY_CLASS_KEY,
-        FileBasedKeyStoresFactory.class, KeyStoresFactory.class);
+      = conf.getClass(KEYSTORES_FACTORY_CLASS_KEY,
+      FileBasedKeyStoresFactory.class, KeyStoresFactory.class);
     keystoresFactory = ReflectionUtils.newInstance(klass, conf);
     enabledProtocols = conf.getStrings(SSL_ENABLED_PROTOCOLS, DEFAULT_SSL_ENABLED_PROTOCOLS);
+  }
+
+  public static HostnameVerifier getHostnameVerifier(String verifier)
+    throws GeneralSecurityException, IOException {
+    HostnameVerifier hostnameVerifier;
+    if (verifier.equals("DEFAULT")) {
+      hostnameVerifier = SSLHostnameVerifier.DEFAULT;
+    } else if (verifier.equals("DEFAULT_AND_LOCALHOST")) {
+      hostnameVerifier = SSLHostnameVerifier.DEFAULT_AND_LOCALHOST;
+    } else if (verifier.equals("STRICT")) {
+      hostnameVerifier = SSLHostnameVerifier.STRICT;
+    } else if (verifier.equals("STRICT_IE6")) {
+      hostnameVerifier = SSLHostnameVerifier.STRICT_IE6;
+    } else if (verifier.equals("ALLOW_ALL")) {
+      hostnameVerifier = SSLHostnameVerifier.ALLOW_ALL;
+    } else {
+      throw new GeneralSecurityException("Invalid hostname verifier: " +
+        verifier);
+    }
+    return hostnameVerifier;
   }
 
   private Configuration readSSLConfiguration(Mode mode) {
@@ -124,35 +144,15 @@ public class SSLFactory implements ConnectionConfigurator {
     keystoresFactory.init(mode);
     context = SSLContext.getInstance("TLS");
     context.init(keystoresFactory.getKeyManagers(),
-        keystoresFactory.getTrustManagers(), null);
+      keystoresFactory.getTrustManagers(), null);
     context.getDefaultSSLParameters().setProtocols(enabledProtocols);
     hostnameVerifier = getHostnameVerifier(conf);
   }
 
   private HostnameVerifier getHostnameVerifier(Configuration conf)
-      throws GeneralSecurityException, IOException {
+    throws GeneralSecurityException, IOException {
     return getHostnameVerifier(conf.get(SSL_HOSTNAME_VERIFIER_KEY, "DEFAULT").
-        trim().toUpperCase());
-  }
-
-  public static HostnameVerifier getHostnameVerifier(String verifier)
-      throws GeneralSecurityException, IOException {
-    HostnameVerifier hostnameVerifier;
-    if (verifier.equals("DEFAULT")) {
-      hostnameVerifier = SSLHostnameVerifier.DEFAULT;
-    } else if (verifier.equals("DEFAULT_AND_LOCALHOST")) {
-      hostnameVerifier = SSLHostnameVerifier.DEFAULT_AND_LOCALHOST;
-    } else if (verifier.equals("STRICT")) {
-      hostnameVerifier = SSLHostnameVerifier.STRICT;
-    } else if (verifier.equals("STRICT_IE6")) {
-      hostnameVerifier = SSLHostnameVerifier.STRICT_IE6;
-    } else if (verifier.equals("ALLOW_ALL")) {
-      hostnameVerifier = SSLHostnameVerifier.ALLOW_ALL;
-    } else {
-      throw new GeneralSecurityException("Invalid hostname verifier: " +
-          verifier);
-    }
-    return hostnameVerifier;
+      trim().toUpperCase());
   }
 
   /**
@@ -170,7 +170,6 @@ public class SSLFactory implements ConnectionConfigurator {
   public KeyStoresFactory getKeystoresFactory() {
     return keystoresFactory;
   }
-
 
   /**
    * Returns a configured SSLSocketFactory.
@@ -199,8 +198,6 @@ public class SSLFactory implements ConnectionConfigurator {
     }
     return hostnameVerifier;
   }
-
-
 
   /**
    * If the given {@link HttpURLConnection} is an {@link HttpsURLConnection}
@@ -236,10 +233,10 @@ public class SSLFactory implements ConnectionConfigurator {
   public void configure(DefaultAsyncHttpClientConfig.Builder builder) throws IOException {
     if (builder != null) {
       JdkSslContext jdkSslContext =
-          new JdkSslContext(context, mode.equals(Mode.CLIENT), /* ciphers */null,
-              SupportedCipherSuiteFilter.INSTANCE, /* ApplicationProtocolConfig */ null,
-              requireClientCert ? ClientAuth.REQUIRE : ClientAuth.OPTIONAL, enabledProtocols,
-              /* startTls */ true);
+        new JdkSslContext(context, mode.equals(Mode.CLIENT), /* ciphers */null,
+          SupportedCipherSuiteFilter.INSTANCE, /* ApplicationProtocolConfig */ null,
+          requireClientCert ? ClientAuth.REQUIRE : ClientAuth.OPTIONAL, enabledProtocols,
+          /* startTls */ true);
       builder.setSslContext(jdkSslContext);
     }
   }

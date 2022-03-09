@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,6 +17,8 @@
  */
 
 package org.apache.tez.mapreduce.combine;
+
+import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -42,10 +44,9 @@ import org.apache.tez.runtime.api.TaskContext;
 import org.apache.tez.runtime.library.api.TezRuntimeConfiguration;
 import org.apache.tez.runtime.library.common.sort.impl.IFile.Writer;
 import org.apache.tez.runtime.library.common.sort.impl.TezRawKeyValueIterator;
+
 import org.junit.Test;
 import org.mockito.Mockito;
-
-import static org.junit.Assert.assertEquals;
 
 public class TestMRCombiner {
 
@@ -72,7 +73,7 @@ public class TestMRCombiner {
     setKeyAndValueClassTypes(conf);
     conf.setBoolean("mapred.mapper.new-api", true);
     conf.setClass(MRJobConfig.COMBINE_CLASS_ATTR, NewReducer.class,
-        Object.class);
+      Object.class);
     TaskContext taskContext = getTaskContext(conf);
     MRCombiner combiner = new MRCombiner(taskContext);
     Writer writer = Mockito.mock(Writer.class);
@@ -106,7 +107,7 @@ public class TestMRCombiner {
     setKeyAndValueClassTypes(conf);
     conf.setBoolean("mapred.mapper.new-api", true);
     conf.setClass(MRJobConfig.COMBINE_CLASS_ATTR, Top2NewReducer.class,
-        Object.class);
+      Object.class);
     TaskContext taskContext = getTaskContext(conf);
     MRCombiner combiner = new MRCombiner(taskContext);
     Writer writer = Mockito.mock(Writer.class);
@@ -119,36 +120,36 @@ public class TestMRCombiner {
 
   private void setKeyAndValueClassTypes(TezConfiguration conf) {
     conf.setClass(TezRuntimeConfiguration.TEZ_RUNTIME_KEY_CLASS,
-        Text.class, Object.class);
+      Text.class, Object.class);
     conf.setClass(TezRuntimeConfiguration.TEZ_RUNTIME_VALUE_CLASS,
-        IntWritable.class, Object.class);
+      IntWritable.class, Object.class);
   }
 
   private TaskContext getTaskContext(TezConfiguration conf)
-      throws IOException {
+    throws IOException {
     UserPayload payload = TezUtils.createUserPayloadFromConf(conf);
     TaskContext taskContext = Mockito.mock(InputContext.class);
     Mockito.when(taskContext.getUserPayload()).thenReturn(payload);
     Mockito.when(taskContext.getCounters()).thenReturn(new TezCounters());
     Mockito.when(taskContext.getApplicationId()).thenReturn(
-        ApplicationId.newInstance(123456, 1));
+      ApplicationId.newInstance(123456, 1));
     return taskContext;
   }
 
   private void verifyKeyAndValues(Writer writer) throws IOException {
     Mockito.verify(writer, Mockito.atLeastOnce()).append(new Text("tez"),
-        new IntWritable(3));
+      new IntWritable(3));
     Mockito.verify(writer, Mockito.atLeastOnce()).append(new Text("apache"),
-        new IntWritable(1));
+      new IntWritable(1));
     Mockito.verify(writer, Mockito.atLeastOnce()).append(new Text("hadoop"),
-        new IntWritable(2));
+      new IntWritable(2));
   }
 
   private static class TezRawKeyValueIteratorTest implements
-      TezRawKeyValueIterator {
+    TezRawKeyValueIterator {
 
     private int i = -1;
-    private String[] keys = { "tez", "tez", "tez", "apache", "hadoop", "hadoop" };
+    private String[] keys = {"tez", "tez", "tez", "apache", "hadoop", "hadoop"};
 
     @Override
     public boolean next() throws IOException {
@@ -161,7 +162,7 @@ public class TestMRCombiner {
     }
 
     public boolean hasNext() throws IOException {
-      if (i < (keys.length -  1)) {
+      if (i < (keys.length - 1)) {
         return true;
       }
       return false;
@@ -203,7 +204,7 @@ public class TestMRCombiner {
   }
 
   private static class OldReducer implements
-      Reducer<Text, IntWritable, Text, IntWritable> {
+    Reducer<Text, IntWritable, Text, IntWritable> {
 
     @Override
     public void configure(JobConf arg0) {
@@ -215,8 +216,8 @@ public class TestMRCombiner {
 
     @Override
     public void reduce(Text key, Iterator<IntWritable> value,
-        OutputCollector<Text, IntWritable> collector, Reporter reporter)
-        throws IOException {
+                       OutputCollector<Text, IntWritable> collector, Reporter reporter)
+      throws IOException {
       int count = 0;
       while (value.hasNext()) {
         count += value.next().get();
@@ -226,10 +227,10 @@ public class TestMRCombiner {
   }
 
   private static class NewReducer extends
-      org.apache.hadoop.mapreduce.Reducer<Text, IntWritable, Text, IntWritable> {
+    org.apache.hadoop.mapreduce.Reducer<Text, IntWritable, Text, IntWritable> {
     @Override
     protected void reduce(Text key, Iterable<IntWritable> values,
-        Context context) throws IOException, InterruptedException {
+                          Context context) throws IOException, InterruptedException {
       int count = 0;
       for (IntWritable value : values) {
         count += value.get();
@@ -241,8 +242,8 @@ public class TestMRCombiner {
   private static class Top2OldReducer extends OldReducer {
     @Override
     public void reduce(Text key, Iterator<IntWritable> value,
-        OutputCollector<Text, IntWritable> collector, Reporter reporter)
-        throws IOException {
+                       OutputCollector<Text, IntWritable> collector, Reporter reporter)
+      throws IOException {
       int i = 0;
       while (value.hasNext()) {
         int val = value.next().get();
@@ -256,7 +257,7 @@ public class TestMRCombiner {
   private static class Top2NewReducer extends NewReducer {
     @Override
     protected void reduce(Text key, Iterable<IntWritable> values,
-        Context context) throws IOException, InterruptedException {
+                          Context context) throws IOException, InterruptedException {
       int i = 0;
       for (IntWritable value : values) {
         if (i++ < 2) {

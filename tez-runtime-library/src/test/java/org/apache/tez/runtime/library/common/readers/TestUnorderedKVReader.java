@@ -18,6 +18,16 @@
 
 package org.apache.tez.runtime.library.common.readers;
 
+import static junit.framework.TestCase.fail;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+
+import java.io.IOException;
+import java.util.LinkedList;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -36,6 +46,7 @@ import org.apache.tez.runtime.library.common.shuffle.FetchedInputCallback;
 import org.apache.tez.runtime.library.common.shuffle.LocalDiskFetchedInput;
 import org.apache.tez.runtime.library.common.shuffle.impl.ShuffleManager;
 import org.apache.tez.runtime.library.common.sort.impl.IFile;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,16 +56,6 @@ import org.mockito.stubbing.Answer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.LinkedList;
-
-import static junit.framework.TestCase.fail;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
-
 public class TestUnorderedKVReader {
 
   private static final Logger LOG = LoggerFactory.getLogger(TestUnorderedKVReader.class);
@@ -63,26 +64,25 @@ public class TestUnorderedKVReader {
   private static FileSystem localFs = null;
   private static Path workDir = null;
 
-  private String outputFileName = "ifile.out";
-  private Path outputPath;
-  private long rawLen;
-  private long compLen;
-
-  private UnorderedKVReader<Text, Text> unorderedKVReader;
-
   static {
     defaultConf.set("fs.defaultFS", "file:///");
     try {
       localFs = FileSystem.getLocal(defaultConf);
       workDir = new Path(
-          new Path(System.getProperty("test.build.data", "/tmp")),
-          TestUnorderedKVReader.class.getName())
-          .makeQualified(localFs.getUri(), localFs.getWorkingDirectory());
+        new Path(System.getProperty("test.build.data", "/tmp")),
+        TestUnorderedKVReader.class.getName())
+        .makeQualified(localFs.getUri(), localFs.getWorkingDirectory());
       LOG.info("Using workDir: " + workDir);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
+
+  private String outputFileName = "ifile.out";
+  private Path outputPath;
+  private long rawLen;
+  private long compLen;
+  private UnorderedKVReader<Text, Text> unorderedKVReader;
 
   @Before
   public void setUp() throws Exception {
@@ -98,7 +98,7 @@ public class TestUnorderedKVReader {
 
     final LinkedList<LocalDiskFetchedInput> inputs = new LinkedList<LocalDiskFetchedInput>();
     LocalDiskFetchedInput realFetchedInput = new LocalDiskFetchedInput(0, compLen, new
-        InputAttemptIdentifier(0, 0), outputPath, defaultConf, new FetchedInputCallback() {
+      InputAttemptIdentifier(0, 0), outputPath, defaultConf, new FetchedInputCallback() {
       @Override
       public void fetchComplete(FetchedInput fetchedInput) {
       }
@@ -121,19 +121,20 @@ public class TestUnorderedKVReader {
 
     ShuffleManager manager = mock(ShuffleManager.class);
     doAnswer(new Answer() {
-      @Override public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
+      @Override
+      public Object answer(InvocationOnMock invocationOnMock) throws Throwable {
         return (inputs.isEmpty()) ? null : inputs.remove();
       }
     }).when(manager).getNextInput();
 
     unorderedKVReader = new UnorderedKVReader<Text, Text>(manager,
-        defaultConf, null, false, -1, -1, inputRecords, mock(InputContext.class));
+      defaultConf, null, false, -1, -1, inputRecords, mock(InputContext.class));
   }
 
   private void createIFile(Path path, int recordCount) throws IOException {
     FSDataOutputStream out = localFs.create(path);
     IFile.Writer writer = new IFile.Writer(new WritableSerialization(), new WritableSerialization(),
-        out, Text.class, Text.class, null, null, null, true);
+      out, Text.class, Text.class, null, null, null, true);
 
     for (int i = 0; i < recordCount; i++) {
       writer.append(new Text("Key_" + i), new Text("Value_" + i));
@@ -164,7 +165,7 @@ public class TestUnorderedKVReader {
     try {
       boolean next = unorderedKVReader.next();
       fail();
-    } catch(IOException ioe) {
+    } catch (IOException ioe) {
       Assert.assertTrue(ioe.getMessage().contains("For usage, please refer to"));
     }
   }
@@ -178,8 +179,8 @@ public class TestUnorderedKVReader {
     TezCounters counters = new TezCounters();
     TezCounter inputRecords = counters.findCounter(TaskCounter.INPUT_RECORDS_PROCESSED);
     UnorderedKVReader<Text, Text> reader =
-        new UnorderedKVReader<Text, Text>(shuffleManager, defaultConf, null, false, -1, -1,
-            inputRecords, mock(InputContext.class));
+      new UnorderedKVReader<Text, Text>(shuffleManager, defaultConf, null, false, -1, -1,
+        inputRecords, mock(InputContext.class));
 
     try {
       reader.next();
@@ -188,5 +189,4 @@ public class TestUnorderedKVReader {
       // Expected exception. Any other should fail the test.
     }
   }
-
 }
