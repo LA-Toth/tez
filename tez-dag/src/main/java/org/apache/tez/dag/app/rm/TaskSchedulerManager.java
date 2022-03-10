@@ -471,8 +471,8 @@ public class TaskSchedulerManager extends AbstractService implements
   private void handleTaLaunchRequest(AMSchedulerEventTALaunchRequest event) {
     TaskAttempt taskAttempt = event.getTaskAttempt();
     TaskLocationHint locationHint = event.getLocationHint();
-    String hosts[] = null;
-    String racks[] = null;
+    String[] hosts = null;
+    String[] racks = null;
     if (locationHint != null) {
       TaskBasedLocationAffinity taskAffinity = locationHint.getAffinitizedTask();
       if (taskAffinity != null) {
@@ -713,8 +713,9 @@ public class TaskSchedulerManager extends AbstractService implements
   public void serviceStop() throws InterruptedException {
     synchronized (this) {
       this.stopEventHandling = true;
-      if (eventHandlingThread != null)
+      if (eventHandlingThread != null) {
         eventHandlingThread.interrupt();
+      }
     }
     for (int i = 0; i < taskSchedulers.length; i++) {
       if (taskSchedulers[i] != null) {
@@ -723,7 +724,7 @@ public class TaskSchedulerManager extends AbstractService implements
     }
     LOG.info("Shutting down AppCallbackExecutor");
     appCallbackExecutor.shutdownNow();
-    appCallbackExecutor.awaitTermination(1000l, TimeUnit.MILLISECONDS);
+    appCallbackExecutor.awaitTermination(1000L, TimeUnit.MILLISECONDS);
   }
 
   // TaskSchedulerAppCallback methods with schedulerId, where relevant

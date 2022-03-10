@@ -402,12 +402,12 @@ public class TestContainerLauncherManager {
     private static final List<String> containerLauncherNames = new LinkedList<>();
     private static final List<ContainerLauncher> testContainerLaunchers = new LinkedList<>();
 
-    public ContainerLaucherRouterForMultipleLauncherTest(AppContext context,
-                                                         TaskCommunicatorManagerInterface taskCommunicatorManagerInterface,
-                                                         String workingDirectory,
-                                                         List<NamedEntityDescriptor> containerLauncherDescriptors,
-                                                         boolean isPureLocalMode) throws
-      UnknownHostException, TezException {
+    public ContainerLaucherRouterForMultipleLauncherTest(
+      AppContext context,
+      TaskCommunicatorManagerInterface taskCommunicatorManagerInterface,
+      String workingDirectory,
+      List<NamedEntityDescriptor> containerLauncherDescriptors,
+      boolean isPureLocalMode) throws UnknownHostException, TezException {
       super(context, taskCommunicatorManagerInterface, workingDirectory,
         containerLauncherDescriptors, isPureLocalMode);
     }

@@ -3043,7 +3043,6 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
       String diag = "Commit failed for output:" + commitCompletedEvent.getOutputName()
         + ", vertexId=" + logIdentifier + ", "
         + ExceptionUtils.getStackTrace(commitCompletedEvent.getException());
-      ;
       LOG.info(diag);
       addDiagnostic(diag);
       trySetTerminationCause(VertexTerminationCause.COMMIT_FAILURE);
@@ -3129,15 +3128,15 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
                   // Exit and start from here next time
                   earlyExit = true;
                 }
+                break;
               }
-              break;
               case ROOT_INPUT_DATA_INFORMATION_EVENT: {
                 InputDataInformationEvent riEvent = (InputDataInformationEvent) tezEvent.getEvent();
                 if (riEvent.getTargetIndex() == taskIndex) {
                   events.add(tezEvent);
                 }
+                break;
               }
-              break;
               default:
                 throw new TezUncheckedException("Unexpected event type for task: "
                   + tezEvent.getEventType());
@@ -3250,8 +3249,8 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
               }
             }
           }
+          break;
         }
-        break;
         case ROOT_INPUT_DATA_INFORMATION_EVENT: {
           checkEventSourceMetadata(this, sourceMeta);
           if (tasksNotYetScheduled) {
@@ -3265,8 +3264,8 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
             Task targetTask = getTask(riEvent.getTargetIndex());
             targetTask.registerTezEvent(tezEvent);
           }
+          break;
         }
-        break;
         case VERTEX_MANAGER_EVENT: {
           // VM events on task success only can be changed as part of TEZ-1532
           VertexManagerEvent vmEvent = (VertexManagerEvent) tezEvent.getEvent();
@@ -3291,8 +3290,8 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
             eventHandler.handle(new VertexEventRouteEvent(target
               .getVertexId(), Collections.singletonList(tezEvent)));
           }
+          break;
         }
-        break;
         case ROOT_INPUT_INITIALIZER_EVENT: {
           InputInitializerEvent riEvent = (InputInitializerEvent) tezEvent.getEvent();
           Vertex target = getDAG().getVertex(riEvent.getTargetVertexName());
@@ -3322,15 +3321,15 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
             eventHandler.handle(new VertexEventRouteEvent(target.getVertexId(),
               Collections.singletonList(tezEvent)));
           }
+          break;
         }
-        break;
         case INPUT_READ_ERROR_EVENT: {
           checkEventSourceMetadata(this, sourceMeta);
           Edge srcEdge = sourceVertices.get(this.getDAG().getVertex(
             sourceMeta.getEdgeVertexName()));
           srcEdge.sendTezEventToSourceTasks(tezEvent);
+          break;
         }
-        break;
         default:
           throw new TezUncheckedException("Unhandled tez event type: "
             + tezEvent.getEventType());
@@ -3418,8 +3417,7 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
 
   @Nullable
   @Override
-  public Map<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>>
-  getAdditionalInputs() {
+  public Map<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>> getAdditionalInputs() {
     readLock.lock();
     try {
       return this.rootInputDescriptors;
@@ -3451,8 +3449,7 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
 
   @Nullable
   @Override
-  public Map<String, RootInputLeafOutput<OutputDescriptor, OutputCommitterDescriptor>>
-  getAdditionalOutputs() {
+  public Map<String, RootInputLeafOutput<OutputDescriptor, OutputCommitterDescriptor>> getAdditionalOutputs() {
     return this.additionalOutputs;
   }
 
@@ -3538,7 +3535,6 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
       }
     } finally {
       writeLock.unlock();
-      ;
     }
   }
 
@@ -3772,7 +3768,9 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
   }
 
   @Override
-  public AbstractService getSpeculator() {return speculator;}
+  public AbstractService getSpeculator() {
+    return speculator;
+  }
 
   @Override
   public Map<String, Set<String>> getDownstreamBlamingHosts() {

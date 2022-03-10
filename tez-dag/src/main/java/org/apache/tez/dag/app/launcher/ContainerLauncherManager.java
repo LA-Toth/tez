@@ -58,9 +58,9 @@ public class ContainerLauncherManager extends AbstractService
   static final Logger LOG = LoggerFactory.getLogger(TezContainerLauncherImpl.class);
   protected final ServicePluginLifecycleAbstractService[] containerLauncherServiceWrappers;
   @VisibleForTesting
-  final ContainerLauncherWrapper containerLaunchers[];
+  final ContainerLauncherWrapper[] containerLaunchers;
   @VisibleForTesting
-  final ContainerLauncherContext containerLauncherContexts[];
+  final ContainerLauncherContext[] containerLauncherContexts;
   private final AppContext appContext;
   private final boolean isIncompleteCtor;
 

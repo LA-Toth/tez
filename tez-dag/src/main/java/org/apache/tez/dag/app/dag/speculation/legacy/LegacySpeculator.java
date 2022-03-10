@@ -105,8 +105,7 @@ public class LegacySpeculator extends AbstractService {
   // This constructor is designed to be called by other constructors.
   //  However, it's public because we do use it in the test cases.
   // Normally we figure out our own estimator.
-  public LegacySpeculator
-  (Configuration conf, TaskRuntimeEstimator estimator, Clock clock, Vertex vertex) {
+  public LegacySpeculator(Configuration conf, TaskRuntimeEstimator estimator, Clock clock, Vertex vertex) {
     super(LegacySpeculator.class.getName());
     this.vertex = vertex;
     this.estimator = estimator;
@@ -131,8 +130,7 @@ public class LegacySpeculator extends AbstractService {
       TezConfiguration.TEZ_AM_MINIMUM_ALLOWED_SPECULATIVE_TASKS_DEFAULT);
   }
 
-  static private TaskRuntimeEstimator getEstimator
-    (Configuration conf, Vertex vertex) {
+  static private TaskRuntimeEstimator getEstimator(Configuration conf, Vertex vertex) {
     TaskRuntimeEstimator estimator;
     Class<? extends TaskRuntimeEstimator> estimatorClass =
       conf.getClass(TezConfiguration.TEZ_AM_TASK_ESTIMATOR_CLASS,
@@ -160,19 +158,29 @@ public class LegacySpeculator extends AbstractService {
   }
 
   @VisibleForTesting
-  public int getMinimumAllowedSpeculativeTasks() {return minimumAllowedSpeculativeTasks;}
+  public int getMinimumAllowedSpeculativeTasks() {
+    return minimumAllowedSpeculativeTasks;
+  }
 
   @VisibleForTesting
-  public double getProportionTotalTasksSpeculatable() {return proportionTotalTasksSpeculatable;}
+  public double getProportionTotalTasksSpeculatable() {
+    return proportionTotalTasksSpeculatable;
+  }
 
   @VisibleForTesting
-  public double getProportionRunningTasksSpeculatable() {return proportionRunningTasksSpeculatable;}
+  public double getProportionRunningTasksSpeculatable() {
+    return proportionRunningTasksSpeculatable;
+  }
 
   @VisibleForTesting
-  public long getSoonestRetryAfterNoSpeculate() {return soonestRetryAfterNoSpeculate;}
+  public long getSoonestRetryAfterNoSpeculate() {
+    return soonestRetryAfterNoSpeculate;
+  }
 
   @VisibleForTesting
-  public long getSoonestRetryAfterSpeculate() {return soonestRetryAfterSpeculate;}
+  public long getSoonestRetryAfterSpeculate() {
+    return soonestRetryAfterSpeculate;
+  }
 
   @Override
   protected void serviceStart() throws Exception {

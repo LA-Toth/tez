@@ -939,8 +939,8 @@ public class TestTaskScheduler {
     TezAMRMClientAsync<CookieContainerRequest> mockRMClient = spy(
       new AMRMClientAsyncForTest(new AMRMClientForTest(), 100));
 
-    long minTime = 1000l;
-    long maxTime = 100000l;
+    long minTime = 1000L;
+    long maxTime = 100000L;
     Configuration conf1 = new Configuration();
     conf1.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MIN_MILLIS, minTime);
     conf1.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MAX_MILLIS, minTime);
@@ -1104,9 +1104,8 @@ public class TestTaskScheduler {
     containers.add(mockContainer3);
     containers.add(mockContainer4);
     when(
-      mockRMClient.getMatchingRequests((Priority) any(), eq("host1"),
-        (Resource) any())).thenAnswer(
-      new Answer<List<? extends Collection<CookieContainerRequest>>>() {
+      mockRMClient.getMatchingRequests((Priority) any(), eq("host1"), (Resource) any()))
+      .thenAnswer(new Answer<List<? extends Collection<CookieContainerRequest>>>() {
         @Override
         public List<? extends Collection<CookieContainerRequest>> answer(
           InvocationOnMock invocation) throws Throwable {

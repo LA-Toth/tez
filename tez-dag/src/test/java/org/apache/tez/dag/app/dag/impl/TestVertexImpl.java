@@ -2810,7 +2810,7 @@ public class TestVertexImpl {
     for (int i = 1; i <= 4; ++i) {
       eventInfo = v4.getTaskAttemptTezEvents(v4TaId, fromEventId, 0, 5);
       fromEventId = eventInfo.getNextFromEventId();
-      Assert.assertEquals((i % 2 > 0 ? (lastFromEventId += 2) : (lastFromEventId += 3)), fromEventId);
+      Assert.assertEquals((i % 2 > 0 ? (lastFromEventId + 2) : (lastFromEventId + 3)), fromEventId);
       Assert.assertEquals(5, eventInfo.getEvents().size());
     }
     eventInfo = v4.getTaskAttemptTezEvents(v4TaId, fromEventId, 0, 5);

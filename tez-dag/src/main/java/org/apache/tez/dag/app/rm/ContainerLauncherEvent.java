@@ -89,28 +89,35 @@ public class ContainerLauncherEvent extends AbstractEvent<ContainerLauncherEvent
 
   @Override
   public boolean equals(Object obj) {
-    if (this == obj)
+    if (this == obj) {
       return true;
-    if (obj == null)
+    } else if (obj == null) {
       return false;
-    if (getClass() != obj.getClass())
+    } else if (getClass() != obj.getClass()) {
       return false;
+    }
     ContainerLauncherEvent other = (ContainerLauncherEvent) obj;
     if (containerId == null) {
-      if (other.containerId != null)
+      if (other.containerId != null) {
         return false;
-    } else if (!containerId.equals(other.containerId))
+      }
+    } else if (!containerId.equals(other.containerId)) {
       return false;
+    }
     if (containerToken == null) {
-      if (other.containerToken != null)
+      if (other.containerToken != null) {
         return false;
-    } else if (!containerToken.equals(other.containerToken))
+      }
+    } else if (!containerToken.equals(other.containerToken)) {
       return false;
+    }
     if (nodeId == null) {
-      if (other.nodeId != null)
+      if (other.nodeId != null) {
         return false;
-    } else if (!nodeId.equals(other.nodeId))
+      }
+    } else if (!nodeId.equals(other.nodeId)) {
       return false;
+    }
     return true;
   }
 }

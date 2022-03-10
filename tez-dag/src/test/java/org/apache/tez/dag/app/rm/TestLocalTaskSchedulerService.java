@@ -93,10 +93,10 @@ public class TestLocalTaskSchedulerService {
   @Test(timeout = 5000)
   public void testDeallocationBeforeAllocation() throws InterruptedException {
     ApplicationAttemptId appAttemptId =
-      ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000l, 1), 1);
+      ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000L, 1), 1);
 
     TaskSchedulerContext mockContext = TestTaskSchedulerHelpers
-      .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000l, null, new Configuration());
+      .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000L, null, new Configuration());
 
     MockLocalTaskSchedulerSerivce taskSchedulerService = new MockLocalTaskSchedulerSerivce(mockContext);
     taskSchedulerService.initialize();
@@ -127,10 +127,10 @@ public class TestLocalTaskSchedulerService {
   @Test(timeout = 5000)
   public void testDeallocationAfterAllocation() throws InterruptedException {
     ApplicationAttemptId appAttemptId =
-      ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000l, 1), 1);
+      ApplicationAttemptId.newInstance(ApplicationId.newInstance(10000L, 1), 1);
 
     TaskSchedulerContext mockContext = TestTaskSchedulerHelpers
-      .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000l, null, new Configuration());
+      .setupMockTaskSchedulerContext("", 0, "", false, appAttemptId, 10000L, null, new Configuration());
 
     MockLocalTaskSchedulerSerivce taskSchedulerService =
       new MockLocalTaskSchedulerSerivce(mockContext);
@@ -168,7 +168,7 @@ public class TestLocalTaskSchedulerService {
 
     TaskSchedulerContext
       mockContext = TestTaskSchedulerHelpers.setupMockTaskSchedulerContext("", 0, "", true,
-      appAttemptId, 1000l, null, tezConf);
+      appAttemptId, 1000L, null, tezConf);
     when(mockContext.getVertexIndexForTask(parentTask1)).thenReturn(0);
     when(mockContext.getVertexIndexForTask(parentTask2)).thenReturn(0);
     when(mockContext.getVertexIndexForTask(childTask1)).thenReturn(1);

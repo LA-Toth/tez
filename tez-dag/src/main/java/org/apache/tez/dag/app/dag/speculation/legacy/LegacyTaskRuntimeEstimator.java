@@ -102,8 +102,7 @@ public class LegacyTaskRuntimeEstimator extends StartEndTimesBase {
     }
   }
 
-  private long storedPerAttemptValue
-    (Map<TaskAttempt, AtomicLong> data, TezTaskAttemptID attemptID) {
+  private long storedPerAttemptValue(Map<TaskAttempt, AtomicLong> data, TezTaskAttemptID attemptID) {
     Task task = vertex.getTask(attemptID.getTaskID());
 
     if (task == null) {

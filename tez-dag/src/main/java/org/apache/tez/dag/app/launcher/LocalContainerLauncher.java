@@ -174,6 +174,7 @@ public class LocalContainerLauncher extends DagContainerLauncher {
     eventHandlingThread.start();
   }
 
+  @SuppressWarnings("checkstyle:UpperEll")
   @Override
   public void shutdown() throws Exception {
     if (!serviceStopped.compareAndSet(false, true)) {
@@ -182,7 +183,7 @@ public class LocalContainerLauncher extends DagContainerLauncher {
     }
     if (eventHandlingThread != null) {
       eventHandlingThread.interrupt();
-      eventHandlingThread.join(2000l);
+      eventHandlingThread.join(2000L);
     }
     if (taskExecutorService != null) {
       taskExecutorService.shutdownNow();

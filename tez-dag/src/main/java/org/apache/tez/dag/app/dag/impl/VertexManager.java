@@ -105,7 +105,8 @@ public class VertexManager {
   private final VertexManagerCallback VM_CALLBACK = new VertexManagerCallback();
 
   public VertexManager(VertexManagerPluginDescriptor pluginDesc, UserGroupInformation dagUgi,
-                       Vertex managedVertex, AppContext appContext, StateChangeNotifier stateChangeNotifier) throws TezException {
+                       Vertex managedVertex, AppContext appContext,
+                       StateChangeNotifier stateChangeNotifier) throws TezException {
     Objects.requireNonNull(pluginDesc, "pluginDesc is null");
     Objects.requireNonNull(managedVertex, "managedVertex is null");
     Objects.requireNonNull(appContext, "appContext is null");

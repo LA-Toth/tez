@@ -109,7 +109,7 @@ public class TestContainerReuse {
     MockDNSToSwitchMapping.initializeMockRackResolver();
   }
 
-  @Test(timeout = 15000l)
+  @Test(timeout = 15000L)
   public void testDelayedReuseContainerBecomesAvailable()
     throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testDelayedReuseContainerBecomesAvailable");
@@ -121,7 +121,7 @@ public class TestContainerReuse {
     conf.setBoolean(
       TezConfiguration.TEZ_AM_CONTAINER_REUSE_NON_LOCAL_FALLBACK_ENABLED, false);
     conf.setLong(
-      TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS, 3000l);
+      TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS, 3000L);
     conf.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MIN_MILLIS, 0);
     conf.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MAX_MILLIS, 0);
 
@@ -229,7 +229,7 @@ public class TestContainerReuse {
 
     long currentTs = System.currentTimeMillis();
     Throwable exception = null;
-    while (System.currentTimeMillis() < currentTs + 5000l) {
+    while (System.currentTimeMillis() < currentTs + 5000L) {
       try {
         verify(taskSchedulerManager,
           times(1)).containerBeingReleased(eq(0), eq(containerHost2.getId()));
@@ -244,7 +244,7 @@ public class TestContainerReuse {
     taskSchedulerManager.close();
   }
 
-  @Test(timeout = 15000l)
+  @Test(timeout = 15000L)
   public void testDelayedReuseContainerNotAvailable()
     throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testDelayedReuseContainerNotAvailable");
@@ -252,7 +252,7 @@ public class TestContainerReuse {
     conf.setBoolean(TezConfiguration.TEZ_AM_CONTAINER_REUSE_ENABLED, true);
     conf.setBoolean(TezConfiguration.TEZ_AM_CONTAINER_REUSE_RACK_FALLBACK_ENABLED, false);
     conf.setBoolean(TezConfiguration.TEZ_AM_CONTAINER_REUSE_NON_LOCAL_FALLBACK_ENABLED, false);
-    conf.setLong(TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS, 1000l);
+    conf.setLong(TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS, 1000L);
     conf.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MIN_MILLIS, 0);
     conf.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MAX_MILLIS, 0);
 
@@ -347,7 +347,7 @@ public class TestContainerReuse {
     taskSchedulerManager.close();
   }
 
-  @Test(timeout = 10000l)
+  @Test(timeout = 10000L)
   public void testSimpleReuse() throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testSimpleReuse");
     Configuration tezConf = new Configuration();
@@ -374,9 +374,10 @@ public class TestContainerReuse {
     doReturn(dagID).when(appContext).getCurrentDAGID();
     doReturn(mock(ClusterInfo.class)).when(appContext).getClusterInfo();
 
-    TaskSchedulerManager
-      taskSchedulerManagerReal = new TaskSchedulerManagerForTest(appContext, eventHandler, rmClient,
-      new AlwaysMatchesContainerMatcher(), TezUtils.createUserPayloadFromConf(tezConf));
+    TaskSchedulerManager taskSchedulerManagerReal
+      = new TaskSchedulerManagerForTest(
+      appContext, eventHandler,
+      rmClient, new AlwaysMatchesContainerMatcher(), TezUtils.createUserPayloadFromConf(tezConf));
     TaskSchedulerManager taskSchedulerManager = spy(taskSchedulerManagerReal);
     taskSchedulerManager.init(tezConf);
     taskSchedulerManager.start();
@@ -494,7 +495,7 @@ public class TestContainerReuse {
     taskSchedulerManager.close();
   }
 
-  @Test(timeout = 10000l)
+  @Test(timeout = 10000L)
   public void testReuseWithTaskSpecificLaunchCmdOption() throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testReuseWithTaskSpecificLaunchCmdOption");
     Configuration tezConf = new Configuration();
@@ -684,7 +685,7 @@ public class TestContainerReuse {
     taskSchedulerManager.close();
   }
 
-  @Test(timeout = 30000l)
+  @Test(timeout = 30000L)
   public void testReuseNonLocalRequest()
     throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testReuseNonLocalRequest");
@@ -692,9 +693,9 @@ public class TestContainerReuse {
     tezConf.setBoolean(TezConfiguration.TEZ_AM_CONTAINER_REUSE_ENABLED, true);
     tezConf.setBoolean(TezConfiguration.TEZ_AM_CONTAINER_REUSE_RACK_FALLBACK_ENABLED, true);
     tezConf.setBoolean(TezConfiguration.TEZ_AM_CONTAINER_REUSE_NON_LOCAL_FALLBACK_ENABLED, true);
-    tezConf.setLong(TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS, 100l);
-    tezConf.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MIN_MILLIS, 1000l);
-    tezConf.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MAX_MILLIS, 1000l);
+    tezConf.setLong(TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS, 100L);
+    tezConf.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MIN_MILLIS, 1000L);
+    tezConf.setLong(TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MAX_MILLIS, 1000L);
 
     CapturingEventHandler eventHandler = new CapturingEventHandler();
     TezDAGID dagID = TezDAGID.getInstance("0", 0, 0);
@@ -805,18 +806,18 @@ public class TestContainerReuse {
     taskSchedulerManager.close();
   }
 
-  @Test(timeout = 30000l)
+  @Test(timeout = 30000L)
   public void testReuseAcrossVertices()
     throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testReuseAcrossVertices");
     Configuration tezConf = new Configuration();
     tezConf.setBoolean(TezConfiguration.TEZ_AM_CONTAINER_REUSE_ENABLED, true);
     tezConf.setLong(
-      TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS, 1l);
+      TezConfiguration.TEZ_AM_CONTAINER_REUSE_LOCALITY_DELAY_ALLOCATION_MILLIS, 1L);
     tezConf.setLong(
-      TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MIN_MILLIS, 20l);
+      TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MIN_MILLIS, 20L);
     tezConf.setLong(
-      TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MAX_MILLIS, 30l);
+      TezConfiguration.TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MAX_MILLIS, 30L);
     tezConf.setInt(
       TezConfiguration.TEZ_AM_SESSION_MIN_HELD_CONTAINERS, 1);
 
@@ -918,7 +919,7 @@ public class TestContainerReuse {
 
     LOG.info("Sleeping to ensure that the container has been idled longer " +
       "than TEZ_AM_CONTAINER_IDLE_RELEASE_TIMEOUT_MAX_MILLIS ");
-    Thread.sleep(50l);
+    Thread.sleep(50L);
     // container should not get released due to min held containers
     verify(rmClient, times(0)).releaseAssignedContainer(eq(container1.getId()));
 
@@ -926,7 +927,7 @@ public class TestContainerReuse {
     taskSchedulerManager.close();
   }
 
-  @Test(timeout = 30000l)
+  @Test(timeout = 30000L)
   public void testReuseLocalResourcesChanged() throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testReuseLocalResourcesChanged");
     Configuration tezConf = new Configuration();
@@ -956,8 +957,8 @@ public class TestContainerReuse {
     doReturn(mock(ClusterInfo.class)).when(appContext).getClusterInfo();
 
     TaskSchedulerManager
-      taskSchedulerManagerReal = new TaskSchedulerManagerForTest(appContext, eventHandler, rmClient,
-      new AlwaysMatchesContainerMatcher(), TezUtils.createUserPayloadFromConf(tezConf));
+      taskSchedulerManagerReal = new TaskSchedulerManagerForTest(appContext, eventHandler,
+      rmClient, new AlwaysMatchesContainerMatcher(), TezUtils.createUserPayloadFromConf(tezConf));
     TaskSchedulerManager taskSchedulerManager = spy(taskSchedulerManagerReal);
     taskSchedulerManager.init(tezConf);
     taskSchedulerManager.start();
@@ -1089,7 +1090,7 @@ public class TestContainerReuse {
     taskSchedulerManager.close();
   }
 
-  @Test(timeout = 30000l)
+  @Test(timeout = 30000L)
   public void testReuseConflictLocalResources() throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testReuseLocalResourcesChanged");
     Configuration tezConf = new Configuration();
@@ -1323,7 +1324,7 @@ public class TestContainerReuse {
     taskSchedulerManager.close();
   }
 
-  @Test(timeout = 10000l)
+  @Test(timeout = 10000L)
   public void testAssignmentOnShutdown()
     throws IOException, InterruptedException, ExecutionException {
     LOG.info("Test testAssignmentOnShutdown");
