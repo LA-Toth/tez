@@ -88,6 +88,7 @@
 
         <!-- Checks for Naming Conventions.                  -->
         <!-- See http://checkstyle.sf.net/config_naming.html -->
+        <!--
         <module name="ConstantName"/>
         <module name="LocalFinalVariableName"/>
         <module name="LocalVariableName"/>
@@ -100,6 +101,7 @@
         <module name="ParameterName"/>
         <module name="StaticVariableName"/>
         <module name="TypeName"/>
+        -->
 
 
         <!-- Checks for Headers                                -->
@@ -130,11 +132,13 @@
             * org.apache.*
             * third party everything else
          -->
-        <!--<module name="CustomImportOrder">
+        <!--
+        <module name="CustomImportOrder">
             <property name="standardPackageRegExp" value="^org\.apache\.*"/>
             <property name="separateLineBetweenGroups" value="true"/>
             <property name="sortImportsInGroupAlphabetically" value="true"/>
-        </module>-->
+        </module>
+        -->
         <module name="IllegalImport"/> <!-- defaults to sun.* packages -->
         <module name="RedundantImport"/>
         <module name="UnusedImports"/>
@@ -173,7 +177,9 @@
         <!-- See http://checkstyle.sf.net/config_modifiers.html -->
         <!-- This one is nitty, disable -->
         <!-- <module name="ModifierOrder"/> -->
+        <!--
         <module name="RedundantModifier"/>
+        -->
 
 
         <!-- Checks for blocks. You know, those {}'s         -->
@@ -190,7 +196,9 @@
         <!-- module name="AvoidInlineConditionals"/-->
         <module name="DefaultComesLast"/>
         <module name="EmptyStatement"/>
+        <!--
         <module name="ExplicitInitialization"/>
+        -->
         <module name="EqualsHashCode"/>
         <!-- explicitly mark "fallthrough" on switch cases -->
         <module name="FallThrough"/>
@@ -202,7 +210,9 @@
         </module>
         <module name="IllegalInstantiation"/>
         <module name="InnerAssignment"/>
-        <!--<module name="MissingSwitchDefault"/>-->
+        <!--
+        <module name="MissingSwitchDefault"/>
+        -->
         <module name="SimplifyBooleanExpression"/>
         <module name="SimplifyBooleanReturn"/>
         <module name="StringLiteralEquality"/>
@@ -213,10 +223,6 @@
         <module name="FinalClass"/>
         <module name="HideUtilityClassConstructor"/>
         <module name="InterfaceIsType"/>
-        <module name="VisibilityModifier">
-            <property name="packageAllowed" value="true"/>
-        </module>
-
 
         <!-- Miscellaneous other checks.                   -->
         <!-- See http://checkstyle.sf.net/config_misc.html -->

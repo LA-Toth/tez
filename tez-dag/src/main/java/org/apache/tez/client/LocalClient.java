@@ -425,18 +425,19 @@ public class LocalClient extends FrameworkClient {
 
     String dagId = dagAppMaster.submitDAGToAppMaster(request.getDAGPlan(), additionalResources);
 
-    return isLocalWithoutNetwork
-      ? new DAGClientImplLocal(sessionAppId, dagId, tezConf, this,
-      ugi, new BiFunction<Set<StatusGetOpts>, Long, DAGStatus>() {
-      @Override
-      public DAGStatus apply(Set<StatusGetOpts> statusOpts, Long timeout) {
-        try {
-          return clientHandler.getDAGStatus(dagId, statusOpts, timeout);
-        } catch (TezException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    })
+    return isLocalWithoutNetwork ?
+      new DAGClientImplLocal(
+        sessionAppId, dagId, tezConf, this, ugi,
+        new BiFunction<Set<StatusGetOpts>, Long, DAGStatus>() {
+          @Override
+          public DAGStatus apply(Set<StatusGetOpts> statusOpts, Long timeout) {
+            try {
+              return clientHandler.getDAGStatus(dagId, statusOpts, timeout);
+            } catch (TezException e) {
+              throw new RuntimeException(e);
+            }
+          }
+        })
       : new DAGClientImpl(sessionAppId, dagId, tezConf, this, ugi);
   }
 
