@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.mapreduce.examples;
 
 import java.io.DataInput;
@@ -56,11 +57,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *  v1 -> v3 <br/>
- *  v2 -> v3 <br/>
- *  (v1,v2) is connected to v3 as vertex group. <br/>
- *  (v1,v2) have multiple shared outputs, each of them have its own multiple outputs. 
- *  And v3 also has multiple outputs. </br>
+ * v1 -> v3 <br/>
+ * v2 -> v3 <br/>
+ * (v1,v2) is connected to v3 as vertex group. <br/>
+ * (v1,v2) have multiple shared outputs, each of them have its own multiple outputs.
+ * And v3 also has multiple outputs. </br>
  */
 public class MultipleCommitsExample extends TezExampleBase {
 

@@ -45,11 +45,11 @@ import org.apache.hadoop.util.ToolRunner;
 /**
  * This is an example Hadoop Map/Reduce application.
  * It reads the text input files that must contain two integers per a line.
- * The output is sorted by the first and second number and grouped on the 
+ * The output is sorted by the first and second number and grouped on the
  * first number.
- *
+ * <p>
  * To run: bin/hadoop jar build/hadoop-examples.jar secondarysort
- *            <i>in-dir</i> <i>out-dir</i> 
+ * <i>in-dir</i> <i>out-dir</i>
  */
 public class SecondarySort extends Configured implements Tool {
 
@@ -161,7 +161,9 @@ public class SecondarySort extends Configured implements Tool {
       }
     }
 
-    /** A Comparator that compares serialized IntPair. */
+    /**
+     * A Comparator that compares serialized IntPair.
+     */
     public static class Comparator extends WritableComparator {
       public Comparator() {
         super(IntPair.class);

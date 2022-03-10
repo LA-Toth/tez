@@ -150,7 +150,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Implementation of Job interface. Maintains the state machines of Job.
+/**
+ * Implementation of Job interface. Maintains the state machines of Job.
  * The read and write calls use ReadWriteLock for concurrency.
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -171,11 +172,8 @@ public class DAGImpl implements org.apache.tez.dag.app.dag.DAG,
     DAG_SCHEDULER_UPDATE_TRANSITION = new DAGSchedulerUpdateTransition();
   private static final CommitCompletedTransition COMMIT_COMPLETED_TRANSITION =
     new CommitCompletedTransition();
-  protected static final
-  StateMachineFactory<DAGImpl, DAGState, DAGEventType, DAGEvent>
-    stateMachineFactory
-    = new StateMachineFactory<DAGImpl, DAGState, DAGEventType, DAGEvent>
-    (DAGState.NEW)
+  protected static final StateMachineFactory<DAGImpl, DAGState, DAGEventType, DAGEvent> stateMachineFactory
+    = new StateMachineFactory<DAGImpl, DAGState, DAGEventType, DAGEvent>(DAGState.NEW)
 
     // Transitions from NEW state
     .addTransition(DAGState.NEW, DAGState.NEW,
@@ -190,11 +188,10 @@ public class DAGImpl implements org.apache.tez.dag.app.dag.DAG,
       new RecoverTransition())
     .addTransition(DAGState.NEW, DAGState.NEW,
       DAGEventType.DAG_COUNTER_UPDATE, COUNTER_UPDATE_TRANSITION)
-    .addTransition
-      (DAGState.NEW,
-        EnumSet.of(DAGState.INITED, DAGState.FAILED),
-        DAGEventType.DAG_INIT,
-        new InitTransition())
+    .addTransition(DAGState.NEW,
+      EnumSet.of(DAGState.INITED, DAGState.FAILED),
+      DAGEventType.DAG_INIT,
+      new InitTransition())
     .addTransition(DAGState.NEW, EnumSet.of(DAGState.KILLED, DAGState.FAILED),
       DAGEventType.DAG_TERMINATE,
       new KillNewJobTransition())
@@ -219,12 +216,11 @@ public class DAGImpl implements org.apache.tez.dag.app.dag.DAG,
       INTERNAL_ERROR_TRANSITION)
 
     // Transitions from RUNNING state
-    .addTransition
-      (DAGState.RUNNING,
-        EnumSet.of(DAGState.RUNNING, DAGState.COMMITTING,
-          DAGState.SUCCEEDED, DAGState.TERMINATING, DAGState.FAILED),
-        DAGEventType.DAG_VERTEX_COMPLETED,
-        new VertexCompletedTransition())
+    .addTransition(DAGState.RUNNING,
+      EnumSet.of(DAGState.RUNNING, DAGState.COMMITTING,
+        DAGState.SUCCEEDED, DAGState.TERMINATING, DAGState.FAILED),
+      DAGEventType.DAG_VERTEX_COMPLETED,
+      new VertexCompletedTransition())
     .addTransition(DAGState.RUNNING, EnumSet.of(DAGState.RUNNING, DAGState.TERMINATING),
       DAGEventType.DAG_VERTEX_RERUNNING,
       new VertexReRunningTransition())
@@ -273,12 +269,11 @@ public class DAGImpl implements org.apache.tez.dag.app.dag.DAG,
       DAGEventType.DAG_COUNTER_UPDATE, COUNTER_UPDATE_TRANSITION)
 
     // Transitions from TERMINATING state.
-    .addTransition
-      (DAGState.TERMINATING,
-        EnumSet.of(DAGState.TERMINATING, DAGState.KILLED, DAGState.FAILED,
-          DAGState.ERROR),
-        DAGEventType.DAG_VERTEX_COMPLETED,
-        new VertexCompletedTransition())
+    .addTransition(DAGState.TERMINATING,
+      EnumSet.of(DAGState.TERMINATING, DAGState.KILLED, DAGState.FAILED,
+        DAGState.ERROR),
+      DAGEventType.DAG_VERTEX_COMPLETED,
+      new VertexCompletedTransition())
     .addTransition(DAGState.TERMINATING, DAGState.TERMINATING,
       DAGEventType.DAG_DIAGNOSTIC_UPDATE,
       DIAGNOSTIC_UPDATE_TRANSITION)
@@ -1025,7 +1020,7 @@ public class DAGImpl implements org.apache.tez.dag.app.dag.DAG,
 
   public DAGStatusBuilder getDAGStatus(Set<StatusGetOpts> statusOptions,
                                        long timeoutMillis) throws TezException {
-    long timeoutNanos = timeoutMillis * 1000l * 1000l;
+    long timeoutNanos = timeoutMillis * 1000L * 1000L;
     if (timeoutMillis < 0) {
       // Return only on SUCCESS
       timeoutNanos = Long.MAX_VALUE;
@@ -1819,8 +1814,6 @@ public class DAGImpl implements org.apache.tez.dag.app.dag.DAG,
                   commitOutput(committer);
                   return null;
                 }
-
-                ;
               };
               ListenableFuture<Void> groupCommitFuture = appContext.getExecService().submit(groupCommitCallableEvent);
               Futures.addCallback(groupCommitFuture, groupCommitCallableEvent.getCallback(),
@@ -2442,25 +2435,31 @@ public class DAGImpl implements org.apache.tez.dag.app.dag.DAG,
 
     @Override
     public boolean equals(Object obj) {
-      if (this == obj)
+      if (this == obj) {
         return true;
-      if (obj == null)
+      } else if (obj == null) {
         return false;
-      if (getClass() != obj.getClass())
+      } else if (getClass() != obj.getClass()) {
         return false;
+      }
       OutputKey other = (OutputKey) obj;
       if (entityName == null) {
-        if (other.entityName != null)
+        if (other.entityName != null) {
           return false;
-      } else if (!entityName.equals(other.entityName))
+        }
+      } else if (!entityName.equals(other.entityName)) {
         return false;
-      if (isVertexGroupOutput != other.isVertexGroupOutput)
+      }
+      if (isVertexGroupOutput != other.isVertexGroupOutput) {
         return false;
+      }
       if (outputName == null) {
-        if (other.outputName != null)
+        if (other.outputName != null) {
           return false;
-      } else if (!outputName.equals(other.outputName))
+        }
+      } else if (!outputName.equals(other.outputName)) {
         return false;
+      }
       return true;
     }
 

@@ -57,6 +57,7 @@ public interface DAG extends DagInfo {
    * Get all the counters of this DAG. This includes job-counters aggregated
    * together with the counters of each task. This creates a clone of the
    * Counters, so use this judiciously.
+   *
    * @return job-counters and aggregate task-counters
    */
   TezCounters getAllCounters();
@@ -112,7 +113,6 @@ public interface DAG extends DagInfo {
   org.apache.tez.dag.api.Vertex.VertexExecutionContext getDefaultExecutionContext();
 
   /**
-   *
    * @return the DAGScheduler that will schedule
    * this DAG, null if it doesn't exist
    */

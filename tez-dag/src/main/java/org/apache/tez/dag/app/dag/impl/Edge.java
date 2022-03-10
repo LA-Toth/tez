@@ -88,6 +88,7 @@ public class Edge {
   private Vertex destinationVertex; // this may end up being a list for shared edge
   private EventMetaData destinationMetaInfo;
   private boolean routingNeeded = true;
+
   @SuppressWarnings("rawtypes")
   public Edge(EdgeProperty edgeProperty, EventHandler eventHandler, Configuration conf) throws TezException {
     this.edgeProperty = edgeProperty;

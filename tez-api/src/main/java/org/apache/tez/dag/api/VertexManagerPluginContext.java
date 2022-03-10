@@ -46,6 +46,7 @@ public interface VertexManagerPluginContext {
   /**
    * Get the edge properties on the input edges of this vertex. The input edge
    * is represented by the source vertex name
+   *
    * @return Map of source vertex name and edge property
    */
   public Map<String, EdgeProperty> getInputVertexEdgeProperties();
@@ -53,6 +54,7 @@ public interface VertexManagerPluginContext {
   /**
    * Get the edge properties on the output edges of this vertex. The output edge
    * is represented by the destination vertex name
+   *
    * @return Map of destination vertex name and edge property
    */
   public Map<String, EdgeProperty> getOutputVertexEdgeProperties();
@@ -63,26 +65,28 @@ public interface VertexManagerPluginContext {
    * <br>This only provides point in time values for statistics (completed tasks)
    * and must be called again to get updated values.
    *
-   * @param vertexName
-   *          Name of the {@link Vertex}
+   * @param vertexName Name of the {@link Vertex}
    * @return {@link VertexStatistics} for the given vertex
    */
   public VertexStatistics getVertexStatistics(String vertexName);
 
   /**
    * Get the name of the vertex
+   *
    * @return Vertex name
    */
   public String getVertexName();
 
   /**
    * Get the payload set for the plugin
+   *
    * @return user payload
    */
   public UserPayload getUserPayload();
 
   /**
    * Get the number of tasks in the given vertex
+   *
    * @param vertexName
    * @return Total number of tasks in this vertex
    */
@@ -90,6 +94,7 @@ public interface VertexManagerPluginContext {
 
   /**
    * Get the resource allocated to a task of this vertex
+   *
    * @return Resource
    */
   Resource getVertexTaskResource();
@@ -98,12 +103,14 @@ public interface VertexManagerPluginContext {
    * Get the total resource allocated to this vertex. If the DAG is running in
    * a busy cluster then it may have no resources available dedicated to it. The
    * DAG may divide its available resource among member vertices.
+   *
    * @return Resource
    */
   Resource getTotalAvailableResource();
 
   /**
    * Get the number of nodes in the cluster
+   *
    * @return Number of nodes
    */
   int getNumClusterNodes();
@@ -114,11 +121,12 @@ public interface VertexManagerPluginContext {
    * between the source tasks and the new destination tasks and the number of physical inputs for root inputs.
    * This API can change the parallelism only once. Subsequent attempts will be
    * disallowed
-   * @param parallelism New number of tasks in the vertex
-   * @param locationHint the placement policy for tasks.
-   * @param sourceEdgeManagers Edge Managers to be updated
+   *
+   * @param parallelism         New number of tasks in the vertex
+   * @param locationHint        the placement policy for tasks.
+   * @param sourceEdgeManagers  Edge Managers to be updated
    * @param rootInputSpecUpdate Updated Root Input specifications, if any.
-   *        If none specified, a default of 1 physical input is used
+   *                            If none specified, a default of 1 physical input is used
    */
   @Deprecated
   public void setVertexParallelism(int parallelism,
@@ -144,20 +152,16 @@ public interface VertexManagerPluginContext {
    * {@link #scheduleTasks(List)}. If needed, the original source edge
    * properties may be obtained via {@link #getInputVertexEdgeProperties()}
    *
-   * @param parallelism
-   *          New number of tasks in the vertex
-   * @param locationHint
-   *          the placement policy for tasks specified at
-   *          {@link VertexLocationHint}s
-   * @param sourceEdgeProperties
-   *          Map with Key=name of {@link Edge} to be updated and Value=
-   *          {@link EdgeProperty}. The name of the Edge will be the
-   *          corresponding source vertex name.
-   * @param rootInputSpecUpdate
-   *          The key of the map is the name of the data source and the value is
-   *          the updated {@link InputSpecUpdate} for that data source. If none
-   *          specified, a default value is used. See {@link InputSpecUpdate}
-   *          for details.
+   * @param parallelism          New number of tasks in the vertex
+   * @param locationHint         the placement policy for tasks specified at
+   *                             {@link VertexLocationHint}s
+   * @param sourceEdgeProperties Map with Key=name of {@link Edge} to be updated and Value=
+   *                             {@link EdgeProperty}. The name of the Edge will be the
+   *                             corresponding source vertex name.
+   * @param rootInputSpecUpdate  The key of the map is the name of the data source and the value is
+   *                             the updated {@link InputSpecUpdate} for that data source. If none
+   *                             specified, a default value is used. See {@link InputSpecUpdate}
+   *                             for details.
    */
   public void reconfigureVertex(int parallelism,
                                 @Nullable VertexLocationHint locationHint,
@@ -174,15 +178,12 @@ public interface VertexManagerPluginContext {
    * {@link #scheduleTasks(List)}. If needed, the original source edge
    * properties may be obtained via {@link #getInputVertexEdgeProperties()}
    *
-   * @param parallelism
-   *          New number of tasks in the vertex
-   * @param locationHint
-   *          the placement policy for tasks specified at
-   *          {@link VertexLocationHint}s
-   * @param sourceEdgeProperties
-   *          Map with Key=name of {@link Edge} to be updated and Value=
-   *          {@link EdgeProperty}. The name of the Edge will be the
-   *          corresponding source vertex name.
+   * @param parallelism          New number of tasks in the vertex
+   * @param locationHint         the placement policy for tasks specified at
+   *                             {@link VertexLocationHint}s
+   * @param sourceEdgeProperties Map with Key=name of {@link Edge} to be updated and Value=
+   *                             {@link EdgeProperty}. The name of the Edge will be the
+   *                             corresponding source vertex name.
    */
   public void reconfigureVertex(int parallelism,
                                 @Nullable VertexLocationHint locationHint,
@@ -198,16 +199,14 @@ public interface VertexManagerPluginContext {
    * information about the data source. This API may be used to set the
    * parallelism of the vertex at runtime based on the data sources, as well as
    * changing the specification for those inputs.
-   * @param rootInputSpecUpdate
-   *          The key of the map is the name of the data source and the value is
-   *          the updated {@link InputSpecUpdate} for that data source. If none
-   *          specified, a default value is used. See {@link InputSpecUpdate}
-   *          for details.
-   * @param locationHint
-   *          the placement policy for tasks specified at
-   *          {@link VertexLocationHint}s
-   * @param parallelism
-   *          New number of tasks in the vertex
+   *
+   * @param rootInputSpecUpdate The key of the map is the name of the data source and the value is
+   *                            the updated {@link InputSpecUpdate} for that data source. If none
+   *                            specified, a default value is used. See {@link InputSpecUpdate}
+   *                            for details.
+   * @param locationHint        the placement policy for tasks specified at
+   *                            {@link VertexLocationHint}s
+   * @param parallelism         New number of tasks in the vertex
    */
   public void reconfigureVertex(@Nullable Map<String, InputSpecUpdate> rootInputSpecUpdate,
                                 @Nullable VertexLocationHint locationHint,
@@ -215,23 +214,21 @@ public interface VertexManagerPluginContext {
 
   /**
    * Allows a VertexManagerPlugin to assign Events for Root Inputs
-   *
+   * <p>
    * For regular Event Routing changes - the EdgeManager should be configured
    * via the setVertexParallelism method
    *
-   * @param inputName
-   *          The input name associated with the event
-   * @param events
-   *          The list of Events to be assigned to various tasks belonging to
-   *          the Vertex. The target index on individual events represents the
-   *          task to which events need to be sent.
+   * @param inputName The input name associated with the event
+   * @param events    The list of Events to be assigned to various tasks belonging to
+   *                  the Vertex. The target index on individual events represents the
+   *                  task to which events need to be sent.
    */
   public void addRootInputEvents(String inputName, Collection<InputDataInformationEvent> events);
 
   /**
    * Allows a VertexManagerPlugin to send events of custom payload to processor
    * of a specific task of managed vertex
-   *
+   * <p>
    * It's up to user to make sure taskId is valid
    *
    * @param events events to be sent
@@ -249,6 +246,7 @@ public interface VertexManagerPluginContext {
 
   /**
    * Notify the vertex to schedule the given tasks
+   *
    * @param tasks Identifier and metadata for the tasks to schedule
    */
   public void scheduleTasks(List<ScheduleTaskRequest> tasks);
@@ -256,6 +254,7 @@ public interface VertexManagerPluginContext {
   /**
    * Get the names of the non-vertex inputs of this vertex. These are primary
    * sources of data.
+   *
    * @return Names of inputs to this vertex. Maybe null if there are no inputs
    */
   @Nullable
@@ -276,7 +275,7 @@ public interface VertexManagerPluginContext {
   /**
    * Register to get notifications on updates to the specified vertex. Notifications will be sent
    * via {@link VertexManagerPlugin#onVertexStateUpdated(org.apache.tez.dag.api.event.VertexStateUpdate)}
-   *
+   * <p>
    * This method can only be invoked once. Duplicate invocations will result in an error.
    *
    * @param vertexName the vertex name for which notifications are required.
@@ -314,7 +313,7 @@ public interface VertexManagerPluginContext {
    * all members vertex name
    *
    * @return map whose key is vertex group name and value is list of members' name,
-   *         or empty map if there is no input vertex group.
+   * or empty map if there is no input vertex group.
    */
   Map<String, List<String>> getInputVertexGroups();
 

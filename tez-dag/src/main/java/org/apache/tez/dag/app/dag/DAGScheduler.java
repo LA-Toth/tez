@@ -82,6 +82,7 @@ public abstract class DAGScheduler {
 
   /**
    * Get the low limit priority for a particular vertex.
+   *
    * @param vertex to get the priority of
    * @return the priority
    */
@@ -94,6 +95,7 @@ public abstract class DAGScheduler {
   /**
    * Get the low hight priority for a particular vertex. Default
    * to the low limit priority minus two.
+   *
    * @param vertex to get the priority of
    * @return the priority
    */

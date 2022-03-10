@@ -450,6 +450,7 @@ public class ATSV15HistoryLoggingService extends HistoryLoggingService {
 
   /**
    * Creates a domain for the session.
+   *
    * @return domainId to be used. null if acls are disabled.
    * @throws HistoryACLPolicyException, IOException Forward if historyACLPolicyManger exception.
    */
@@ -467,12 +468,13 @@ public class ATSV15HistoryLoggingService extends HistoryLoggingService {
 
   /**
    * When running in session mode, create a domain for the dag and return it.
+   *
    * @param dagConf The configuration the dag for which domain has to be created.
    * @param dagPlan The dag plan which contains the ACLs.
-   * @param dagId The dagId for which domain has to be created.
+   * @param dagId   The dagId for which domain has to be created.
    * @return The created domain id on success.
-   *     sessionDomainId: If there is a failure also disable history logging for this dag.
-   *     sessionDomainId: If historyACLPolicyManager returns null.
+   * sessionDomainId: If there is a failure also disable history logging for this dag.
+   * sessionDomainId: If historyACLPolicyManager returns null.
    */
   private String createDagDomain(Configuration dagConf, DAGPlan dagPlan, TezDAGID dagId) {
     // In non session mode dag domain is same as session domain id.

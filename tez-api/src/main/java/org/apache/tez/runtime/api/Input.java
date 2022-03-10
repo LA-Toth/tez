@@ -23,10 +23,10 @@ import org.apache.hadoop.classification.InterfaceAudience.Public;
 /**
  * Represents an input through which a {@link Processor} receives data on an edge.
  * </p>
- *
+ * <p>
  * This interface has methods which can be used by a {@link org.apache.tez.runtime.api.Processor}
  * to control execution of this Input and read data from it.
- *
+ * <p>
  * Actual implementations are expected to derive from {@link AbstractLogicalInput}
  */
 @Public
@@ -35,14 +35,14 @@ public interface Input {
   /**
    * Start any processing that the Input may need to perform. It is the
    * responsibility of the Processor to start Inputs.
-   *
+   * <p>
    * This typically acts as a signal to Inputs to start any Processing that they
    * may required. A blocking implementation of this method should not be used
    * as a mechanism to determine when an Input is actually ready.
-   *
+   * <p>
    * This method may be invoked by the framework under certain circumstances,
    * and as such requires the implementation to be non-blocking.
-   *
+   * <p>
    * Inputs must be written to handle multiple start invocations - typically
    * honoring only the first one.
    *
@@ -54,8 +54,7 @@ public interface Input {
    * Gets an instance of the {@link Reader} for this <code>Output</code>
    *
    * @return Gets an instance of the {@link Reader} for this <code>Output</code>
-   * @throws Exception
-   *           if an error occurs
+   * @throws Exception if an error occurs
    */
   public Reader getReader() throws Exception;
 }

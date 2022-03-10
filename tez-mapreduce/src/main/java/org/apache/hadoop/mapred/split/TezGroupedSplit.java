@@ -36,7 +36,7 @@ import org.apache.tez.dag.api.TezException;
 import org.apache.tez.dag.api.TezUncheckedException;
 
 /**
- * Implements an InputSplit that provides a generic wrapper around 
+ * Implements an InputSplit that provides a generic wrapper around
  * a group of real InputSplits
  */
 @Public

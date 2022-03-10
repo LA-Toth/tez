@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.test;
 
 import java.io.ByteArrayOutputStream;
@@ -52,7 +53,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Add hook before/after processing RecoveryEvent & SummaryEvent
- *
  */
 public class RecoveryServiceWithEventHandlingHook extends RecoveryService {
 
@@ -115,7 +115,6 @@ public class RecoveryServiceWithEventHandlingHook extends RecoveryService {
 
   /**
    * Abstract class to allow do something before/after processing recovery events
-   *
    */
   public static abstract class RecoveryServiceHook {
 
@@ -141,7 +140,6 @@ public class RecoveryServiceWithEventHandlingHook extends RecoveryService {
   /**
    * Shutdown AM before/after a specified recovery event is processed.
    * Only do it in the first AM attempt
-   *
    */
   public static class SimpleRecoveryEventHook extends RecoveryServiceHook {
 
@@ -193,7 +191,6 @@ public class RecoveryServiceWithEventHandlingHook extends RecoveryService {
   }
 
   /**
-   *
    * Shutdown AM based on one recovery event if it is matched.
    * This would be serialized as property of TezConfiguration and deserialized at runtime.
    */
@@ -201,6 +198,7 @@ public class RecoveryServiceWithEventHandlingHook extends RecoveryService {
 
     private TIMING timing;
     private HistoryEvent event;
+
     public SimpleShutdownCondition(TIMING timing, HistoryEvent event) {
       this.timing = timing;
       this.event = event;

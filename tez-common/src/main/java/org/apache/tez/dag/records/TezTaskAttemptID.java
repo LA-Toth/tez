@@ -33,7 +33,7 @@ import com.google.common.collect.Interners;
  * TezTaskAttemptID represents the immutable and unique identifier for
  * a task attempt. Each task attempt is one particular instance of a Tez Task
  * identified by its TezTaskID.
- *
+ * <p>
  * TezTaskAttemptID consists of 2 parts. First part is the
  * {@link TezTaskID}, that this TaskAttemptID belongs to.
  * Second part is the task attempt number. <br>
@@ -62,8 +62,9 @@ public class TezTaskAttemptID extends TezID implements TaskIDAware {
 
   /**
    * Constructs a TaskAttemptID object from given {@link TezTaskID}.
+   *
    * @param taskID TaskID that this task belongs to
-   * @param id the task attempt number
+   * @param id     the task attempt number
    * @throws NullPointerException if {@code taskID} is {@code null}
    */
   public static TezTaskAttemptID getInstance(TezTaskID taskID, int id) {
@@ -103,7 +104,9 @@ public class TezTaskAttemptID extends TezID implements TaskIDAware {
     return null;
   }
 
-  /** Returns the {@link TezTaskID} object that this task attempt belongs to */
+  /**
+   * Returns the {@link TezTaskID} object that this task attempt belongs to
+   */
   @Override
   public TezTaskID getTaskID() {
     return taskId;
@@ -120,6 +123,7 @@ public class TezTaskAttemptID extends TezID implements TaskIDAware {
 
   /**
    * Add the unique string to the StringBuilder
+   *
    * @param builder the builder to append ot
    * @return the builder that was passed in.
    */
@@ -134,7 +138,9 @@ public class TezTaskAttemptID extends TezID implements TaskIDAware {
     return taskId.hashCode() * 539501 + id;
   }
 
-  /**Compare TaskIds by first tipIds, then by task numbers. */
+  /**
+   * Compare TaskIds by first tipIds, then by task numbers.
+   */
   @Override
   public int compareTo(TezID o) {
     TezTaskAttemptID that = (TezTaskAttemptID) o;

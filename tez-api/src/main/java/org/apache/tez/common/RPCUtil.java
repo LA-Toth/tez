@@ -93,10 +93,9 @@ public class RPCUtil {
   /**
    * Utility method that unwraps and returns appropriate exceptions.
    *
-   * @param se
-   *          ServiceException
+   * @param se ServiceException
    * @return An instance of the actual exception, which will be a subclass of
-   *         {@link TezException} or {@link IOException}
+   * {@link TezException} or {@link IOException}
    */
   public static Void unwrapAndThrowException(ServiceException se)
     throws IOException, TezException {
@@ -155,10 +154,9 @@ public class RPCUtil {
   /**
    * Utility method that unwraps and returns appropriate exceptions.
    *
-   * @param se
-   *          ServiceException
+   * @param se ServiceException
    * @return An instance of the actual exception, which will be a subclass of
-   *         {@link TezException} or {@link IOException}
+   * {@link TezException} or {@link IOException}
    */
   public static Void unwrapAndThrowNonIOException(ServiceException se)
     throws TezException {

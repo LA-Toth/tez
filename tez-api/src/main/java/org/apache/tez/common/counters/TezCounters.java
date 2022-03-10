@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.common.counters;
 
 import org.apache.hadoop.classification.InterfaceAudience.Public;
@@ -43,6 +44,7 @@ public class TezCounters extends AbstractCounters<TezCounter, CounterGroup> {
 
   /**
    * Construct the Counters object from the another counters object
+   *
    * @param <C> the type of counter
    * @param <G> the type of counter group
    */
@@ -53,8 +55,9 @@ public class TezCounters extends AbstractCounters<TezCounter, CounterGroup> {
 
   /**
    * Construct the Counters object from the another counters object
-   * @param <C> the type of counter
-   * @param <G> the type of counter group
+   *
+   * @param <C>      the type of counter
+   * @param <G>      the type of counter group
    * @param counters the old counters object
    */
   public <C extends TezCounter, G extends CounterGroupBase<C>>
@@ -124,7 +127,7 @@ public class TezCounters extends AbstractCounters<TezCounter, CounterGroup> {
   /**
    * Provide factory methods for counter group factory implementation.
    * See also the GroupFactory in
-   *  {@link org.apache.hadoop.TezCounters.Counters mapred.Counters}
+   * {@link org.apache.hadoop.TezCounters.Counters mapred.Counters}
    */
   private static class GroupFactory
     extends CounterGroupFactory<TezCounter, CounterGroup> {

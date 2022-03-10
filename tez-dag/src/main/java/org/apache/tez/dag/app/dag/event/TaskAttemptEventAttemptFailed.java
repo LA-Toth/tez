@@ -42,8 +42,10 @@ public class TaskAttemptEventAttemptFailed extends TaskAttemptEvent
 
   /* Accepted Types - FAILED, TIMED_OUT */
   public TaskAttemptEventAttemptFailed(TezTaskAttemptID id,
-                                       TaskAttemptEventType type, TaskFailureType taskFailureType, String diagnostics
-    , TaskAttemptTerminationCause errorCause,
+                                       TaskAttemptEventType type,
+                                       TaskFailureType taskFailureType,
+                                       String diagnostics,
+                                       TaskAttemptTerminationCause errorCause,
                                        boolean isFromRecovery) {
     super(id, type);
     Objects.requireNonNull(taskFailureType, "FailureType must be set for a FAILED task attempt");

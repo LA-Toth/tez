@@ -340,6 +340,7 @@ public class AsyncDispatcher extends CompositeService implements Dispatcher {
   /**
    * Multiplexing an event. Sending it to different handlers that
    * are interested in the event.
+   *
    * @param <T> the type of event these multiple handlers are interested in.
    */
   static class MultiListenerHandler implements EventHandler<Event> {

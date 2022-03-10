@@ -30,14 +30,14 @@ import org.apache.tez.runtime.api.InputInitializer;
  * Events used by {@link InputInitializer} implementations to provide the
  * user payload for individual tasks running as part of the Vertex for which an
  * Initial Input has been configured.
- *
+ * <p>
  * This event is used by InputInitialziers to configure tasks belonging to a
  * Vertex. The event may be processed by a @link {@link VertexManagerPlugin}
  * before being sent to tasks.
- *
+ * <p>
  * A {@link InputInitializer} may send Events with or without a
  * serialized user payload.
- *
+ * <p>
  * Events, after being processed by a {@link VertexManagerPlugin}, must
  * contain the payload in a serialized form.
  */
@@ -64,7 +64,8 @@ public final class InputDataInformationEvent extends Event {
 
   /**
    * Provide a serialized form of the payload
-   * @param srcIndex the src index
+   *
+   * @param srcIndex    the src index
    * @param userPayload the serialized payload
    */
   public static InputDataInformationEvent createWithSerializedPayload(int srcIndex,

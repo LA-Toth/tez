@@ -62,7 +62,6 @@ import com.google.common.collect.Collections2;
 
 /**
  * Configures and starts the Tez-specific components in the YARN cluster.
- *
  */
 public class MiniTezClusterWithTimeline extends MiniYARNCluster {
 

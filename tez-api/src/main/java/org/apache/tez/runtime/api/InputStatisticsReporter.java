@@ -30,6 +30,7 @@ public interface InputStatisticsReporter {
 
   /**
    * Report the size of the logical data read
+   *
    * @param size of data in bytes
    */
   public void reportDataSize(long size);
@@ -38,8 +39,7 @@ public interface InputStatisticsReporter {
    * Report the number of items processed. These could be key-value pairs, table
    * records etc.
    *
-   * @param items
-   *          number of items
+   * @param items number of items
    */
   public void reportItemsProcessed(long items);
 }

@@ -30,13 +30,14 @@ public interface MergedInputContext {
 
   /**
    * Get the user payload for this input
+   *
    * @return {@link UserPayload}
    */
   public UserPayload getUserPayload();
 
   /**
    * Inform the framework that the specific Input is ready for consumption.
-   *
+   * <p>
    * This method can be invoked multiple times.
    */
   public void inputIsReady();
@@ -48,6 +49,7 @@ public interface MergedInputContext {
 
   /**
    * Get the work directories for the Input
+   *
    * @return an array of work dirs
    */
   public String[] getWorkDirs();

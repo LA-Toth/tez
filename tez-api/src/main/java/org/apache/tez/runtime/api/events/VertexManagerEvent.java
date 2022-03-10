@@ -38,7 +38,7 @@ import org.apache.tez.runtime.api.TaskAttemptIdentifier;
 public class VertexManagerEvent extends Event {
 
   /**
-   * Vertex to which the event should be sent 
+   * Vertex to which the event should be sent
    */
   private final String targetVertexName;
   /**
@@ -53,7 +53,7 @@ public class VertexManagerEvent extends Event {
    * @param vertexName
    * @param userPayload
    * @throws NullPointerException if {@code vertexName} or {@code userPayload}
-   *           is {@code null}
+   *                              is {@code null}
    */
   private VertexManagerEvent(String vertexName, ByteBuffer userPayload) {
     this.targetVertexName = Objects.requireNonNull(vertexName);
@@ -62,6 +62,7 @@ public class VertexManagerEvent extends Event {
 
   /**
    * Create a new VertexManagerEvent
+   *
    * @param vertexName
    * @param userPayload This should not be modified since a reference is kept
    */
@@ -79,8 +80,9 @@ public class VertexManagerEvent extends Event {
 
   /**
    * Get metadata about the task attempt that produced the event.
-   * This method will provide a valid return value only when invoked in the 
+   * This method will provide a valid return value only when invoked in the
    * {@link VertexManagerPlugin}
+   *
    * @return attempt metadata
    */
   public TaskAttemptIdentifier getProducerAttemptIdentifier() {

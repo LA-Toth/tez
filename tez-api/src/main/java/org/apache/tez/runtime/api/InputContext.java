@@ -29,26 +29,29 @@ public interface InputContext extends TaskContext {
 
   /**
    * Get the Vertex Name of the Source that generated data for this Input
+   *
    * @return Name of the Source Vertex
    */
   public String getSourceVertexName();
 
   /**
    * Returns a convenient, human-readable string describing the input and output vertices.
+   *
    * @return the convenient string
    */
   String getInputOutputVertexNames();
 
   /**
-   * Get the index of the input in the set of all inputs for the task. The 
+   * Get the index of the input in the set of all inputs for the task. The
    * index will be consistent and valid only among the tasks of this vertex.
+   *
    * @return index
    */
   public int getInputIndex();
 
   /**
    * Inform the framework that the specific Input is ready for consumption.
-   *
+   * <p>
    * This method can be invoked multiple times.
    */
   public void inputIsReady();
@@ -56,6 +59,7 @@ public interface InputContext extends TaskContext {
   /**
    * Get an {@link InputStatisticsReporter} for this {@link Input} that can
    * be used to report statistics like data size
+   *
    * @return {@link InputStatisticsReporter}
    */
   public InputStatisticsReporter getStatisticsReporter();

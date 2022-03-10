@@ -32,11 +32,10 @@ import org.apache.tez.dag.api.Vertex;
 
 /**
  * Simple Test DAG with 2 vertices using TestProcessor/TestInput/TestOutput.
- *
+ * <p>
  * v1
  * |
  * v2
- *
  */
 public class SimpleTestDAG {
   public static String TEZ_SIMPLE_DAG_NUM_TASKS =
@@ -69,13 +68,14 @@ public class SimpleTestDAG {
   }
 
   /**
-   *  v1  v2
-   *   \  /
-   *    v3
-   *   /  \
-   *  v4  v5
-   *   \  /
-   *    v6
+   * v1  v2
+   * \  /
+   * v3
+   * /  \
+   * v4  v5
+   * \  /
+   * v6
+   *
    * @param name
    * @param conf
    * @return

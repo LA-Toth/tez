@@ -1677,7 +1677,7 @@ public class TestDAGImpl {
     Assert.assertEquals(5, dag.getSuccessfulVertices());
 
     long dagStatusStartTime = System.currentTimeMillis();
-    DAGStatusBuilder dagStatus = dag.getDAGStatus(EnumSet.noneOf(StatusGetOpts.class), 2000l);
+    DAGStatusBuilder dagStatus = dag.getDAGStatus(EnumSet.noneOf(StatusGetOpts.class), 2000L);
     long dagStatusEndTime = System.currentTimeMillis();
     long diff = dagStatusEndTime - dagStatusStartTime;
     Assert.assertTrue(diff >= 0 && diff < 2500);
@@ -1708,7 +1708,7 @@ public class TestDAGImpl {
     runTestGetDAGStatusReturnOnDagFinished(DAGStatus.State.ERROR);
   }
 
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "checkstyle:UpperEll"})
   public void runTestGetDAGStatusReturnOnDagFinished(DAGStatusBuilder.State testState) throws TezException,
     InterruptedException {
     initDAG(dag);
@@ -2198,7 +2198,8 @@ public class TestDAGImpl {
 
     @Override
     public EventRouteMetadata routeDataMovementEventToDestination(int sourceTaskIndex,
-                                                                  int sourceOutputIndex, int destinationTaskIndex) throws Exception {
+                                                                  int sourceOutputIndex, int destinationTaskIndex)
+      throws Exception {
       if (exLocation == ExceptionLocation.RouteDataMovementEventToDestination) {
         throw new Exception(exLocation.name());
       }
@@ -2319,6 +2320,7 @@ public class TestDAGImpl {
       this.endCondition = endCondition;
     }
 
+    @SuppressWarnings("checkstyle:UpperEll")
     @Override
     public void run() {
       started.set(true);
@@ -2330,10 +2332,10 @@ public class TestDAGImpl {
       }
       try {
         dagStatusStartTime = System.currentTimeMillis();
-        dagStatus = dag.getDAGStatus(EnumSet.noneOf(StatusGetOpts.class), 10000l);
+        dagStatus = dag.getDAGStatus(EnumSet.noneOf(StatusGetOpts.class), 10000L);
         dagStatusEndTime = System.currentTimeMillis();
       } catch (TezException e) {
-
+        // empty
       }
       lock.lock();
       ended.set(true);

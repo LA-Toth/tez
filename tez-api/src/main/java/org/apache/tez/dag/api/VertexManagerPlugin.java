@@ -31,7 +31,7 @@ import org.apache.tez.runtime.api.TaskAttemptIdentifier;
 import org.apache.tez.runtime.api.events.VertexManagerEvent;
 
 /**
- * Interface to plugin user logic into the VertexManager to implement runtime 
+ * Interface to plugin user logic into the VertexManager to implement runtime
  * scheduling optimizations and graph reconfiguration.
  * The plugin will be notified of interesting events in the vertex execution life
  * cycle and can respond to them by via the context object
@@ -47,17 +47,17 @@ public abstract class VertexManagerPlugin {
    * create a VertexManagerPlugin, must provide the same constructor so that Tez
    * can create an instance of the class at runtime.
    *
-   * @param context
-   *          vertex manager plugin context which can be used to access the
-   *          payload, vertex properties, etc
+   * @param context vertex manager plugin context which can be used to access the
+   *                payload, vertex properties, etc
    */
   public VertexManagerPlugin(VertexManagerPluginContext context) {
     this.context = context;
   }
 
   /**
-   * Initialize the plugin. Called when the vertex is initializing. This happens 
+   * Initialize the plugin. Called when the vertex is initializing. This happens
    * after all source vertices and inputs have initialized
+   *
    * @throws Exception
    */
   public abstract void initialize() throws Exception;
@@ -75,6 +75,7 @@ public abstract class VertexManagerPlugin {
 
   /**
    * Notification that the vertex is ready to start running tasks
+   *
    * @param completions All the source task attempts that have already completed
    * @throws Exception
    */
@@ -107,6 +108,7 @@ public abstract class VertexManagerPlugin {
 
   /**
    * Notification of a source vertex task completion.
+   *
    * @param attempt Identifier of the task attempt that completed
    * @throws Exception
    */
@@ -117,6 +119,7 @@ public abstract class VertexManagerPlugin {
 
   /**
    * Notification of an event directly sent to this vertex manager
+   *
    * @param vmEvent
    * @throws Exception
    */
@@ -124,6 +127,7 @@ public abstract class VertexManagerPlugin {
 
   /**
    * Notification that the inputs of this vertex have initialized
+   *
    * @param inputName
    * @param inputDescriptor
    * @param events
@@ -150,14 +154,13 @@ public abstract class VertexManagerPlugin {
    * . Notifications will be received for all registered state changes, and not
    * just for the latest state update. They will be in order in which the state
    * change occurred.
-   * </p><br>This method may be invoked concurrently with {@link #onVertexStarted(Map)} etc. and 
+   * </p><br>This method may be invoked concurrently with {@link #onVertexStarted(Map)} etc. and
    * multi-threading/concurrency implications must be considered.
    *
-   * @param stateUpdate
-   *          an event indicating the name of the vertex, and it's updated
-   *          state. Additional information may be available for specific
-   *          events, Look at the type hierarchy for
-   *          {@link org.apache.tez.dag.api.event.VertexStateUpdate}
+   * @param stateUpdate an event indicating the name of the vertex, and it's updated
+   *                    state. Additional information may be available for specific
+   *                    events, Look at the type hierarchy for
+   *                    {@link org.apache.tez.dag.api.event.VertexStateUpdate}
    */
   public void onVertexStateUpdated(VertexStateUpdate stateUpdate) throws Exception {
   }

@@ -43,13 +43,11 @@ public interface ObjectRegistry {
    * irrespective of the life-cycle attached to the Object. The object may stay
    * in the cache while the Vertex (to which the task belongs) is running.
    *
-   * @param key
-   *          Key to identify the Object
-   * @param value
-   *          Object to be inserted
+   * @param key   Key to identify the Object
+   * @param value Object to be inserted
    * @return Previous Object associated with the key attached if present else
-   *         null. Could return the same object if the object was associated
-   *         with the same key for a different life-cycle.
+   * null. Could return the same object if the object was associated
+   * with the same key for a different life-cycle.
    */
   public Object cacheForVertex(String key, Object value);
 
@@ -60,13 +58,11 @@ public interface ObjectRegistry {
    * irrespective of the life-cycle attached to the Object. The object may stay
    * in the cache while the DAG (to which the task belongs) is running.
    *
-   * @param key
-   *          Key to identify the Object
-   * @param value
-   *          Object to be inserted
+   * @param key   Key to identify the Object
+   * @param value Object to be inserted
    * @return Previous Object associated with the key attached if present else
-   *         null. Could return the same object if the object was associated
-   *         with the same key for a different life-cycle.
+   * null. Could return the same object if the object was associated
+   * with the same key for a different life-cycle.
    */
   public Object cacheForDAG(String key, Object value);
 
@@ -77,18 +73,17 @@ public interface ObjectRegistry {
    * key irrespective of the life-cycle attached to the Object. The object may stay
    * in the cache while the Session (to which the task belongs) is running.
    *
-   * @param key
-   *          Key to identify the Object
-   * @param value
-   *          Object to be inserted
+   * @param key   Key to identify the Object
+   * @param value Object to be inserted
    * @return Previous Object associated with the key attached if present else
-   *         null. Could return the same object if the object was associated
-   *         with the same key for a different life-cycle.
+   * null. Could return the same object if the object was associated
+   * with the same key for a different life-cycle.
    */
   public Object cacheForSession(String key, Object value);
 
   /**
    * Return the object associated with the provided key
+   *
    * @param key Key to find object
    * @return Object if found else null
    */
@@ -96,6 +91,7 @@ public interface ObjectRegistry {
 
   /**
    * Delete the object associated with the provided key
+   *
    * @param key Key to find object
    * @return True if an object was found and removed
    */

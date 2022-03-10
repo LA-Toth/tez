@@ -41,9 +41,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 
 /**
- * Defines a vertex in the DAG. It represents the application logic that 
- * processes and transforms the input data to create the output data. The 
- * vertex represents the template from which tasks are created to execute 
+ * Defines a vertex in the DAG. It represents the application logic that
+ * processes and transforms the input data to create the output data. The
+ * vertex represents the template from which tasks are created to execute
  * the application in parallel across a distributed execution environment.
  */
 @Public
@@ -110,18 +110,14 @@ public class Vertex {
   /**
    * Create a new vertex with the given name.
    *
-   * @param vertexName
-   *          Name of the vertex
-   * @param processorDescriptor
-   *          Description of the processor that is executed in every task of
-   *          this vertex
-   * @param parallelism
-   *          Number of tasks in this vertex. Set to -1 if this is going to be
-   *          decided at runtime. Parallelism may change at runtime due to graph
-   *          reconfigurations.
-   * @param taskResource
-   *          Physical resources like memory/cpu thats used by each task of this
-   *          vertex.
+   * @param vertexName          Name of the vertex
+   * @param processorDescriptor Description of the processor that is executed in every task of
+   *                            this vertex
+   * @param parallelism         Number of tasks in this vertex. Set to -1 if this is going to be
+   *                            decided at runtime. Parallelism may change at runtime due to graph
+   *                            reconfigurations.
+   * @param taskResource        Physical resources like memory/cpu thats used by each task of this
+   *                            vertex.
    * @return a new Vertex with the given parameters
    */
   public static Vertex create(String vertexName,
@@ -142,11 +138,9 @@ public class Vertex {
    * {@link Vertex#Vertex(String, ProcessorDescriptor, int)} with the
    * parallelism set to -1.
    *
-   * @param vertexName
-   *          Name of the vertex
-   * @param processorDescriptor
-   *          Description of the processor that is executed in every task of
-   *          this vertex
+   * @param vertexName          Name of the vertex
+   * @param processorDescriptor Description of the processor that is executed in every task of
+   *                            this vertex
    * @return a new Vertex with the given parameters
    */
   public static Vertex create(String vertexName, ProcessorDescriptor processorDescriptor) {
@@ -163,15 +157,12 @@ public class Vertex {
    * {@link Vertex#Vertex(String, ProcessorDescriptor, int, Resource)} to create
    * the Vertex.
    *
-   * @param vertexName
-   *          Name of the vertex
-   * @param processorDescriptor
-   *          Description of the processor that is executed in every task of
-   *          this vertex
-   * @param parallelism
-   *          Number of tasks in this vertex. Set to -1 if this is going to be
-   *          decided at runtime. Parallelism may change at runtime due to graph
-   *          reconfigurations.
+   * @param vertexName          Name of the vertex
+   * @param processorDescriptor Description of the processor that is executed in every task of
+   *                            this vertex
+   * @param parallelism         Number of tasks in this vertex. Set to -1 if this is going to be
+   *                            decided at runtime. Parallelism may change at runtime due to graph
+   *                            reconfigurations.
    * @return a new Vertex with the given parameters
    */
   public static Vertex create(String vertexName, ProcessorDescriptor processorDescriptor,
@@ -181,6 +172,7 @@ public class Vertex {
 
   /**
    * Get the vertex name
+   *
    * @return vertex name
    */
   public String getName() {
@@ -189,6 +181,7 @@ public class Vertex {
 
   /**
    * Get the vertex task processor descriptor
+   *
    * @return process descriptor
    */
   public ProcessorDescriptor getProcessorDescriptor() {
@@ -196,9 +189,10 @@ public class Vertex {
   }
 
   /**
-   * Get the specified number of tasks specified to run in this vertex. It may 
-   * be -1 if the parallelism is defined at runtime. Parallelism may change at 
+   * Get the specified number of tasks specified to run in this vertex. It may
+   * be -1 if the parallelism is defined at runtime. Parallelism may change at
    * runtime
+   *
    * @return vertex parallelism
    */
   public int getParallelism() {
@@ -207,6 +201,7 @@ public class Vertex {
 
   /**
    * Set the number of tasks for this vertex
+   *
    * @param parallelism Parallelism for this vertex
    */
   void setParallelism(int parallelism) {
@@ -215,6 +210,7 @@ public class Vertex {
 
   /**
    * Get the resources for the vertex
+   *
    * @return the physical resources like pcu/memory of each vertex task
    */
   public Resource getTaskResource() {
@@ -223,6 +219,7 @@ public class Vertex {
 
   /**
    * Set the cpu/memory etc resources used by tasks of this vertex
+   *
    * @param resource {@link Resource} for the tasks of this vertex
    */
   void setTaskResource(Resource resource) {
@@ -237,6 +234,7 @@ public class Vertex {
   /**
    * Specify location hints for the tasks of this vertex. Hints must be specified
    * for all tasks as defined by the parallelism
+   *
    * @param locationHint list of locations for each task in the vertex
    * @return this Vertex
    */
@@ -253,10 +251,10 @@ public class Vertex {
 
   /**
    * Set the files etc that must be provided to the tasks of this vertex
-   * @param localFiles
-   *          files that must be available locally for each task. These files
-   *          may be regular files, archives etc. as specified by the value
-   *          elements of the map.
+   *
+   * @param localFiles files that must be available locally for each task. These files
+   *                   may be regular files, archives etc. as specified by the value
+   *                   elements of the map.
    * @return this Vertex
    */
   public Vertex addTaskLocalFiles(Map<String, LocalResource> localFiles) {
@@ -268,6 +266,7 @@ public class Vertex {
 
   /**
    * Get the files etc that must be provided by the tasks of this vertex
+   *
    * @return local files of the vertex. Key is the file name.
    */
   public Map<String, LocalResource> getTaskLocalFiles() {
@@ -276,6 +275,7 @@ public class Vertex {
 
   /**
    * Get the environment variables of the tasks
+   *
    * @return environment variable map
    */
   public Map<String, String> getTaskEnvironment() {
@@ -286,6 +286,7 @@ public class Vertex {
    * Set the Key-Value pairs of environment variables for tasks of this vertex.
    * This method should be used if different vertices need different env. Else,
    * set environment for all vertices via Tezconfiguration#TEZ_TASK_LAUNCH_ENV
+   *
    * @param environment
    * @return this Vertex
    * NullPointerException if {@code environment} is {@code null}
@@ -302,24 +303,22 @@ public class Vertex {
   /**
    * Specifies an external data source for a Vertex. This is meant to be used
    * when a Vertex reads Input directly from an external source </p>
-   *
+   * <p>
    * For vertices which read data generated by another vertex - use the
    * {@link DAG addEdge} method.
-   *
+   * <p>
    * If a vertex needs to use data generated by another vertex in the DAG and
    * also from an external source, a combination of this API and the DAG.addEdge
    * API can be used. </p>
-   *
+   * <p>
    * Note: If more than one RootInput exists on a vertex, which generates events
    * which need to be routed, or generates information to set parallelism, a
    * custom vertex manager should be setup to handle this. Not using a custom
    * vertex manager for such a scenario will lead to a runtime failure.
    *
-   * @param inputName
-   *          the name of the input. This will be used when accessing the input
-   *          in the {@link LogicalIOProcessor}
-   * @param dataSourceDescriptor
-   *          the @{link DataSourceDescriptor} for this input.
+   * @param inputName            the name of the input. This will be used when accessing the input
+   *                             in the {@link LogicalIOProcessor}
+   * @param dataSourceDescriptor the @{link DataSourceDescriptor} for this input.
    * @return this Vertex
    */
   public Vertex addDataSource(String inputName, DataSourceDescriptor dataSourceDescriptor) {
@@ -338,19 +337,17 @@ public class Vertex {
   /**
    * Specifies an external data sink for a Vertex. This is meant to be used when
    * a Vertex writes Output directly to an external destination. </p>
-   *
+   * <p>
    * If an output of the vertex is meant to be consumed by another Vertex in the
    * DAG - use the {@link DAG addEdge} method.
-   *
+   * <p>
    * If a vertex needs generate data to an external source as well as for
    * another Vertex in the DAG, a combination of this API and the DAG.addEdge
    * API can be used.
    *
-   * @param outputName
-   *          the name of the output. This will be used when accessing the
-   *          output in the {@link LogicalIOProcessor}
-   * @param dataSinkDescriptor
-   *          the {@link DataSinkDescriptor} for this output
+   * @param outputName         the name of the output. This will be used when accessing the
+   *                           output in the {@link LogicalIOProcessor}
+   * @param dataSinkDescriptor the {@link DataSinkDescriptor} for this output
    * @return this Vertex
    */
   public Vertex addDataSink(String outputName, DataSinkDescriptor dataSinkDescriptor) {
@@ -377,6 +374,7 @@ public class Vertex {
 
   /**
    * Get the launch command opts for tasks in this vertex
+   *
    * @return launch command opts
    */
   public String getTaskLaunchCmdOpts() {
@@ -387,6 +385,7 @@ public class Vertex {
    * Set the command opts for tasks of this vertex. This method should be used
    * when different vertices have different opts. Else, set the launch opts for '
    * all vertices via Tezconfiguration#TEZ_TASK_LAUNCH_CMD_OPTS
+   *
    * @param cmdOpts
    * @return this Vertex
    */
@@ -400,18 +399,18 @@ public class Vertex {
    * in the Vertex specific configuration used in the AppMaster. This API would be used for properties which
    * are used by the Tez framework while executing this vertex as part of a larger DAG.
    * As an example, the number of attempts for a task. </p>
-   *
+   * <p>
    * A vertex inherits it's Configuration from the DAG, and can override properties for this Vertex only
    * using this method </p>
-   *
+   * <p>
    * Currently, properties which are used by the task runtime, such as the task to AM
    * heartbeat interval, cannot be changed using this method. </p>
-   *
+   * <p>
    * Note: This API does not add any configuration to runtime components such as InputInitializers,
    * OutputCommitters, Inputs and Outputs.
    *
    * @param property the property name
-   * @param value the value for the property
+   * @param value    the value for the property
    * @return the current DAG being constructed
    */
   @InterfaceStability.Unstable
@@ -428,7 +427,6 @@ public class Vertex {
    * with the custom context.
    *
    * @param vertexExecutionContext the execution context for the vertex.
-   *
    * @return this Vertex
    */
   public Vertex setExecutionContext(VertexExecutionContext vertexExecutionContext) {
@@ -483,6 +481,7 @@ public class Vertex {
 
   /**
    * Get the input vertices for this vertex
+   *
    * @return List of input vertices
    */
   public List<Vertex> getInputVertices() {
@@ -491,6 +490,7 @@ public class Vertex {
 
   /**
    * Get the output vertices for this vertex
+   *
    * @return List of output vertices
    */
   public List<Vertex> getOutputVertices() {

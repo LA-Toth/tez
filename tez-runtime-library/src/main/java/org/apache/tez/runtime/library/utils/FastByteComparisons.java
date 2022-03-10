@@ -29,7 +29,7 @@ import sun.misc.Unsafe;
 
 /**
  * Same as {@link org.apache.hadoop.io.FastByteComparisons}
- *
+ * <p>
  * Utility code to do optimized byte-array comparison.
  * This is borrowed and slightly modified from Guava's {@link com.google.common.primitives.UnsignedBytes}
  * class to be able to compare arrays that start at non-zero offsets.
@@ -117,7 +117,9 @@ final class FastByteComparisons {
 
       static final Unsafe theUnsafe;
 
-      /** The offset to the first element in a byte array. */
+      /**
+       * The offset to the first element in a byte array.
+       */
       static final int BYTE_ARRAY_BASE_OFFSET;
       static final boolean littleEndian =
         ByteOrder.nativeOrder().equals(ByteOrder.LITTLE_ENDIAN);

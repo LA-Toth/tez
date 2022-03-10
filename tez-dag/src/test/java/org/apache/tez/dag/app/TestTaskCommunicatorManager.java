@@ -395,10 +395,11 @@ public class TestTaskCommunicatorManager {
     private static final List<String> taskCommNames = new LinkedList<>();
     private static final List<TaskCommunicator> testTaskComms = new LinkedList<>();
 
-    public TaskCommManagerForMultipleCommTest(AppContext context,
-                                              TaskHeartbeatHandler thh,
-                                              ContainerHeartbeatHandler chh,
-                                              List<NamedEntityDescriptor> taskCommunicatorDescriptors) throws TezException {
+    public TaskCommManagerForMultipleCommTest(
+      AppContext context,
+      TaskHeartbeatHandler thh,
+      ContainerHeartbeatHandler chh,
+      List<NamedEntityDescriptor> taskCommunicatorDescriptors) throws TezException {
       super(context, thh, chh, taskCommunicatorDescriptors);
     }
 

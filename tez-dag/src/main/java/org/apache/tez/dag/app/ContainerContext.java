@@ -129,14 +129,14 @@ public class ContainerContext {
    * Create a new ContainerContext to account for container re-use. On re-use, there is
    * re-localization of additional LocalResources. Also, a task from a different vertex could be
    * run on the given container.
-   *
+   * <p>
    * Only a merge of local resources is needed as:
-   *
+   * <p>
    * credentials are modified at run-time based on the task spec.
    * the environment for a container cannot be changed. A re-used container is always
    * expected to have a super-set.
    * javaOpts have to be identical for re-use.
-   *
+   * <p>
    * Vertex should be overridden to account for the new task being scheduled to run on this
    * container context.
    *
@@ -171,7 +171,7 @@ public class ContainerContext {
 
   /**
    * @return true if this ContainerContext is a super-set of the specified
-   *         container context.
+   * container context.
    */
   public boolean isSuperSet(ContainerContext otherContext) {
     Objects.requireNonNull(otherContext, "otherContext should not null");
@@ -195,7 +195,7 @@ public class ContainerContext {
 
   /**
    * @return true if this ContainerContext is an exact match of the specified
-   *         container context.
+   * container context.
    */
   public boolean isExactMatch(ContainerContext otherContext) {
     return (this.vertex == otherContext.vertex);

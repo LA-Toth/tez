@@ -229,19 +229,15 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
   private static final CommitCompletedTransition
     COMMIT_COMPLETED_TRANSITION =
     new CommitCompletedTransition();
-  protected static final
-  StateMachineFactory<VertexImpl, VertexState, VertexEventType, VertexEvent>
-    stateMachineFactory
-    = new StateMachineFactory<VertexImpl, VertexState, VertexEventType, VertexEvent>
-    (VertexState.NEW)
+  protected static final StateMachineFactory<VertexImpl, VertexState, VertexEventType, VertexEvent> stateMachineFactory
+    = new StateMachineFactory<VertexImpl, VertexState, VertexEventType, VertexEvent>(VertexState.NEW)
 
     // Transitions from NEW state
-    .addTransition
-      (VertexState.NEW,
-        EnumSet.of(VertexState.NEW, VertexState.INITED,
-          VertexState.INITIALIZING, VertexState.FAILED, VertexState.KILLED),
-        VertexEventType.V_INIT,
-        new InitTransition())
+    .addTransition(VertexState.NEW,
+      EnumSet.of(VertexState.NEW, VertexState.INITED,
+        VertexState.INITIALIZING, VertexState.FAILED, VertexState.KILLED),
+      VertexEventType.V_INIT,
+      new InitTransition())
     .addTransition(VertexState.NEW,
       EnumSet.of(VertexState.NEW),
       VertexEventType.V_NULL_EDGE_INITIALIZED,
@@ -254,13 +250,12 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
       EnumSet.of(VertexState.NEW),
       VertexEventType.V_SOURCE_TASK_ATTEMPT_COMPLETED,
       SOURCE_TASK_ATTEMPT_COMPLETED_EVENT_TRANSITION)
-    .addTransition
-      (VertexState.NEW,
-        EnumSet.of(VertexState.NEW,
-          VertexState.SUCCEEDED, VertexState.FAILED,
-          VertexState.KILLED, VertexState.ERROR),
-        VertexEventType.V_RECOVER,
-        new RecoverTransition())
+    .addTransition(VertexState.NEW,
+      EnumSet.of(VertexState.NEW,
+        VertexState.SUCCEEDED, VertexState.FAILED,
+        VertexState.KILLED, VertexState.ERROR),
+      VertexEventType.V_RECOVER,
+      new RecoverTransition())
     .addTransition(VertexState.NEW, VertexState.NEW,
       VertexEventType.V_SOURCE_VERTEX_STARTED,
       new SourceVertexStartedTransition())
@@ -363,14 +358,13 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
       EnumSet.of(VertexState.RUNNING, VertexState.TERMINATING),
       VertexEventType.V_SOURCE_TASK_ATTEMPT_COMPLETED,
       SOURCE_TASK_ATTEMPT_COMPLETED_EVENT_TRANSITION)
-    .addTransition
-      (VertexState.RUNNING,
-        EnumSet.of(VertexState.RUNNING,
-          VertexState.COMMITTING,
-          VertexState.SUCCEEDED, VertexState.TERMINATING, VertexState.FAILED,
-          VertexState.ERROR),
-        VertexEventType.V_TASK_COMPLETED,
-        new TaskCompletedTransition())
+    .addTransition(VertexState.RUNNING,
+      EnumSet.of(VertexState.RUNNING,
+        VertexState.COMMITTING,
+        VertexState.SUCCEEDED, VertexState.TERMINATING, VertexState.FAILED,
+        VertexState.ERROR),
+      VertexEventType.V_TASK_COMPLETED,
+      new TaskCompletedTransition())
     .addTransition(VertexState.RUNNING, VertexState.TERMINATING,
       VertexEventType.V_TERMINATE,
       new VertexKilledTransition())
@@ -428,16 +422,14 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
       new VertexManagerUserCodeErrorTransition())
 
     // Transitions from TERMINATING state.
-    .addTransition
-      (VertexState.TERMINATING,
-        EnumSet.of(VertexState.TERMINATING, VertexState.KILLED, VertexState.FAILED, VertexState.ERROR),
-        VertexEventType.V_TASK_COMPLETED,
-        new TaskCompletedTransition())
-    .addTransition
-      (VertexState.TERMINATING,
-        EnumSet.of(VertexState.TERMINATING, VertexState.KILLED, VertexState.FAILED, VertexState.ERROR),
-        VertexEventType.V_COMPLETED,
-        new VertexNoTasksCompletedTransition())
+    .addTransition(VertexState.TERMINATING,
+      EnumSet.of(VertexState.TERMINATING, VertexState.KILLED, VertexState.FAILED, VertexState.ERROR),
+      VertexEventType.V_TASK_COMPLETED,
+      new TaskCompletedTransition())
+    .addTransition(VertexState.TERMINATING,
+      EnumSet.of(VertexState.TERMINATING, VertexState.KILLED, VertexState.FAILED, VertexState.ERROR),
+      VertexEventType.V_COMPLETED,
+      new VertexNoTasksCompletedTransition())
     .addTransition(
       VertexState.TERMINATING,
       VertexState.ERROR, VertexEventType.V_INTERNAL_ERROR,
@@ -729,7 +721,7 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
   private AtomicBoolean commitCanceled = new AtomicBoolean(false);
   private boolean commitVertexOutputs = false;
   private Map<String, VertexGroupInfo> dagVertexGroups;
-  private TaskLocationHint taskLocationHints[];
+  private TaskLocationHint[] taskLocationHints;
   private Map<String, LocalResource> localResources;
   private VertexTerminationCause terminationCause;
   private String logIdentifier;
@@ -742,7 +734,7 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
                     TaskHeartbeatHandler thh, boolean commitVertexOutputs,
                     AppContext appContext, VertexLocationHint vertexLocationHint,
                     Map<String, VertexGroupInfo> dagVertexGroups,
-                     TaskSpecificLaunchCmdOption taskSpecificLaunchCmdOption,
+                    TaskSpecificLaunchCmdOption taskSpecificLaunchCmdOption,
                     StateChangeNotifier entityStatusTracker, Configuration dagOnlyConf) {
     this.vertexId = vertexId;
     this.vertexPlan = vertexPlan;
@@ -1235,7 +1227,6 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
         STATE_CHANGED_CALLBACK)
       .registerStateEnteredCallback(VertexState.INITIALIZING,
         STATE_CHANGED_CALLBACK);
-    ;
   }
 
   void resetCompletedTaskStatsCache(boolean recompute) {
@@ -1442,8 +1433,9 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
     try {
       int num = 0;
       for (Task task : tasks.values()) {
-        if (task.getState() == TaskState.RUNNING)
+        if (task.getState() == TaskState.RUNNING) {
           num++;
+        }
       }
       return num;
     } finally {
@@ -2343,6 +2335,7 @@ public class VertexImpl implements org.apache.tez.dag.app.dag.Vertex, EventHandl
    * Set the terminationCause and send a kill-message to all tasks.
    * The task-kill messages are only sent once.
    */
+  @SuppressWarnings("checkstyle:ParenPad")
   void tryEnactKill(VertexTerminationCause trigger,
                     TaskTerminationCause taskterminationCause) {
     // In most cases the dag is shutting down due to some error

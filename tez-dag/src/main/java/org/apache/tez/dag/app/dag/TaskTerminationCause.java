@@ -23,19 +23,28 @@ package org.apache.tez.dag.app.dag;
  */
 public enum TaskTerminationCause {
 
-  /** DAG was killed  */
+  /**
+   * DAG was killed
+   */
   DAG_KILL,
 
-  /** Other vertex failed causing DAG to fail thus killing the parent vertex  */
+  /**
+   * Other vertex failed causing DAG to fail thus killing the parent vertex
+   */
   OTHER_VERTEX_FAILURE,
 
-  /** One of the tasks for the source/destination vertex failed.  */
+  /**
+   * One of the tasks for the source/destination vertex failed.
+   */
   OTHER_TASK_FAILURE,
 
-  /** One of the tasks of the destination vertex failed. */
+  /**
+   * One of the tasks of the destination vertex failed.
+   */
   OWN_TASK_FAILURE,
 
-  /** This vertex failed as its AM usercode (VertexManager/EdgeManager/InputInitializer)
+  /**
+   * This vertex failed as its AM usercode (VertexManager/EdgeManager/InputInitializer)
    * throw Exception
    */
   AM_USERCODE_FAILURE,

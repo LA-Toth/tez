@@ -42,7 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A dispatcher that can schedule events concurrently. Uses a fixed size threadpool 
+ * A dispatcher that can schedule events concurrently. Uses a fixed size threadpool
  * to schedule events. Events that have the same serializing hash will get scheduled
  * on the same thread in the threadpool. This can be used to prevent concurrency issues
  * for events that may not be independently processed.
@@ -263,6 +263,7 @@ public class AsyncDispatcherConcurrent extends CompositeService implements Dispa
   /**
    * Multiplexing an event. Sending it to different handlers that
    * are interested in the event.
+   *
    * @param <T> the type of event these multiple handlers are interested in.
    */
   static class MultiListenerHandler implements EventHandler<Event> {

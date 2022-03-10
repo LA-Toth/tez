@@ -79,19 +79,29 @@ public class TezRuntimeChildJVM {
 
   // FIXME
   public static enum LogName {
-    /** Log on the stdout of the task. */
+    /**
+     * Log on the stdout of the task.
+     */
     STDOUT("stdout"),
 
-    /** Log on the stderr of the task. */
+    /**
+     * Log on the stderr of the task.
+     */
     STDERR("stderr"),
 
-    /** Log on the map-reduce system logs of the task. */
+    /**
+     * Log on the map-reduce system logs of the task.
+     */
     SYSLOG("syslog"),
 
-    /** The java profiler information. */
+    /**
+     * The java profiler information.
+     */
     PROFILE("profile.out"),
 
-    /** Log the debug script's stdout  */
+    /**
+     * Log the debug script's stdout
+     */
     DEBUGOUT("debugout");
 
     private String prefix;

@@ -25,12 +25,20 @@ import org.apache.hadoop.classification.InterfaceAudience.Public;
  */
 @Public
 public enum TezAppMasterStatus {
-  /** App Master initializing itself */
+  /**
+   * App Master initializing itself
+   */
   INITIALIZING,
-  /** App Master ready to run DAG */
+  /**
+   * App Master ready to run DAG
+   */
   READY,
-  /** App Master is running a DAG */
+  /**
+   * App Master is running a DAG
+   */
   RUNNING,
-  /** App Master has shut down or is in the process of shutting down. */
+  /**
+   * App Master has shut down or is in the process of shutting down.
+   */
   SHUTDOWN
 }

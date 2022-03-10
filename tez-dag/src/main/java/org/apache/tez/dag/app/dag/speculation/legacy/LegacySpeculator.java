@@ -50,11 +50,11 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Maintains runtime estimation statistics. Makes periodic updates
- * estimates based on progress and decides on when to trigger a 
- * speculative attempt. Speculation attempts are triggered when the 
+ * estimates based on progress and decides on when to trigger a
+ * speculative attempt. Speculation attempts are triggered when the
  * estimated runtime is more than a threshold beyond the mean runtime
- * and the original task still has enough estimated runtime left that 
- * the speculative version is expected to finish sooner than that. If 
+ * and the original task still has enough estimated runtime left that
+ * the speculative version is expected to finish sooner than that. If
  * the original is close to completion then we dont start a speculation
  * because it may be likely a wasted attempt. There is a delay between
  * successive speculations.
@@ -267,9 +267,9 @@ public class LegacySpeculator extends AbstractService {
    * Absorbs one TaskAttemptStatus
    *
    * @param reportedState the status report that we got from a task attempt
-   *        that we want to fold into the speculation data for this job
-   * @param timestamp the time this status corresponds to.  This matters
-   *        because statuses contain progress.
+   *                      that we want to fold into the speculation data for this job
+   * @param timestamp     the time this status corresponds to.  This matters
+   *                      because statuses contain progress.
    */
   private void statusUpdate(TezTaskAttemptID attemptID,
                             TaskAttemptState reportedState, long timestamp) {

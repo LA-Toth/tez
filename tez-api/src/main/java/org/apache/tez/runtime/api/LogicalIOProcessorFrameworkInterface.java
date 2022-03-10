@@ -33,12 +33,10 @@ public interface LogicalIOProcessorFrameworkInterface extends ProcessorFramework
   /**
    * Runs the {@link Processor}
    *
-   * @param inputs
-   *          a map of the source vertex name to {@link LogicalInput} - one per
-   *          incoming edge.
-   * @param outputs
-   *          a map of the destination vertex name to {@link LogicalOutput} -
-   *          one per outgoing edge
+   * @param inputs  a map of the source vertex name to {@link LogicalInput} - one per
+   *                incoming edge.
+   * @param outputs a map of the destination vertex name to {@link LogicalOutput} -
+   *                one per outgoing edge
    * @throws Exception TODO
    */
   public void run(Map<String, LogicalInput> inputs,

@@ -35,10 +35,9 @@ import org.apache.tez.test.TestProcessor;
 
 /**
  * A DAG with 3 vertices of which their graph can be depicted easily with reverse V shape.
- *     v1
- *   /    \
- *  v2     v3
- *
+ * v1
+ * /    \
+ * v2     v3
  */
 public class SimpleReverseVTestDAG {
   public static String TEZ_SIMPLE_REVERSE_V_DAG_NUM_TASKS =

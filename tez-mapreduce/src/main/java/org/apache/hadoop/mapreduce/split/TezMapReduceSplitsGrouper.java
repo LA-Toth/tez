@@ -40,7 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Helper that provides a grouping of input splits based 
+ * Helper that provides a grouping of input splits based
  * on multiple parameters. It creates {@link TezGroupedSplit}
  * to wrap the each group of real InputSplits
  */

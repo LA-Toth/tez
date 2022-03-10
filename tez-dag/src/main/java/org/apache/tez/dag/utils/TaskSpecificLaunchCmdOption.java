@@ -73,8 +73,7 @@ public class TaskSpecificLaunchCmdOption {
   /**
    * Get task specific command options in a vertex
    *
-   * @param launchCmdOpts
-   *          vertex specific command option
+   * @param launchCmdOpts vertex specific command option
    * @param vertexName
    * @param taskIdx
    * @return tsLaunchCmdOpts
@@ -149,7 +148,7 @@ public class TaskSpecificLaunchCmdOption {
    *
    * @param conf
    * @return a map from the vertex name to a BitSet representing tasks to be instruemented. null if
-   *         the provided configuration is empty or invalid
+   * the provided configuration is empty or invalid
    */
   private Map<String, BitSet> getSpecificTasks(Configuration conf) {
     String specificTaskList =

@@ -43,20 +43,26 @@ public interface TaskAttemptReport {
 
   public abstract void setFinishTime(long finishTime);
 
-  /** @return the shuffle finish time. Applicable only for reduce attempts */
+  /**
+   * @return the shuffle finish time. Applicable only for reduce attempts
+   */
   public abstract long getShuffleFinishTime();
 
   /**
    * Set the shuffle finish time. Applicable only for reduce attempts
+   *
    * @param time the time the shuffle finished.
    */
   public abstract void setShuffleFinishTime(long time);
 
-  /** @return the sort/merge finish time. Applicable only for reduce attempts */
+  /**
+   * @return the sort/merge finish time. Applicable only for reduce attempts
+   */
   public abstract long getSortFinishTime();
 
   /**
    * Set the sort/merge finish time. Applicable only for reduce attempts
+   *
    * @param time the time the shuffle finished.
    */
   public abstract void setSortFinishTime(long time);

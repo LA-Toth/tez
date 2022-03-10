@@ -64,6 +64,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Convert the byte[] to a secret key
+   *
    * @param key the byte[] to create the secret key from
    * @return the secret key
    */
@@ -73,6 +74,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Compute the HMAC hash of the message using the key
+   *
    * @param msg the message to hash
    * @param key the key to use
    * @return the computed hash
@@ -83,6 +85,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Compute the HMAC hash of the message using the key
+   *
    * @param msg the message to hash
    * @return the computed hash
    */
@@ -94,6 +97,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Create a new password/secret for the given job token identifier.
+   *
    * @param identifier the job token identifier
    * @return token password/secret
    */
@@ -104,6 +108,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Add the job token of a job to cache
+   *
    * @param jobId the job that owns the token
    * @param token the job token
    */
@@ -116,6 +121,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Remove the cached job token of a job from cache
+   *
    * @param jobId the job whose token is to be removed
    */
   public void removeTokenForJob(String jobId) {
@@ -126,6 +132,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Look up the token password/secret for the given jobId.
+   *
    * @param jobId the jobId to look up
    * @return token password/secret as SecretKey
    * @throws InvalidToken
@@ -143,6 +150,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Look up the token password/secret for the given job token identifier.
+   *
    * @param identifier the job token identifier to look up
    * @return token password/secret as byte[]
    * @throws InvalidToken
@@ -155,6 +163,7 @@ public class JobTokenSecretManager extends SecretManager<JobTokenIdentifier> {
 
   /**
    * Create an empty job token identifier
+   *
    * @return a newly created empty job token identifier
    */
   @Override

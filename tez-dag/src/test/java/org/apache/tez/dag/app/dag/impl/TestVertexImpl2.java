@@ -419,6 +419,7 @@ public class TestVertexImpl2 {
     final BiMap<String, Integer> containerLaunchers = HashBiMap.create();
     final BiMap<String, Integer> taskComms = HashBiMap.create();
     final AppContext appContext;
+
     public ExecutionContextTestInfoHolder(VertexExecutionContext vertexExecutionContext,
                                           VertexExecutionContext defaultDagExecutionContext) {
       this(vertexExecutionContext, defaultDagExecutionContext, 0);

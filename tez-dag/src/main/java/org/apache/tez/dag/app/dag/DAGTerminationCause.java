@@ -19,34 +19,50 @@
 package org.apache.tez.dag.app.dag;
 
 /**
- * Represents proximate cause of a DAG transition to FAILED or KILLED. 
+ * Represents proximate cause of a DAG transition to FAILED or KILLED.
  */
 public enum DAGTerminationCause {
 
-  /** DAG was directly killed.   */
+  /**
+   * DAG was directly killed.
+   */
   DAG_KILL(DAGState.KILLED),
 
-  /** A service plugin indicated an error */
+  /**
+   * A service plugin indicated an error
+   */
   SERVICE_PLUGIN_ERROR(DAGState.FAILED),
 
-  /** A vertex failed. */
+  /**
+   * A vertex failed.
+   */
   VERTEX_FAILURE(DAGState.FAILED),
 
-  /** DAG failed due as it had zero vertices. */
+  /**
+   * DAG failed due as it had zero vertices.
+   */
   ZERO_VERTICES(DAGState.FAILED),
 
-  /** DAG failed during init. */
+  /**
+   * DAG failed during init.
+   */
   INIT_FAILURE(DAGState.FAILED),
 
-  /** DAG failed during output commit. */
+  /**
+   * DAG failed during output commit.
+   */
   COMMIT_FAILURE(DAGState.FAILED),
 
-  /** In some cases, vertex could not rerun, e.g. its output been committed as a shared output of vertex group */
+  /**
+   * In some cases, vertex could not rerun, e.g. its output been committed as a shared output of vertex group
+   */
   VERTEX_RERUN_AFTER_COMMIT(DAGState.FAILED),
 
   VERTEX_RERUN_IN_COMMITTING(DAGState.FAILED),
 
-  /** DAG failed while trying to write recovery events */
+  /**
+   * DAG failed while trying to write recovery events
+   */
   RECOVERY_FAILURE(DAGState.FAILED),
 
   INTERNAL_ERROR(DAGState.ERROR);

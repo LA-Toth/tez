@@ -353,6 +353,7 @@ public class TestATSHistoryWithACLs {
   /**
    * Test Disable Logging for all dags in a session
    * due to failure to create domain in session start
+   *
    * @throws Exception
    */
   @Test(timeout = 50000)
@@ -418,6 +419,7 @@ public class TestATSHistoryWithACLs {
   /**
    * use mini cluster to verify data do not push to ats when the daglogging flag
    * in dagsubmittedevent is set off
+   *
    * @throws Exception
    */
   @Test(timeout = 50000)
@@ -463,6 +465,7 @@ public class TestATSHistoryWithACLs {
   /**
    * use mini cluster to verify data do push to ats when
    * the dag logging flag in dagsubmitted event is set on
+   *
    * @throws Exception
    */
   @Test(timeout = 50000)

@@ -22,7 +22,6 @@ import org.apache.hadoop.classification.InterfaceAudience.Private;
 
 /**
  * TaskAttemptImpl internal state machine states.
- *
  */
 @Private
 public enum TaskAttemptStateInternal {

@@ -28,13 +28,13 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 /**
- * Represents a virtual collection of vertices whose members can be treated as a single 
+ * Represents a virtual collection of vertices whose members can be treated as a single
  * named collection for graph operations. Only the following connections are valid.
- * A VertexGroup can be connected as an input to a consumer Vertex. The tasks of 
- * the destination vertex see a single input named after the VertexGroup instead 
- * multiple inputs from the members of the VertexGroup. 
+ * A VertexGroup can be connected as an input to a consumer Vertex. The tasks of
+ * the destination vertex see a single input named after the VertexGroup instead
+ * multiple inputs from the members of the VertexGroup.
  * An output can be added to a VertexGroup.
- * All outgoing edges & outputs of a VertexGroup are automatically transferred to the 
+ * All outgoing edges & outputs of a VertexGroup are automatically transferred to the
  * member vertices of the VertexGroup.
  * A VertexGroup is not part of the final DAG.
  */
@@ -45,6 +45,7 @@ public class VertexGroup {
 
   /**
    * Create an object representing a group of vertices
+   *
    * @param groupName name of the group
    */
   VertexGroup(String groupName, Vertex... members) {
@@ -56,6 +57,7 @@ public class VertexGroup {
 
   /**
    * Get the name of the group
+   *
    * @return name
    */
   public String getGroupName() {
@@ -65,6 +67,7 @@ public class VertexGroup {
   /**
    * Add an common data sink to the group of vertices.
    * Refer to {@link Vertex#addDataSink(String, DataSinkDescriptor)}
+   *
    * @return this object for further chained method calls
    */
   public VertexGroup addDataSink(String outputName, DataSinkDescriptor dataSinkDescriptor) {

@@ -1195,7 +1195,8 @@ public class TestVertexImpl {
     LOG.info("Setting up invalid dag plan with input distributor");
     DAGPlan dag = DAGPlan.newBuilder()
       .setName("testVertexWithInitializer")
-      .addVertex( // simulates split distribution with known number of tasks
+      // simulates split distribution with known number of tasks
+      .addVertex(
         VertexPlan.newBuilder()
           .setName("vertex1")
           .setType(PlanVertexType.NORMAL)
@@ -1462,8 +1463,7 @@ public class TestVertexImpl {
             .setId("e6")
             .setDataSourceType(PlanEdgeDataSourceType.PERSISTED)
             .setSchedulingType(PlanEdgeSchedulingType.SEQUENTIAL)
-            .build()
-        );
+            .build());
     }
     DAGPlan dag = dagBuilder.build();
     return dag;
@@ -6508,8 +6508,8 @@ public class TestVertexImpl {
     dispatcher.await();
     Assert.assertEquals(1, amSchedulerEventDispatcher.events.size());
     AMSchedulerEventTALaunchRequest launchRequestEvent =
-     (AMSchedulerEventTALaunchRequest) amSchedulerEventDispatcher.events.get(
-      0);
+      (AMSchedulerEventTALaunchRequest) amSchedulerEventDispatcher.events.get(
+        0);
     Map<String, LocalResource> localResourceMap = launchRequestEvent.getContainerContext().getLocalResources();
     Assert.assertTrue(localResourceMap.containsKey("dag lr"));
     Assert.assertTrue(localResourceMap.containsKey("vertex lr"));

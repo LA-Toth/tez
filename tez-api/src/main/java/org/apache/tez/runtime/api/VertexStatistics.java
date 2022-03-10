@@ -39,8 +39,7 @@ public interface VertexStatistics {
    * Get statistics about an {@link Edge} input or external input of this
    * {@link Vertex}. <br>
    *
-   * @param inputName
-   *          Name of the input {@link Edge} or external input of this vertex
+   * @param inputName Name of the input {@link Edge} or external input of this vertex
    * @return {@link InputStatistics} for the given input
    */
   public InputStatistics getInputStatistics(String inputName);
@@ -49,8 +48,7 @@ public interface VertexStatistics {
    * Get statistics about an {@link Edge} output or external output of this
    * {@link Vertex}. <br>
    *
-   * @param outputName
-   *          Name of the output {@link Edge} or external output of this vertex
+   * @param outputName Name of the output {@link Edge} or external output of this vertex
    * @return {@link OutputStatistics} for the given output
    */
   public OutputStatistics getOutputStatistics(String outputName);

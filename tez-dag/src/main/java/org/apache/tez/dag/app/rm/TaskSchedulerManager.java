@@ -166,16 +166,15 @@ public class TaskSchedulerManager extends AbstractService implements
   }
 
   /**
-   *
    * @param appContext
    * @param clientService
    * @param eventHandler
    * @param containerSignatureMatcher
    * @param webUI
-   * @param schedulerDescriptors the list of scheduler descriptors. Tez internal classes will not have the class
-   *                             names populated.
-   *                         An empty list defaults to using the YarnTaskScheduler as the only source.
-   * @param isLocalMode whether the AM is running in local mode
+   * @param schedulerDescriptors      the list of scheduler descriptors. Tez internal classes will not have the class
+   *                                  names populated.
+   *                                  An empty list defaults to using the YarnTaskScheduler as the only source.
+   * @param isLocalMode               whether the AM is running in local mode
    */
   @SuppressWarnings("rawtypes")
   public TaskSchedulerManager(AppContext appContext,

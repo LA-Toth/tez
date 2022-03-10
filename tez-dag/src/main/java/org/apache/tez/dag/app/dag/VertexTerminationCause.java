@@ -23,44 +23,67 @@ package org.apache.tez.dag.app.dag;
  */
 public enum VertexTerminationCause {
 
-  /** DAG was killed  */
+  /**
+   * DAG was killed
+   */
   DAG_TERMINATED(VertexState.KILLED),
 
-  /** Other vertex failed causing DAG to fail thus killing this vertex  */
+  /**
+   * Other vertex failed causing DAG to fail thus killing this vertex
+   */
   OTHER_VERTEX_FAILURE(VertexState.KILLED),
 
-  /** Initialization failed for one of the root Inputs */
+  /**
+   * Initialization failed for one of the root Inputs
+   */
   ROOT_INPUT_INIT_FAILURE(VertexState.FAILED),
 
-  /** This vertex failed as its AM usercode (VertexManager/EdgeManager/InputInitializer)
+  /**
+   * This vertex failed as its AM usercode (VertexManager/EdgeManager/InputInitializer)
    * throw Exception
    */
   AM_USERCODE_FAILURE(VertexState.FAILED),
 
-  /** One of the tasks for this vertex failed.  */
+  /**
+   * One of the tasks for this vertex failed.
+   */
   OWN_TASK_FAILURE(VertexState.FAILED),
 
-  /** This vertex failed during commit. */
+  /**
+   * This vertex failed during commit.
+   */
   COMMIT_FAILURE(VertexState.FAILED),
 
-  /** In some cases, vertex could not rerun, e.g. its output been committed as a shared output of vertex group */
+  /**
+   * In some cases, vertex could not rerun, e.g. its output been committed as a shared output of vertex group
+   */
   VERTEX_RERUN_AFTER_COMMIT(VertexState.FAILED),
 
-  /** Rerun vertex while it is in committing, it would cause conflict. */
+  /**
+   * Rerun vertex while it is in committing, it would cause conflict.
+   */
   VERTEX_RERUN_IN_COMMITTING(VertexState.FAILED),
 
-  /** This vertex failed as it had invalid number tasks. */
+  /**
+   * This vertex failed as it had invalid number tasks.
+   */
   INVALID_NUM_OF_TASKS(VertexState.FAILED),
 
-  /** This vertex failed during init. */
+  /**
+   * This vertex failed during init.
+   */
   INIT_FAILURE(VertexState.FAILED),
 
   INTERNAL_ERROR(VertexState.ERROR),
 
-  /** error when writing recovery log */
+  /**
+   * error when writing recovery log
+   */
   RECOVERY_ERROR(VertexState.FAILED),
 
-  /** This vertex failed due to counter limits exceeded. */
+  /**
+   * This vertex failed due to counter limits exceeded.
+   */
   COUNTER_LIMITS_EXCEEDED(VertexState.FAILED);
 
   private VertexState finishedState;

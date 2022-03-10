@@ -62,8 +62,9 @@ public class TezTaskID extends TezID implements VertexIDAware {
 
   /**
    * Constructs a TezTaskID object from given {@link TezVertexID}.
+   *
    * @param vertexID the vertexID object for this TezTaskID
-   * @param id the tip number
+   * @param id       the tip number
    * @throws NullPointerException if {@code vertexID} is {@code null}
    */
   public static TezTaskID getInstance(TezVertexID vertexID, int id) {
@@ -104,7 +105,9 @@ public class TezTaskID extends TezID implements VertexIDAware {
     return serializingHash;
   }
 
-  /** Returns the {@link TezVertexID} object that this task belongs to */
+  /**
+   * Returns the {@link TezVertexID} object that this task belongs to
+   */
   @Override
   public TezVertexID getVertexID() {
     return vertexId;
@@ -119,7 +122,9 @@ public class TezTaskID extends TezID implements VertexIDAware {
     return this.vertexId.equals(that.vertexId);
   }
 
-  /**Compare TaskInProgressIds by first jobIds, then by tip numbers and type.*/
+  /**
+   * Compare TaskInProgressIds by first jobIds, then by tip numbers and type.
+   */
   @Override
   public int compareTo(TezID o) {
     TezTaskID that = (TezTaskID) o;
@@ -136,6 +141,7 @@ public class TezTaskID extends TezID implements VertexIDAware {
 
   /**
    * Add the unique string to the given builder.
+   *
    * @param builder the builder to append to
    * @return the builder that was passed in
    */

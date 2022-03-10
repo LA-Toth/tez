@@ -38,10 +38,10 @@ public class SimpleExponentialSmoothing {
   /**
    * Instantiates a new Simple exponential smoothing.
    *
-   * @param ktConstant the kt constant
-   * @param skipCnt the skip cnt
+   * @param ktConstant      the kt constant
+   * @param skipCnt         the skip cnt
    * @param stagnatedWindow the stagnated window
-   * @param timeStamp the time stamp
+   * @param timeStamp       the time stamp
    */
   SimpleExponentialSmoothing(final long ktConstant, final int skipCnt,
                              final long stagnatedWindow, final long timeStamp) {
@@ -55,10 +55,10 @@ public class SimpleExponentialSmoothing {
   /**
    * Create forecast simple exponential smoothing.
    *
-   * @param timeConstant the time constant
-   * @param skipCnt the skip cnt
+   * @param timeConstant    the time constant
+   * @param skipCnt         the skip cnt
    * @param stagnatedWindow the stagnated window
-   * @param timeStamp the time stamp
+   * @param timeStamp       the time stamp
    * @return the simple exponential smoothing
    */
   public static SimpleExponentialSmoothing createForecast(
@@ -72,9 +72,9 @@ public class SimpleExponentialSmoothing {
    * Process raw data double.
    *
    * @param oldRawData the old raw data
-   * @param oldTime the old time
+   * @param oldTime    the old time
    * @param newRawData the new raw data
-   * @param newTime the new time
+   * @param newTime    the new time
    * @return the double
    */
   static double processRawData(final double oldRawData, final long oldTime,
@@ -101,7 +101,7 @@ public class SimpleExponentialSmoothing {
   /**
    * Incorporate reading.
    *
-   * @param timeStamp the time stamp
+   * @param timeStamp   the time stamp
    * @param currRawData the curr raw data
    */
   public void incorporateReading(final long timeStamp,
@@ -244,8 +244,8 @@ public class SimpleExponentialSmoothing {
     /**
      * Instantiates a new Forecast record.
      *
-     * @param currForecast the curr forecast
-     * @param currRawData the curr raw data
+     * @param currForecast  the curr forecast
+     * @param currRawData   the curr raw data
      * @param currTimeStamp the curr time stamp
      */
     ForecastRecord(final double currForecast, final double currRawData,
@@ -256,13 +256,13 @@ public class SimpleExponentialSmoothing {
     /**
      * Instantiates a new Forecast record.
      *
-     * @param alphaVal the alpha val
-     * @param currSample the curr sample
-     * @param currRawData the curr raw data
-     * @param currForecast the curr forecast
+     * @param alphaVal      the alpha val
+     * @param currSample    the curr sample
+     * @param currRawData   the curr raw data
+     * @param currForecast  the curr forecast
      * @param currTimeStamp the curr time stamp
-     * @param accError the acc error
-     * @param index the index
+     * @param accError      the acc error
+     * @param index         the index
      */
     ForecastRecord(final double alphaVal, final double currSample,
                    final double currRawData,
@@ -300,7 +300,7 @@ public class SimpleExponentialSmoothing {
      * Append forecast record.
      *
      * @param newTimeStamp the new time stamp
-     * @param rData the r data
+     * @param rData        the r data
      * @return the forecast record
      */
     public ForecastRecord append(final long newTimeStamp, final double rData) {

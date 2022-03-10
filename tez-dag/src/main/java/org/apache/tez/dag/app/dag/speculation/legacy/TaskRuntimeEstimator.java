@@ -26,7 +26,6 @@ import org.apache.tez.dag.records.TezTaskID;
 
 /**
  * Estimate the runtime for tasks of a given vertex.
- *
  */
 public interface TaskRuntimeEstimator {
   void enrollAttempt(TezTaskAttemptID id, long timestamp);
@@ -39,67 +38,57 @@ public interface TaskRuntimeEstimator {
   void contextualize(Configuration conf, Vertex vertex);
 
   /**
-   *
    * Find a maximum reasonable execution wallclock time.  Includes the time
    * already elapsed.
-   *
+   * <p>
    * Find a maximum reasonable execution time.  Includes the time
    * already elapsed.  If the projected total execution time for this task
    * ever exceeds its reasonable execution time, we may speculate it.
    *
    * @param id the {@link TezTaskID} of the task we are asking about
    * @return the task's maximum reasonable runtime, or MAX_VALUE if
-   *         we don't have enough information to rule out any runtime,
-   *         however long.
-   *
+   * we don't have enough information to rule out any runtime,
+   * however long.
    */
   long thresholdRuntime(TezTaskID id);
 
   /**
-   *
    * Estimate a task attempt's total runtime.  Includes the time already
    * elapsed.
    *
    * @param id the {@link TezTaskAttemptID} of the attempt we are asking about
    * @return our best estimate of the attempt's runtime, or {@code -1} if
-   *         we don't have enough information yet to produce an estimate.
-   *
+   * we don't have enough information yet to produce an estimate.
    */
   long estimatedRuntime(TezTaskAttemptID id);
 
   /**
-   *
    * Estimates how long a new attempt on this task will take if we start
-   *  one now
+   * one now
    *
    * @return our best estimate of a new attempt's runtime, or {@code -1} if
-   *         we don't have enough information yet to produce an estimate.
-   *
+   * we don't have enough information yet to produce an estimate.
    */
   long newAttemptEstimatedRuntime();
 
   /**
-   *
    * Computes the width of the error band of our estimate of the task
-   *  runtime as returned by {@link #estimatedRuntime(TezTaskAttemptID)}
+   * runtime as returned by {@link #estimatedRuntime(TezTaskAttemptID)}
    *
    * @param id the {@link TezTaskAttemptID} of the attempt we are asking about
    * @return our best estimate of the attempt's runtime, or {@code -1} if
-   *         we don't have enough information yet to produce an estimate.
-   *
+   * we don't have enough information yet to produce an estimate.
    */
   long runtimeEstimateVariance(TezTaskAttemptID id);
 
   /**
-   *
    * Returns true if the estimator has no updates records for a threshold time
    * window. This helps to identify task attempts that are stalled at the
    * beginning of execution.
    *
-   * @param id the {@link TezTaskAttemptID} of the attempt we are asking about
+   * @param id        the {@link TezTaskAttemptID} of the attempt we are asking about
    * @param timeStamp the time of the report we compare with
    * @return true if the task attempt has no progress for a given time window
-   *
    */
   default boolean hasStagnatedProgress(TezTaskAttemptID id, long timeStamp) {
     return false;

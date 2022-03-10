@@ -32,7 +32,7 @@ import com.google.common.collect.Interners;
 /**
  * TezDAGID represents the immutable and unique identifier for
  * a Tez DAG.
- *
+ * <p>
  * TezDAGID consists of 2 parts. The first part is the {@link ApplicationId},
  * that is the YARN Application ID that this DAG belongs to. The second part is
  * the DAG number.
@@ -72,8 +72,9 @@ public class TezDAGID extends TezID {
 
   /**
    * Get a DAGID object from given {@link ApplicationId}.
+   *
    * @param applicationId Application that this dag belongs to
-   * @param id the dag number
+   * @param id            the dag number
    * @throws NullPointerException if {@code obj} is {@code applicationId}
    */
   public static TezDAGID getInstance(ApplicationId applicationId, int id) {
@@ -86,9 +87,10 @@ public class TezDAGID extends TezID {
 
   /**
    * Get a DAGID object from given parts.
+   *
    * @param yarnRMIdentifier YARN RM identifier
-   * @param appId application number
-   * @param id the dag number
+   * @param appId            application number
+   * @param id               the dag number
    * @throws NullPointerException if {@code yarnRMIdentifier} is {@code null}
    */
   public static TezDAGID getInstance(String yarnRMIdentifier, int appId, int id) {
@@ -130,7 +132,9 @@ public class TezDAGID extends TezID {
     return TezDAGID.getInstance(rmId, appId, id);
   }
 
-  /** Returns the {@link ApplicationId} object that this dag belongs to */
+  /**
+   * Returns the {@link ApplicationId} object that this dag belongs to
+   */
   public ApplicationId getApplicationId() {
     return applicationId;
   }
@@ -144,7 +148,9 @@ public class TezDAGID extends TezID {
     return this.applicationId.equals(that.applicationId);
   }
 
-  /**Compare TaskInProgressIds by first jobIds, then by tip numbers and type.*/
+  /**
+   * Compare TaskInProgressIds by first jobIds, then by tip numbers and type.
+   */
   @Override
   public int compareTo(TezID o) {
     TezDAGID that = (TezDAGID) o;
@@ -196,6 +202,7 @@ public class TezDAGID extends TezID {
 
   /**
    * Add the unique string to the given builder.
+   *
    * @param builder the builder to append to
    * @return the builder that was passed in
    */

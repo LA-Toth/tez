@@ -60,7 +60,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * {@link UnorderedKVInput} provides unordered key value input by
- * bringing together (shuffling) a set of distributed data and providing a 
+ * bringing together (shuffling) a set of distributed data and providing a
  * unified view to that data. There are no ordering constraints applied by
  * this input.
  */

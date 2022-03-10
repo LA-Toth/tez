@@ -214,7 +214,6 @@ public class TestExceptionPropagation {
    * mode for fast speed
    *
    * @throws Exception
-   *
    */
   @Test(timeout = 600000)
   public void testExceptionPropagationSession() throws Exception {

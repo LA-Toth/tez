@@ -50,7 +50,7 @@ public enum TaskCounter {
 
   /**
    * Number of records written to disk in case of OnFileSortedOutput.
-   *
+   * <p>
    * Number of additional records writtent out to disk in case of
    * ShuffledMergedInput; this represents the number of unnecessary spills to
    * disk caused by lac of memory.
@@ -58,7 +58,7 @@ public enum TaskCounter {
   SPILLED_RECORDS,
 
   /**
-   * Number of Inputs from which data is copied. Represents physical Inputs. 
+   * Number of Inputs from which data is copied. Represents physical Inputs.
    */
   NUM_SHUFFLED_INPUTS,
 
@@ -75,7 +75,9 @@ public enum TaskCounter {
   MERGED_MAP_OUTPUTS,
   GC_TIME_MILLIS,
   CPU_MILLISECONDS,
-  /** Wall clock time taken by the task initialization and execution. */
+  /**
+   * Wall clock time taken by the task initialization and execution.
+   */
   WALL_CLOCK_MILLISECONDS,
   PHYSICAL_MEMORY_BYTES,
   VIRTUAL_MEMORY_BYTES,
@@ -84,7 +86,6 @@ public enum TaskCounter {
   /**
    * Represents the number of Input Records that were actually processed.
    * Used by MRInput and ShuffledUnorderedKVInput
-   *
    */
   INPUT_RECORDS_PROCESSED,
 
@@ -148,7 +149,7 @@ public enum TaskCounter {
   /**
    * Spills that were generated & read by the same task (unnecessary spills due to lac of
    * adequate memory).
-   *
+   * <p>
    * Used by OnFileSortedOutput
    */
   ADDITIONAL_SPILL_COUNT,
@@ -175,12 +176,12 @@ public enum TaskCounter {
   SHUFFLE_BYTES_DECOMPRESSED,
 
   /**
-   * Number of bytes which were shuffled directly to memory. 
+   * Number of bytes which were shuffled directly to memory.
    */
   SHUFFLE_BYTES_TO_MEM,
 
   /**
-   * Number of bytes which were shuffled directly to disk 
+   * Number of bytes which were shuffled directly to disk
    */
   SHUFFLE_BYTES_TO_DISK,
 
@@ -204,35 +205,35 @@ public enum TaskCounter {
    * Time taken to shuffle data. This includes time taken to fetch the data
    * & merging the data in parallel to fetching when needed.  This also includes any
    * waiting time related to event delays from source.
-   *
+   * <p>
    * Represented in milliseconds.
    */
   SHUFFLE_PHASE_TIME,
 
   /**
    * Time taken to merge data retrieved during shuffle.
-   *
+   * <p>
    * Relative to task start time and expressed in milliseconds.
    */
   MERGE_PHASE_TIME,
 
   /**
    * First event received from source relative to task start time.
-   *
+   * <p>
    * Represented in milliseconds
    */
   FIRST_EVENT_RECEIVED,
 
   /**
    * Last event received from source relative to task start time.
-   *
+   * <p>
    * Represented in milliseconds
    */
   LAST_EVENT_RECEIVED,
 
   /**
    * The size of the data that is transmitted via event.
-   *
+   * <p>
    * Represented in number of bytes
    */
   DATA_BYTES_VIA_EVENT

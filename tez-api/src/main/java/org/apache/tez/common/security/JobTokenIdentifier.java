@@ -47,19 +47,24 @@ public class JobTokenIdentifier extends TokenIdentifier {
 
   /**
    * Create a job token identifier from a jobid
+   *
    * @param jobid the jobid to use
    */
   public JobTokenIdentifier(Text jobid) {
     this.jobid = jobid;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public Text getKind() {
     return KIND_NAME;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public UserGroupInformation getUser() {
     if (jobid == null || "".equals(jobid.toString())) {
@@ -70,19 +75,24 @@ public class JobTokenIdentifier extends TokenIdentifier {
 
   /**
    * Get the jobid
+   *
    * @return the jobid
    */
   public Text getJobId() {
     return jobid;
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void readFields(DataInput in) throws IOException {
     jobid.readFields(in);
   }
 
-  /** {@inheritDoc} */
+  /**
+   * {@inheritDoc}
+   */
   @Override
   public void write(DataOutput out) throws IOException {
     jobid.write(out);

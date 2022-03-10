@@ -34,10 +34,12 @@ public class Graph {
   private Graph parent;
   private Set<Graph.Node> nodes = new HashSet<Graph.Node>();
   private Set<Graph> subgraphs = new HashSet<Graph>();
+
   public Graph(String name, Graph parent) {
     this.name = name;
     this.parent = parent;
   }
+
   public Graph(String name) {
     this(name, null);
   }

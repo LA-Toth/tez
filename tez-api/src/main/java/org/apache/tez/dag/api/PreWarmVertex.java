@@ -66,6 +66,7 @@ public class PreWarmVertex extends Vertex {
   /**
    * Create a config builder for the @link {@link PreWarmVertex}. This may be used to construct the
    * pre-warm vertex more flexibly.
+   *
    * @param conf
    * @return a new config builder for {@link PreWarmVertex}
    */
@@ -79,14 +80,10 @@ public class PreWarmVertex extends Vertex {
    * methods to add local files etc on the pre-warm vertex post creation so that
    * it matches the real DAG vertices.
    *
-   * @param vertexName
-   *          Name of the vertex
-   * @param processorDescriptor
-   *          Descriptor of the processor to be run
-   * @param parallelism
-   *          Number of containers to be pre-warmed
-   * @param taskResource
-   *          Execution cpu/memory resources etc needed
+   * @param vertexName          Name of the vertex
+   * @param processorDescriptor Descriptor of the processor to be run
+   * @param parallelism         Number of containers to be pre-warmed
+   * @param taskResource        Execution cpu/memory resources etc needed
    */
   public static PreWarmVertex create(String vertexName, ProcessorDescriptor processorDescriptor,
                                      int parallelism,
@@ -104,12 +101,9 @@ public class PreWarmVertex extends Vertex {
    * methods to add local files etc on the pre-warm vertex post creation so that
    * it matches the real DAG vertices.
    *
-   * @param vertexName
-   *          Name of the vertex
-   * @param parallelism
-   *          Number of containers to be pre-warmed
-   * @param taskResource
-   *          Execution cpu/memory resources etc needed
+   * @param vertexName   Name of the vertex
+   * @param parallelism  Number of containers to be pre-warmed
+   * @param taskResource Execution cpu/memory resources etc needed
    */
   public static PreWarmVertex create(String vertexName, int parallelism, Resource taskResource) {
     return new PreWarmVertex(vertexName, parallelism, taskResource);

@@ -32,6 +32,7 @@ public interface SummaryEvent {
   /**
    * Whether to write this event immediately to the DAG recovery file
    * Summary events are always written immediately to summary file.
+   *
    * @return true if event should be written immediately to the DAG recovery file
    */
   public boolean writeToRecoveryImmediately();

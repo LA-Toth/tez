@@ -24,7 +24,7 @@ import org.apache.tez.dag.api.TezException;
 /**
  * Wrap the exception of user code in AM. Now we only have 3 kinds of user code in AM:
  * <li>VertexManager</li>
- * <li>EdgeManager</li> 
+ * <li>EdgeManager</li>
  * <li>InputInitializer</li>
  */
 @Private

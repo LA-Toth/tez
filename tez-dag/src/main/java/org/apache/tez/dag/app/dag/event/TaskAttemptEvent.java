@@ -24,7 +24,6 @@ import org.apache.tez.dag.records.TezTaskAttemptID;
 
 /**
  * This class encapsulates task attempt related events.
- *
  */
 public class TaskAttemptEvent extends TezAbstractEvent<TaskAttemptEventType> implements TaskAttemptIDAware {
 
@@ -32,7 +31,8 @@ public class TaskAttemptEvent extends TezAbstractEvent<TaskAttemptEventType> imp
 
   /**
    * Create a new TaskAttemptEvent.
-   * @param id the id of the task attempt
+   *
+   * @param id   the id of the task attempt
    * @param type the type of event that happened.
    */
   public TaskAttemptEvent(TezTaskAttemptID id, TaskAttemptEventType type) {

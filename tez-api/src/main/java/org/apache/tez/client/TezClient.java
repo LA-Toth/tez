@@ -154,7 +154,9 @@ public class TezClient {
   private ApplicationId sessionAppId;
   private ApplicationId lastSubmittedAppId;
   private String diagnostics;
-  /** Tokens which will be required for all DAGs submitted to this session. */
+  /**
+   * Tokens which will be required for all DAGs submitted to this session.
+   */
   private Credentials sessionCredentials = new Credentials();
   private long clientTimeout;
   private JobTokenSecretManager jobTokenSecretManager =
@@ -245,11 +247,10 @@ public class TezClient {
   /**
    * Create a new TezClient. Session or non-session execution mode will be
    * inferred from configuration.
-   * @param name
-   *          Name of the client. Used for logging etc. This will also be used
-   *          as app master name is session mode
-   * @param tezConf
-   *          Configuration for the framework
+   *
+   * @param name    Name of the client. Used for logging etc. This will also be used
+   *                as app master name is session mode
+   * @param tezConf Configuration for the framework
    */
   public static TezClient create(String name, TezConfiguration tezConf) {
     return new TezClient(name, tezConf);
@@ -261,24 +262,20 @@ public class TezClient {
    * credentials for the App Master. If app master resources/credentials are
    * needed then this is the recommended method for session mode execution.
    *
-   * @param name
-   *          Name of the client. Used for logging etc. This will also be used
-   *          as app master name is session mode
-   * @param tezConf
-   *          Configuration for the framework
-   * @param localFiles
-   *          local files for the App Master
-   * @param credentials
-   *          Set security credentials to be used inside the app master, if
-   *          needed. Tez App Master needs credentials to access the staging
-   *          directory and for most HDFS cases these are automatically obtained
-   *          by Tez client. If the staging directory is on a file system for
-   *          which credentials cannot be obtained or for any credentials needed
-   *          by user code running inside the App Master, credentials must be
-   *          supplied by the user. These will be used by the App Master for the
-   *          next DAG. <br>
-   *          In session mode, credentials, if needed, must be set before
-   *          calling start()
+   * @param name        Name of the client. Used for logging etc. This will also be used
+   *                    as app master name is session mode
+   * @param tezConf     Configuration for the framework
+   * @param localFiles  local files for the App Master
+   * @param credentials Set security credentials to be used inside the app master, if
+   *                    needed. Tez App Master needs credentials to access the staging
+   *                    directory and for most HDFS cases these are automatically obtained
+   *                    by Tez client. If the staging directory is on a file system for
+   *                    which credentials cannot be obtained or for any credentials needed
+   *                    by user code running inside the App Master, credentials must be
+   *                    supplied by the user. These will be used by the App Master for the
+   *                    next DAG. <br>
+   *                    In session mode, credentials, if needed, must be set before
+   *                    calling start()
    */
   public static TezClient create(String name, TezConfiguration tezConf,
                                  @Nullable Map<String, LocalResource> localFiles,
@@ -289,10 +286,10 @@ public class TezClient {
   /**
    * Create a new TezClient with AM session mode set explicitly. This overrides
    * the setting from configuration.
-   * @param name
-   *          Name of the client. Used for logging etc. This will also be used
-   *          as app master name is session mode
-   * @param tezConf Configuration for the framework
+   *
+   * @param name      Name of the client. Used for logging etc. This will also be used
+   *                  as app master name is session mode
+   * @param tezConf   Configuration for the framework
    * @param isSession The AM will run in session mode or not
    */
   public static TezClient create(String name, TezConfiguration tezConf, boolean isSession) {
@@ -303,12 +300,12 @@ public class TezClient {
    * Create a new TezClient with AM session mode set explicitly. This overrides
    * the setting from configuration.
    * Set the initial files and security credentials for the App Master.
-   * @param name
-   *          Name of the client. Used for logging etc. This will also be used
-   *          as app master name is session mode
-   * @param tezConf Configuration for the framework
-   * @param isSession The AM will run in session mode or not
-   * @param localFiles local files for the App Master
+   *
+   * @param name        Name of the client. Used for logging etc. This will also be used
+   *                    as app master name is session mode
+   * @param tezConf     Configuration for the framework
+   * @param isSession   The AM will run in session mode or not
+   * @param localFiles  local files for the App Master
    * @param credentials credentials for the App Master
    */
   public static TezClient create(String name, TezConfiguration tezConf, boolean isSession,
@@ -444,6 +441,7 @@ public class TezClient {
    * Start the client. This establishes a connection to the YARN cluster.
    * In session mode, this start the App Master thats runs all the DAGs in the
    * session.
+   *
    * @throws TezException
    * @throws IOException
    */
@@ -507,7 +505,7 @@ public class TezClient {
    * The caller of getClient is responsible for initializing the new TezClient with a
    * Configuration compatible with the existing AM. It is expected the caller has cached the
    * original Configuration (e.g. in Zookeeper).
-   *
+   * <p>
    * In contrast to "start", no resources are localized. It is the responsibility of the caller to
    * ensure that existing localized resources and staging dirs are still valid.
    *
@@ -665,13 +663,11 @@ public class TezClient {
    * blocks until either the DAG is submitted to the session or configured
    * timeout period expires. Cleans up session if the submission timed out.
    *
-   * @param dag
-   *          DAG to be submitted to Session
+   * @param dag DAG to be submitted to Session
    * @return DAGClient to monitor the DAG
    * @throws TezException
    * @throws IOException
-   * @throws DAGSubmissionTimedOut
-   *           if submission timed out
+   * @throws DAGSubmissionTimedOut if submission timed out
    */
   public synchronized DAGClient submitDAG(DAG dag) throws TezException, IOException {
     DAGClient result = isSession ? submitDAGSession(dag) : submitDAGApplication(dag);
@@ -783,6 +779,7 @@ public class TezClient {
   /**
    * Stop the client. This terminates the connection to the YARN cluster.
    * In session mode, this shuts down the session DAG App Master
+   *
    * @throws TezException
    * @throws IOException
    */
@@ -866,6 +863,7 @@ public class TezClient {
 
   /**
    * Get the name of the client
+   *
    * @return name
    */
   public String getClientName() {
@@ -952,6 +950,7 @@ public class TezClient {
    * containers.
    * Pre-warming is best efforts and among other factors is limited by the free
    * resources on the cluster.
+   *
    * @param preWarmVertex
    * @throws TezException
    * @throws IOException
@@ -977,6 +976,7 @@ public class TezClient {
    * Pre-warming is best efforts and among other factors is limited by the free
    * resources on the cluster. Based on the specified timeout value it returns
    * false if the status is not READY after the wait period.
+   *
    * @param preWarmVertex
    * @param timeout
    * @param unit
@@ -1020,6 +1020,7 @@ public class TezClient {
    * In non-session mode this is a no-op since the application can be immediately
    * submitted.
    * In session mode, this waits for the session host to be ready to accept a DAG
+   *
    * @throws IOException
    * @throws TezException
    * @throws InterruptedException
@@ -1035,6 +1036,7 @@ public class TezClient {
    * immediately submitted.
    * In session mode, this waits for the session host to be ready to accept
    * a DAG and returns false if not ready after a configured time wait period.
+   *
    * @param timeout
    * @param unit
    * @return true if READY or is not in session mode, false otherwise.
@@ -1213,11 +1215,9 @@ public class TezClient {
     /**
      * Create an instance of a TezClientBuilder
      *
-     * @param name
-     *          Name of the client. Used for logging etc. This will also be used
-     *          as app master name is session mode
-     * @param tezConf
-     *          Configuration for the framework
+     * @param name    Name of the client. Used for logging etc. This will also be used
+     *                as app master name is session mode
+     * @param tezConf Configuration for the framework
      */
     private TezClientBuilder(String name, TezConfiguration tezConf) {
       this.name = name;
@@ -1228,6 +1228,7 @@ public class TezClient {
 
     /**
      * Specify whether this client is a session or not
+     *
      * @param isSession whether the client is a session
      * @return the current builder
      */
@@ -1250,17 +1251,16 @@ public class TezClient {
     /**
      * Setup security credentials
      *
-     * @param credentials
-     *          Set security credentials to be used inside the app master, if
-     *          needed. Tez App Master needs credentials to access the staging
-     *          directory and for most HDFS cases these are automatically obtained
-     *          by Tez client. If the staging directory is on a file system for
-     *          which credentials cannot be obtained or for any credentials needed
-     *          by user code running inside the App Master, credentials must be
-     *          supplied by the user. These will be used by the App Master for the
-     *          next DAG. <br>
-     *          In session mode, credentials, if needed, must be set before
-     *          calling start()
+     * @param credentials Set security credentials to be used inside the app master, if
+     *                    needed. Tez App Master needs credentials to access the staging
+     *                    directory and for most HDFS cases these are automatically obtained
+     *                    by Tez client. If the staging directory is on a file system for
+     *                    which credentials cannot be obtained or for any credentials needed
+     *                    by user code running inside the App Master, credentials must be
+     *                    supplied by the user. These will be used by the App Master for the
+     *                    next DAG. <br>
+     *                    In session mode, credentials, if needed, must be set before
+     *                    calling start()
      * @return the current builder
      */
     public TezClientBuilder setCredentials(Credentials credentials) {
@@ -1270,6 +1270,7 @@ public class TezClient {
 
     /**
      * Specify the service plugins that will be running in the AM
+     *
      * @param servicePluginsDescriptor the service plugin descriptor with details about the plugins running in the AM
      * @return the current builder
      */
@@ -1280,6 +1281,7 @@ public class TezClient {
 
     /**
      * Build the actual instance of the {@link TezClient}
+     *
      * @return an instance of {@link TezClient}
      */
     public TezClient build() {

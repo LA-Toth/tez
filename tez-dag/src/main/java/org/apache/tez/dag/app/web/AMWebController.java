@@ -390,6 +390,7 @@ public class AMWebController extends Controller {
 
   /**
    * Parse a params list in the format: CtrGroup/CtrName1,CtrName2;CtrGroup2;
+   *
    * @return nested structure of counter groups and names. Null if nothing specified.
    */
   Map<String, Set<String>> getCounterListFromRequest() {
@@ -442,8 +443,7 @@ public class AMWebController extends Controller {
    * The function returns null if any of the value is not an integer
    *
    * @param paramName {String}
-   * @param limit {Integer} Maximum number of values to be taken
-   *
+   * @param limit     {Integer} Maximum number of values to be taken
    * @return {List<Integer>} List of parsed values
    */
   List<Integer> getIntegersFromRequest(String paramName, Integer limit) {
@@ -474,8 +474,7 @@ public class AMWebController extends Controller {
    * The function returns null if any of the value is not an integer
    *
    * @param paramName {String}
-   * @param limit {Integer} Maximum number of values to be taken
-   *
+   * @param limit     {Integer} Maximum number of values to be taken
    * @return {List<List<Integer>>} List of parsed values
    */
   List<List<Integer>> getIDsFromRequest(String paramName, Integer limit, Integer count) {
@@ -661,7 +660,7 @@ public class AMWebController extends Controller {
    * Heart of getTasksInfo. Given a dag and a limit, based on the incoming query parameters
    * returns a list of task instances
    *
-   * @param dag {DAG}
+   * @param dag   {DAG}
    * @param limit {Integer}
    */
   List<Task> getRequestedTasks(DAG dag, Integer limit) {
@@ -779,7 +778,7 @@ public class AMWebController extends Controller {
    * Given a dag and a limit, based on the incoming query parameters. Used by getAttemptsInfo
    * returns a list of task instances
    *
-   * @param dag {DAG}
+   * @param dag   {DAG}
    * @param limit {Integer}
    */
   List<TaskAttempt> getRequestedAttempts(DAG dag, Integer limit) {

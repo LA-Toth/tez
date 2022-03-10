@@ -127,8 +127,7 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
   private static final StateMachineFactory
     <TaskImpl, TaskStateInternal, TaskEventType, TaskEvent>
     stateMachineFactory
-    = new StateMachineFactory<TaskImpl, TaskStateInternal, TaskEventType, TaskEvent>
-    (TaskStateInternal.NEW)
+    = new StateMachineFactory<TaskImpl, TaskStateInternal, TaskEventType, TaskEvent>(TaskStateInternal.NEW)
 
     // define the state machine of Task
 
@@ -651,10 +650,10 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
   }
 
   private TaskStateInternal finished(TaskStateInternal finalState) {
-    if (getInternalState() == TaskStateInternal.RUNNING) {
-      // TODO Metrics
-      //metrics.endRunningTask(this);
-    }
+    //if (getInternalState() == TaskStateInternal.RUNNING) {
+    // TODO Metrics
+    //metrics.endRunningTask(this);
+    //}
     return finalState;
   }
 
@@ -704,8 +703,8 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
       // have been in scheduled state in task impl.
       if (state != TaskState.RUNNING) {
         LOG.info("Task not running. Issuing kill to bad commit attempt " + taskAttemptID);
-        eventHandler.handle(new TaskAttemptEventKillRequest(taskAttemptID
-          , "Task not running. Bad attempt.", TaskAttemptTerminationCause.TERMINATED_ORPHANED));
+        eventHandler.handle(new TaskAttemptEventKillRequest(taskAttemptID, "Task not running. Bad attempt.",
+          TaskAttemptTerminationCause.TERMINATED_ORPHANED));
         return false;
       }
       if (commitAttempt == null) {
@@ -897,10 +896,9 @@ public class TaskImpl implements Task, EventHandler<TaskEvent> {
 
   /**
    * @return a String representation of the splits.
-   *
+   * <p>
    * Subclasses can override this method to provide their own representations
    * of splits (if any).
-   *
    */
   protected String getSplitsAsString() {
     return "";

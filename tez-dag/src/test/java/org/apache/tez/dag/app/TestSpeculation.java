@@ -201,9 +201,9 @@ public class TestSpeculation {
   /**
    * Sync with mock app launcher.
    *
-   * @param allowScheduling the allow scheduling
+   * @param allowScheduling       the allow scheduling
    * @param mockAppLauncherGoFlag the mock app launcher go flag
-   * @param tezClient the tez client
+   * @param tezClient             the tez client
    * @throws Exception the exception
    */
   void syncWithMockAppLauncher(boolean allowScheduling, AtomicBoolean mockAppLauncherGoFlag,

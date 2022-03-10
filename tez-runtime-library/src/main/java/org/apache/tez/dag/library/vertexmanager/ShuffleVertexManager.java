@@ -54,8 +54,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Starts scheduling tasks when number of completed source tasks crosses 
- * <code>slowStartMinSrcCompletionFraction</code> and schedules all tasks 
+ * Starts scheduling tasks when number of completed source tasks crosses
+ * <code>slowStartMinSrcCompletionFraction</code> and schedules all tasks
  *  when <code>slowStartMaxSrcCompletionFraction</code> is reached
  */
 @Public

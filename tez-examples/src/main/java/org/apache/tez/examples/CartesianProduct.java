@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.examples;
 
 import java.io.IOException;
@@ -62,13 +63,13 @@ import org.slf4j.LoggerFactory;
 /**
  * This DAG does cartesian product of two text inputs and then filters results according to the
  * third text input.
- *
+ * <p>
  * V1    V2    V3
- *  \     |    /
+ * \     |    /
  * CP\  CP|   / Broadcast
- *    \   |  /
- *    Vertex 4
- *
+ * \   |  /
+ * Vertex 4
+ * <p>
  * Vertex 1~3 are tokenizers and each of them tokenizes input from one directory. In partitioned
  * case, CustomPartitioner separates tokens into 2 partitions according to the parity of token's
  * first char. Vertex 4 does cartesian product of input from vertex1 and vertex2, and generates

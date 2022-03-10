@@ -29,7 +29,7 @@ import org.apache.tez.runtime.api.InputInitializer;
 /**
  * Events used by {@link InputInitializer} implementations to update the
  * shared user payload for the Input that is being initialized. </p>
- *
+ * <p>
  * This event is specific to an Input, and should only be sent once - ideally
  * before {@link InputDataInformationEvent}s
  */

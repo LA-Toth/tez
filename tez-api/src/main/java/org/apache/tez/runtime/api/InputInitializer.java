@@ -58,7 +58,7 @@ public abstract class InputInitializer {
    * complete.
    *
    * @return a list of events which are eventually routed to a
-   *         {@link org.apache.tez.dag.api.VertexManagerPlugin} for routing
+   * {@link org.apache.tez.dag.api.VertexManagerPlugin} for routing
    * @throws Exception
    */
   public abstract List<Event> initialize()
@@ -81,7 +81,7 @@ public abstract class InputInitializer {
    * for this specific instance of the Initializer.
    *
    * @return the {@link org.apache.tez.runtime.api.InputInitializerContext}
-   *         for the initializer
+   * for the initializer
    */
   public final InputInitializerContext getContext() {
     return this.initializerContext;
@@ -94,11 +94,12 @@ public abstract class InputInitializer {
    * org.apache.tez.runtime.api.InputInitializerContext#registerForVertexStateUpdates(String,
    * java.util.Set)}. Notifications will be received for all registered state changes, and not just
    * for the latest state update. They will be in order in which the state change occurred. </p>
-   *
+   * <p>
    * Extensive processing should not be performed via this method call. Instead this should just be
    * used as a notification mechanism to the main initialization, which is via the initialize method.
-   * <br>This method may be invoked concurrently with {@link #initialize()} etc. and 
+   * <br>This method may be invoked concurrently with {@link #initialize()} etc. and
    * multi-threading/concurrency implications must be considered.
+   *
    * @param stateUpdate an event indicating the name of the vertex, and it's updated state.
    *                    Additional information may be available for specific events, Look at the
    *                    type hierarchy for {@link org.apache.tez.dag.api.event.VertexStateUpdate}

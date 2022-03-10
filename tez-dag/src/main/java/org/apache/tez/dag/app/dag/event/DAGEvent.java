@@ -24,7 +24,6 @@ import org.apache.tez.dag.records.TezDAGID;
 
 /**
  * This class encapsulates job related events.
- *
  */
 public class DAGEvent extends TezAbstractEvent<DAGEventType> implements DAGIDAware {
 

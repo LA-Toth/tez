@@ -29,7 +29,7 @@ import org.apache.hadoop.yarn.api.records.ApplicationId;
 
 /**
  * ACL Policy Manager
- * An instance of this implements any ACL related activity when starting a session or submitting a 
+ * An instance of this implements any ACL related activity when starting a session or submitting a
  * DAG. It is used in the HistoryLoggingService to create domain ids and populate entities with
  * domain id.
  */
@@ -44,7 +44,8 @@ public interface HistoryACLPolicyManager extends Configurable {
    * If the method returns null, acls are disabled at session level, i.e use default acls at session
    * level.
    * If the method throws an Exception, history logging is disabled for the entire session.
-   * @param conf Configuration
+   *
+   * @param conf          Configuration
    * @param applicationId Application ID for the session
    * @throws Exception
    */
@@ -53,8 +54,9 @@ public interface HistoryACLPolicyManager extends Configurable {
 
   /**
    * Not used currently.
-   * @param conf Configuration
-   * @param applicationId Application ID for the AM
+   *
+   * @param conf              Configuration
+   * @param applicationId     Application ID for the AM
    * @param dagAccessControls ACLs defined for the DAG being submitted
    * @throws Exception
    */
@@ -69,8 +71,9 @@ public interface HistoryACLPolicyManager extends Configurable {
    * for all of the dag events.
    * If the method returns null, it falls back to session level acls.
    * If the method throws Exception: it disables history logging for the dag events.
-   * @param conf Configuration
-   * @param applicationId Application ID for the AM
+   *
+   * @param conf              Configuration
+   * @param applicationId     Application ID for the AM
    * @param dagAccessControls ACLs defined for the DAG being submitted
    * @throws Exception
    */
@@ -80,8 +83,9 @@ public interface HistoryACLPolicyManager extends Configurable {
 
   /**
    * Called with a timeline entity which has to be updated with a domain id.
+   *
    * @param timelineEntity The timeline entity which will be published.
-   * @param domainId The domainId returned by one of the setup*ACL calls.
+   * @param domainId       The domainId returned by one of the setup*ACL calls.
    */
   public void updateTimelineEntityDomain(Object timelineEntity, String domainId);
 

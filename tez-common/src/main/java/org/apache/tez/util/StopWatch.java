@@ -34,6 +34,7 @@ public class StopWatch implements Closeable {
 
   /**
    * The method is used to find out if the StopWatch is started.
+   *
    * @return boolean If the StopWatch is started.
    */
   public boolean isRunning() {
@@ -42,6 +43,7 @@ public class StopWatch implements Closeable {
 
   /**
    * Start to measure times and make the state of stopwatch running.
+   *
    * @return this instance of StopWatch.
    */
   public StopWatch start() {
@@ -55,6 +57,7 @@ public class StopWatch implements Closeable {
 
   /**
    * Stop elapsed time and make the state of stopwatch stop.
+   *
    * @return this instance of StopWatch.
    */
   public StopWatch stop() {
@@ -69,6 +72,7 @@ public class StopWatch implements Closeable {
 
   /**
    * Reset elapsed time to zero and make the state of stopwatch stop.
+   *
    * @return this instance of StopWatch.
    */
   public StopWatch reset() {

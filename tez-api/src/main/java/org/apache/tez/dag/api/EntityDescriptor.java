@@ -59,6 +59,7 @@ public abstract class EntityDescriptor<T extends EntityDescriptor<T>> implements
 
   /**
    * Set user payload for this entity descriptor
+   *
    * @param userPayload User Payload
    * @return this object for further chained method calls
    */
@@ -76,11 +77,12 @@ public abstract class EntityDescriptor<T extends EntityDescriptor<T>> implements
   /**
    * Provide a human-readable version of the user payload that can be
    * used in the TEZ UI
+   *
    * @param historyText History text
-   * For better support in the UI, the history text should be a json-encoded string.
-   * The following keys in the json object will be recognized:
-   *    "desc" : A string-value describing the entity
-   *    "config" : A key-value map to represent configuration
+   *                    For better support in the UI, the history text should be a json-encoded string.
+   *                    The following keys in the json object will be recognized:
+   *                    "desc" : A string-value describing the entity
+   *                    "config" : A key-value map to represent configuration
    * @return this object for further chained method calls
    */
   public T setHistoryText(String historyText) {

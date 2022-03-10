@@ -21,7 +21,7 @@ package org.apache.tez.dag.api;
 import org.apache.hadoop.classification.InterfaceAudience.Public;
 
 /**
- *  Checked Exception thrown upon error
+ * Checked Exception thrown upon error
  */
 @Public
 public class TezException extends Exception {

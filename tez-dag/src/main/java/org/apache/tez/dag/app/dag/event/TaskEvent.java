@@ -24,7 +24,6 @@ import org.apache.tez.dag.records.TezTaskID;
 
 /**
  * this class encapsulates task related events.
- *
  */
 public class TaskEvent extends TezAbstractEvent<TaskEventType> implements TaskIDAware {
 

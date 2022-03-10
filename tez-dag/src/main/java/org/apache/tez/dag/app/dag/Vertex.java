@@ -80,18 +80,21 @@ public interface Vertex extends Comparable<Vertex> {
 
   /**
    * Get all the counters of this vertex.
+   *
    * @return aggregate task-counters
    */
   TezCounters getAllCounters();
 
   /**
    * Get all the counters of this vertex.
+   *
    * @return aggregate task-counters
    */
   TezCounters getCachedCounters();
 
   /**
    * Add custom counters to the vertex
+   *
    * @param tezCounters counters to add
    */
   void addCounters(TezCounters tezCounters);
@@ -163,14 +166,12 @@ public interface Vertex extends Comparable<Vertex> {
   Map<String, OutputCommitter> getOutputCommitters();
 
   @Nullable
-  public Map<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>>
-  getAdditionalInputs();
+  public Map<String, RootInputLeafOutput<InputDescriptor, InputInitializerDescriptor>> getAdditionalInputs();
 
   void setAdditionalInputs(List<RootInputLeafOutputProto> inputs);
 
   @Nullable
-  public Map<String, RootInputLeafOutput<OutputDescriptor, OutputCommitterDescriptor>>
-  getAdditionalOutputs();
+  public Map<String, RootInputLeafOutput<OutputDescriptor, OutputCommitterDescriptor>> getAdditionalOutputs();
 
   void setAdditionalOutputs(List<RootInputLeafOutputProto> outputs);
 

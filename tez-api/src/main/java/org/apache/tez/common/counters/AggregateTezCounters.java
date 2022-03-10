@@ -89,7 +89,7 @@ public class AggregateTezCounters extends TezCounters {
   /**
    * Provide factory methods for counter group factory implementation.
    * See also the GroupFactory in
-   *  {@link org.apache.hadoop.TezCounters.Counters mapred.Counters}
+   * {@link org.apache.hadoop.TezCounters.Counters mapred.Counters}
    */
   private static class GroupFactory
     extends CounterGroupFactory<TezCounter, CounterGroup> {

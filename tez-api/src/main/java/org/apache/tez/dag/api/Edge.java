@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.dag.api;
 
 import org.apache.hadoop.classification.InterfaceAudience.Private;
@@ -22,10 +23,10 @@ import org.apache.hadoop.classification.InterfaceAudience.Public;
 
 /**
  * Edge defines the connection between a producer and consumer vertex in the DAG.
- * @link {@link EdgeProperty} defines the relationship between them. The producer
- * vertex provides input to the edge and the consumer vertex reads output from the 
- * edge.
  *
+ * @link {@link EdgeProperty} defines the relationship between them. The producer
+ * vertex provides input to the edge and the consumer vertex reads output from the
+ * edge.
  */
 @Public
 public class Edge {
@@ -44,10 +45,10 @@ public class Edge {
 
   /**
    * Creates an edge between the specified vertices.
-   *
+   * <p>
    * InputVertex(EdgeInput) ----- Edge ----- OutputVertex(EdgeOutput)]
    *
-   * @param inputVertex the vertex which generates data to the edge.
+   * @param inputVertex  the vertex which generates data to the edge.
    * @param outputVertex the vertex which consumes data from the edge
    * @param edgeProperty {@link org.apache.tez.dag.api.EdgeProperty} associated with this edge
    * @return the {@link org.apache.tez.dag.api.Edge}
@@ -60,7 +61,8 @@ public class Edge {
 
   /**
    * The @link {@link Vertex} that provides input to the edge
-   * @return  {@link Vertex}
+   *
+   * @return {@link Vertex}
    */
   public Vertex getInputVertex() {
     return inputVertex;
@@ -68,6 +70,7 @@ public class Edge {
 
   /**
    * The @link {@link Vertex} that reads output from the edge
+   *
    * @return {@link Vertex}
    */
   public Vertex getOutputVertex() {
@@ -76,6 +79,7 @@ public class Edge {
 
   /**
    * The @link {@link EdgeProperty} for this edge
+   *
    * @return {@link EdgeProperty}
    */
   public EdgeProperty getEdgeProperty() {

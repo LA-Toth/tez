@@ -66,6 +66,7 @@ public class CriticalPathAnalyzer extends TezAnalyzerBase implements Analyzer {
   public CriticalPathAnalyzer() {
     super(new Configuration());
   }
+
   public CriticalPathAnalyzer(Configuration conf) {
     super(conf);
   }
@@ -578,6 +579,7 @@ public class CriticalPathAnalyzer extends TezAnalyzerBase implements Analyzer {
     long startCriticalPathTime; // time at which attempt is on critical path
     long stopCriticalPathTime; // time at which attempt is off critical path
     List<String> notes = Lists.newLinkedList();
+
     public CriticalPathStep(TaskAttemptInfo attempt, EntityType type) {
       this.type = type;
       this.attempt = attempt;

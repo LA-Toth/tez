@@ -32,13 +32,12 @@ import org.apache.tez.dag.api.Vertex;
 
 /**
  * Simple Test DAG with 3 vertices using TestProcessor/TestInput/TestOutput.
- *
+ * <p>
  * v1
  * |
  * v2
  * |
  * v3
- *
  */
 public class SimpleTestDAG3Vertices {
   public static String TEZ_SIMPLE_DAG_NUM_TASKS =

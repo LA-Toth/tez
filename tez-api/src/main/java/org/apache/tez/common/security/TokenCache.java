@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * This class provides user facing APIs for transferring secrets from
  * the job client to the tasks.
  * The secrets can be stored just before submission of jobs and read during
- * the task execution.  
+ * the task execution.
  */
 @InterfaceAudience.Private
 @InterfaceStability.Unstable
@@ -53,6 +53,7 @@ public class TokenCache {
 
   /**
    * auxiliary method to get user's secret keys..
+   *
    * @param alias
    * @return secret key from the storage
    */
@@ -65,9 +66,10 @@ public class TokenCache {
   /**
    * Convenience method to obtain delegation tokens from namenodes
    * corresponding to the paths passed.
+   *
    * @param credentials
-   * @param ps array of paths
-   * @param conf configuration
+   * @param ps          array of paths
+   * @param conf        configuration
    * @throws IOException
    */
   public static void obtainTokensForFileSystems(Credentials credentials,
@@ -118,6 +120,7 @@ public class TokenCache {
 
   /**
    * get delegation token for a specific FS
+   *
    * @param fs
    * @param credentials
    * @param p
@@ -148,6 +151,7 @@ public class TokenCache {
 
   /**
    * store session specific token
+   *
    * @param t
    */
   @InterfaceAudience.Private
@@ -157,7 +161,6 @@ public class TokenCache {
   }
 
   /**
-   *
    * @return session token
    */
   @SuppressWarnings("unchecked")
@@ -172,7 +175,8 @@ public class TokenCache {
 
   /**
    * Merge tokens from a configured binary file into provided Credentials object
-   * @param creds Credentials object to add new tokens to
+   *
+   * @param creds         Credentials object to add new tokens to
    * @param tokenFilePath Location of tokens' binary file
    */
   @InterfaceAudience.Private

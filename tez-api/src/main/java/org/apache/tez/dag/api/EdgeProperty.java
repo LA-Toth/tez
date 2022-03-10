@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.dag.api;
 
 import org.apache.hadoop.classification.InterfaceAudience.Private;
@@ -39,6 +40,7 @@ public class EdgeProperty {
   final InputDescriptor inputDescriptor;
   final OutputDescriptor outputDescriptor;
   final EdgeManagerPluginDescriptor edgeManagerDescriptor;
+
   private EdgeProperty(DataMovementType dataMovementType,
                        DataSourceType dataSourceType,
                        SchedulingType schedulingType,
@@ -48,6 +50,7 @@ public class EdgeProperty {
     Preconditions.checkArgument(dataMovementType != DataMovementType.CUSTOM,
       DataMovementType.CUSTOM + " cannot be used with this constructor");
   }
+
   private EdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor,
                        DataSourceType dataSourceType,
                        SchedulingType schedulingType,
@@ -56,6 +59,7 @@ public class EdgeProperty {
     this(edgeManagerDescriptor, DataMovementType.CUSTOM, dataSourceType, schedulingType,
       edgeSource, edgeDestination);
   }
+
   private EdgeProperty(EdgeManagerPluginDescriptor edgeManagerDescriptor,
                        DataMovementType dataMovementType, DataSourceType dataSourceType,
                        SchedulingType schedulingType, OutputDescriptor edgeSource, InputDescriptor edgeDestination) {
@@ -89,15 +93,12 @@ public class EdgeProperty {
   /**
    * Setup an Edge which uses a custom EdgeManager
    *
-   * @param edgeManagerDescriptor
-   *          the EdgeManager specifications. This can be null if the edge
-   *          manager will be setup at runtime
+   * @param edgeManagerDescriptor the EdgeManager specifications. This can be null if the edge
+   *                              manager will be setup at runtime
    * @param dataSourceType
    * @param schedulingType
-   * @param edgeSource
-   *          The {@link OutputDescriptor} that generates data on the edge.
-   * @param edgeDestination
-   *          The {@link InputDescriptor} which will consume data from the edge.
+   * @param edgeSource            The {@link OutputDescriptor} that generates data on the edge.
+   * @param edgeDestination       The {@link InputDescriptor} which will consume data from the edge.
    */
   public static EdgeProperty create(EdgeManagerPluginDescriptor edgeManagerDescriptor,
                                     DataSourceType dataSourceType,
@@ -119,6 +120,7 @@ public class EdgeProperty {
 
   /**
    * Get the {@link DataMovementType}
+   *
    * @return {@link DataMovementType}
    */
   public DataMovementType getDataMovementType() {
@@ -127,6 +129,7 @@ public class EdgeProperty {
 
   /**
    * Get the {@link DataSourceType}
+   *
    * @return {@link DataSourceType}
    */
   public DataSourceType getDataSourceType() {
@@ -135,6 +138,7 @@ public class EdgeProperty {
 
   /**
    * Get the {@link SchedulingType}
+   *
    * @return {@link SchedulingType}
    */
   public SchedulingType getSchedulingType() {
@@ -157,6 +161,7 @@ public class EdgeProperty {
 
   /**
    * Returns the Edge Manager specifications for this edge.
+   *
    * @return @link {@link EdgeManagerPluginDescriptor} if a custom edge was setup, null otherwise.
    */
   @Private

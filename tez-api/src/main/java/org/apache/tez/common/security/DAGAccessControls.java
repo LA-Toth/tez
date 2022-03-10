@@ -55,6 +55,7 @@ public class DAGAccessControls {
    * Format supports a comma-separated list of users and groups with the users and groups separated
    * by whitespace. e.g. "user1,user2 group1,group2"
    * If the value specified is "*", all users are allowed to do the operation.
+   *
    * @param viewACLsStr
    * @param modifyACLsStr
    */
@@ -94,6 +95,7 @@ public class DAGAccessControls {
   /**
    * Sets the list of users with view permissions on the DAG. If all users are allowed,
    * pass in a single entry "*"
+   *
    * @param users Set of users with view permissions
    * @return this object for further chained method calls
    */
@@ -111,6 +113,7 @@ public class DAGAccessControls {
   /**
    * Sets the list of users with modify permissions on the DAG. If all users are allowed,
    * pass in a single entry "*"
+   *
    * @param users Set of users with modify permissions
    * @return this object for further chained method calls
    */
@@ -127,6 +130,7 @@ public class DAGAccessControls {
 
   /**
    * Sets the list of groups with view permissions on the DAG.
+   *
    * @param groups Set of groups with view permissions
    * @return this object for further chained method calls
    */
@@ -143,6 +147,7 @@ public class DAGAccessControls {
 
   /**
    * Sets the list of groups with modify permissions on the DAG.
+   *
    * @param groups Set of groups with modify permissions
    * @return this object for further chained method calls
    */
@@ -155,6 +160,7 @@ public class DAGAccessControls {
   /**
    * Merge the dag acls with the AM acls in the configuration object. The config object will contain
    * the updated acls.
+   *
    * @param conf The AM config.
    */
   @Private

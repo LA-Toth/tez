@@ -51,8 +51,9 @@ public class GcTimeUpdater {
 
   /**
    * Get the elapsed time since the last call. This is not thread safe.
+   *
    * @return the number of milliseconds that the gc has used for CPU since the
-   *         last time this method was called.
+   * last time this method was called.
    */
   protected long getElapsedGc() {
     long thisGcMillis = getCumulativaGcTime();

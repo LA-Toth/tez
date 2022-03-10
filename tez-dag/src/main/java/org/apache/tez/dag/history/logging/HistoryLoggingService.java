@@ -36,6 +36,7 @@ public abstract class HistoryLoggingService extends AbstractService {
 
   /**
    * Handle logging of history event
+   *
    * @param event History event to be logged
    */
   public abstract void handle(DAGHistoryEvent event);

@@ -341,7 +341,7 @@ public class TestTaskAttempt {
       new TaskAttemptImpl.ScheduleTaskattemptTransition();
 
     EventHandler eventHandler = mock(EventHandler.class);
-    String hosts[] = new String[]{"127.0.0.1", "host2", "host3"};
+    String[] hosts = new String[]{"127.0.0.1", "host2", "host3"};
     Set<String> resolved = new TreeSet<String>(
       Arrays.asList(new String[]{"host1", "host2", "host3"}));
     locationHint = TaskLocationHint.createTaskLocationHint(
@@ -1054,7 +1054,7 @@ public class TestTaskAttempt {
 
     TaskHeartbeatHandler mockHeartbeatHandler = mock(TaskHeartbeatHandler.class);
     Clock mockClock = mock(Clock.class);
-    when(mockClock.getTime()).thenReturn(50l);
+    when(mockClock.getTime()).thenReturn(50L);
     TaskAttemptImpl taImpl = new MockTaskAttemptImpl(taskID, 1, eventHandler,
       taListener, taskConf, mockClock,
       mockHeartbeatHandler, appCtx, false,
@@ -1069,7 +1069,7 @@ public class TestTaskAttempt {
       TaskAttemptState.RUNNING);
     verify(mockHeartbeatHandler).register(taskAttemptID);
 
-    when(mockClock.getTime()).thenReturn(100l);
+    when(mockClock.getTime()).thenReturn(100L);
     taImpl.handle(new TaskAttemptEventStatusUpdate(
       taskAttemptID, new TaskStatusUpdateEvent(null, 0.1f, null, false)));
     verify(eventHandler, atLeast(1)).handle(arg.capture());
@@ -1083,7 +1083,7 @@ public class TestTaskAttempt {
       Assert.assertEquals("Task Attempt's internal state should be RUNNING!",
         taImpl.getInternalState(), TaskAttemptStateInternal.RUNNING);
     }
-    when(mockClock.getTime()).thenReturn(200l);
+    when(mockClock.getTime()).thenReturn(200L);
     taImpl.handle(new TaskAttemptEventStatusUpdate(
       taskAttemptID, new TaskStatusUpdateEvent(null, 0.1f, null, false)));
     verify(eventHandler, atLeast(1)).handle(arg.capture());
@@ -1268,26 +1268,26 @@ public class TestTaskAttempt {
       TaskAttemptState.RUNNING);
     verify(mockHeartbeatHandler).register(taskAttemptID);
 
-    when(mockClock.getTime()).thenReturn(100l);
+    when(mockClock.getTime()).thenReturn(100L);
     taImpl.handle(new TaskAttemptEventStatusUpdate(
       taskAttemptID, new TaskStatusUpdateEvent(null, 0.1f, null, true)));
     // invocations and time updated
-    assertEquals(100l, taImpl.lastNotifyProgressTimestamp);
-    when(mockClock.getTime()).thenReturn(150l);
+    assertEquals(100L, taImpl.lastNotifyProgressTimestamp);
+    when(mockClock.getTime()).thenReturn(150L);
     taImpl.handle(new TaskAttemptEventStatusUpdate(
       taskAttemptID, new TaskStatusUpdateEvent(null, 0.1f, null, true)));
     // invocations and time updated
-    assertEquals(150l, taImpl.lastNotifyProgressTimestamp);
-    when(mockClock.getTime()).thenReturn(200l);
+    assertEquals(150L, taImpl.lastNotifyProgressTimestamp);
+    when(mockClock.getTime()).thenReturn(200L);
     taImpl.handle(new TaskAttemptEventStatusUpdate(
       taskAttemptID, new TaskStatusUpdateEvent(null, 0.1f, null, false)));
     // invocations and time not updated
-    assertEquals(150l, taImpl.lastNotifyProgressTimestamp);
-    when(mockClock.getTime()).thenReturn(250l);
+    assertEquals(150L, taImpl.lastNotifyProgressTimestamp);
+    when(mockClock.getTime()).thenReturn(250L);
     taImpl.handle(new TaskAttemptEventStatusUpdate(
       taskAttemptID, new TaskStatusUpdateEvent(null, 0.1f, null, false)));
     // invocations and time not updated
-    assertEquals(150l, taImpl.lastNotifyProgressTimestamp);
+    assertEquals(150L, taImpl.lastNotifyProgressTimestamp);
     // failed event sent to self
     verify(eventHandler, atLeast(1)).handle(arg.capture());
     TaskAttemptEventAttemptFailed fEvent = (TaskAttemptEventAttemptFailed) arg.getValue();

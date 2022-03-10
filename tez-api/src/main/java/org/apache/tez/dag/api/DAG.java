@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.dag.api;
 
 import java.io.IOException;
@@ -111,6 +112,7 @@ public class DAG {
 
   /**
    * Create a DAG with the specified name.
+   *
    * @param name the name of the DAG
    * @return this {@link DAG}
    */
@@ -120,10 +122,10 @@ public class DAG {
 
   /**
    * Set the files etc that must be provided to the tasks of this DAG
-   * @param localFiles
-   *          files that must be available locally for each task. These files
-   *          may be regular files, archives etc. as specified by the value
-   *          elements of the map.
+   *
+   * @param localFiles files that must be available locally for each task. These files
+   *                   may be regular files, archives etc. as specified by the value
+   *                   elements of the map.
    * @return {@link DAG}
    */
   public synchronized DAG addTaskLocalFiles(Map<String, LocalResource> localFiles) {
@@ -147,13 +149,14 @@ public class DAG {
 
   /**
    * Set description info for this DAG that can be used for visualization purposes.
+   *
    * @param dagInfo JSON blob as a serialized string.
    *                Recognized keys by the UI are:
-   *                    "context" - The application context in which this DAG is being used.
-   *                                For example, this could be set to "Hive" or "Pig" if
-   *                                this is being run as part of a Hive or Pig script.
-   *                    "description" - General description on what this DAG is going to do.
-   *                                In the case of Hive, this could be the SQL query text.
+   *                "context" - The application context in which this DAG is being used.
+   *                For example, this could be set to "Hive" or "Pig" if
+   *                this is being run as part of a Hive or Pig script.
+   *                "description" - General description on what this DAG is going to do.
+   *                In the case of Hive, this could be the SQL query text.
    * @return {@link DAG}
    */
   @Deprecated
@@ -166,7 +169,8 @@ public class DAG {
   /**
    * Create a group of vertices that share a common output. This can be used to implement
    * unions efficiently.
-   * @param name Name of the group.
+   *
+   * @param name    Name of the group.
    * @param members {@link Vertex} members of the group
    * @return {@link DAG}
    */
@@ -192,7 +196,7 @@ public class DAG {
    * addURIsForCredentials should be used to specify information about all
    * credentials required by a DAG. AM specific credentials are not used when
    * executing a DAG.
-   *
+   * <p>
    * Set credentials which will be required to run this dag. This method can be
    * used if the client has already obtained some or all of the required
    * credentials.
@@ -210,6 +214,7 @@ public class DAG {
    * who can modify the DAG i.e. kill the DAG.
    * The owner of the Tez Session and the user submitting the DAG are super-users and have access
    * to all operations on the DAG.
+   *
    * @param accessControls Access Controls
    * @return {@link DAG}
    */
@@ -229,17 +234,16 @@ public class DAG {
    * setCredentials should be used to specify information about all credentials
    * required by a DAG. AM specific credentials are not used when executing a
    * DAG.
-   *
+   * <p>
    * This method can be used to specify a list of URIs for which Credentials
    * need to be obtained so that the job can run. An incremental list of URIs
    * can be provided by making multiple calls to the method.
-   *
+   * <p>
    * Currently, @{link credentials} can only be fetched for HDFS and other
    * {@link org.apache.hadoop.fs.FileSystem} implementations that support
    * credentials.
    *
-   * @param uris
-   *          a list of {@link URI}s
+   * @param uris a list of {@link URI}s
    * @return {@link DAG}
    */
   public synchronized DAG addURIsForCredentials(Collection<URI> uris) {
@@ -249,9 +253,8 @@ public class DAG {
   }
 
   /**
-   *
    * @return an unmodifiable list representing the URIs for which credentials
-   *         are required.
+   * are required.
    */
   @Private
   public synchronized Collection<URI> getURIsForCredentials() {
@@ -265,6 +268,7 @@ public class DAG {
 
   /**
    * Add an {@link Edge} connecting vertices in the DAG
+   *
    * @param edge The edge to be added
    * @return {@link DAG}
    */
@@ -293,6 +297,7 @@ public class DAG {
 
   /**
    * Add a {@link GroupInputEdge} to the DAG.
+   *
    * @param edge {@link GroupInputEdge}
    * @return {@link DAG}
    */
@@ -333,6 +338,7 @@ public class DAG {
 
   /**
    * Get the DAG name
+   *
    * @return DAG name
    */
   public String getName() {
@@ -344,18 +350,18 @@ public class DAG {
    * in the DAG configuration used in the AppMaster. This API would be used for properties which
    * are used by the Tez framework while executing the DAG. As an example, the number of attempts
    * for a task.</p>
-   *
+   * <p>
    * A DAG inherits it's base properties from the ApplicationMaster within which it's running. This
    * method allows for these properties to be overridden.
-   *
+   * <p>
    * Currently, properties which are used by the task runtime, such as the task to AM
    * heartbeat interval, cannot be changed using this method. </p>
-   *
+   * <p>
    * Note: This API does not add any configuration to runtime components such as InputInitializers,
    * OutputCommitters, Inputs and Outputs.
    *
    * @param property the property name
-   * @param value the value for the property
+   * @param value    the value for the property
    * @return the current DAG being constructed
    */
   @InterfaceStability.Unstable
@@ -370,7 +376,6 @@ public class DAG {
    * level.
    *
    * @param historyLogLevel The ATS history log level for this DAG.
-   *
    * @return this DAG
    */
   public DAG setHistoryLogLevel(HistoryLogLevel historyLogLevel) {
@@ -382,7 +387,6 @@ public class DAG {
    * See {@link org.apache.tez.dag.api.Vertex#setExecutionContext(VertexExecutionContext)}
    *
    * @param vertexExecutionContext the default execution context for the DAG
-   *
    * @return this DAG
    */
   @Public
@@ -1161,6 +1165,7 @@ public class DAG {
 
   /**
    * Set the Context in which Tez is being called.
+   *
    * @param callerContext Caller Context
    * @return {@link DAG}
    */

@@ -33,7 +33,7 @@ import com.google.common.collect.Interners;
 /**
  * TezVertexID represents the immutable and unique identifier for
  * a Vertex in a Tez DAG. Each TezVertexID encompasses multiple Tez Tasks.
- *
+ * <p>
  * TezVertezID consists of 2 parts. The first part is the {@link TezDAGID},
  * that is the Tez DAG that this vertex belongs to. The second part is
  * the vertex number.
@@ -69,8 +69,9 @@ public class TezVertexID extends TezID implements DAGIDAware {
 
   /**
    * Constructs a TezVertexID object from given {@link TezDAGID}.
+   *
    * @param dagId TezDAGID object for this TezVertexID
-   * @param id the tip number
+   * @param id    the tip number
    * @throws NullPointerException if {@code dagId} is {@code null}
    */
   public static TezVertexID getInstance(TezDAGID dagId, int id) {
@@ -103,7 +104,9 @@ public class TezVertexID extends TezID implements DAGIDAware {
     return null;
   }
 
-  /** Returns the {@link TezDAGID} object that this tip belongs to */
+  /**
+   * Returns the {@link TezDAGID} object that this tip belongs to
+   */
   @Override
   public TezDAGID getDAGID() {
     return dagId;
@@ -118,7 +121,9 @@ public class TezVertexID extends TezID implements DAGIDAware {
     return this.dagId.equals(that.dagId);
   }
 
-  /**Compare TaskInProgressIds by first jobIds, then by tip numbers and type.*/
+  /**
+   * Compare TaskInProgressIds by first jobIds, then by tip numbers and type.
+   */
   @Override
   public int compareTo(TezID o) {
     TezVertexID that = (TezVertexID) o;
@@ -146,6 +151,7 @@ public class TezVertexID extends TezID implements DAGIDAware {
 
   /**
    * Add the unique string to the given builder.
+   *
    * @param builder the builder to append to
    * @return the builder that was passed in
    */

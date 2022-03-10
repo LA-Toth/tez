@@ -528,7 +528,8 @@ public class TestAnalyzer {
   /**
    * Sets configuration for cascading input failure tests that
    * use SimpleTestDAG3Vertices.
-   * @param testConf configuration
+   *
+   * @param testConf    configuration
    * @param failAndExit whether input failure should trigger attempt exit
    */
   private void setCascadingInputFailureConfig(Configuration testConf,
@@ -574,8 +575,9 @@ public class TestAnalyzer {
    * v2 task0 attempt1 input0 fails. Wait. Triggering v1 rerun.
    * v1 attempt1 rerun and succeeds. v2 accepts v1 attempt1 output. v2 attempt1 succeeds.
    * v3 attempt0 accepts v2 attempt1 output.
-   *
+   * <p>
    * AM vertex succeeded order is v1, v2, v1, v2, v3.
+   *
    * @throws Exception
    */
   private List<StepCheck[]> testCascadingInputFailureWithoutExitSuccess() throws Exception {
@@ -605,8 +607,9 @@ public class TestAnalyzer {
    * v2 task0 attempt1 input0 fails. v2 attempt1 exits. Triggering v1 rerun.
    * v1 attempt1 rerun and succeeds. v2 accepts v1 attempt1 output. v2 attempt2 succeeds.
    * v3 attempt1 accepts v2 attempt2 output.
-   *
+   * <p>
    * AM vertex succeeded order is v1, v2, v3, v1, v2, v3.
+   *
    * @throws Exception
    */
   private List<StepCheck[]> testCascadingInputFailureWithExitSuccess() throws Exception {
@@ -638,6 +641,7 @@ public class TestAnalyzer {
    * Retry of v1 task has no space - so it preempts the least priority task (current tez logic)
    * v3 is preempted and re-run. Shows up on critical path as preempted failure.
    * Also v1 retry attempts note show that it caused preemption of v3
+   *
    * @throws Exception
    */
   private List<StepCheck[]> testInternalPreemption() throws Exception {
@@ -664,9 +668,9 @@ public class TestAnalyzer {
 
   /**
    * Input failure of v3 causes rerun of both both v1 and v2 vertices.
-   *   v1  v2
-   *    \ /
-   *    v3
+   * v1  v2
+   * \ /
+   * v3
    *
    * @throws Exception
    */
@@ -709,9 +713,9 @@ public class TestAnalyzer {
   /**
    * Downstream(v3) attempt failure of a vertex connected with
    * 2 upstream vertices..
-   *   v1  v2
-   *    \ /
-   *    v3
+   * v1  v2
+   * \ /
+   * v3
    *
    * @throws Exception
    */
@@ -746,11 +750,12 @@ public class TestAnalyzer {
    * version of v1 and also consume the output of the next version. While the other
    * consumes the output of the next version of v1.
    * Reruns can send output to 2 downstream vertices.
-   *     v1
-   *    /  \
-   *   v2   v3
-   *
+   * v1
+   * /  \
+   * v2   v3
+   * <p>
    * Also covers multiple consumer vertices report failure against same producer task.
+   *
    * @throws Exception
    */
   private List<StepCheck[]> testInputFailureRerunCanSendOutputToTwoDownstreamVertices() throws Exception {

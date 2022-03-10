@@ -44,14 +44,13 @@ import org.slf4j.LoggerFactory;
  */
 public final class Utils {
 
-  private Utils() {}
-
   private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
-
   /**
    * Pattern to clean the labels in the .dot generation.
    */
   private static Pattern sanitizeLabelPattern = Pattern.compile("[:\\-\\W]+");
+
+  private Utils() {}
 
   public static String getContainerLauncherIdentifierString(int launcherIndex, AppContext appContext) {
     String name;

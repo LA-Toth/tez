@@ -51,33 +51,33 @@ import org.apache.hadoop.util.ToolRunner;
  * <?xml version="1.0"?>
  * <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
  * <configuration>
- *   <property>
- *     <name>mapreduce.randomtextwriter.minwordskey</name>
- *     <value>5</value>
- *   </property>
- *   <property>
- *     <name>mapreduce.randomtextwriter.maxwordskey</name>
- *     <value>10</value>
- *   </property>
- *   <property>
- *     <name>mapreduce.randomtextwriter.minwordsvalue</name>
- *     <value>20</value>
- *   </property>
- *   <property>
- *     <name>mapreduce.randomtextwriter.maxwordsvalue</name>
- *     <value>100</value>
- *   </property>
- *   <property>
- *     <name>mapreduce.randomtextwriter.totalbytes</name>
- *     <value>1099511627776</value>
- *   </property>
+ * <property>
+ * <name>mapreduce.randomtextwriter.minwordskey</name>
+ * <value>5</value>
+ * </property>
+ * <property>
+ * <name>mapreduce.randomtextwriter.maxwordskey</name>
+ * <value>10</value>
+ * </property>
+ * <property>
+ * <name>mapreduce.randomtextwriter.minwordsvalue</name>
+ * <value>20</value>
+ * </property>
+ * <property>
+ * <name>mapreduce.randomtextwriter.maxwordsvalue</name>
+ * <value>100</value>
+ * </property>
+ * <property>
+ * <name>mapreduce.randomtextwriter.totalbytes</name>
+ * <value>1099511627776</value>
+ * </property>
  * </configuration></xmp>
- *
+ * <p>
  * Equivalently, {@link RandomTextWriter} also supports all the above options
  * and ones supported by {@link Tool} via the command-line.
- *
+ * <p>
  * To run: bin/hadoop jar hadoop-${version}-examples.jar randomtextwriter
- *            [-outFormat <i>output format class</i>] <i>output</i> 
+ * [-outFormat <i>output format class</i>] <i>output</i>
  */
 public class RandomTextWriter extends Configured implements Tool {
   public static final String TOTAL_BYTES =

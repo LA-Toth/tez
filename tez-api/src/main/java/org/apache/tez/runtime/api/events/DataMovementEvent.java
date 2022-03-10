@@ -70,8 +70,9 @@ public final class DataMovementEvent extends Event {
 
   /**
    * User Event constructor for {@link Output}s
+   *
    * @param sourceIndex Index to identify the physical edge of the input/output
-   * that generated the event
+   *                    that generated the event
    * @param userPayload User Payload of the User Event
    */
   public static DataMovementEvent create(int sourceIndex,
@@ -100,11 +101,10 @@ public final class DataMovementEvent extends Event {
    * Make a routable copy of the {@link DataMovementEvent} by adding a target
    * input index
    *
-   * @param targetIndex
-   *          The index of the physical input to which this
-   *          {@link DataMovementEvent} should be routed
+   * @param targetIndex The index of the physical input to which this
+   *                    {@link DataMovementEvent} should be routed
    * @return Copy of this {@link DataMovementEvent} with the target input index
-   *         added to it
+   * added to it
    */
   @Private
   public DataMovementEvent makeCopy(int targetIndex) {

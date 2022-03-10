@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.examples;
 
 import java.io.IOException;
@@ -50,7 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Simple example to perform WordCount using Tez API's. WordCount is the 
+ * Simple example to perform WordCount using Tez API's. WordCount is the
  * HelloWorld program of distributed data processing and counts the number
  * of occurrences of a word in a distributed text data set.
  */

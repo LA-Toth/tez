@@ -30,19 +30,18 @@ import org.apache.tez.test.TestProcessor;
  * Vertex name is "l<level number>v<vertex number>". Level/vertex numbers start at 1.
  * Each vertex has failing processor and failing inputs. The constructor can accept Tez Configuration to indicate
  * failing patterns.
- *
+ * <p>
  * DAG is shown with a diagram below.
  * Each vertex has its degree of parallelism indicated in a bracket following its name.
  * Each edge annotates with data movement (s = scatter/gather, b = broadcast)
- *
+ * <p>
  * l1v1(1)     l1v2(2)     l1v3(3)     l1v4(2)
- *   |s          |s          |s          |b
- *   |           |           |           |
+ * |s          |s          |s          |b
+ * |           |           |           |
  * l2v1(1)     l2v2(3)     l2v3(2)     l2v4(3)
- *    \s        /s    \b     |s       /s
- *     \       /        \    |      /
- *      l3v1(4)            l3v2(4)
- *
+ * \s        /s    \b     |s       /s
+ * \       /        \    |      /
+ * l3v1(4)            l3v2(4)
  */
 public class ThreeLevelsFailingDAG extends TwoLevelsFailingDAG {
 

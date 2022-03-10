@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
  * Defines the configurations for Tez. These configurations are typically specified in
  * tez-site.xml on the client machine where TezClient is used to launch the Tez application.
  * tez-site.xml is expected to be picked up from the classpath of the client process.
+ *
  * @see <a href="../../../../../configs/TezConfiguration.html">Detailed Configuration Information</a>
  * @see <a href="../../../../../configs/tez-default-template.xml">XML-based Config Template</a>
  */
@@ -110,20 +111,20 @@ public class TezConfiguration extends Configuration {
   public static final String TEZ_AM_SESSION_MODE = TEZ_AM_PREFIX + "mode.session";
   /**
    * Root Logging level passed to the Tez app master.
-   *
+   * <p>
    * Simple configuration: Set the log level for all loggers.
-   *   e.g. INFO
-   *   This sets the log level to INFO for all loggers.
-   *
+   * e.g. INFO
+   * This sets the log level to INFO for all loggers.
+   * <p>
    * Advanced configuration: Set the log level for all classes, along with a different level for some.
-   *   e.g. DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO
-   *   This sets the log level for all loggers to DEBUG, expect for the
-   *   org.apache.hadoop.ipc and org.apache.hadoop.security, which are set to INFO
-   *
+   * e.g. DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO
+   * This sets the log level for all loggers to DEBUG, expect for the
+   * org.apache.hadoop.ipc and org.apache.hadoop.security, which are set to INFO
+   * <p>
    * Note: The global log level must always be the first parameter.
-   *   DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is valid
-   *   org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is not valid
-   * */
+   * DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is valid
+   * org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is not valid
+   */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
   public static final String TEZ_AM_LOG_LEVEL = TEZ_AM_PREFIX + "log.level";
@@ -134,7 +135,7 @@ public class TezConfiguration extends Configuration {
    * try to guard against a flurry of re-runs due to intermittent read errors
    * (due to network issues). This configuration puts a time limit on those heuristics to ensure
    * jobs dont hang indefinitely due to lack of closure in those heuristics
-   *
+   * <p>
    * Expert level setting.
    */
   @ConfigurationScope(Scope.AM)
@@ -150,7 +151,7 @@ public class TezConfiguration extends Configuration {
    * E.g. if this set to 0.2, in case of 3 different hosts reporting fetch failure
    * for the same upstream host in a cluster which currently utilizes 10 nodes, the upstream task
    * is immediately blamed for the fetch failure.
-   *
+   * <p>
    * Expert level setting.
    */
   @ConfigurationScope(Scope.AM)
@@ -183,7 +184,7 @@ public class TezConfiguration extends Configuration {
    * String value. Command line options provided during the launch of the Tez
    * AppMaster process. Its recommended to not set any Xmx or Xms in these launch opts so that
    * Tez can determine them automatically.
-   * */
+   */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
   public static final String TEZ_AM_LAUNCH_CMD_OPTS = TEZ_AM_PREFIX + "launch.cmd-opts";
@@ -197,7 +198,8 @@ public class TezConfiguration extends Configuration {
   @ConfigurationProperty
   public static final String TEZ_AM_LAUNCH_CLUSTER_DEFAULT_ENV =
     TEZ_AM_PREFIX + "launch.cluster-default.env";
-  /** String value. Env settings for the Tez AppMaster process.
+  /**
+   * String value. Env settings for the Tez AppMaster process.
    * Should be specified as a comma-separated of key-value pairs where each pair
    * is defined as KEY=VAL
    * e.g. "LD_LIBRARY_PATH=.,USERNAME=foo"
@@ -250,14 +252,18 @@ public class TezConfiguration extends Configuration {
     TEZ_AM_PREFIX + "legacy.speculative.single.task.vertex.timeout";
   @Private
   public static final String TEZ_SPECULATOR_PREFIX = TEZ_AM_PREFIX + "speculator.";
-  /** The class that should be used for speculative execution calculations. */
+  /**
+   * The class that should be used for speculative execution calculations.
+   */
   @ConfigurationScope(Scope.VERTEX)
   @ConfigurationProperty
   public static final String TEZ_AM_SPECULATOR_CLASS =
     TEZ_SPECULATOR_PREFIX + "class";
   @Private
   public static final String TEZ_ESTIMATOR_PREFIX = TEZ_AM_PREFIX + "task.estimator.";
-  /** The class that should be used for task runtime estimation. */
+  /**
+   * The class that should be used for task runtime estimation.
+   */
   @ConfigurationScope(Scope.VERTEX)
   @ConfigurationProperty
   public static final String TEZ_AM_TASK_ESTIMATOR_CLASS =
@@ -424,7 +430,9 @@ public class TezConfiguration extends Configuration {
   @ConfigurationProperty(type = "boolean")
   public static final String TEZ_AM_NODE_UNHEALTHY_RESCHEDULE_TASKS =
     TEZ_AM_PREFIX + "node-unhealthy-reschedule-tasks";
-  /** Int value. Number of threads to handle client RPC requests. Expert level setting.*/
+  /**
+   * Int value. Number of threads to handle client RPC requests. Expert level setting.
+   */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty(type = "integer")
   public static final String TEZ_AM_CLIENT_THREAD_COUNT =
@@ -458,17 +466,23 @@ public class TezConfiguration extends Configuration {
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
   public static final String TEZ_AM_YARN_SCHEDULER_CLASS = TEZ_AM_PREFIX + "yarn.scheduler.class";
-  /** Int value. The amount of memory in MB to be used by the AppMaster */
+  /**
+   * Int value. The amount of memory in MB to be used by the AppMaster
+   */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty(type = "integer")
   public static final String TEZ_AM_RESOURCE_MEMORY_MB = TEZ_AM_PREFIX
     + "resource.memory.mb";
-  /** Int value. The number of virtual cores to be used by the app master */
+  /**
+   * Int value. The number of virtual cores to be used by the app master
+   */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty(type = "integer")
   public static final String TEZ_AM_RESOURCE_CPU_VCORES = TEZ_AM_PREFIX
     + "resource.cpu.vcores";
-  /** Boolean value. Instructs AM to delete Dag directory upon completion */
+  /**
+   * Boolean value. Instructs AM to delete Dag directory upon completion
+   */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty(type = "boolean")
   public static final String TEZ_AM_DAG_CLEANUP_ON_COMPLETION = TEZ_AM_PREFIX
@@ -620,7 +634,7 @@ public class TezConfiguration extends Configuration {
   public static final String TEZ_AM_PREEMPTION_MAX_WAIT_TIME_MS =
     TEZ_AM_PREFIX + "preemption.max.wait-time-ms";
   /**
-   *  Tez AM Inline Mode flag. Not valid till Tez-684 get checked-in
+   * Tez AM Inline Mode flag. Not valid till Tez-684 get checked-in
    */
   @Private
   @ConfigurationScope(Scope.AM)
@@ -674,15 +688,15 @@ public class TezConfiguration extends Configuration {
    * String value
    * Tez UI URL template for the application.
    * Expert level setting.
-   *
+   * <p>
    * The AM will redirect the user to the Tez UI via this url. Template supports the following
    * parameters to be replaced with the actual runtime information:
-   *
-   *   __APPLICATION_ID__ : Replaces this with application ID
-   *   __HISTORY_URL_BASE__: replaces this with TEZ_HISTORY_URL_BASE
-   *
-   *   For example, "http://uihost:9001/#/tez-app/__APPLICATION_ID__/ will be replaced to
-   *   http://uihost:9001/#/tez-app/application_1421880306565_0001/
+   * <p>
+   * __APPLICATION_ID__ : Replaces this with application ID
+   * __HISTORY_URL_BASE__: replaces this with TEZ_HISTORY_URL_BASE
+   * <p>
+   * For example, "http://uihost:9001/#/tez-app/__APPLICATION_ID__/ will be replaced to
+   * http://uihost:9001/#/tez-app/application_1421880306565_0001/
    */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
@@ -719,20 +733,20 @@ public class TezConfiguration extends Configuration {
   public static final String TEZ_TASK_PREFIX = TEZ_PREFIX + "task.";
   /**
    * Root Logging level passed to the Tez tasks.
-   *
+   * <p>
    * Simple configuration: Set the log level for all loggers.
-   *   e.g. INFO
-   *   This sets the log level to INFO for all loggers.
-   *
+   * e.g. INFO
+   * This sets the log level to INFO for all loggers.
+   * <p>
    * Advanced configuration: Set the log level for all classes, along with a different level for some.
-   *   e.g. DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO
-   *   This sets the log level for all loggers to DEBUG, expect for the
-   *   org.apache.hadoop.ipc and org.apache.hadoop.security, which are set to INFO
-   *
+   * e.g. DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO
+   * This sets the log level for all loggers to DEBUG, expect for the
+   * org.apache.hadoop.ipc and org.apache.hadoop.security, which are set to INFO
+   * <p>
    * Note: The global log level must always be the first parameter.
-   *   DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is valid
-   *   org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is not valid
-   * */
+   * DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is valid
+   * org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is not valid
+   */
   @ConfigurationScope(Scope.VERTEX)
   @ConfigurationProperty
   public static final String TEZ_TASK_LOG_LEVEL = TEZ_TASK_PREFIX + "log.level";
@@ -740,7 +754,7 @@ public class TezConfiguration extends Configuration {
    * double value. Represents ratio of unique failed outputs / number of consumer
    * tasks. When this condition or value mentioned in {@link
    * #TEZ_TASK_MAX_ALLOWED_OUTPUT_FAILURES} is met, task would be declared as failed by AM.
-   *
+   * <p>
    * Expert level setting.
    */
   @ConfigurationScope(Scope.AM)
@@ -750,7 +764,7 @@ public class TezConfiguration extends Configuration {
    * Int value. Represents maximum allowed unique failures after which a task would be
    * declared as failed by AM. When this condition or the threshold mentioned in {@link
    * #TEZ_TASK_MAX_ALLOWED_OUTPUT_FAILURES_FRACTION} is met, task would be relaunched by AM.
-   *
+   * <p>
    * Expert level setting.
    */
   @ConfigurationScope(Scope.AM)
@@ -794,7 +808,8 @@ public class TezConfiguration extends Configuration {
   @ConfigurationProperty
   public static final String TEZ_TASK_LAUNCH_CLUSTER_DEFAULT_ENV =
     TEZ_TASK_PREFIX + "launch.cluster-default.env";
-  /** String value. Env settings for the Tez Task processes.
+  /**
+   * String value. Env settings for the Tez Task processes.
    * Should be specified as a comma-separated of key-value pairs where each pair
    * is defined as KEY=VAL
    * e.g. "LD_LIBRARY_PATH=.,USERNAME=foo"
@@ -806,9 +821,11 @@ public class TezConfiguration extends Configuration {
   @ConfigurationProperty
   public static final String TEZ_TASK_LAUNCH_ENV = TEZ_TASK_PREFIX
     + "launch.env";
-  /** Int value. The amount of memory in MB to be used by tasks. This applies to all tasks across
+  /**
+   * Int value. The amount of memory in MB to be used by tasks. This applies to all tasks across
    * all vertices. Setting it to the same value for all tasks is helpful for container reuse and
-   * thus good for performance typically. */
+   * thus good for performance typically.
+   */
   @ConfigurationScope(Scope.DAG)  // TODO vertex level
   @ConfigurationProperty(type = "integer")
   public static final String TEZ_TASK_RESOURCE_MEMORY_MB = TEZ_TASK_PREFIX
@@ -986,7 +1003,7 @@ public class TezConfiguration extends Configuration {
    * initialized until inputs release memory buffers, allowing inputs to
    * leverage memory normally set aside for outputs and vice-versa.
    * NOTE: This property currently is not supported by the ScalingAllocator
-   *       memory distributor.
+   * memory distributor.
    */
   @Private
   @Unstable
@@ -998,7 +1015,7 @@ public class TezConfiguration extends Configuration {
    * memory allocation is being used.  When enabled inputs will receive the
    * same memory allocation as if concurrent I/O memory allocation were used.
    * NOTE: This property currently is not supported by the ScalingAllocator
-   *       memory distributor.
+   * memory distributor.
    */
   @Private
   @Unstable
@@ -1074,7 +1091,7 @@ public class TezConfiguration extends Configuration {
    * actual allocation of memory to tasks the cluster. The value if used as a
    * fraction that is applied to the memory allocated Factor to size Xmx based
    * on container memory size. Value should be greater than 0 and less than 1.
-   *
+   * <p>
    * Set this value to -1 to allow Tez to use different default max heap fraction
    * for different container memory size. Current policy is to use 0.7 for container
    * smaller than 4GB and use 0.8 for larger container.
@@ -1251,28 +1268,25 @@ public class TezConfiguration extends Configuration {
   @ConfigurationProperty
   public static final String TEZ_LIB_URIS = TEZ_PREFIX + "lib.uris";
   /**
-   *
    * Specify additional user classpath information to be used for Tez AM and all containers.
    * This will be appended to the classpath after PWD
-   *
+   * <p>
    * 'tez.lib.uris.classpath' defines the relative classpath into the archives
    * that are set in 'tez.lib.uris'
-   *
    */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
   public static final String TEZ_LIB_URIS_CLASSPATH = TEZ_PREFIX + "lib.uris.classpath";
   /**
    * Auxiliary resources to be localized for the Tez AM and all its containers.
-   *
+   * <p>
    * Value is comma-separated list of fully-resolved directories or file paths. All resources
    * are made available into the working directory of the AM and/or containers i.e. $CWD.
-   *
+   * <p>
    * If directories are specified, they are not traversed recursively. Only files directly under the
    * specified directory are localized.
-   *
+   * <p>
    * All duplicate resources are ignored.
-   *
    */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
@@ -1307,7 +1321,7 @@ public class TezConfiguration extends Configuration {
   public static final boolean TEZ_USER_CLASSPATH_FIRST_DEFAULT = true;
   /**
    * String value.
-   *
+   * <p>
    * Specify additional classpath information to be used for Tez AM and all containers.
    * If {@link #TEZ_USER_CLASSPATH_FIRST} is true then this will be added to the classpath
    * before all framework specific components have been specified, otherwise this will
@@ -1416,20 +1430,20 @@ public class TezConfiguration extends Configuration {
     ".launch.cmd-opts";
   /**
    * Task specific log level.
-   *
+   * <p>
    * Simple configuration: Set the log level for all loggers.
-   *   e.g. INFO
-   *   This sets the log level to INFO for all loggers.
-   *
+   * e.g. INFO
+   * This sets the log level to INFO for all loggers.
+   * <p>
    * Advanced configuration: Set the log level for all classes, along with a different level for some.
-   *   e.g. DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO
-   *   This sets the log level for all loggers to DEBUG, expect for the
-   *   org.apache.hadoop.ipc and org.apache.hadoop.security, which are set to INFO
-   *
+   * e.g. DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO
+   * This sets the log level for all loggers to DEBUG, expect for the
+   * org.apache.hadoop.ipc and org.apache.hadoop.security, which are set to INFO
+   * <p>
    * Note: The global log level must always be the first parameter.
-   *   DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is valid
-   *   org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is not valid
-   * */
+   * DEBUG;org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is valid
+   * org.apache.hadoop.ipc=INFO;org.apache.hadoop.security=INFO is not valid
+   */
   @Unstable
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
@@ -1470,7 +1484,7 @@ public class TezConfiguration extends Configuration {
    * that the groupIds generated previously will continue to be generated by the plugin. If an older
    * value is not present then the UI may not show information for DAGs which were created
    * with a different grouping value.
-   *
+   * <p>
    * Note: Do not add too many values here as it will affect the performance of Yarn Timeline
    * Server/Tez UI due to the need to scan for more log files.
    */
@@ -1644,8 +1658,8 @@ public class TezConfiguration extends Configuration {
     TEZ_PREFIX + "dag.recovery.flush.interval.secs";
   public static final int DAG_RECOVERY_FLUSH_INTERVAL_SECS_DEFAULT = 30;
   /**
-   *  Boolean value. Enable local mode execution in Tez. Enables tasks to run in the same process as
-   *  the app master. Primarily used for debugging.
+   * Boolean value. Enable local mode execution in Tez. Enables tasks to run in the same process as
+   * the app master. Primarily used for debugging.
    */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty(type = "boolean")
@@ -1671,7 +1685,7 @@ public class TezConfiguration extends Configuration {
   public static final String TEZ_LOCAL_CACHE_ROOT_FOLDER = TEZ_PREFIX + "local.cache.root.folder";
   public static final String TEZ_LOCAL_CACHE_ROOT_FOLDER_DEFAULT = ".";
   /**
-   *  Tez AM Inline Mode flag. Not valid till Tez-684 get checked-in
+   * Tez AM Inline Mode flag. Not valid till Tez-684 get checked-in
    */
   @Private
   public static final boolean TEZ_AM_INLINE_TASK_EXECUTION_ENABLED_DEFAULT = false;
@@ -1879,19 +1893,19 @@ public class TezConfiguration extends Configuration {
   public static final String TEZ_SHARED_EXECUTOR_MAX_THREADS = "tez.shared-executor.max-threads";
   public static final int TEZ_SHARED_EXECUTOR_MAX_THREADS_DEFAULT = -1;
   /**
-   *  Acquire all FileSystems info. e.g., all namenodes info of HDFS federation cluster.
+   * Acquire all FileSystems info. e.g., all namenodes info of HDFS federation cluster.
    */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
   public static final String TEZ_JOB_FS_SERVERS = "tez.job.fs-servers";
   /**
-   *  Skip delegation token renewal for specified FileSystems.
+   * Skip delegation token renewal for specified FileSystems.
    */
   @ConfigurationScope(Scope.AM)
   @ConfigurationProperty
   public static final String TEZ_JOB_FS_SERVERS_TOKEN_RENEWAL_EXCLUDE = "tez.job.fs-servers.token-renewal.exclude";
   /**
-   *  Comma-separated list of properties that MRReaderMapred should return (if present) when calling for config updates.
+   * Comma-separated list of properties that MRReaderMapred should return (if present) when calling for config updates.
    */
   @ConfigurationScope(Scope.VERTEX)
   @ConfigurationProperty
@@ -1947,6 +1961,7 @@ public class TezConfiguration extends Configuration {
       TEZ_TASK_LAUNCH_CMD_OPTS_DEFAULT = TEZ_TASK_LAUNCH_CMD_OPTS_JDK8_DEFAULT;
     }
   }
+
   public TezConfiguration() {
     this(true);
   }
@@ -1955,6 +1970,7 @@ public class TezConfiguration extends Configuration {
     super(conf);
     addResource(TEZ_SITE_XML);
   }
+
   public TezConfiguration(boolean loadDefaults) {
     super(loadDefaults);
     if (loadDefaults) {

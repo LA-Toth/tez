@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implements the {@link OutputCommitter} and provide Map Reduce compatible
- * output commit operations for Map Reduce compatible data sinks. 
+ * output commit operations for Map Reduce compatible data sinks.
  */
 @Public
 public class MROutputCommitter extends OutputCommitter {

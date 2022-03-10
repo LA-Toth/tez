@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.client;
 
 import static org.junit.Assert.assertEquals;
@@ -276,7 +277,6 @@ public class TestTezClientUtils {
   }
 
   /**
-   *
    * @throws Exception
    */
   @Test(timeout = 5000)
@@ -297,7 +297,6 @@ public class TestTezClientUtils {
   }
 
   /**
-   *
    * @throws Exception
    */
   @Test(timeout = 20000)

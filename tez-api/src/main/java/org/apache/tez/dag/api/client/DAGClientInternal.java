@@ -38,6 +38,7 @@ public abstract class DAGClientInternal implements Closeable {
 
   /**
    * Gets DAG execution context for use with logging
+   *
    * @return summary of DAG execution
    */
   public abstract String getExecutionContext();
@@ -53,6 +54,7 @@ public abstract class DAGClientInternal implements Closeable {
 
   /**
    * Get the status of the specified DAG
+   *
    * @param statusOptions Optionally, retrieve additional information based on
    *                      specified options. To retrieve basic information, this can be null
    */
@@ -64,8 +66,8 @@ public abstract class DAGClientInternal implements Closeable {
    *
    * @param statusOptions Optionally, retrieve additional information based on
    *                      specified options. To retrieve basic information, this can be null
-   * @param timeout RPC call timeout. Value -1 waits for infinite and returns when
-   *                DAG reaches final state
+   * @param timeout       RPC call timeout. Value -1 waits for infinite and returns when
+   *                      DAG reaches final state
    * @return DAG Status
    * @throws IOException
    * @throws TezException
@@ -76,6 +78,7 @@ public abstract class DAGClientInternal implements Closeable {
 
   /**
    * Get the status of a Vertex of a DAG
+   *
    * @param statusOptions Optionally, retrieve additional information based on
    *                      specified options
    */
@@ -86,19 +89,20 @@ public abstract class DAGClientInternal implements Closeable {
   /**
    * Get the dag identifier for the currently executing dag. This is a string
    * which represents this dag
+   *
    * @return the dag identifier
    */
   public abstract String getDagIdentifierString();
 
   /**
    * Get the session identifier for the session in which this dag is running
+   *
    * @return the session identifier
    */
   public abstract String getSessionIdentifierString();
 
   /**
    * Kill a running DAG
-   *
    */
   public abstract void tryKillDAG() throws IOException, TezException;
 
@@ -115,9 +119,8 @@ public abstract class DAGClientInternal implements Closeable {
   /**
    * Wait for DAG to complete and periodically print *all* vertices' status.
    *
-   * @param statusGetOpts
-   *          : status get options. For example, to get counter pass
-   *          <code>EnumSet.of(StatusGetOpts.GET_COUNTERS)</code>
+   * @param statusGetOpts : status get options. For example, to get counter pass
+   *                      <code>EnumSet.of(StatusGetOpts.GET_COUNTERS)</code>
    * @return Final DAG Status
    * @throws IOException
    * @throws TezException

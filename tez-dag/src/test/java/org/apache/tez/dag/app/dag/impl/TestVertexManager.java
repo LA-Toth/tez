@@ -155,6 +155,7 @@ public class TestVertexManager {
   /**
    * TEZ-1647
    * custom vertex manager generates events only when both i1 and i2 are initialized.
+   *
    * @throws Exception
    */
   @Test(timeout = 5000)

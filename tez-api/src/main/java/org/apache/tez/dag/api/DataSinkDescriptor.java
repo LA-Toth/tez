@@ -31,8 +31,7 @@ import org.apache.hadoop.security.Credentials;
 import com.google.common.collect.Sets;
 
 /**
- * Defines the output and output committer for a data sink 
- *
+ * Defines the output and output committer for a data sink
  */
 @Public
 public class DataSinkDescriptor {
@@ -44,20 +43,19 @@ public class DataSinkDescriptor {
 
   /**
    * Create a {@link DataSinkDescriptor}
-   * @param outputDescriptor
-   *          An {@link OutputDescriptor} for the output
-   * @param committerDescriptor
-   *          Specify a committer to be used for the output. Can be null. After all
-   *          tasks in the vertex (or in the DAG) have completed, the committer
-   *          (if specified) is invoked to commit the outputs. Commit is a data
-   *          sink specific operation that usually determines the visibility of
-   *          the output to external observers. E.g. moving output files from
-   *          temporary dirs to the real output dir. When there are multiple
-   *          executions of a task, the commit process also helps decide which
-   *          execution will be included in the final output. Users should
-   *          consider whether their application or data sink need a commit
-   *          operation.
-   * @param credentials Credentials needs to access the data sink
+   *
+   * @param outputDescriptor    An {@link OutputDescriptor} for the output
+   * @param committerDescriptor Specify a committer to be used for the output. Can be null. After all
+   *                            tasks in the vertex (or in the DAG) have completed, the committer
+   *                            (if specified) is invoked to commit the outputs. Commit is a data
+   *                            sink specific operation that usually determines the visibility of
+   *                            the output to external observers. E.g. moving output files from
+   *                            temporary dirs to the real output dir. When there are multiple
+   *                            executions of a task, the commit process also helps decide which
+   *                            execution will be included in the final output. Users should
+   *                            consider whether their application or data sink need a commit
+   *                            operation.
+   * @param credentials         Credentials needs to access the data sink
    */
   @Deprecated
   public DataSinkDescriptor(OutputDescriptor outputDescriptor,
@@ -70,20 +68,19 @@ public class DataSinkDescriptor {
 
   /**
    * Create a {@link DataSinkDescriptor}
-   * @param outputDescriptor
-   *          An {@link OutputDescriptor} for the output
-   * @param committerDescriptor
-   *          Specify a committer to be used for the output. Can be null. After all
-   *          tasks in the vertex (or in the DAG) have completed, the committer
-   *          (if specified) is invoked to commit the outputs. Commit is a data
-   *          sink specific operation that usually determines the visibility of
-   *          the output to external observers. E.g. moving output files from
-   *          temporary dirs to the real output dir. When there are multiple
-   *          executions of a task, the commit process also helps decide which
-   *          execution will be included in the final output. Users should
-   *          consider whether their application or data sink need a commit
-   *          operation.
-   * @param credentials Credentials needs to access the data sink
+   *
+   * @param outputDescriptor    An {@link OutputDescriptor} for the output
+   * @param committerDescriptor Specify a committer to be used for the output. Can be null. After all
+   *                            tasks in the vertex (or in the DAG) have completed, the committer
+   *                            (if specified) is invoked to commit the outputs. Commit is a data
+   *                            sink specific operation that usually determines the visibility of
+   *                            the output to external observers. E.g. moving output files from
+   *                            temporary dirs to the real output dir. When there are multiple
+   *                            executions of a task, the commit process also helps decide which
+   *                            execution will be included in the final output. Users should
+   *                            consider whether their application or data sink need a commit
+   *                            operation.
+   * @param credentials         Credentials needs to access the data sink
    */
   public static DataSinkDescriptor create(OutputDescriptor outputDescriptor,
                                           @Nullable OutputCommitterDescriptor committerDescriptor,
@@ -93,6 +90,7 @@ public class DataSinkDescriptor {
 
   /**
    * Get the {@link OutputDescriptor} for this {@link DataSinkDescriptor}
+   *
    * @return {@link OutputDescriptor}
    */
   public OutputDescriptor getOutputDescriptor() {
@@ -101,6 +99,7 @@ public class DataSinkDescriptor {
 
   /**
    * Get the {@link OutputCommitterDescriptor} for this {@link DataSinkDescriptor}
+   *
    * @return {@link OutputCommitterDescriptor}
    */
   public @Nullable
@@ -112,13 +111,12 @@ public class DataSinkDescriptor {
    * This method can be used to specify a list of URIs for which Credentials
    * need to be obtained so that the job can run. An incremental list of URIs
    * can be provided by making multiple calls to the method.
-   *
+   * <p>
    * Currently, @{link credentials} can only be fetched for HDFS and other
    * {@link org.apache.hadoop.fs.FileSystem} implementations that support
    * credentials.
    *
-   * @param uris
-   *          a list of {@link URI}s
+   * @param uris a list of {@link URI}s
    * @return this
    */
   public synchronized DataSinkDescriptor addURIsForCredentials(Collection<URI> uris) {
@@ -129,8 +127,9 @@ public class DataSinkDescriptor {
 
   /**
    * Get the URIs for which credentials will be obtained
+   *
    * @return an unmodifiable list representing the URIs for which credentials
-   *         are required.
+   * are required.
    */
   public Collection<URI> getURIsForCredentials() {
     return Collections.unmodifiableCollection(urisForCredentials);
@@ -138,6 +137,7 @@ public class DataSinkDescriptor {
 
   /**
    * Get the {@link Credentials} for this {@link DataSinkDescriptor}
+   *
    * @return {@link Credentials}
    */
   public @Nullable

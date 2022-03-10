@@ -84,6 +84,7 @@ public final class InputReadErrorEvent extends Event {
 
   /**
    * Creates an InputReadErrorEvent from less parameters, supposed to be used from tests only.
+   *
    * @param diagnostics
    * @param index
    * @param version

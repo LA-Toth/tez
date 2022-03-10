@@ -117,6 +117,7 @@ public class DAGClientImpl extends DAGClient {
 
   /**
    * Constructs a new {@link CachedEntity} for {@link DAGStatus}.
+   *
    * @param tezConf TEZ configuration parameters.
    * @return a caching entry to hold the {@link DAGStatus}.
    */
@@ -386,6 +387,7 @@ public class DAGClientImpl extends DAGClient {
 
   /**
    * Get the DAG status via the AM
+   *
    * @param statusOptions
    * @param timeout
    * @return null if the AM cannot be contacted, otherwise the DAGstatus
@@ -443,6 +445,7 @@ public class DAGClientImpl extends DAGClient {
 
   /**
    * Get the DAG status via the YARN ResourceManager
+   *
    * @return the dag status, inferred from the RM App state. Does not return null.
    * @throws TezException
    * @throws IOException

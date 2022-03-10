@@ -28,12 +28,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Simple example that shows how Tez session mode can be used to run multiple DAGs in the same 
- * session for efficiency and performance. Tez session mode enables the execution environment to 
- * hold onto execution resources so that they can be reused to across multiple DAGs. Typical use 
+ * Simple example that shows how Tez session mode can be used to run multiple DAGs in the same
+ * session for efficiency and performance. Tez session mode enables the execution environment to
+ * hold onto execution resources so that they can be reused to across multiple DAGs. Typical use
  * cases for this would be drill-down queries from a user shell or maintaining a pool of resources
  * to provide low latency execution of DAGs for an application.
- * In this example we will be submitting multiple OrderedWordCount DAGs on different inputs to the 
+ * In this example we will be submitting multiple OrderedWordCount DAGs on different inputs to the
  * same session.
  */
 public class SimpleSessionExample extends TezExampleBase {

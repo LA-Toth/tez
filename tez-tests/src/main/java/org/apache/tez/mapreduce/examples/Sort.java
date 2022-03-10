@@ -51,15 +51,15 @@ import org.apache.hadoop.util.ToolRunner;
 /**
  * This is the trivial map/reduce program that does absolutely nothing
  * other than use the framework to fragment and sort the input values.
- *
+ * <p>
  * To run: bin/hadoop jar build/hadoop-examples.jar sort
- *            [-r <i>reduces</i>]
- *            [-inFormat <i>input format class</i>] 
- *            [-outFormat <i>output format class</i>] 
- *            [-outKey <i>output key class</i>] 
- *            [-outValue <i>output value class</i>] 
- *            [-totalOrder <i>pcnt</i> <i>num samples</i> <i>max splits</i>]
- *            <i>in-dir</i> <i>out-dir</i> 
+ * [-r <i>reduces</i>]
+ * [-inFormat <i>input format class</i>]
+ * [-outFormat <i>output format class</i>]
+ * [-outKey <i>output key class</i>]
+ * [-outValue <i>output value class</i>]
+ * [-totalOrder <i>pcnt</i> <i>num samples</i> <i>max splits</i>]
+ * <i>in-dir</i> <i>out-dir</i>
  */
 public class Sort<K, V> extends Configured implements Tool {
   public static final String REDUCES_PER_HOST =
@@ -86,8 +86,9 @@ public class Sort<K, V> extends Configured implements Tool {
   /**
    * The main driver for sort program.
    * Invoke this method to submit the map/reduce job.
+   *
    * @throws java.lang.Exception When there is communication problems with the
-   *                     job tracker.
+   *                             job tracker.
    */
   @SuppressWarnings("deprecation")
   public int run(String[] args) throws Exception {
@@ -200,6 +201,7 @@ public class Sort<K, V> extends Configured implements Tool {
 
   /**
    * Get the last job that was run using this instance.
+   *
    * @return the results of the last job that was run
    */
   public Job getResult() {

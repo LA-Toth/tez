@@ -48,6 +48,7 @@ public class DAGStatus {
   LinkedHashMap<String, Progress> vertexProgress = null;
   TezCounters dagCounters = null;
   AtomicBoolean countersInitialized = new AtomicBoolean(false);
+
   @InterfaceAudience.Private
   public DAGStatus(DAGStatusProtoOrBuilder proxy, DagStatusSource source) {
     this.proxy = proxy;
@@ -94,9 +95,9 @@ public class DAGStatus {
    * Gets overall progress value of the DAG.
    *
    * @return Progress of the DAG. Maybe null when the DAG is not running. Maybe
-   *         null when the DAG is running and the application master cannot be
-   *         reached - e.g. when the execution platform has restarted the
-   *         application master.
+   * null when the DAG is running and the application master cannot be
+   * reached - e.g. when the execution platform has restarted the
+   * application master.
    * @see Progress
    */
   public Progress getDAGProgress() {
@@ -110,9 +111,9 @@ public class DAGStatus {
    * Get the progress of a vertex in the DAG
    *
    * @return Progress of the vertex. May be null when the DAG is not running.
-   *         Maybe null when the DAG is running and the application master
-   *         cannot be reached - e.g. when the execution platform has restarted
-   *         the application master.
+   * Maybe null when the DAG is running and the application master
+   * cannot be reached - e.g. when the execution platform has restarted
+   * the application master.
    * @see Progress
    */
   public Map<String, Progress> getVertexProgress() {

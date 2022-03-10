@@ -629,7 +629,6 @@ public class TestAMRecovery {
 
   /**
    * VertexManager which control schedule only one task when it is test case of partially-finished.
-   *
    */
   public static class ScheduleControlledVertexManager extends VertexManagerPlugin {
 
@@ -689,7 +688,6 @@ public class TestAMRecovery {
 
   /**
    * VM which could control fail on attempt less than a specified number
-   *
    */
   public static class FailOnAttemptVertexManager extends ShuffleVertexManager {
 

@@ -469,14 +469,15 @@ public class TestFaultTolerance {
    * v1-task0    v1-task1
    * |       \ /     |
    * v2-task0    v2-task1
-   *
+   * <p>
    * Use maximum allowed failed attempt of 4 (default value during session creation).
    * v1-task1-attempt0 fails. Attempt 1 succeeds.
-   * v2-task0-attempt0 runs. Its input1-inputversion0 fails. 
+   * v2-task0-attempt0 runs. Its input1-inputversion0 fails.
    * This will trigger rerun of v1-task1.
    * v1-task1-attempt2 is re-run and succeeds.
-   * v2-task0-attempt0 (no attempt bump) runs. Check its input1. 
+   * v2-task0-attempt0 (no attempt bump) runs. Check its input1.
    * The input version is now 2. The attempt will now succeed.
+   *
    * @throws Exception
    */
   @Test(timeout = 60000)
@@ -527,8 +528,9 @@ public class TestFaultTolerance {
   /**
    * Sets configuration for cascading input failure tests that
    * use SimpleTestDAG3Vertices.
-   * @param testConf configuration
-   * @param failAndExit whether input failure should trigger attempt exit 
+   *
+   * @param testConf    configuration
+   * @param failAndExit whether input failure should trigger attempt exit
    */
   private void setCascadingInputFailureConfig(Configuration testConf,
                                               boolean failAndExit) {
@@ -571,8 +573,9 @@ public class TestFaultTolerance {
    * v2 task0 attempt1 input0 fails. Wait. Triggering v1 rerun.
    * v1 attempt1 rerun and succeeds. v2 accepts v1 attempt1 output. v2 attempt1 succeeds.
    * v3 attempt0 accepts v2 attempt1 output.
-   *
+   * <p>
    * AM vertex succeeded order is v1, v2, v1, v2, v3.
+   *
    * @throws Exception
    */
   @Test(timeout = 60000)
@@ -601,8 +604,9 @@ public class TestFaultTolerance {
    * v2 task0 attempt1 input0 fails. v2 attempt1 exits. Triggering v1 rerun.
    * v1 attempt1 rerun and succeeds. v2 accepts v1 attempt1 output. v2 attempt2 succeeds.
    * v3 attempt1 accepts v2 attempt2 output.
-   *
+   * <p>
    * AM vertex succeeded order is v1, v2, v3, v1, v2, v3.
+   *
    * @throws Exception
    */
   @Test(timeout = 60000)
@@ -625,10 +629,10 @@ public class TestFaultTolerance {
   }
 
   /**
-   * Input failure of v3 causes rerun of both both v1 and v2 vertices. 
-   *   v1  v2
-   *    \ /
-   *    v3
+   * Input failure of v3 causes rerun of both both v1 and v2 vertices.
+   * v1  v2
+   * \ /
+   * v3
    *
    * @throws Exception
    */
@@ -662,11 +666,11 @@ public class TestFaultTolerance {
   }
 
   /**
-   * Downstream(v3) attempt failure of a vertex connected with 
-   * 2 upstream vertices.. 
-   *   v1  v2
-   *    \ /
-   *    v3
+   * Downstream(v3) attempt failure of a vertex connected with
+   * 2 upstream vertices..
+   * v1  v2
+   * \ /
+   * v3
    *
    * @throws Exception
    */
@@ -696,13 +700,14 @@ public class TestFaultTolerance {
   }
 
   /**
-   * Input failure of v2,v3 trigger v1 rerun. 
-   * Reruns can send output to 2 downstream vertices. 
-   *     v1
-   *    /  \
-   *   v2   v3 
-   *
+   * Input failure of v2,v3 trigger v1 rerun.
+   * Reruns can send output to 2 downstream vertices.
+   * v1
+   * /  \
+   * v2   v3
+   * <p>
    * Also covers multiple consumer vertices report failure against same producer task.
+   *
    * @throws Exception
    */
   @Test(timeout = 60000)
@@ -754,11 +759,12 @@ public class TestFaultTolerance {
   /**
    * SimpleTestDAG (v1,v2) has v2 task0/1 input failures triggering v1 rerun
    * upto version 1.
-   *
+   * <p>
    * v1 attempt0 succeeds.
    * v2-task0-attempt0 rejects v1 version0/1. Trigger v1 attempt1.
    * v2-task1-attempt0 rejects v1 version0/1. Trigger v1 attempt2.
    * DAG succeeds with v1 attempt2.
+   *
    * @throws Exception
    */
   @Test(timeout = 60000)
@@ -831,6 +837,7 @@ public class TestFaultTolerance {
    * depends on the src task. Here we test a 2x2 cartesian product and let 4th destination task fail.
    * The failure fraction limit is configured to be 0.25. So the failure fraction should be 1/2,
    * not 1/4.
+   *
    * @throws Exception
    */
   @Test

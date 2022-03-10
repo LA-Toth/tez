@@ -41,6 +41,7 @@ public class VertexStatus {
   Progress progress = null;
   TezCounters vertexCounters = null;
   private AtomicBoolean countersInitialized = new AtomicBoolean(false);
+
   public VertexStatus(VertexStatusProtoOrBuilder proxy) {
     this.proxy = proxy;
   }

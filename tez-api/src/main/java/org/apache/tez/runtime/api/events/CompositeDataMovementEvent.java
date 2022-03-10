@@ -29,14 +29,13 @@ import org.apache.tez.runtime.api.Event;
 /**
  * A convenience class to specify multiple DataMovementEvents which share the
  * same payload. A contiguous range of srcIndices can be specified.
- *
+ * <p>
  * This event will NOT be seen by downstream Inputs - instead they will see
  * {@link DataMovementEvent}s which are generated based on the range specified
  * in this event.
- *
+ * <p>
  * This event should be used by an output which has the same payload for all of
  * the Physical Outputs that it generates.
- *
  */
 @Public
 public class CompositeDataMovementEvent extends Event {
@@ -53,14 +52,11 @@ public class CompositeDataMovementEvent extends Event {
   }
 
   /**
-   * @param srcIndexStart
-   *          the startIndex of the physical source which generated the event
-   *          (inclusive)
-   * @param count
-   *          the number of physical sources represented by this event,
-   *          starting from the srcIndexStart(non-inclusive)
-   * @param userPayload
-   *          the common payload between all the events.
+   * @param srcIndexStart the startIndex of the physical source which generated the event
+   *                      (inclusive)
+   * @param count         the number of physical sources represented by this event,
+   *                      starting from the srcIndexStart(non-inclusive)
+   * @param userPayload   the common payload between all the events.
    */
   public static CompositeDataMovementEvent create(int srcIndexStart, int count,
                                                   ByteBuffer userPayload) {
@@ -72,15 +68,13 @@ public class CompositeDataMovementEvent extends Event {
    * {@link DataMovementEvent} by providing the source output index and the
    * target input index.
    *
-   * @param sourceIndex
-   *          The index of the physical output represented by the
-   *          {@link DataMovementEvent}
-   * @param targetIndex
-   *          The index of the physical input to which the given
-   *          {@link DataMovementEvent} should be routed.
+   * @param sourceIndex The index of the physical output represented by the
+   *                    {@link DataMovementEvent}
+   * @param targetIndex The index of the physical input to which the given
+   *                    {@link DataMovementEvent} should be routed.
    * @return {@link DataMovementEvent} created from the
-   *         {@link CompositeDataMovementEvent} with indices specified by the
-   *         method parameters
+   * {@link CompositeDataMovementEvent} with indices specified by the
+   * method parameters
    */
   @Private
   public DataMovementEvent expand(int sourceIndex, int targetIndex) {

@@ -58,6 +58,7 @@ public interface TaskAttempt extends TaskAttemptIDAware {
 
   /**
    * Has attempt reached the final state or not.
+   *
    * @return true if it has finished, else false
    */
   boolean isFinished();
@@ -100,13 +101,14 @@ public interface TaskAttempt extends TaskAttemptIDAware {
 
   /**
    * Get the time at which this attempt was scheduled
+   *
    * @return the time at which this attempt was scheduled, 0 if it hasn't been scheduled yet
    */
   long getScheduleTime();
 
   /**
    * @return attempt's finish time. If attempt is not finished
-   *  yet, returns 0.
+   * yet, returns 0.
    */
   long getFinishTime();
 

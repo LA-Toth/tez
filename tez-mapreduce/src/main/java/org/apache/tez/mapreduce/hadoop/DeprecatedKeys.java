@@ -31,7 +31,7 @@ public class DeprecatedKeys {
 
   // This could be done via deprecation.
   /**
-   * Keys used by the DAG - mainly the AM. 
+   * Keys used by the DAG - mainly the AM.
    */
   private static Map<String, String> mrParamToDAGParamMap = new HashMap<String, String>();
 

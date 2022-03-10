@@ -199,16 +199,16 @@ import org.slf4j.LoggerFactory;
  * The state machine is encapsulated in the implementation of Job interface.
  * All state changes happens via Job interface. Each event
  * results in a Finite State Transition in Job.
- *
+ * <p>
  * Tez DAG AppMaster is the composition of loosely coupled services. The services
  * interact with each other via events. The components resembles the
  * Actors model. The component acts on received event and send out the
  * events to other components.
  * This keeps it highly concurrent with no or minimal synchronization needs.
- *
+ * <p>
  * The events are dispatched by a central Dispatch mechanism. All components
  * register to the Dispatcher.
- *
+ * <p>
  * The information is shared across different components using AppContext.
  */
 
@@ -363,7 +363,9 @@ public class DAGAppMaster extends AbstractService {
 
   private static Path findLocalFileForResource(String fileName) {
     URL localResource = TezClassLoader.getInstance().getResource(fileName);
-    if (localResource == null) return null;
+    if (localResource == null) {
+      return null;
+    }
     return new Path(localResource.getPath());
   }
 
@@ -542,7 +544,7 @@ public class DAGAppMaster extends AbstractService {
   @VisibleForTesting
   public static void parsePlugin(List<NamedEntityDescriptor> resultList,
                                  BiMap<String, Integer> pluginMap,
-                                  List<TezNamedEntityDescriptorProto> namedEntityDescriptorProtos,
+                                 List<TezNamedEntityDescriptorProto> namedEntityDescriptorProtos,
                                  boolean tezYarnEnabled, boolean uberEnabled, UserPayload defaultPayload) {
 
     if (tezYarnEnabled) {
@@ -1018,7 +1020,7 @@ public class DAGAppMaster extends AbstractService {
                 TezConstants.TEZ_PREWARM_DAG_NAME_PREFIX)) {
                 failedDAGs.incrementAndGet();
               }
-              // This is a pass-through. Kill the AM if DAG state is ERROR.
+              // This is a fallthrough. Kill the AM if DAG state is ERROR.
             default:
               LOG.error("Received a DAG Finished Event with state="
                 + finishEvt.getDAGState()
@@ -1118,7 +1120,9 @@ public class DAGAppMaster extends AbstractService {
     return createDAG(dagPB, null);
   }
 
-  /** Create and initialize (but don't start) a single dag. */
+  /**
+   * Create and initialize (but don't start) a single dag.
+   */
   DAGImpl createDAG(DAGPlan dagPB, TezDAGID dagId) {
     if (dagId == null) {
       dagId = TezDAGID.getInstance(appAttemptID.getApplicationId(),
@@ -1208,11 +1212,11 @@ public class DAGAppMaster extends AbstractService {
     }
   }
 
-  protected TaskCommunicatorManagerInterface createTaskCommunicatorManager(AppContext context,
-                                                                           TaskHeartbeatHandler thh,
-                                                                           ContainerHeartbeatHandler chh,
-                                                                           List<NamedEntityDescriptor> entityDescriptors)
-    throws TezException {
+  protected TaskCommunicatorManagerInterface createTaskCommunicatorManager(
+    AppContext context,
+    TaskHeartbeatHandler thh,
+    ContainerHeartbeatHandler chh,
+    List<NamedEntityDescriptor> entityDescriptors) throws TezException {
     TaskCommunicatorManagerInterface tcm =
       new TaskCommunicatorManager(context, thh, chh, entityDescriptors);
     return tcm;
@@ -2114,6 +2118,7 @@ public class DAGAppMaster extends AbstractService {
     AtomicInteger dependenciesStarted = new AtomicInteger(0);
     volatile boolean canStart = false;
     volatile boolean dependenciesFailed = false;
+
     ServiceWithDependency(Service service) {
       this.service = service;
     }

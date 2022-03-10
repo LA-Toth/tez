@@ -25,7 +25,7 @@ import org.apache.hadoop.classification.InterfaceAudience.Public;
 
 /**
  * Describes the placements hints for tasks in a vertex.
- * The system will make a best-effort attempt to run the tasks 
+ * The system will make a best-effort attempt to run the tasks
  * close to the specified locations.
  */
 @Public

@@ -117,7 +117,9 @@ public interface AppContext {
 
   void setQueueName(String queueName);
 
-  /** Whether the AM is in the process of shutting down/completing */
+  /**
+   * Whether the AM is in the process of shutting down/completing
+   */
   boolean isAMInCompletionState();
 
   Credentials getAppCredentials();

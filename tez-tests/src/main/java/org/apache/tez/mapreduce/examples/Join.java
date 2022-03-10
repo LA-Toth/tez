@@ -47,17 +47,17 @@ import org.apache.hadoop.util.ToolRunner;
 
 /**
  * Given a set of sorted datasets keyed with the same class and yielding
- * equal partitions, it is possible to effect a join of those datasets 
+ * equal partitions, it is possible to effect a join of those datasets
  * prior to the map. The example facilitates the same.
- *
+ * <p>
  * To run: bin/hadoop jar build/hadoop-examples.jar join
- *            [-r <i>reduces</i>]
- *            [-inFormat <i>input format class</i>] 
- *            [-outFormat <i>output format class</i>] 
- *            [-outKey <i>output key class</i>] 
- *            [-outValue <i>output value class</i>] 
- *            [-joinOp &lt;inner|outer|override&gt;]
- *            [<i>in-dir</i>]* <i>in-dir</i> <i>out-dir</i> 
+ * [-r <i>reduces</i>]
+ * [-inFormat <i>input format class</i>]
+ * [-outFormat <i>output format class</i>]
+ * [-outKey <i>output key class</i>]
+ * [-outValue <i>output value class</i>]
+ * [-joinOp &lt;inner|outer|override&gt;]
+ * [<i>in-dir</i>]* <i>in-dir</i> <i>out-dir</i>
  */
 public class Join extends Configured implements Tool {
   public static final String REDUCES_PER_HOST = "mapreduce.join.reduces_per_host";
@@ -82,8 +82,9 @@ public class Join extends Configured implements Tool {
   /**
    * The main driver for sort program.
    * Invoke this method to submit the map/reduce job.
+   *
    * @throws Exception When there is communication problems with the
-   *                     job tracker.
+   *                   job tracker.
    */
   @SuppressWarnings("deprecation")
   public int run(String[] args) throws Exception {

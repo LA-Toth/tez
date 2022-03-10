@@ -460,13 +460,12 @@ public class YarnTaskSchedulerService extends TaskScheduler
   /**
    * Tries assigning the list of specified containers. Optionally, release
    * containers or add them to the delayed container queue.
-   *
+   * <p>
    * The flags apply to all containers in the specified lists. So, separate
    * calls should be made based on the expected behaviour.
    *
-   * @param containers
-   *          The list of containers to be assigned. The list *may* be modified
-   *          in place based on allocations and releases.
+   * @param containers The list of containers to be assigned. The list *may* be modified
+   *                   in place based on allocations and releases.
    * @return Assignments.
    */
   private synchronized Map<CookieContainerRequest, Container>
@@ -530,6 +529,7 @@ public class YarnTaskSchedulerService extends TaskScheduler
 
   /**
    * Try to assign a re-used container
+   *
    * @param heldContainer Container to be used to assign to tasks
    * @return Assigned container map
    */
@@ -946,12 +946,9 @@ public class YarnTaskSchedulerService extends TaskScheduler
   }
 
   /**
-   * @param task
-   *          the task to de-allocate.
-   * @param taskSucceeded
-   *          specify whether the task succeeded or failed.
-   * @param endReason
-   *          reason for the task ending
+   * @param task          the task to de-allocate.
+   * @param taskSucceeded specify whether the task succeeded or failed.
+   * @param endReason     reason for the task ending
    * @return true if a container is assigned to this task.
    */
   @Override
@@ -1879,6 +1876,7 @@ public class YarnTaskSchedulerService extends TaskScheduler
     private CookieContainerRequest lastTaskInfo;
     private int numAssignmentAttempts = 0;
     private Object lastAssignedContainerSignature;
+
     HeldContainer(Container container,
                   long nextScheduleTime,
                   long containerExpiryTime,

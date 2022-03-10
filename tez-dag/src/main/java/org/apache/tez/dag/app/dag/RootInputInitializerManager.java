@@ -238,9 +238,10 @@ public class RootInputInitializerManager {
     }
   }
 
-  private static class VertexUpdateRegistrationHolder {
+  private static final class VertexUpdateRegistrationHolder {
     private final String vertexName;
     private final Set<org.apache.tez.dag.api.event.VertexState> stateSet;
+
     private VertexUpdateRegistrationHolder(String vertexName, Set<org.apache.tez.dag.api.event.VertexState> stateSet) {
       this.vertexName = vertexName;
       this.stateSet = stateSet;

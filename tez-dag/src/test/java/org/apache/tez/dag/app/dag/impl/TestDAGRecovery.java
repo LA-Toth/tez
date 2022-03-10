@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.dag.app.dag.impl;
 
 import static org.junit.Assert.assertEquals;
@@ -282,9 +283,9 @@ public class TestDAGRecovery {
 
   /**
    * v1     v2
-   *   \    /
-   *    \  /
-   *     v3
+   * \    /
+   * \  /
+   * v3
    */
   private DAGPlan createDAGPlan() {
     DAGPlan dag = DAGPlan
@@ -536,9 +537,9 @@ public class TestDAGRecovery {
 
   /**
    * RecoveryEvents:
-   *  DAG:  DAGInitedEvent -> DAGStartedEvent
-   *  V1:   No any event
-   *
+   * DAG:  DAGInitedEvent -> DAGStartedEvent
+   * V1:   No any event
+   * <p>
    * Reinitialize V1 again.
    */
   @Test(timeout = 5000)
@@ -563,9 +564,9 @@ public class TestDAGRecovery {
 
   /**
    * RecoveryEvents:
-   *  DAG:  DAGInitedEvent -> DAGStartedEvent
-   *  V1:   VertexInitializedEvent
-   *
+   * DAG:  DAGInitedEvent -> DAGStartedEvent
+   * V1:   VertexInitializedEvent
+   * <p>
    * Reinitialize V1 again.
    */
   @Test(timeout = 5000)
@@ -595,9 +596,9 @@ public class TestDAGRecovery {
 
   /**
    * RecoveryEvents:
-   *  DAG:  DAGInitedEvent -> DAGStartedEvent
-   *  V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent
-   *
+   * DAG:  DAGInitedEvent -> DAGStartedEvent
+   * V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent
+   * <p>
    * Reinitialize V1 again.
    */
   @Test//(timeout=5000)
@@ -633,9 +634,9 @@ public class TestDAGRecovery {
 
   /**
    * RecoveryEvents:
-   *  DAG:  DAGInitedEvent -> DAGStartedEvent
-   *  V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent
-   *
+   * DAG:  DAGInitedEvent -> DAGStartedEvent
+   * V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent
+   * <p>
    * Reinitialize V1 again.
    */
   @Test(timeout = 5000)
@@ -668,9 +669,9 @@ public class TestDAGRecovery {
 
   /**
    * RecoveryEvents:
-   *  DAG:  DAGInitedEvent -> DAGStartedEvent
-   *  V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> setParallelismCalledFlag
-   *
+   * DAG:  DAGInitedEvent -> DAGStartedEvent
+   * V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> setParallelismCalledFlag
+   * <p>
    * V1 skip initialization.
    */
   @Test(timeout = 5000)
@@ -706,9 +707,9 @@ public class TestDAGRecovery {
 
   /**
    * RecoveryEvents:
-   *  DAG:  DAGInitedEvent -> DAGStartedEvent
-   *  V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
-   *
+   * DAG:  DAGInitedEvent -> DAGStartedEvent
+   * V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
+   * <p>
    * V1 skip initialization.
    */
   @Test(timeout = 5000)
@@ -751,11 +752,11 @@ public class TestDAGRecovery {
 
   /**
    * RecoveryEvents:
-   *  DAG:  DAGInitedEvent -> DAGStartedEvent
-   *  V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
-   *  V2:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
-   *  V3:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
-   *
+   * DAG:  DAGInitedEvent -> DAGStartedEvent
+   * V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
+   * V2:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
+   * V3:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
+   * <p>
    * V1 skip initialization.
    * V2 skip initialization.
    * V3 skip initialization.
@@ -845,14 +846,14 @@ public class TestDAGRecovery {
 
   /**
    * RecoveryEvents:
-   *  DAG:  DAGInitedEvent -> DAGStartedEvent
-   *  V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent
-   *  V2:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
-   *  V3:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
-   *
-   *  Reinitialize V1 again.
-   *  V2 skip initialization.
-   *  Reinitialize V3 again. Since V3 is dependent on V1
+   * DAG:  DAGInitedEvent -> DAGStartedEvent
+   * V1:   VertexReconfigrationDoneEvent -> VertexInitializedEvent
+   * V2:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
+   * V3:   VertexReconfigrationDoneEvent -> VertexInitializedEvent -> VertexStartedEvent -> VertexTaskStart
+   * <p>
+   * Reinitialize V1 again.
+   * V2 skip initialization.
+   * Reinitialize V3 again. Since V3 is dependent on V1
    */
   @Test(timeout = 5000)
   public void testMultipleVertexRecoverFromVertex() {

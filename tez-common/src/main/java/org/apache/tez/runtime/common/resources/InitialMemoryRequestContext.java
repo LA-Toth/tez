@@ -31,6 +31,7 @@ public class InitialMemoryRequestContext {
   private String componentClassName;
   private ComponentType componentType;
   private String componentVertexName;
+
   public InitialMemoryRequestContext(long requestedSize, String componentClassName,
                                      ComponentType componentType, String componentVertexName) {
     Objects.requireNonNull(componentClassName, "componentClassName is null");

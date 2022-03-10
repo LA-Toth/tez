@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.common;
 
 import java.util.concurrent.TimeUnit;
@@ -26,6 +27,7 @@ import org.apache.hadoop.yarn.util.MonotonicClock;
 /**
  * A thread safe implementation used as a container for cacheable entries with Expiration times.
  * It supports custom {@link Clock} to control the elapsed time calculation.
+ *
  * @param <T> the data object type.
  */
 public class CachedEntity<T> {
@@ -46,9 +48,8 @@ public class CachedEntity<T> {
   }
 
   /**
-   *
    * @return true if expiration timestamp is 0, or the elapsed time since last update is
-   *         greater than {@link #expiryDurationMS}
+   * greater than {@link #expiryDurationMS}
    */
   public boolean isExpired() {
     return (entryTimeStamp == 0)
@@ -57,6 +58,7 @@ public class CachedEntity<T> {
 
   /**
    * If the entry has expired, it reset the cache reference through {@link #clearExpiredEntry()}.
+   *
    * @return cached data if the timestamp is valid. Null, if the timestamp has expired.
    */
   public T getValue() {
@@ -70,6 +72,7 @@ public class CachedEntity<T> {
 
   /**
    * Safely sets the cached data.
+   *
    * @param newEntry
    */
   public void setValue(T newEntry) {
@@ -89,8 +92,9 @@ public class CachedEntity<T> {
 
   /**
    * Safely deletes the reference to the data if it was not null.
+   *
    * @return true if the reference is set to Null. False indicates that another thread
-   *         updated the cache.
+   * updated the cache.
    */
   private boolean clearExpiredEntry() {
     T currentEntry = entryDataRef.get();

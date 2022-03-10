@@ -365,8 +365,8 @@ public class TestTaskCommunicatorManager1 {
     TokenCache.setSessionToken(sessionToken, credentials);
     UserPayload userPayload = TezUtils.createUserPayloadFromConf(conf);
     taskAttemptListener = new TaskCommunicatorManager(appContext,
-      mock(TaskHeartbeatHandler.class), mock(ContainerHeartbeatHandler.class), Lists.newArrayList(
-      new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
+      mock(TaskHeartbeatHandler.class), mock(ContainerHeartbeatHandler.class),
+      Lists.newArrayList(new NamedEntityDescriptor(TezConstants.getTezYarnServicePluginName(), null)
         .setUserPayload(userPayload)));
     // no exception happen, should started properly
     taskAttemptListener.init(conf);
@@ -444,10 +444,11 @@ public class TestTaskCommunicatorManager1 {
 
   private static class TaskCommunicatorManagerInterfaceImplForTest extends TaskCommunicatorManager {
 
-    public TaskCommunicatorManagerInterfaceImplForTest(AppContext context,
-                                                       TaskHeartbeatHandler thh,
-                                                       ContainerHeartbeatHandler chh,
-                                                       List<NamedEntityDescriptor> taskCommDescriptors) throws TezException {
+    public TaskCommunicatorManagerInterfaceImplForTest(
+      AppContext context,
+      TaskHeartbeatHandler thh,
+      ContainerHeartbeatHandler chh,
+      List<NamedEntityDescriptor> taskCommDescriptors) throws TezException {
       super(context, thh, chh, taskCommDescriptors);
     }
 

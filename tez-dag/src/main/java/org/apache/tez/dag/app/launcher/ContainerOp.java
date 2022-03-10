@@ -24,6 +24,7 @@ import org.apache.tez.serviceplugins.api.ContainerStopRequest;
 public class ContainerOp {
   final ContainerLauncherOperationBase command;
   final OPType opType;
+
   public ContainerOp(OPType opType, ContainerLauncherOperationBase command) {
     this.opType = opType;
     this.command = command;

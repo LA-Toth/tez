@@ -34,6 +34,7 @@ public interface OutputStatistics {
   /**
    * Returns the data size associated with this logical output
    * <br>It is the size of the data written to this output by the vertex.
+   *
    * @return Data size in bytes
    */
   public long getDataSize();

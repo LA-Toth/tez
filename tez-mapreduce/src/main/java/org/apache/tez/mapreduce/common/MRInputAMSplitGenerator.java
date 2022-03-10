@@ -49,10 +49,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Implements an {@link InputInitializer} that generates Map Reduce 
+ * Implements an {@link InputInitializer} that generates Map Reduce
  * splits in the App Master. This may utilizes the up to date cluster
- * information to create an optimal distribution of splits. This is the 
- * recommended {@link InputInitializer} to use when reading Map Reduce 
+ * information to create an optimal distribution of splits. This is the
+ * recommended {@link InputInitializer} to use when reading Map Reduce
  * compatible data sources.
  */
 @Public

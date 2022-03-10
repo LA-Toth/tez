@@ -29,7 +29,7 @@ import org.apache.tez.common.Preconditions;
 
 /**
  * Describes the placements hints for tasks.
- * The system will make a best-effort attempt to run the tasks 
+ * The system will make a best-effort attempt to run the tasks
  * close to the specified locations.
  */
 @Public
@@ -67,6 +67,7 @@ public class TaskLocationHint {
    * rack local or further depending on cluster resource allocations.<br>
    * This is expected to be used only during dynamic optimizations via {@link VertexManagerPlugin}s
    * and not in while creating the dag using the DAG API.
+   *
    * @param vertexName
    * @param taskIndex
    * @return the task location hint for the vertex name and task index

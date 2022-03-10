@@ -77,7 +77,7 @@ import org.slf4j.LoggerFactory;
  * {@link MRInput} is an {@link Input} which provides key/values pairs
  * for the consumer.
  *
- * It is compatible with all standard Apache Hadoop MapReduce 
+ * It is compatible with all standard Apache Hadoop MapReduce
  * {@link InputFormat} implementations.
  *
  * This class is not meant to be extended by external projects.

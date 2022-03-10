@@ -29,7 +29,7 @@ import org.apache.tez.dag.records.TezTaskAttemptID;
 
 /**
  * Runtime estimator that uses a simple scheme of estimating task attempt
- * runtime based on current elapsed runtime and reported progress. 
+ * runtime based on current elapsed runtime and reported progress.
  */
 public class LegacyTaskRuntimeEstimator extends StartEndTimesBase {
 

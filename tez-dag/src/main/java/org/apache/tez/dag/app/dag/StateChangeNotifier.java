@@ -121,8 +121,9 @@ public class StateChangeNotifier {
 
   public void stop() {
     this.stopEventHandling = true;
-    if (eventHandlingThread != null)
+    if (eventHandlingThread != null) {
       eventHandlingThread.interrupt();
+    }
   }
 
   // -------------- VERTEX STATE CHANGE SECTION ---------------

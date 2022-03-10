@@ -1154,8 +1154,9 @@ public class TestMockDAGAppMaster {
     }
 
     @Override
-    public void routeInputSourceTaskFailedEventToDestination(int sourceTaskIndex,
-                                                             Map<Integer, List<Integer>> destinationTaskAndInputIndices) {
+    public void routeInputSourceTaskFailedEventToDestination(
+      int sourceTaskIndex,
+      Map<Integer, List<Integer>> destinationTaskAndInputIndices) {
       destinationTaskAndInputIndices.put(sourceTaskIndex, destinationInputIndices);
     }
 

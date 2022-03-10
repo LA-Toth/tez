@@ -260,6 +260,7 @@ public class ShuffleHandler extends AuxiliaryService {
 
   /**
    * Serialize the shuffle port into a ByteBuffer for use later on.
+   *
    * @param port the port to be sent to the ApplciationMaster
    * @return the serialized form of the port.
    */
@@ -274,6 +275,7 @@ public class ShuffleHandler extends AuxiliaryService {
 
   /**
    * A helper function to deserialize the metadata returned by ShuffleHandler.
+   *
    * @param meta the metadata returned by the ShuffleHandler
    * @return the port the Shuffle Handler is listening on to serve shuffle data.
    */
@@ -289,8 +291,9 @@ public class ShuffleHandler extends AuxiliaryService {
   /**
    * A helper function to serialize the JobTokenIdentifier to be sent to the
    * ShuffleHandler as ServiceData.
+   *
    * @param jobToken the job token to be used for authentication of
-   * shuffle data requests.
+   *                 shuffle data requests.
    * @return the serialized version of the jobToken.
    */
   public static ByteBuffer serializeServiceData(Token<JobTokenIdentifier> jobToken) throws IOException {
@@ -590,12 +593,12 @@ public class ShuffleHandler extends AuxiliaryService {
   /**
    * 1) Versioning scheme: major.minor. For e.g. 1.0, 1.1, 1.2...1.25, 2.0 etc.
    * 2) Any incompatible change of DB schema is a major upgrade, and any
-   *    compatible change of DB schema is a minor upgrade.
+   * compatible change of DB schema is a minor upgrade.
    * 3) Within a minor upgrade, say 1.1 to 1.2:
-   *    overwrite the version info and proceed as normal.
+   * overwrite the version info and proceed as normal.
    * 4) Within a major upgrade, say 1.2 to 2.0:
-   *    throw exception and indicate user to use a separate upgrade tool to
-   *    upgrade shuffle info or remove incompatible old state.
+   * throw exception and indicate user to use a separate upgrade tool to
+   * upgrade shuffle info or remove incompatible old state.
    */
   private void checkVersion() throws IOException {
     Version loadedVersion = loadVersion();
@@ -1240,6 +1243,7 @@ public class ShuffleHandler extends AuxiliaryService {
      * sendMapOutput operation. This limits the number of open files on a node,
      * which can get really large(exhausting file descriptors on the NM) if all
      * sendMapOutputs are called in one go, as was done previous to this change.
+     *
      * @param reduceContext used to call sendMapOutput with correct params.
      * @return the ChannelFuture of the sendMapOutput, can be null.
      */

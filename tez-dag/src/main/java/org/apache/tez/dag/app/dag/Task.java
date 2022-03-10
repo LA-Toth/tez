@@ -51,7 +51,8 @@ public interface Task extends TaskIDAware {
 
   TaskAttempt getSuccessfulAttempt();
 
-  /** Has Task reached the final state or not.
+  /**
+   * Has Task reached the final state or not.
    */
   boolean isFinished();
 

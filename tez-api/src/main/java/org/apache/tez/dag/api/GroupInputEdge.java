@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.dag.api;
 
 import org.apache.hadoop.classification.InterfaceAudience.Private;
@@ -22,9 +23,9 @@ import org.apache.hadoop.classification.InterfaceAudience.Public;
 import org.apache.tez.runtime.api.MergedLogicalInput;
 
 /**
- * A composite edge that represents a common connection between a 
- * group of input vertices and a single output vertex. This can be 
- * used to perform e.g. an efficient union of the data produced by 
+ * A composite edge that represents a common connection between a
+ * group of input vertices and a single output vertex. This can be
+ * used to perform e.g. an efficient union of the data produced by
  * the input vertices. The output vertex tasks see a unified/merged
  * view of the data from all the input vertices.
  */
@@ -59,16 +60,12 @@ public class GroupInputEdge {
    * members. These individual inputs are merged using the mergedInput before
    * presenting them to the destination task.
    *
-   * @param inputVertexGroup
-   *          source {@link VertexGroup}
-   * @param outputVertex
-   *          destination Vertex
-   * @param edgeProperty
-   *          the common {@link EdgeProperty} for this {@link GroupInputEdge}
-   * @param mergedInput
-   *          {@link MergedLogicalInput} This input is responsible for merging
-   *          the data from the input vertex tasks to create a single input for
-   *          the output vertex tasks
+   * @param inputVertexGroup source {@link VertexGroup}
+   * @param outputVertex     destination Vertex
+   * @param edgeProperty     the common {@link EdgeProperty} for this {@link GroupInputEdge}
+   * @param mergedInput      {@link MergedLogicalInput} This input is responsible for merging
+   *                         the data from the input vertex tasks to create a single input for
+   *                         the output vertex tasks
    */
   public static GroupInputEdge create(VertexGroup inputVertexGroup,
                                       Vertex outputVertex,

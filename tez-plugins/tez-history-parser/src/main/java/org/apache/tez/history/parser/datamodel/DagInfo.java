@@ -282,7 +282,6 @@ public class DagInfo extends BaseInfo {
    * Parse edge details in the DAG
    *
    * @param edgesArray
-   *
    * @throws JSONException
    */
   private void parseEdges(JSONArray edgesArray) throws JSONException {

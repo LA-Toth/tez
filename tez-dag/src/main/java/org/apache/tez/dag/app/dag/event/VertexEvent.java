@@ -24,7 +24,6 @@ import org.apache.tez.dag.records.VertexIDAware;
 
 /**
  * this class encapsulates vertex related events.
- *
  */
 public class VertexEvent extends TezAbstractEvent<VertexEventType> implements VertexIDAware {
 

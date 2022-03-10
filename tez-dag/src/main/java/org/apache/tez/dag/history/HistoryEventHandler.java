@@ -118,6 +118,7 @@ public class HistoryEventHandler extends CompositeService {
    * Used by events that are critical for recovery
    * DAG Submission/finished and any commit related activites are critical events
    * In short, any events that are instances of SummaryEvent
+   *
    * @param event History event
    * @throws IOException
    */

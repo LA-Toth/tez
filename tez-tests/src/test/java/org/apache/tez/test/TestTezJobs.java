@@ -108,7 +108,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Tests for Tez example jobs
- *
  */
 public class TestTezJobs {
 
@@ -304,6 +303,7 @@ public class TestTezJobs {
   /**
    * test whole {@link HashJoinExample} pipeline as following: <br>
    * {@link JoinDataGen} -> {@link HashJoinExample} -> {@link JoinValidate}
+   *
    * @throws Exception
    */
   @Test(timeout = 120000)
@@ -627,6 +627,7 @@ public class TestTezJobs {
   /**
    * test whole {@link HashJoinExample} pipeline as following: <br>
    * {@link JoinDataGen} -> {@link HashJoinExample} -> {@link JoinValidate}
+   *
    * @throws Exception
    */
   @Test(timeout = 120000)
@@ -675,6 +676,7 @@ public class TestTezJobs {
   /**
    * test whole {@link SortMergeJoinExample} pipeline as following: <br>
    * {@link JoinDataGen} -> {@link SortMergeJoinExample} -> {@link JoinValidate}
+   *
    * @throws Exception
    */
   @Test(timeout = 120000)

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.tez.dag.app.dag.impl;
 
 import static org.mockito.Mockito.doReturn;
@@ -126,15 +127,13 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *
  * The test case of commit here are different from that in TestDAGImpl &
  * TestVertexImpl in that the commits here are running in separated thread. So
  * should need to pay some special attention.
- *
- * 2 kinds of commit 
+ * <p>
+ * 2 kinds of commit
  * <li> test XXX_OnDAGSuccess means TEZ_AM_COMMIT_ALL_OUTPUTS_ON_DAG_SUCCESS is true
  * <li> test XXX_OnVertexSuccess means TEZ_AM_COMMIT_ALL_OUTPUTS_ON_DAG_SUCCESS is false
- *
  */
 public class TestCommit {
 
@@ -317,7 +316,7 @@ public class TestCommit {
   // vertex_group (v1, v2) has 2 shared outputs
   private DAGPlan createDAGPlanWith2VertexGroupOutputs(boolean vertexGroupCommitSucceeded1,
                                                        boolean vertexGroupCommitSucceeded2,
-                                                        boolean v3CommitSucceeded) throws Exception {
+                                                       boolean v3CommitSucceeded) throws Exception {
     LOG.info("Setting up group dag plan");
     int dummyTaskCount = 1;
     Resource dummyTaskResource = Resource.newInstance(1, 1);
@@ -376,8 +375,8 @@ public class TestCommit {
   }
 
   // used for route event error in VM
-  private DAGPlan createDAGPlan_SingleVertexWith2Committer
-  (boolean commit1Succeed, boolean commit2Succeed, boolean customVM) throws IOException {
+  private DAGPlan createDAGPlan_SingleVertexWith2Committer(boolean commit1Succeed, boolean commit2Succeed,
+                                                           boolean customVM) throws IOException {
     LOG.info("Setting up group dag plan");
     int dummyTaskCount = 1;
     Resource dummyTaskResource = Resource.newInstance(1, 1);
@@ -1456,7 +1455,8 @@ public class TestCommit {
 
   // Kill dag while it is in COMMITTING in the case of
   // TEZ_AM_COMMIT_ALL_OUTPUTS_ON_DAG_SUCCESS is false
-  private void _testDAGTerminatedWhileCommitting1_OnVertexSuccess(DAGTerminationCause terminationCause) throws Exception {
+  private void _testDAGTerminatedWhileCommitting1_OnVertexSuccess(DAGTerminationCause terminationCause)
+    throws Exception {
     conf.setBoolean(TezConfiguration.TEZ_AM_COMMIT_ALL_OUTPUTS_ON_DAG_SUCCESS,
       false);
     setupDAG(createDAGPlan(true, true));

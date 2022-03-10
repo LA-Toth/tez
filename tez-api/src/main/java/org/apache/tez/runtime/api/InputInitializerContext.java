@@ -40,36 +40,42 @@ public interface InputInitializerContext {
 
   /**
    * Get the YARN application id given to the Tez Application Master
+   *
    * @return Application id
    */
   ApplicationId getApplicationId();
 
   /**
    * Get the name of the DAG
+   *
    * @return DAG name
    */
   String getDAGName();
 
   /**
    * Get vertex configuration
+   *
    * @return Vertex configuration
    */
   Configuration getVertexConfiguration();
 
   /**
    * Get the name of the input
+   *
    * @return Input name
    */
   String getInputName();
 
   /**
    * Get the user payload for the input
+   *
    * @return User payload
    */
   UserPayload getInputUserPayload();
 
   /**
    * Get the user payload for the initializer
+   *
    * @return User payload
    */
   UserPayload getUserPayload();
@@ -77,26 +83,30 @@ public interface InputInitializerContext {
   /**
    * Get the number of tasks in this vertex. Maybe -1 if the vertex has not been
    * initialized with a pre-determined number of tasks.
+   *
    * @return number of tasks
    */
   int getNumTasks();
 
   /**
    * Get the resource allocated to a task of this vertex
+   *
    * @return Resource
    */
   Resource getVertexTaskResource();
 
   /**
-   * Get the total resource allocated to this vertex. If the DAG is running in 
+   * Get the total resource allocated to this vertex. If the DAG is running in
    * a busy cluster then it may have no resources available dedicated to it. The
    * DAG may divide its resources among member vertices.
+   *
    * @return Resource
    */
   Resource getTotalAvailableResource();
 
   /**
    * Get the number of nodes in the cluster
+   *
    * @return Number of nodes
    */
   int getNumClusterNodes();
@@ -108,6 +118,7 @@ public interface InputInitializerContext {
 
   /**
    * Get the number of tasks in the given vertex
+   *
    * @param vertexName
    * @return Total number of tasks in this vertex
    */
@@ -117,7 +128,7 @@ public interface InputInitializerContext {
    * Register to get notifications on updates to the specified vertex. Notifications will be sent
    * via
    * {@link org.apache.tez.runtime.api.InputInitializer#onVertexStateUpdated(org.apache.tez.dag.api.event.VertexStateUpdate)} </p>
-   *
+   * <p>
    * This method can only be invoked once. Duplicate invocations will result in an error.
    *
    * @param vertexName the vertex name for which notifications are required.

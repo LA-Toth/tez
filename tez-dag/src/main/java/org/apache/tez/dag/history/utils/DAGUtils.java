@@ -206,7 +206,8 @@ public class DAGUtils {
 
   /**
    * Auxiliary method to convert dagPlan to ATS Map.
-   * @param dagPlan dag plan.
+   *
+   * @param dagPlan  dag plan.
    * @param inflater inflater. This method shouldn't end it.
    * @return ATS MAP
    */

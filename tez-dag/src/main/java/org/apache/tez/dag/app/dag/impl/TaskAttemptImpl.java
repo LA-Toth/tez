@@ -143,8 +143,7 @@ public class TaskAttemptImpl implements TaskAttempt,
     <TaskAttemptImpl, TaskAttemptStateInternal, TaskAttemptEventType, TaskAttemptEvent>
     stateMachineFactory
     = new StateMachineFactory
-    <TaskAttemptImpl, TaskAttemptStateInternal, TaskAttemptEventType, TaskAttemptEvent>
-    (TaskAttemptStateInternal.NEW)
+    <TaskAttemptImpl, TaskAttemptStateInternal, TaskAttemptEventType, TaskAttemptEvent>(TaskAttemptStateInternal.NEW)
 
     .addTransition(TaskAttemptStateInternal.NEW,
       EnumSet.of(TaskAttemptStateInternal.NEW, TaskAttemptStateInternal.START_WAIT, TaskAttemptStateInternal.FAILED),
@@ -453,11 +452,17 @@ public class TaskAttemptImpl implements TaskAttempt,
   private TaskAttemptRecoveryData recoveryData;
   private long launchTime = 0;
   private long finishTime = 0;
-  /** System.nanoTime for task launch time, if recorded in this JVM. */
+  /**
+   * System.nanoTime for task launch time, if recorded in this JVM.
+   */
   private Long launchTimeNs;
-  /** System.nanoTime for task finish time, if recorded in this JVM. */
+  /**
+   * System.nanoTime for task finish time, if recorded in this JVM.
+   */
   private Long finishTimeNs;
-  /** Whether the task was recovered from a prior AM; see getDurationNs. */
+  /**
+   * Whether the task was recovered from a prior AM; see getDurationNs.
+   */
   private boolean isRecoveredDuration;
   private String trackerName;
   private int httpPort;
@@ -745,7 +750,8 @@ public class TaskAttemptImpl implements TaskAttempt,
     }
   }
 
-  /**If container Assigned then return the node's address, otherwise null.
+  /**
+   * If container Assigned then return the node's address, otherwise null.
    */
   @Override
   public String getNodeHttpAddress() {
@@ -780,7 +786,9 @@ public class TaskAttemptImpl implements TaskAttempt,
     }
   }
 
-  /** @return task runtime duration in NS. */
+  /**
+   * @return task runtime duration in NS.
+   */
   public long getDurationNs() {
     readLock.lock();
     try {
@@ -1085,7 +1093,9 @@ public class TaskAttemptImpl implements TaskAttempt,
     Preconditions.checkArgument(recoveryData == null
         || recoveryData.getTaskAttemptFinishedEvent() == null,
       "log TaskAttemptFinishedEvent again in recovery when there's already another TaskAtttemptFinishedEvent");
-    if (getLaunchTime() == 0) return;
+    if (getLaunchTime() == 0) {
+      return;
+    }
 
     TaskAttemptFinishedEvent finishEvt = new TaskAttemptFinishedEvent(
       attemptId, getVertex().getName(), getLaunchTime(),

@@ -32,48 +32,56 @@ public interface OutputCommitterContext {
 
   /**
    * Get the {@link org.apache.hadoop.yarn.api.records.ApplicationId}
+   *
    * @return the {@link org.apache.hadoop.yarn.api.records.ApplicationId}
    */
   public ApplicationId getApplicationId();
 
   /**
    * Get the current DAG Attempt Number
+   *
    * @return DAG Attempt Number
    */
   public int getDAGAttemptNumber();
 
   /**
    * Get the name of the DAG
+   *
    * @return the DAG name
    */
   public String getDAGName();
 
   /**
    * Get the name of the Vertex
+   *
    * @return Vertex Name
    */
   public String getVertexName();
 
   /**
    * Get the name of the Output
+   *
    * @return Output Name
    */
   public String getOutputName();
 
   /**
    * Get the User Payload for the Output
+   *
    * @return User Payload
    */
   public UserPayload getOutputUserPayload();
 
   /**
    * Get the User Payload for the OutputCommitter
+   *
    * @return User Payload
    */
   public UserPayload getUserPayload();
 
   /**
    * Get Vertex Index in the DAG
+   *
    * @return Vertex index
    */
   public int getVertexIndex();

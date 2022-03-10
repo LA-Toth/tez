@@ -31,7 +31,6 @@ import com.google.common.collect.Lists;
  * Update Input specs for Inputs running in a task. Allows setting the number of physical
  * inputs for all work units if they have the same number of physical inputs, or individual
  * numPhysicalInputs for each work unit.
- *
  */
 @Unstable
 @Public
@@ -55,8 +54,7 @@ public class InputSpecUpdate {
    * Create an update instance where all work units (typically represented by
    * {@link InputDataInformationEvent}) will have the same number of physical inputs.
    *
-   * @param numPhysicalInputs
-   *          the number of physical inputs for all work units which will use the LogicalInput
+   * @param numPhysicalInputs the number of physical inputs for all work units which will use the LogicalInput
    * @return a new InputSpecUpdate instance given the parameters
    */
   public static InputSpecUpdate createAllTaskInputSpecUpdate(int numPhysicalInputs) {
@@ -67,9 +65,10 @@ public class InputSpecUpdate {
    * Create an update instance where all work units (typically represented by
    * {@link InputDataInformationEvent}) will have the same number of physical inputs.
    *
-   * @param perWorkUnitNumPhysicalInputs
-   *          A list containing one entry per work unit. The order in the list corresponds to task
-   *          index or equivalently the order of {@link InputDataInformationEvent}s being sent.
+   * @param perWorkUnitNumPhysicalInputs A list containing one entry per work unit. The order in the list corresponds
+   *                                    to task
+   *                                     index or equivalently the order of {@link InputDataInformationEvent}s being
+   *                                     sent.
    * @return a new InputSpecUpdate instance given the parameters
    */
   public static InputSpecUpdate createPerTaskInputSpecUpdate(

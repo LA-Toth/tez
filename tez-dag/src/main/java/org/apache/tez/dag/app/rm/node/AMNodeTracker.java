@@ -123,7 +123,7 @@ public class AMNodeTracker extends AbstractService implements
 
   /**
    * Retrieve the number of nodes from this source on which containers may be running
-   *
+   * <p>
    * This number may differ from the total number of nodes available from the source
    *
    * @param schedulerId the schedulerId for which the node count is required

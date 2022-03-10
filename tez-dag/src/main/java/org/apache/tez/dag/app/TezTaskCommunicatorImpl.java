@@ -349,6 +349,7 @@ public class TezTaskCommunicatorImpl extends TaskCommunicator {
     boolean credentialsChanged = false;
     boolean taskPulled = false;
     long usedMemory = 0;
+
     ContainerInfo(ContainerId containerId, String host, int port) {
       this.containerId = containerId;
       this.host = host;

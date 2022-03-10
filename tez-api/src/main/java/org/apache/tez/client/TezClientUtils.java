@@ -148,11 +148,9 @@ public class TezClientUtils {
   /**
    * Setup LocalResource map for Tez jars based on provided Configuration
    *
-   * @param conf
-   *          Configuration to use to access Tez jars' locations
-   * @param credentials
-   *          a credentials instance into which tokens for the Tez local
-   *          resources will be populated
+   * @param conf            Configuration to use to access Tez jars' locations
+   * @param credentials     a credentials instance into which tokens for the Tez local
+   *                        resources will be populated
    * @param tezJarResources Map of LocalResources to use for AM and DAGs
    * @return Whether the archive-based deployment of Tez was used.
    * @throws IOException
@@ -320,6 +318,7 @@ public class TezClientUtils {
 
   /**
    * Verify or create the Staging area directory on the configured Filesystem
+   *
    * @param stagingArea Staging area directory path
    * @return the FileSytem for the staging area directory
    * @throws IOException
@@ -357,9 +356,10 @@ public class TezClientUtils {
 
   /**
    * Populate {@link Credentials} for the URI's to access them from their {@link FileSystem}s
-   * @param uris URIs that need to be accessed
+   *
+   * @param uris        URIs that need to be accessed
    * @param credentials Credentials object into which to add the credentials
-   * @param conf Configuration to access the FileSystem
+   * @param conf        Configuration to access the FileSystem
    * @throws IOException
    */
   public static void addFileSystemCredentialsFromURIs(Collection<URI> uris, Credentials credentials,
@@ -383,11 +383,9 @@ public class TezClientUtils {
    * fetched credentials are populated back into the DAG and can be retrieved
    * via dag.getCredentials
    *
-   * @param dag
-   *          the dag for which credentials need to be setup
-   * @param sessionCredentials
-   *          session credentials which have already been obtained, and will be
-   *          required for the DAG
+   * @param dag                the dag for which credentials need to be setup
+   * @param sessionCredentials session credentials which have already been obtained, and will be
+   *                           required for the DAG
    * @param conf
    * @throws IOException
    */
@@ -438,12 +436,13 @@ public class TezClientUtils {
 
   /**
    * Create an ApplicationSubmissionContext to launch a Tez AM
-   * @param appId Application Id
-   * @param dag DAG to be submitted
-   * @param amName Name for the application
-   * @param amConfig AM Configuration
-   * @param tezJarResources Resources to be used by the AM
-   * @param sessionCreds the credential object which will be populated with session specific
+   *
+   * @param appId                    Application Id
+   * @param dag                      DAG to be submitted
+   * @param amName                   Name for the application
+   * @param amConfig                 AM Configuration
+   * @param tezJarResources          Resources to be used by the AM
+   * @param sessionCreds             the credential object which will be populated with session specific
    * @param servicePluginsDescriptor descriptor for services which may be running in the AM
    * @return an ApplicationSubmissionContext to launch a Tez AM
    * @throws IOException
@@ -860,8 +859,9 @@ public class TezClientUtils {
 
   /**
    * Helper function to create a YARN LocalResource
-   * @param fs FileSystem object
-   * @param p Path of resource to localize
+   *
+   * @param fs   FileSystem object
+   * @param p    Path of resource to localize
    * @param type LocalResource Type
    * @return a YARN LocalResource for the given Path
    * @throws IOException

@@ -107,13 +107,12 @@ public class RootInputVertexManager extends VertexManagerPlugin {
    * Create a {@link VertexManagerPluginDescriptor} builder that can be used to
    * configure the plugin.
    *
-   * @param conf
-   *          {@link Configuration} May be modified in place. May be null if the
-   *          configuration parameters are to be set only via code. If
-   *          configuration values may be changed at runtime via a config file
-   *          then pass in a {@link Configuration} that is initialized from a
-   *          config file. The parameters that are not overridden in code will
-   *          be derived from the Configuration object.
+   * @param conf {@link Configuration} May be modified in place. May be null if the
+   *             configuration parameters are to be set only via code. If
+   *             configuration values may be changed at runtime via a config file
+   *             then pass in a {@link Configuration} that is initialized from a
+   *             config file. The parameters that are not overridden in code will
+   *             be derived from the Configuration object.
    * @return {@link RootInputVertexManagerConfigBuilder}
    */
   public static RootInputVertexManagerConfigBuilder createConfigBuilder(
@@ -514,15 +513,13 @@ public class RootInputVertexManager extends VertexManagerPlugin {
       return this;
     }
 
-    public RootInputVertexManagerConfigBuilder
-    setSlowStartMinSrcCompletionFraction(float minFraction) {
+    public RootInputVertexManagerConfigBuilder setSlowStartMinSrcCompletionFraction(float minFraction) {
       conf.setFloat(TEZ_ROOT_INPUT_VERTEX_MANAGER_MIN_SRC_FRACTION,
         minFraction);
       return this;
     }
 
-    public RootInputVertexManagerConfigBuilder
-    setSlowStartMaxSrcCompletionFraction(float maxFraction) {
+    public RootInputVertexManagerConfigBuilder setSlowStartMaxSrcCompletionFraction(float maxFraction) {
       conf.setFloat(TEZ_ROOT_INPUT_VERTEX_MANAGER_MAX_SRC_FRACTION,
         maxFraction);
       return this;

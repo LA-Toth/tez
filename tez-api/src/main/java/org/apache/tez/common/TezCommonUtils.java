@@ -74,8 +74,7 @@ public class TezCommonUtils {
    * directory with permission <code>TEZ_AM_DIR_PERMISSION</code>.
    * </p>
    *
-   * @param conf
-   *          TEZ configuration
+   * @param conf TEZ configuration
    * @return Fully qualified staging directory
    */
   public static Path getTezBaseStagingPath(Configuration conf) {
@@ -104,10 +103,8 @@ public class TezCommonUtils {
    * staging directory, often provided by user.
    * </p>
    *
-   * @param conf
-   *          Tez configuration
-   * @param strAppId
-   *          Application ID as string
+   * @param conf     Tez configuration
+   * @param strAppId Application ID as string
    * @return TEZ system level staging directory used for Tez internals
    */
   @Private
@@ -135,10 +132,8 @@ public class TezCommonUtils {
    * creates any sub-directory under the base staging directory.
    * </p>
    *
-   * @param conf
-   *          Tez configuration
-   * @param strAppId
-   *          Application ID as string
+   * @param conf     Tez configuration
+   * @param strAppId Application ID as string
    * @return TEZ system level staging directory used for Tez internals
    */
   @Private
@@ -155,8 +150,7 @@ public class TezCommonUtils {
    * Returns a path to store binary configuration
    * </p>
    *
-   * @param tezSysStagingPath
-   *          TEZ system level staging directory used for Tez internals
+   * @param tezSysStagingPath TEZ system level staging directory used for Tez internals
    * @return path to configuration
    */
   @Private
@@ -169,8 +163,7 @@ public class TezCommonUtils {
    * Returns a path to store local resources/session jars
    * </p>
    *
-   * @param tezSysStagingPath
-   *          TEZ system level staging directory used for Tez internals
+   * @param tezSysStagingPath TEZ system level staging directory used for Tez internals
    * @return path to store the session jars
    */
   @Private
@@ -183,8 +176,7 @@ public class TezCommonUtils {
    * Returns a path to store binary plan
    * </p>
    *
-   * @param tezSysStagingPath
-   *          TEZ system level staging directory used for Tez internals
+   * @param tezSysStagingPath TEZ system level staging directory used for Tez internals
    * @return path to store the plan in binary
    */
   @Private
@@ -197,12 +189,9 @@ public class TezCommonUtils {
    * Returns a path to store text plan
    * </p>
    *
-   * @param tezSysStagingPath
-   *          TEZ system level staging directory used for Tez internals
-   * @param strAppId
-   *          Application ID
-   * @param dagPBName
-   *          DAG PB Name
+   * @param tezSysStagingPath TEZ system level staging directory used for Tez internals
+   * @param strAppId          Application ID
+   * @param dagPBName         DAG PB Name
    * @return path to store the plan in text
    */
   @Private
@@ -217,10 +206,8 @@ public class TezCommonUtils {
    * Returns a path to store recovery information
    * </p>
    *
-   * @param tezSysStagingPath
-   *          TEZ system level staging directory used for Tez internals
-   * @param conf
-   *          Tez configuration
+   * @param tezSysStagingPath TEZ system level staging directory used for Tez internals
+   * @param conf              Tez configuration
    * @return App recovery path
    * @throws IOException
    */
@@ -238,10 +225,8 @@ public class TezCommonUtils {
    * Returns a path to store app attempt specific recovery details
    * </p>
    *
-   * @param recoveryPath
-   *          TEZ recovery directory used for Tez internals
-   * @param attemptID
-   *          Application Attempt Id
+   * @param recoveryPath TEZ recovery directory used for Tez internals
+   * @param attemptID    Application Attempt Id
    * @return App attempt specific recovery path
    */
   @Private
@@ -254,10 +239,8 @@ public class TezCommonUtils {
    * Returns a path to store DAG specific recovery info
    * </p>
    *
-   * @param attemptRecoverPath
-   *          :TEZ system level staging directory used for Tez internals
-   * @param dagID
-   *          DagID as string
+   * @param attemptRecoverPath :TEZ system level staging directory used for Tez internals
+   * @param dagID              DagID as string
    * @return DAG specific recovery path
    */
   @Private
@@ -270,8 +253,7 @@ public class TezCommonUtils {
    * Returns a path to store summary info for recovery
    * </p>
    *
-   * @param attemptRecoverPath
-   *          TEZ system level staging directory used for Tez internals
+   * @param attemptRecoverPath TEZ system level staging directory used for Tez internals
    * @return Summary event path used in recovery
    */
   @Private
@@ -284,10 +266,8 @@ public class TezCommonUtils {
    * Create a directory with predefined directory permission
    * </p>
    *
-   * @param fs
-   *          Filesystem
-   * @param dir
-   *          directory to be created
+   * @param fs  Filesystem
+   * @param dir directory to be created
    * @throws IOException
    */
   public static void mkDirForAM(FileSystem fs, Path dir) throws IOException {
@@ -300,10 +280,8 @@ public class TezCommonUtils {
    * returns OutputStream
    * </p>
    *
-   * @param fs
-   *          Filesystem
-   * @param filePath
-   *          file path to create the file
+   * @param fs       Filesystem
+   * @param filePath file path to create the file
    * @return FSDataOutputStream
    * @throws IOException
    */
@@ -462,6 +440,7 @@ public class TezCommonUtils {
 
   /**
    * Splits a comma separated value <code>String</code>, trimming leading and trailing whitespace on each value.
+   *
    * @param str a comma separated <String> with values
    * @return an array of <code>String</code> values
    */
@@ -476,13 +455,12 @@ public class TezCommonUtils {
   /**
    * A helper function to serialize the JobTokenIdentifier to be sent to the
    * ShuffleHandler as ServiceData.
-   *
+   * <p>
    * *NOTE* This is a copy of what is done by the MapReduce ShuffleHandler. Not using that directly
    * to avoid a dependency on mapreduce.
    *
-   * @param jobToken
-   *          the job token to be used for authentication of shuffle data
-   *          requests.
+   * @param jobToken the job token to be used for authentication of shuffle data
+   *                 requests.
    * @return the serialized version of the jobToken.
    */
   public static ByteBuffer serializeServiceData(Token<JobTokenIdentifier> jobToken)
@@ -512,6 +490,7 @@ public class TezCommonUtils {
   /**
    * Helper function to get the heartbeat interval for client-AM heartbeats
    * See {@link TezConfiguration#TEZ_AM_CLIENT_HEARTBEAT_TIMEOUT_SECS} for more details.
+   *
    * @param conf Configuration object
    * @return heartbeat interval in milliseconds. -1 implies disabled.
    */
@@ -529,9 +508,10 @@ public class TezCommonUtils {
 
   /**
    * Helper function to get the poll interval for client-AM heartbeats.
-   * @param conf Configuration object
+   *
+   * @param conf                    Configuration object
    * @param heartbeatIntervalMillis Heartbeat interval in milliseconds
-   * @param buckets How many times to poll within the provided heartbeat interval
+   * @param buckets                 How many times to poll within the provided heartbeat interval
    * @return poll interval in milliseconds
    */
   public static long getAMClientHeartBeatPollIntervalMillis(Configuration conf,

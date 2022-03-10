@@ -110,7 +110,7 @@ public class PluginWrapperTestHelpers {
     } else if (clazz.equals(int.class)) {
       return 224;
     } else if (clazz.equals(long.class)) {
-      return 445l;
+      return 445L;
     } else if (clazz.equals(float.class)) {
       return 2.24f;
     } else if (clazz.equals(double.class)) {

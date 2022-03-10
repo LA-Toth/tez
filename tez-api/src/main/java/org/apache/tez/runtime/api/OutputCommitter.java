@@ -78,8 +78,7 @@ public abstract class OutputCommitter {
    * output in the case of a post-commit failure. This is called from the
    * application master process. This may be called multiple times.
    *
-   * @param finalState
-   *          final run-state of the vertex
+   * @param finalState final run-state of the vertex
    * @throws java.lang.Exception
    */
   public abstract void abortOutput(VertexStatus.State finalState)
@@ -88,6 +87,7 @@ public abstract class OutputCommitter {
   /**
    * Whether the OutputCommitter supports recovery of output from a Task
    * that completed in a previous DAG attempt
+   *
    * @return True if recovery supported
    */
   public boolean isTaskRecoverySupported() {
@@ -96,7 +96,8 @@ public abstract class OutputCommitter {
 
   /**
    * Recover task output from a previous DAG attempt
-   * @param taskIndex Index of task to be recovered
+   *
+   * @param taskIndex          Index of task to be recovered
    * @param previousDAGAttempt Previous DAG Attempt Number
    * @throws java.lang.Exception
    */

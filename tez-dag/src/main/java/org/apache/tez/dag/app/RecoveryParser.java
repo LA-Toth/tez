@@ -80,7 +80,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * RecoverParser is mainly for Tez AM Recovery. It would read the recovery events. (summary & non-summary)
- *
  */
 public class RecoveryParser {
 
@@ -274,7 +273,7 @@ public class RecoveryParser {
     return historyEvents;
   }
 
-  public static void main(String argv[]) throws IOException {
+  public static void main(String[] argv) throws IOException {
     // TODO clean up with better usage and error handling
     Configuration conf = new Configuration();
     String summaryPath = argv[0];
@@ -375,11 +374,12 @@ public class RecoveryParser {
 
   /**
    * 1. Read Summary Recovery file and build DAGSummaryData
-   *    Check whether it is recoverable based on the summary file (whether dag is
-   *    in the middle of committing)
+   * Check whether it is recoverable based on the summary file (whether dag is
+   * in the middle of committing)
    * 2. Read the non-Summary Recovery file and build DAGRecoveryData
-   *    Check whether it is recoverable based on both the summary file and non-summary file
-   *    (whether vertex has completed its committing, but its full non-summary recovery events are not seen)
+   * Check whether it is recoverable based on both the summary file and non-summary file
+   * (whether vertex has completed its committing, but its full non-summary recovery events are not seen)
+   *
    * @return DAGRecoveryData
    * @throws IOException
    */

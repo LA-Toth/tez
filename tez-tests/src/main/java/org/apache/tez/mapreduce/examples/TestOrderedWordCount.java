@@ -90,7 +90,7 @@ import org.slf4j.LoggerFactory;
 /**
  * An MRR job built on top of word count to return words sorted by
  * their frequency of occurrence.
- *
+ * <p>
  * Use -DUSE_TEZ_SESSION=true to run jobs in a session mode.
  * If multiple input/outputs are provided, this job will process each pair
  * as a separate DAG in a sequential manner.

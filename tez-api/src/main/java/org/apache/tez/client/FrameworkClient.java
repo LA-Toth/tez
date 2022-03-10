@@ -74,8 +74,8 @@ public abstract class FrameworkClient {
    * The actual implementation of FramworkClient may modify the configuration instances that are
    * passed in to configure required functionality
    *
-   * @param tezConf  the {@link org.apache.tez.dag.api.TezConfiguration} instance being used by the
-   *                 cluster
+   * @param tezConf the {@link org.apache.tez.dag.api.TezConfiguration} instance being used by the
+   *                cluster
    */
   public abstract void init(TezConfiguration tezConf);
 
